@@ -25,7 +25,7 @@ export class BaseHyperbeeDB {
 
   async onDatabaseCreated () {
     // override me
-    console.log('New Hyperbee Database Created:', this.key)
+    console.log('New Hyperbee Database Created:', this.key.toString('hex'))
     console.log('(Warning: this function should have been overridden.)')
   }
 }
