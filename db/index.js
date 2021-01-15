@@ -4,6 +4,9 @@ import * as os from 'os'
 import * as hyperspace from './hyperspace.js'
 import { PublicServerDB, PrivateServerDB } from './server.js'
 
+import pump from 'pump'
+import concat from 'concat-stream'
+
 const HYPER_KEY = /[0-9a-f]{64}/i
 
 export let configPath = undefined
@@ -25,6 +28,41 @@ export async function setup () {
   config.publicServer = publicServerDb.key.toString('hex')
   config.privateServer = privateServerDb.key.toString('hex')
   await saveDbConfig()
+
+  // DEBUG
+  const peopleTable = await publicServerDb.getTable('https://ctzn.com/person.json')
+  console.log(await peopleTable.put(1, {
+    firstName: 'bob',
+    lastName: 'roberts',
+    age: 5
+  }))
+  console.log(await peopleTable.put(1, {
+    firstName: 'bob',
+    lastName: 'roberts'
+  }))
+  console.log(await peopleTable.put(1, {
+    lastName: 'roberts',
+    age: 5
+  }))
+  console.log(await peopleTable.put(1, {
+    firstName: 'bob',
+    lastName: 'roberts',
+    age: -1
+  }).catch(e => e))
+  console.log(await peopleTable.put(1, {
+    firstName: 10,
+    lastName: 'roberts',
+    age: 5
+  }).catch(e => e))
+
+  console.log(await peopleTable.get(1).catch(e => e))
+  console.log(await new Promise((r, r2) => {
+    pump(
+      peopleTable.createReadStream(),
+      concat(r),
+      r2
+    )
+  }))
 }
 
 export async function cleanup () {

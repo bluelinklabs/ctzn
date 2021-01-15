@@ -6,8 +6,6 @@ let app
 const PORT = 3000
 
 export async function start () {
-  await db.setup()
-
   app = express()
   app.set('view engine', 'ejs')
 
@@ -19,6 +17,7 @@ export async function start () {
   app.use('/css', express.static('static/css'))
   app.use('/js', express.static('static/js'))
   app.use('/vendor', express.static('static/vendor'))
+  app.use('/_schemas', express.static('schemas'))
 
   app.get('/notifications', (req, res) => {
     res.render('notifications')
@@ -40,8 +39,10 @@ export async function start () {
     res.status(404).send('404 Page not found')
   })
 
-  const server = app.listen(PORT, () => {
+  const server = app.listen(PORT, async () => {
     console.log(`Example app listening at http://localhost:${PORT}`)
+
+    await db.setup()
   })
 
   const wsServer = new WebSocketServer({server})
