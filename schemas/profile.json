@@ -1,0 +1,24 @@
+{
+  "$id": "https://ctzn.network/profile.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Profile",
+  "description": "Information about a user",
+  "type": "object",
+  "required": ["displayName"],
+  "additionalProperties": false,
+  "properties": {
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "homepageUrl": {
+      "type": "string",
+      "format": "uri"
+    }
+  }
+}

@@ -14,6 +14,10 @@ export class BaseHyperbeeDB {
     this.bee = null
   }
 
+  get url () {
+    return `hyper://${this.key.toString('hex')}/`
+  }
+
   async setup () {
     this.bee = new Hyperbee(client.corestore().get(this.key), {
       keyEncoding: 'utf8',
@@ -37,7 +41,7 @@ export class BaseHyperbeeDB {
     let schema = await schemas.fetch(schemaUrl)
     
     let tableDef = await this.bee.sub('tables').get(schemaUrl)
-    if (tableDef && (typeof tableDef.value !== 'object' || typeof tableDef.value.id !== 'number')) {
+    if (tableDef && (typeof tableDef.value !== 'object' || typeof tableDef.value?.id !== 'number')) {
       console.error('Incorrect table definition for', schemaUrl)
       console.error('Definition:', tableDef)
       console.error('Must be an object containing a .id number value')
@@ -54,10 +58,10 @@ export class BaseHyperbeeDB {
       })
       tableDefs.sort((a, b) => b.value.id - a.value.id)
       let highestId = tableDefs[0] ? tableDefs[0].value.id : 0
-      tableDef = {key: schemaUrl, seq: undefined, id: highestId + 1}
+      tableDef = {key: schemaUrl, seq: undefined, value: {id: highestId + 1}}
 
       // save new table definition
-      await this.bee.sub('tables').put(schemaUrl, tableDef)
+      await this.bee.sub('tables').put(schemaUrl, tableDef.value)
     }
 
     return new Table(this, schema, tableDef.value.id)

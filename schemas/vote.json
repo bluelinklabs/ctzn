@@ -1,0 +1,23 @@
+{
+  "$id": "https://ctzn.network/vote.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Vote",
+  "description": "A user vote up or down on a piece of content",
+  "type": "object",
+  "required": ["subjectUrl", "vote", "createdAt"],
+  "additionalProperties": false,
+  "properties": {
+    "subjectUrl": {
+      "type": "string",
+      "format": "uri"
+    },
+    "vote": {
+      "type": "number",
+      "enum": [-1, 1]
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

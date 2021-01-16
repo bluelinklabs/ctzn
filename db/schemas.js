@@ -1,11 +1,13 @@
 import webfetch from 'node-fetch'
 import Ajv from 'ajv'
+import addFormats from 'ajv-formats'
 
 const ajv = new Ajv.default()
+addFormats(ajv)
 const schemaCache = new Map()
 
 const DEBUG_SCHEMA_REPLACE = true
-const DEBUG_SCHEMA_REPLACE_RE = /^https:\/\/ctzn.com\//i
+const DEBUG_SCHEMA_REPLACE_RE = /^https:\/\/ctzn.network\//i
 const DEBUG_SCHEMA_ENDPOINT = 'http://localhost:3000/_schemas/'
 
 export async function fetch (url) {

@@ -1,0 +1,21 @@
+{
+  "$id": "https://ctzn.network/vote-idx.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Vote Index",
+  "description": "Aggregated vote counts on a piece of content",
+  "type": "object",
+  "required": ["subjectUrl", "upvoteCount", "downvoteCount"],
+  "additionalProperties": false,
+  "properties": {
+    "subjectUrl": {
+      "type": "string",
+      "format": "uri"
+    },
+    "upvoteCount": {
+      "type": "number"
+    },
+    "downvoteCount": {
+      "type": "number"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "$id": "https://ctzn.network/comment-idx.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Comments Index",
+  "description": "Aggregated comments on a piece of content",
+  "type": "object",
+  "required": ["subjectUrl", "commentUrls"],
+  "additionalProperties": false,
+  "properties": {
+    "subjectUrl": {
+      "type": "string",
+      "format": "uri"
+    },
+    "commentUrls": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      }
+    }
+  }
+}
