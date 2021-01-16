@@ -18,6 +18,7 @@
   "dependencies": {
     "ajv": "^7.0.3",
     "ajv-formats": "^1.5.1",
+    "await-lock": "^2.1.0",
     "concat-stream": "^2.0.0",
     "config": "^3.3.3",
     "ejs": "^3.1.5",

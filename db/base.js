@@ -76,23 +76,16 @@ class Table {
     this.id = id
   }
 
-  _validate (value) {
-    const valid = this.schema.validate(value)
-    if (!valid) {
-      throw new ValidationError(this.schema.validate.errors[0])
-    }
-  }
-
   async get (key) {
     let entry = await this.bee.get(String(key))
     if (entry) {
-      this._validate(entry.value)
+      this.schema.assertValid(entry.value)
     }
     return entry
   }
 
   async put (key, value) {
-    this._validate(value)
+    this.schema.assertValid(value)
     return this.bee.put(String(key), value)
   }
 
@@ -108,13 +101,14 @@ class Table {
       cb()
     }))
   }
-}
 
-class ValidationError extends Error {
-  constructor (info) {
-    super()
-    for (let k in info) {
-      this[k] = info[k]
-    }
+  async list (opts) {
+    return new Promise((resolve, reject) => {
+      pump(
+        this.createReadStream(opts),
+        concat(resolve),
+        reject
+      )
+    })
   }
 }

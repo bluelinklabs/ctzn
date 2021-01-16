@@ -51,4 +51,20 @@ class Schema {
       process.exit(1)
     }
   }
+
+  assertValid (value) {
+    const valid = this.schema.validate(value)
+    if (!valid) {
+      throw new ValidationError(this.schema.validate.errors[0])
+    }
+  }
+}
+
+class ValidationError extends Error {
+  constructor (info) {
+    super()
+    for (let k in info) {
+      this[k] = info[k]
+    }
+  }
 }

@@ -4,13 +4,15 @@ import * as os from 'os'
 import * as hyperspace from './hyperspace.js'
 import { PublicServerDB, PrivateServerDB } from './server.js'
 import { UserDB } from './user.js'
-
-const HYPER_KEY = /[0-9a-f]{64}/i
+import * as schemas from './schemas.js'
+import { HYPER_KEY, hyperUrlToKey } from '../lib/strings.js'
+import lock from '../lib/lock.js'
 
 export let configPath = undefined
 export let config = undefined
 export let publicServerDb = undefined
 export let privateServerDb = undefined
+export let userDbs = new Map()
 
 export async function setup () {
   await hyperspace.setup()
@@ -26,6 +28,37 @@ export async function setup () {
   config.publicServer = publicServerDb.key.toString('hex')
   config.privateServer = privateServerDb.key.toString('hex')
   await saveDbConfig()
+
+  await loadUserDbs()
+}
+
+export async function createUser ({username, email, profile}) {
+  let release = lock('db')
+  try {
+    const account = {email}
+    const user = {
+      username,
+      dbUrl: `hyper://${'0'.repeat(64)}/`,
+      joinDate: (new Date()).toISOString(),
+    }
+
+    ;(await schemas.fetch('https://ctzn.network/profile.json')).assertValid(profile)
+    ;(await schemas.fetch('https://ctzn.network/account.json')).assertValid(account)
+    ;(await schemas.fetch('https://ctzn.network/user.json')).assertValid(user)
+
+    const db = new UserDB(null)
+    await db.setup()
+    user.dbUrl = db.url
+
+    await user.profile.put('self', profile)
+    await publicServerDb.users.put(username, user)
+    await privateServerDb.accounts.put(username, account)
+    
+    userDbs.set(username, db)
+    return db
+  } finally {
+    release()
+  }
 }
 
 export async function cleanup () {
@@ -67,4 +100,14 @@ async function readDbConfig () {
 async function saveDbConfig () {
   await fsp.mkdir(path.join(os.homedir(), '.ctzn')).catch(e => undefined)
   await fsp.writeFile(configPath, JSON.stringify(config, null, 2))
+}
+
+async function loadUserDbs () {
+  let users = await publicServerDb.users.list()
+  console.log('Loading', users.length, 'user databases')
+  for (let user of users) {
+    let userDb = new UserDB(hyperUrlToKey(user.value.dbUrl))
+    await userDb.setup()
+    userDbs.set(user.key, userDb)
+  }
 }
