@@ -7,7 +7,14 @@ export async function create (endpoint) {
     get (target, prop) {
       // generate rpc calls as needed
       if (!(prop in target)) {
-        target[prop] = (...params) => ws.call(prop, params)
+        target[prop] = new Proxy({}, {
+          get (target, prop2) {
+            if (!(prop2 in target)) {
+              target[prop2] = (...params) => ws.call(`${prop}.${prop2}`, params)
+            }
+            return target[prop2]
+          }
+        })
       }
 
       return target[prop]

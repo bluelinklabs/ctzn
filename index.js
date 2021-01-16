@@ -1,6 +1,7 @@
 import express from 'express'
 import { Server as WebSocketServer } from 'rpc-websockets'
 import * as db from './db/index.js'
+import * as api from './api/index.js'
 
 let app
 const PORT = 3000
@@ -46,15 +47,13 @@ export async function start () {
   })
 
   const wsServer = new WebSocketServer({server})
-  wsServer.register('sum', function(params) {
-    return params[0] + params[1]
-  })
+  api.setup(wsServer)
 
-  process.on('SIGINT', close)
-  process.on('SIGTERM', close)
-  async function close () {
-    console.log('Shutting down, this may take a moment...')
-    await db.cleanup()
-    server.close()
-  }
+  // process.on('SIGINT', close)
+  // process.on('SIGTERM', close)
+  // async function close () {
+  //   console.log('Shutting down, this may take a moment...')
+  //   await db.cleanup()
+  //   server.close()
+  // }
 }

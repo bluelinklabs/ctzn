@@ -2,6 +2,7 @@ import { LitElement, html } from '../vendor/lit-element/lit-element.js'
 import { repeat } from '../vendor/lit-element/lit-html/directives/repeat.js'
 import { ViewThreadPopup } from './com/popups/view-thread.js'
 import * as toast from './com/toast.js'
+import { create as createRpcApi } from './lib/rpc-api.js'
 // import { getAvailableName } from './fs.js'
 import { pluralize, getOrigin, createResourceSlug } from './lib/strings.js'
 // import { typeToQuery } from './records.js'
@@ -12,22 +13,26 @@ import './com/record-feed.js'
 import './com/sites-list.js'
 import './com/img-fallbacks.js'
 
-const PATH_QUERIES = {
-  search: {
-    discussion: [
-      typeToQuery('microblogpost'),
-      typeToQuery('comment')
-    ]
-  },
-  all: [typeToQuery('microblogpost'), typeToQuery('comment')],
-  notifications: [
-    typeToQuery('microblogpost'),
-    typeToQuery('comment'),
-    typeToQuery('subscription'),
-    typeToQuery('tag'),
-    typeToQuery('vote')
-  ]
-}
+createRpcApi('ws://localhost:3000/').then(api => {
+  window.api = api
+})
+
+// const PATH_QUERIES = {
+//   search: {
+//     discussion: [
+//       typeToQuery('microblogpost'),
+//       typeToQuery('comment')
+//     ]
+//   },
+//   all: [typeToQuery('microblogpost'), typeToQuery('comment')],
+//   notifications: [
+//     typeToQuery('microblogpost'),
+//     typeToQuery('comment'),
+//     typeToQuery('subscription'),
+//     typeToQuery('tag'),
+//     typeToQuery('vote')
+//   ]
+// }
 const TITLE = document.title
 
 class CtznApp extends LitElement {
