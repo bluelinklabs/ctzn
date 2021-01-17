@@ -1,3 +1,3 @@
 import { start } from './index.js'
 
-start()
+start({debugMode: true, port: 3000})

@@ -2,11 +2,18 @@ import express from 'express'
 import { Server as WebSocketServer } from 'rpc-websockets'
 import * as db from './db/index.js'
 import * as api from './api/index.js'
+import * as path from 'path'
+import * as os from 'os'
+import * as schemas from './lib/schemas.js'
 
 let app
-const PORT = 3000
 
-export async function start () {
+export async function start ({debugMode, port, configDir}) {
+  configDir = configDir || path.join(os.homedir(), '.ctzn')
+  if (debugMode) {
+    schemas.setDebugEndpoint(port)
+  }
+
   app = express()
   app.set('view engine', 'ejs')
 
@@ -56,4 +63,14 @@ export async function start () {
   //   await db.cleanup()
   //   server.close()
   // }
+
+  return {
+    server,
+    db,
+    close: async () => {
+      console.log('Shutting down, this may take a moment...')
+      await db.cleanup()
+      server.close()
+    }
+  }
 }

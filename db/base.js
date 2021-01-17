@@ -1,5 +1,5 @@
 import { client } from './hyperspace.js'
-import * as schemas from './schemas.js'
+import * as schemas from '../lib/schemas.js'
 import Hyperbee from 'hyperbee'
 import pump from 'pump'
 import concat from 'concat-stream'
@@ -32,9 +32,6 @@ export class BaseHyperbeeDB {
   }
 
   async onDatabaseCreated () {
-    // override me
-    console.log('New Hyperbee Database Created:', this.key.toString('hex'))
-    console.log('(Warning: this function should have been overridden.)')
   }
 
   async getTable (schemaUrl) {

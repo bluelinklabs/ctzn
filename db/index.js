@@ -1,23 +1,24 @@
 import { promises as fsp } from 'fs'
 import * as path from 'path'
-import * as os from 'os'
 import * as hyperspace from './hyperspace.js'
 import { PublicServerDB, PrivateServerDB } from './server.js'
 import { UserDB } from './user.js'
-import * as schemas from './schemas.js'
+import * as schemas from '../lib/schemas.js'
 import { HYPER_KEY, hyperUrlToKey } from '../lib/strings.js'
 import lock from '../lib/lock.js'
 
+let _configDir = undefined
 export let configPath = undefined
 export let config = undefined
 export let publicServerDb = undefined
 export let privateServerDb = undefined
 export let userDbs = new Map()
 
-export async function setup () {
+export async function setup ({configDir}) {
   await hyperspace.setup()
-
-  configPath = path.join(os.homedir(), '.ctzn', 'dbconfig.json')
+  
+  _configDir = configDir
+  configPath = path.join(configDir, 'dbconfig.json')
   await readDbConfig()
 
   publicServerDb = new PublicServerDB(config.publicServer)
@@ -33,7 +34,7 @@ export async function setup () {
 }
 
 export async function createUser ({username, email, profile}) {
-  let release = lock('db')
+  let release = await lock('db')
   try {
     const account = {email}
     const user = {
@@ -46,16 +47,16 @@ export async function createUser ({username, email, profile}) {
     ;(await schemas.fetch('https://ctzn.network/account.json')).assertValid(account)
     ;(await schemas.fetch('https://ctzn.network/user.json')).assertValid(user)
 
-    const db = new UserDB(null)
-    await db.setup()
-    user.dbUrl = db.url
+    const userDb = new UserDB(null)
+    await userDb.setup()
+    user.dbUrl = userDb.url
 
-    await user.profile.put('self', profile)
+    await userDb.profile.put('self', profile)
     await publicServerDb.users.put(username, user)
     await privateServerDb.accounts.put(username, account)
     
-    userDbs.set(username, db)
-    return db
+    userDbs.set(username, userDb)
+    return userDb
   } finally {
     release()
   }
@@ -98,7 +99,7 @@ async function readDbConfig () {
 }
 
 async function saveDbConfig () {
-  await fsp.mkdir(path.join(os.homedir(), '.ctzn')).catch(e => undefined)
+  await fsp.mkdir(_configDir).catch(e => undefined)
   await fsp.writeFile(configPath, JSON.stringify(config, null, 2))
 }
 
