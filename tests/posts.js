@@ -24,12 +24,40 @@ test.after.always(async t => {
 	await close()
 })
 
-test('create post', async t => {
+test('basic CRUD', async t => {
   posts.push(await api.posts.create({text: '1'}))
   posts.push(await api.posts.create({text: '2'}))
   posts.push(await api.posts.create({text: '3'}))
   t.is(posts.length, 3)
-  t.truthy(typeof posts[0].postId === 'string')
-  t.truthy(typeof posts[1].postId === 'string')
-  t.truthy(typeof posts[2].postId === 'string')
+  for (let post of posts) {
+    t.truthy(typeof post.key === 'string')
+    t.truthy(typeof post.url === 'string')
+  }
+
+  let postEntries = await api.posts.listUserFeed('bobo')
+  t.is(postEntries.length, 3)
+  t.is(postEntries[0].key, posts[0].key)
+  t.is(postEntries[0].value.text, '1')
+  t.is(postEntries[1].value.text, '2')
+  t.is(postEntries[2].value.text, '3')
+
+  postEntries = await api.posts.listUserFeed('bobo', {reverse: true})
+  t.is(postEntries.length, 3)
+  t.is(postEntries[0].value.text, '3')
+  t.is(postEntries[1].value.text, '2')
+  t.is(postEntries[2].value.text, '1')
+
+  postEntries = await api.posts.listUserFeed('bobo', {limit: 2})
+  t.is(postEntries.length, 2)
+
+  await api.posts.edit(posts[0].key, {text: '1234'})
+  let editedPost = await api.posts.get('bobo', posts[0].key)
+  t.is(editedPost.value.text, '1234')
+
+  await api.posts.del(posts[0].key)
+  await t.throwsAsync(() => api.posts.get('bobo', posts[0].key))
+  postEntries = await api.posts.listUserFeed('bobo', {limit: 2})
+  t.is(postEntries.length, 2)
+  t.is(postEntries[0].value.text, '2')
+  t.is(postEntries[1].value.text, '3')
 })

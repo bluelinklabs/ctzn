@@ -5,6 +5,7 @@ import * as api from './api/index.js'
 import * as path from 'path'
 import * as os from 'os'
 import * as schemas from './lib/schemas.js'
+import { setOrigin } from './lib/strings.js'
 
 let app
 
@@ -13,6 +14,7 @@ export async function start ({debugMode, port, configDir}) {
   if (debugMode) {
     schemas.setDebugEndpoint(port)
   }
+  setOrigin(`http://localhost:${port}`)
 
   app = express()
   app.set('view engine', 'ejs')
@@ -47,14 +49,22 @@ export async function start ({debugMode, port, configDir}) {
     res.status(404).send('404 Page not found')
   })
 
-  const server = app.listen(PORT, async () => {
-    console.log(`Example app listening at http://localhost:${PORT}`)
+  const server = await new Promise(r => {
+    let s = app.listen(port, async () => {
+      console.log(`Example app listening at http://localhost:${port}`)
 
-    await db.setup()
+      await db.setup({configDir})
+      r(s)
+    })
   })
 
   const wsServer = new WebSocketServer({server})
   api.setup(wsServer)
+
+  // DEBUG always authed as me for now -prf
+  wsServer.on('connection', client => {
+    client.auth = {username: 'pfrazee'}
+  })
 
   // process.on('SIGINT', close)
   // process.on('SIGTERM', close)

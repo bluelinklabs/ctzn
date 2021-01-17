@@ -1,4 +1,5 @@
 import { BaseHyperbeeDB } from './base.js'
+import lock from '../lib/lock.js'
 
 export class PublicServerDB extends BaseHyperbeeDB {
   async setup () {
@@ -11,6 +12,35 @@ export class PublicServerDB extends BaseHyperbeeDB {
 
   async onDatabaseCreated () {
     console.log('New public server database created, key:', this.key.toString('hex'))
+  }
+
+  async updateCommentsIndex (change) {
+    const release = await lock('comments-idx')
+    try {
+      let commentsIdxEntry = await this.commentsIdx.get(change.value.subjectUrl).catch(e => undefined)
+      if (!commentsIdxEntry) {
+        commentsIdxEntry = {
+          key: change.value.subjectUrl,
+          value: {
+            subjectUrl: change.value.subjectUrl,
+            commentUrls: []
+          }
+        }
+      }
+      let commentUrlIndex = commentsIdxEntry.value.commentUrls.indexOf(change.url)
+      if (change.type === 'put') {
+        if (commentUrlIndex === -1) {
+          commentsIdxEntry.value.commentUrls.push(change.url)
+        }
+      } else if (change.type === 'del') {
+        if (commentUrlIndex !== -1) {
+          commentsIdxEntry.value.commentUrls.splice(commentUrlIndex, 1)
+        }
+      }
+      await this.commentsIdx.put(commentsIdxEntry.key, commentsIdxEntry.value)
+    } finally {
+      release()
+    }
   }
 }
 
