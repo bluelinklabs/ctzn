@@ -1,6 +1,6 @@
 import { createValidator } from '../lib/schemas.js'
 import { userDbs } from '../db/index.js'
-import { constructUrl } from '../lib/strings.js'
+import { constructEntryUrl } from '../lib/strings.js'
 
 const listParam = createValidator({
   type: 'object',
@@ -33,7 +33,7 @@ export function setup (wsServer) {
 
     const entries = await userDb.posts.list(opts)
     for (let entry of entries) {
-      entry.url = constructUrl(userDb.posts.schema.url, username, entry.key)
+      entry.url = constructEntryUrl(userDb.posts.schema.url, username, entry.key)
     }
     return entries
   })
@@ -50,7 +50,7 @@ export function setup (wsServer) {
     if (!postEntry) {
       throw new Error('Post not found')
     }
-    postEntry.url = constructUrl(userDb.posts.schema.url, username, postEntry.key)
+    postEntry.url = constructEntryUrl(userDb.posts.schema.url, username, postEntry.key)
 
     return postEntry
   })
@@ -64,7 +64,7 @@ export function setup (wsServer) {
     post.createdAt = (new Date()).toISOString()
     await userDb.posts.put(key, post)
     
-    const url = constructUrl(userDb.posts.schema.url, client.auth.username, key)
+    const url = constructEntryUrl(userDb.posts.schema.url, client.auth.username, key)
     return {key, url}
   })
 
@@ -81,7 +81,7 @@ export function setup (wsServer) {
     postEntry.value.text = post?.text
     await userDb.posts.put(key, postEntry.value)
 
-    const url = constructUrl(userDb.posts.schema.url, client.auth.username, postEntry.key)
+    const url = constructEntryUrl(userDb.posts.schema.url, client.auth.username, postEntry.key)
     return {key, url}
   })
 

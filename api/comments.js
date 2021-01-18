@@ -1,14 +1,13 @@
 import { publicServerDb, userDbs } from '../db/index.js'
-import { constructUrl } from '../lib/strings.js'
+import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 
 export function setup (wsServer) {
   wsServer.register('comments.getThread', async ([subjectUrl]) => {
     let commentsIdxEntry
     try {
       commentsIdxEntry = await publicServerDb.commentsIdx.get(subjectUrl)
-    } catch (e) {
-      return []
-    }
+    } catch (e) {}
+    if (!commentsIdxEntry) return []
 
     const commentEntries = await fetchIndexedComments(commentsIdxEntry)
     return commentEntriesToThread(commentEntries)
@@ -22,7 +21,7 @@ export function setup (wsServer) {
     if (!commentEntry) {
       throw new Error('Comment not found')
     }
-    commentEntry.url = constructUrl(userDb.comments.schema.url, username, commentEntry.key)
+    commentEntry.url = constructEntryUrl(userDb.comments.schema.url, username, commentEntry.key)
 
     return commentEntry
   })
@@ -36,7 +35,7 @@ export function setup (wsServer) {
     comment.createdAt = (new Date()).toISOString()
     await userDb.comments.put(key, comment)
 
-    const url = constructUrl(userDb.comments.schema.url, client.auth.username, key)
+    const url = constructEntryUrl(userDb.comments.schema.url, client.auth.username, key)
     const commentEntry = await userDb.comments.get(key)
     commentEntry.url = url
 
@@ -63,7 +62,7 @@ export function setup (wsServer) {
     if (comment?.text) commentEntry.value.text = comment.text
     await userDb.comments.put(key, commentEntry.value)
 
-    const url = constructUrl(userDb.comments.schema.url, client.auth.username, key)
+    const url = constructEntryUrl(userDb.comments.schema.url, client.auth.username, key)
 
     await publicServerDb.updateCommentsIndex({
       type: 'put',
@@ -80,9 +79,8 @@ export function setup (wsServer) {
     const userDb = userDbs.get(client.auth.username)
     if (!userDb) throw new Error('User database not found')
 
-    const url = constructUrl(userDb.comments.schema.url, client.auth.username, key)
+    const url = constructEntryUrl(userDb.comments.schema.url, client.auth.username, key)
     const commentEntry = await userDb.comments.get(key)
-    commentEntry.url = url
 
     await userDb.comments.del(key)
 
@@ -98,14 +96,13 @@ export function setup (wsServer) {
 async function fetchIndexedComments (commentsIdxEntry) {
   const commentEntries = await Promise.all(commentsIdxEntry.value.commentUrls.map(async (commentUrl) => {
     try {
-      const commentUrlp = new URL(commentUrl)
-      const [username, _, key] = commentUrlp.pathname.split('/').filter(Boolean)
+      const {username, key} = parseEntryUrl(commentUrl)
 
       const userDb = userDbs.get(username)
       if (!userDb) return undefined
 
       const commentEntry = await userDb.comments.get(key)
-      commentEntry.url = constructUrl(userDb.comments.schema.url, username, key)
+      commentEntry.url = constructEntryUrl(userDb.comments.schema.url, username, key)
       return commentEntry
     } catch (e) {
       return undefined
