@@ -2884,339 +2884,311 @@
     }
 
     const cssStr = css`
-*,
-*:before,
-*:after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-a {
-  text-decoration: none;
-  color: inherit;
-}
-
+/**
+ * New button styles
+ * We should replace buttons.css with this
+ */
 button {
-  background: none;
-  outline-color: transparent;
-  border: none;
-}
+  --bg-color--button: #fff;
+  --bg-color--button--hover: #f5f5f5;
+  --bg-color--button--active: #eee;
+  --bg-color--button--pressed: #6d6d79;
+  --bg-color--button--disabled: #fff;
+  --bg-color--primary-button: #5289f7;
+  --bg-color--primary-button--hover: rgb(73, 126, 234);
+  --bg-color--transparent-button: transparent;
+  --bg-color--transparent-button--hover: #f5f5fa;
+  --bg-color--transparent-button--pressed: rgba(0,0,0,.1);
+  --bg-color--button-gray: #fafafa;
+  --bg-color--button-gray--hover: #f5f5f5;
+  --text-color--button: #333;
+  --text-color--button--pressed: #fff;
+  --text-color--button--disabled: #999;
+  --text-color--primary-button: #fff;
+  --border-color--button: #d4d7dc;
+  --border-color--primary-button: #2864dc;
+  --box-shadow-color--button: rgba(0,0,0,.05);
+  --box-shadow-color--button--hover: rgba(0,0,0,.5);
+  --box-shadow-color--transparent-button: rgba(0,0,0,.25);
 
-`;
-
-    const cssStr$1 = css`
-body {
-  --system-font: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Ubuntu, Cantarell, "Oxygen Sans", "Helvetica Neue", sans-serif;
-  --code-font: Consolas, 'Lucida Console', Monaco, monospace;
-}
-
-body {
-  font-family: var(--system-font);
-}
-
-code {
-  font-family: var(--code-font);
-  font-style: normal;
-}
-
-`;
-
-    const cssStr$2 = css`
-body {
-  --blue: #2864dc; /* this is a leftover that ought to get replaced */
-  --border-color--default: #bbc;
-  --border-color--light: #ccd;
-  --border-color--dark: #99a;
-  --border-color--semi-light: #dde;
-  --border-color--very-light: #eef;
-  --border-color--private-light: #b7c7b0;
-  --border-color--unread: #9497f5;
-  --border-color--focused: #2864dc;
-  --text-color--default: #333;
-  --text-color--lightish: #555;
-  --text-color--light: #667;
-  --text-color--pretty-light: #889;
-  --text-color--very-light: #bbc;
-  --text-color--link: #4040e7;
-  --text-color--result-link: blue;
-  --text-color--markdown-link: #4040e7;
-  --text-color--private-default: #518680;
-  --text-color--private-link: #02796d;
-  --text-color--error: #f00;
-  --bg-color--default: #fff;
-  --bg-color--secondary: #fafafd;
-  --bg-color--light: #fafafd;
-  --bg-color--semi-light: #f0f0f6;
-  --bg-color--private-light: #f5faf7;
-  --bg-color--private-semi-light: #edf6f1;
-  --bg-color--light-highlight: #f7faff;
-  --bg-color--selected: var(--text-color--link);
-  --bg-color--unread: #f2f3ff;
-  --bg-color--error: #fee;
+  background: var(--bg-color--button);
+  border: 1px solid var(--border-color--button);
+  border-radius: 3px;
+  box-shadow: 0 1px 1px var(--box-shadow-color--button);
+  padding: 5px 10px;
+  color: var(--text-color--button);
+  outline: 0;
+  cursor: pointer;
 }
 
 @media (prefers-color-scheme: dark) {
-  body {
-    --border-color--default: #669;
-    --border-color--light: #558;
-    --border-color--dark: #88a;
-    --border-color--semi-light: #447;
-    --border-color--very-light: #334;
-    --border-color--private-light: #3a5a4c;
-    --border-color--unread: #9497f5;
-    --text-color--default: #ccd;
-    --text-color--lightish: #bbc;
-    --text-color--light: #aab;
-    --text-color--pretty-light: #99a;
-    --text-color--very-light: #557;
-    --text-color--link: #5d80ff;
-    --text-color--result-link: #587bfb;
-    --text-color--markdown-link: #5d80ff;
-    --text-color--private-default: #69a59e;
-    --text-color--private-link: #04a294;
-    --text-color--error: #f00;
-    --bg-color--default: #223;
-    --bg-color--secondary: #1b1b2b;
-    --bg-color--light: #334;
-    --bg-color--semi-light: #445;
-    --bg-color--private-light: #202f2f;
-    --bg-color--private-semi-light: #354a48;
-    --bg-color--light-highlight: #3e3e5a;
-    --bg-color--selected: var(--text-color--link);
-    --bg-color--unread: #333658;
-    --bg-color--error: #fee;
+  button {
+    --bg-color--button: #335;
+    --bg-color--button--hover: #446;
+    --bg-color--button--active: #eee;
+    --bg-color--button--pressed: #6d6d79;
+    --bg-color--button--disabled: #445;
+    --bg-color--primary-button: #5289f7;
+    --bg-color--primary-button--hover: rgb(73, 126, 234);
+    --bg-color--transparent-button: transparent;
+    --bg-color--transparent-button--hover: #445;
+    --bg-color--transparent-button--pressed: rgba(0,0,0,.1);
+    --bg-color--button-gray: #fafafa;
+    --bg-color--button-gray--hover: #f5f5f5;
+    --text-color--button: #ccd;
+    --text-color--button--pressed: #fff;
+    --text-color--button--disabled: #aac;
+    --text-color--primary-button: #fff;
+    --border-color--button: #779;
+    --border-color--primary-button: #2864dc;
+    --box-shadow-color--button: rgba(0,0,0,.05);
+    --box-shadow-color--button--hover: rgba(0,0,0,.5);
+    --box-shadow-color--transparent-button: rgba(0,0,0,.25);
   }
 }
-`;
 
-    const cssStr$3 = css`
-${cssStr}
-${cssStr$2}
-
-.link {
-  color: var(--blue);
+button:hover {
+  background: var(--bg-color--button--hover);
 }
 
-.link:hover {
-  text-decoration: underline;
+button:active {
+  background: var(--bg-color--button--active);
 }
 
-.btn.nofocus,
-.btn[disabled="disabled"],
-.btn.disabled,
-.btn:disabled {
-  outline: 0;
-  box-shadow: none;
+button.big {
+  padding: 6px 12px;
 }
 
-.btn {
-  display: inline-block;
-  height: 30px;
-  padding: 0 10px;
-  border: 1px solid #ddd;
-  background: #fafafa;
-  border-radius: 2px;
-  color: var(--text-color--default);
-  font-size: 13px;
-  line-height: 26px;
-  letter-spacing: 0.25px;
-  font-weight: 400;
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.btn.small {
-  height: 24px;
-  line-height: 20px;
-}
-
-.btn.small * {
-  vertical-align: top;
-  line-height: 20px;
-}
-
-.btn.plain {
-  background: none;
-  border: none;
-  color: var(--text-color--pretty-light);
-  line-height: 28px;
-  padding: 0 3px;
-}
-
-.btn.plain:hover {
-  color: var(--color-text);
-  background: none;
-}
-
-.btn.plain:focus {
-  box-shadow: none;
-}
-
-.btn i {
-  line-height: 100%;
-  line-height: 30px;
-  vertical-align: middle;
-}
-
-.btn i:last-child {
-  margin-left: 2px;
-  margin-right: 0;
-}
-
-.btn i:first-child {
-  margin-left: 0;
-  margin-right: 2px;
-}
-
-.btn i:first-child:last-child {
-  margin-left: 0;
-  margin-right: 0;
-}
-
-.btn:focus {
-  outline: none;
-}
-
-.btn.full-width {
+button.block {
+  display: block;
   width: 100%;
 }
 
-.btn.center {
-  text-align: center;
+button.pressed {
+  box-shadow: inset 0 1px 1px var(--box-shadow-color--button--hover);
+  background: var(--bg-color--button--pressed);
+  color: var(--text-color--button--pressed);
+  border-color: transparent;
+  border-radius: 4px;
 }
 
-.btn.thick {
-  font-size: 14px;
-  font-weight: normal;
-  height: 35px;
-  line-height: 32px;
-  padding: 0 12px;
+button.primary {
+  background: var(--bg-color--primary-button);
+  border-color: var(--border-color--primary-button);
+  color: var(--text-color--primary-button);
+  box-shadow: 0 1px 1px rgba(0,0,0,.1);
 }
 
-.btn.pressed {
-  box-shadow: inset 0px 0 5px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(to top, #ddd, #ccc);
+button.primary:hover {
+  background: var(--bg-color--primary-button--hover);
 }
 
-.btn.pressed:hover {
-  box-shadow: inset 0px 0 2px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(to top, #ddd, #ccc);
-  cursor: default;
+button.gray {
+  background: var(--bg-color--button-gray);
 }
 
-.btn:hover {
-  text-decoration: none;
-  background: #eee;
+button.gray:hover {
+  background: var(--bg-color--button-gray--hover);
 }
 
-.btn[disabled="disabled"],
-.btn.disabled,
-.btn:disabled {
-  cursor: default !important;
-  background: #fafafa !important;
-  color: rgba(0, 0, 0, 0.4) !important;
-  border: 1px solid #eee !important;
-  font-weight: 400 !important;
-  -webkit-font-smoothing: initial !important;
-}
-
-.btn[disabled="disabled"] .spinner,
-.btn.disabled .spinner,
-.btn:disabled .spinner {
-  color: #aaa !important;
-}
-
-.btn[disabled="disabled"]:hover,
-.btn.disabled:hover,
-.btn:disabled:hover {
-  background: #fafafa;
-}
-
-.btn[disabled="disabled"] *,
-.btn.disabled *,
-.btn:disabled * {
+button[disabled] {
+  border-color: var(--border-color--semi-light) !important;
+  background: var(--bg-color--button--disabled) !important;
+  color: var(--text-color--button--disabled) !important;
   cursor: default !important;
 }
 
-.btn .spinner {
-  display: inline-block;
-  position: relative;
-  top: 1px;
+button.rounded {
+  border-radius: 16px;
+}
+
+button.flat {
+  box-shadow: none; 
+}
+
+button.noborder {
+  border-color: transparent;
+}
+
+button.transparent {
+  background: var(--bg-color--transparent-button);
+  border-color: transparent;
+  box-shadow: none; 
+}
+
+button.transparent[disabled] {
+  border-color: transparent !important;
+}
+
+button.transparent:hover {
+  background: var(--bg-color--transparent-button--hover);
+}
+
+button.transparent.pressed {
+  background: var(--bg-color--transparent-button--pressed);
+  box-shadow: inset 0 1px 2px var(--box-shadow-color--transparent-button);
   color: inherit;
 }
 
-.btn.warning {
-  color: #fff;
-  background: #cc2f26;
-  border-color: #cc2f26;
-}
-
-.btn.warning.pressed,
-.btn.warning:hover {
-  background: #c42d25;
-  border-color: #c42d25;
-}
-
-.btn.success {
-  background: #41bb56;
-  color: #fff;
-  border-color: #41bb56;
-}
-
-.btn.success.pressed,
-.btn.success:hover {
-  background: #3baa4e;
-  border-color: #3baa4e;
-}
-
-.btn.transparent {
-  border-color: transparent;
-  background: none;
-  font-weight: 400;
-}
-
-.btn.transparent:hover {
-  background: rgba(0, 0, 0, 0.075);
-  color: #424242;
-}
-
-.btn.transparent.disabled {
-  border-color: transparent !important;
-  background: none !important;
-}
-
-.btn.transparent.pressed {
-  background: linear-gradient(to top, #f5f3f3, #ececec);
-  border-color: #dadada;
-}
-
-.btn.primary {
-  background: #2864dc;
-  color: #fff;
-  border: 1px solid #2864dc;
-  transition: background 0.1s ease;
-}
-
-.btn.primary.pressed {
-  box-shadow: inset 0px 0 5px rgba(0, 0, 0, 0.25);
-}
-
-.btn.primary:hover {
-  background: #2357bf;
-}
-
-.btn.nofocus:focus,
-button.nofocus:focus {
-  outline: 0;
+.radio-group button {
+  background: transparent;
+  border: 0;
   box-shadow: none;
 }
 
+.radio-group button.pressed {
+  background: var(--bg-color--button--pressed);
+  border-radius: 30px;
+}
+
+.btn-group {
+  display: inline-flex;
+}
+
+.btn-group button {
+  border-radius: 0;
+  border-right-width: 0;
+}
+
+.btn-group button:first-child {
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+
+.btn-group button:last-child {
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+  border-right-width: 1px;
+}
+
+.btn-group.rounded button:first-child {
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+  padding-left: 14px;
+}
+
+.btn-group.rounded button:last-child {
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+  padding-right: 14px;
+}
 `;
 
-    const cssStr$4 = css`
+    const cssStr$1 = css`
+*[data-tooltip] {
+  position: relative;
+}
+
+*[data-tooltip]:hover:before,
+*[data-tooltip]:hover:after {
+  display: block;
+  z-index: 1000;
+  transition: opacity 0.01s ease;
+  transition-delay: 0.2s;
+}
+
+*[data-tooltip]:hover:after {
+  opacity: 1;
+}
+
+*[data-tooltip]:hover:before {
+  transform: translate(-50%, 0);
+  opacity: 1;
+}
+
+*[data-tooltip]:before {
+  opacity: 0;
+  transform: translate(-50%, 0);
+  position: absolute;
+  top: 33px;
+  left: 50%;
+  z-index: 3000;
+  content: attr(data-tooltip);
+  background: rgba(17, 17, 17, 0.95);
+  font-size: 0.7rem;
+  border: 0;
+  border-radius: 4px;
+  padding: 7px 10px;
+  color: rgba(255, 255, 255, 0.925);
+  text-transform: none;
+  text-align: center;
+  font-weight: 500;
+  white-space: pre;
+  line-height: 1;
+  pointer-events: none;
+}
+
+*[data-tooltip]:after {
+  opacity: 0;
+  position: absolute;
+  left: calc(50% - 6px);
+  top: 28px;
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid rgba(17, 17, 17, 0.95);
+  pointer-events: none;
+}
+
+.tooltip-nodelay[data-tooltip]:hover:before,
+.tooltip-nodelay[data-tooltip]:hover:after {
+  transition-delay: initial;
+}
+
+.tooltip-right[data-tooltip]:before {
+  top: 50%;
+  left: calc(100% + 6px);
+  transform: translate(0, -50%);
+  line-height: 0.9;
+}
+
+.tooltip-right[data-tooltip]:after {
+  top: 50%;
+  left: calc(100% + 0px);
+  transform: translate(0, -50%);
+  border: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 6px solid rgba(17, 17, 17, 0.95);
+}
+
+.tooltip-left[data-tooltip]:before {
+  top: 50%;
+  left: auto;
+  right: calc(100% + 6px);
+  transform: translate(0, -50%);
+  line-height: 0.9;
+}
+
+.tooltip-left[data-tooltip]:after {
+  top: 50%;
+  left: auto;
+  right: calc(100% + 0px);
+  transform: translate(0, -50%);
+  border: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 6px solid rgba(17, 17, 17, 0.95);
+}
+
+.tooltip-top[data-tooltip]:before {
+  top: unset;
+  bottom: 33px;
+}
+
+.tooltip-top[data-tooltip]:after {
+  top: unset;
+  bottom: 28px;
+  border: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid rgba(17, 17, 17, 0.95);
+}
+`;
+
+    const cssStr$2 = css`
 textarea {
   line-height: 1.4;
 }
@@ -3488,324 +3460,7 @@ label.checkbox-container input[type="checkbox"] {
 
 `;
 
-    const cssStr$5 = css`
-${cssStr}
-${cssStr$1}
-${cssStr$3}
-${cssStr$4}
-
-body {
-  background: #f5f5f7;
-  color: #333;
-}
-`;
-
-    const cssStr$6 = css`
-/**
- * New button styles
- * We should replace buttons.css with this
- */
-button {
-  --bg-color--button: #fff;
-  --bg-color--button--hover: #f5f5f5;
-  --bg-color--button--active: #eee;
-  --bg-color--button--pressed: #6d6d79;
-  --bg-color--button--disabled: #fff;
-  --bg-color--primary-button: #5289f7;
-  --bg-color--primary-button--hover: rgb(73, 126, 234);
-  --bg-color--transparent-button: transparent;
-  --bg-color--transparent-button--hover: #f5f5fa;
-  --bg-color--transparent-button--pressed: rgba(0,0,0,.1);
-  --bg-color--button-gray: #fafafa;
-  --bg-color--button-gray--hover: #f5f5f5;
-  --text-color--button: #333;
-  --text-color--button--pressed: #fff;
-  --text-color--button--disabled: #999;
-  --text-color--primary-button: #fff;
-  --border-color--button: #d4d7dc;
-  --border-color--primary-button: #2864dc;
-  --box-shadow-color--button: rgba(0,0,0,.05);
-  --box-shadow-color--button--hover: rgba(0,0,0,.5);
-  --box-shadow-color--transparent-button: rgba(0,0,0,.25);
-
-  background: var(--bg-color--button);
-  border: 1px solid var(--border-color--button);
-  border-radius: 3px;
-  box-shadow: 0 1px 1px var(--box-shadow-color--button);
-  padding: 5px 10px;
-  color: var(--text-color--button);
-  outline: 0;
-  cursor: pointer;
-}
-
-@media (prefers-color-scheme: dark) {
-  button {
-    --bg-color--button: #335;
-    --bg-color--button--hover: #446;
-    --bg-color--button--active: #eee;
-    --bg-color--button--pressed: #6d6d79;
-    --bg-color--button--disabled: #445;
-    --bg-color--primary-button: #5289f7;
-    --bg-color--primary-button--hover: rgb(73, 126, 234);
-    --bg-color--transparent-button: transparent;
-    --bg-color--transparent-button--hover: #445;
-    --bg-color--transparent-button--pressed: rgba(0,0,0,.1);
-    --bg-color--button-gray: #fafafa;
-    --bg-color--button-gray--hover: #f5f5f5;
-    --text-color--button: #ccd;
-    --text-color--button--pressed: #fff;
-    --text-color--button--disabled: #aac;
-    --text-color--primary-button: #fff;
-    --border-color--button: #779;
-    --border-color--primary-button: #2864dc;
-    --box-shadow-color--button: rgba(0,0,0,.05);
-    --box-shadow-color--button--hover: rgba(0,0,0,.5);
-    --box-shadow-color--transparent-button: rgba(0,0,0,.25);
-  }
-}
-
-button:hover {
-  background: var(--bg-color--button--hover);
-}
-
-button:active {
-  background: var(--bg-color--button--active);
-}
-
-button.big {
-  padding: 6px 12px;
-}
-
-button.block {
-  display: block;
-  width: 100%;
-}
-
-button.pressed {
-  box-shadow: inset 0 1px 1px var(--box-shadow-color--button--hover);
-  background: var(--bg-color--button--pressed);
-  color: var(--text-color--button--pressed);
-  border-color: transparent;
-  border-radius: 4px;
-}
-
-button.primary {
-  background: var(--bg-color--primary-button);
-  border-color: var(--border-color--primary-button);
-  color: var(--text-color--primary-button);
-  box-shadow: 0 1px 1px rgba(0,0,0,.1);
-}
-
-button.primary:hover {
-  background: var(--bg-color--primary-button--hover);
-}
-
-button.gray {
-  background: var(--bg-color--button-gray);
-}
-
-button.gray:hover {
-  background: var(--bg-color--button-gray--hover);
-}
-
-button[disabled] {
-  border-color: var(--border-color--semi-light) !important;
-  background: var(--bg-color--button--disabled) !important;
-  color: var(--text-color--button--disabled) !important;
-  cursor: default !important;
-}
-
-button.rounded {
-  border-radius: 16px;
-}
-
-button.flat {
-  box-shadow: none; 
-}
-
-button.noborder {
-  border-color: transparent;
-}
-
-button.transparent {
-  background: var(--bg-color--transparent-button);
-  border-color: transparent;
-  box-shadow: none; 
-}
-
-button.transparent[disabled] {
-  border-color: transparent !important;
-}
-
-button.transparent:hover {
-  background: var(--bg-color--transparent-button--hover);
-}
-
-button.transparent.pressed {
-  background: var(--bg-color--transparent-button--pressed);
-  box-shadow: inset 0 1px 2px var(--box-shadow-color--transparent-button);
-  color: inherit;
-}
-
-.radio-group button {
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-}
-
-.radio-group button.pressed {
-  background: var(--bg-color--button--pressed);
-  border-radius: 30px;
-}
-
-.btn-group {
-  display: inline-flex;
-}
-
-.btn-group button {
-  border-radius: 0;
-  border-right-width: 0;
-}
-
-.btn-group button:first-child {
-  border-top-left-radius: 3px;
-  border-bottom-left-radius: 3px;
-}
-
-.btn-group button:last-child {
-  border-top-right-radius: 3px;
-  border-bottom-right-radius: 3px;
-  border-right-width: 1px;
-}
-
-.btn-group.rounded button:first-child {
-  border-top-left-radius: 14px;
-  border-bottom-left-radius: 14px;
-  padding-left: 14px;
-}
-
-.btn-group.rounded button:last-child {
-  border-top-right-radius: 14px;
-  border-bottom-right-radius: 14px;
-  padding-right: 14px;
-}
-`;
-
-    const cssStr$7 = css`
-*[data-tooltip] {
-  position: relative;
-}
-
-*[data-tooltip]:hover:before,
-*[data-tooltip]:hover:after {
-  display: block;
-  z-index: 1000;
-  transition: opacity 0.01s ease;
-  transition-delay: 0.2s;
-}
-
-*[data-tooltip]:hover:after {
-  opacity: 1;
-}
-
-*[data-tooltip]:hover:before {
-  transform: translate(-50%, 0);
-  opacity: 1;
-}
-
-*[data-tooltip]:before {
-  opacity: 0;
-  transform: translate(-50%, 0);
-  position: absolute;
-  top: 33px;
-  left: 50%;
-  z-index: 3000;
-  content: attr(data-tooltip);
-  background: rgba(17, 17, 17, 0.95);
-  font-size: 0.7rem;
-  border: 0;
-  border-radius: 4px;
-  padding: 7px 10px;
-  color: rgba(255, 255, 255, 0.925);
-  text-transform: none;
-  text-align: center;
-  font-weight: 500;
-  white-space: pre;
-  line-height: 1;
-  pointer-events: none;
-}
-
-*[data-tooltip]:after {
-  opacity: 0;
-  position: absolute;
-  left: calc(50% - 6px);
-  top: 28px;
-  content: '';
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-bottom: 6px solid rgba(17, 17, 17, 0.95);
-  pointer-events: none;
-}
-
-.tooltip-nodelay[data-tooltip]:hover:before,
-.tooltip-nodelay[data-tooltip]:hover:after {
-  transition-delay: initial;
-}
-
-.tooltip-right[data-tooltip]:before {
-  top: 50%;
-  left: calc(100% + 6px);
-  transform: translate(0, -50%);
-  line-height: 0.9;
-}
-
-.tooltip-right[data-tooltip]:after {
-  top: 50%;
-  left: calc(100% + 0px);
-  transform: translate(0, -50%);
-  border: 0;
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-  border-right: 6px solid rgba(17, 17, 17, 0.95);
-}
-
-.tooltip-left[data-tooltip]:before {
-  top: 50%;
-  left: auto;
-  right: calc(100% + 6px);
-  transform: translate(0, -50%);
-  line-height: 0.9;
-}
-
-.tooltip-left[data-tooltip]:after {
-  top: 50%;
-  left: auto;
-  right: calc(100% + 0px);
-  transform: translate(0, -50%);
-  border: 0;
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-  border-left: 6px solid rgba(17, 17, 17, 0.95);
-}
-
-.tooltip-top[data-tooltip]:before {
-  top: unset;
-  bottom: 33px;
-}
-
-.tooltip-top[data-tooltip]:after {
-  top: unset;
-  bottom: 28px;
-  border: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 6px solid rgba(17, 17, 17, 0.95);
-}
-`;
-
-    const cssStr$8 = css`
+    const cssStr$3 = css`
 .spinner {
   display: inline-block;
   height: 14px;
@@ -3828,7 +3483,7 @@ button.transparent.pressed {
 }
 `;
 
-    const cssStr$9 = css`
+    const cssStr$4 = css`
 header {
   display: flex;
   justify-content: space-between;
@@ -3859,13 +3514,12 @@ header ctzn-header-session a {
 }
 `;
 
-    const cssStr$a = css`
-${cssStr$5}
-${cssStr$6}
-${cssStr$7}
+    const cssStr$5 = css`
+${cssStr}
+${cssStr$1}
+${cssStr$2}
+${cssStr$3}
 ${cssStr$4}
-${cssStr$8}
-${cssStr$9}
 
 :host {
   display: block;
@@ -3873,6 +3527,15 @@ ${cssStr$9}
 
 .hidden {
   display: none !important;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 .login-form {
@@ -3971,7 +3634,7 @@ ${cssStr$9}
       }
 
       static get styles () {
-        return cssStr$a
+        return cssStr$5
       }
 
       constructor () {

@@ -1,8 +1,8 @@
 import {css} from '../../vendor/lit-element/lit-element.js'
-import buttonsCSS from '../../css/buttons2.css.js'
-import inputsCSS from '../../css/inputs.css.js'
-import tooltipCSS from '../../css/tooltip.css.js'
-import spinnerCSS from '../../css/com/spinner.css.js'
+import buttonsCSS from './buttons.css.js'
+import inputsCSS from './inputs.css.js'
+import tooltipCSS from './tooltip.css.js'
+import spinnerCSS from './spinner.css.js'
 
 const cssStr = css`
 ${buttonsCSS}

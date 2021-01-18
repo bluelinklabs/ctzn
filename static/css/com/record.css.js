@@ -1,8 +1,8 @@
 import {css, unsafeCSS} from '../../vendor/lit-element/lit-element.js'
-import buttonsCSS from '../buttons2.css.js'
-import inputsCSS from '../inputs.css.js'
-import tooltipCSS from '../tooltip.css.js'
-import markdownCSS from '../markdown.css.js'
+import buttonsCSS from './buttons.css.js'
+import inputsCSS from './inputs.css.js'
+import tooltipCSS from './tooltip.css.js'
+import markdownCSS from './markdown.css.js'
 
 const cssStr = css`
 ${buttonsCSS}

@@ -2680,322 +2680,197 @@
     //# =repeat.js.map
 
     const cssStr = css`
-*,
-*:before,
-*:after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-a {
-  text-decoration: none;
-  color: inherit;
-}
-
+/**
+ * New button styles
+ * We should replace buttons.css with this
+ */
 button {
-  background: none;
-  outline-color: transparent;
-  border: none;
-}
+  --bg-color--button: #fff;
+  --bg-color--button--hover: #f5f5f5;
+  --bg-color--button--active: #eee;
+  --bg-color--button--pressed: #6d6d79;
+  --bg-color--button--disabled: #fff;
+  --bg-color--primary-button: #5289f7;
+  --bg-color--primary-button--hover: rgb(73, 126, 234);
+  --bg-color--transparent-button: transparent;
+  --bg-color--transparent-button--hover: #f5f5fa;
+  --bg-color--transparent-button--pressed: rgba(0,0,0,.1);
+  --bg-color--button-gray: #fafafa;
+  --bg-color--button-gray--hover: #f5f5f5;
+  --text-color--button: #333;
+  --text-color--button--pressed: #fff;
+  --text-color--button--disabled: #999;
+  --text-color--primary-button: #fff;
+  --border-color--button: #d4d7dc;
+  --border-color--primary-button: #2864dc;
+  --box-shadow-color--button: rgba(0,0,0,.05);
+  --box-shadow-color--button--hover: rgba(0,0,0,.5);
+  --box-shadow-color--transparent-button: rgba(0,0,0,.25);
 
-`;
-
-    const cssStr$1 = css`
-body {
-  --blue: #2864dc; /* this is a leftover that ought to get replaced */
-  --border-color--default: #bbc;
-  --border-color--light: #ccd;
-  --border-color--dark: #99a;
-  --border-color--semi-light: #dde;
-  --border-color--very-light: #eef;
-  --border-color--private-light: #b7c7b0;
-  --border-color--unread: #9497f5;
-  --border-color--focused: #2864dc;
-  --text-color--default: #333;
-  --text-color--lightish: #555;
-  --text-color--light: #667;
-  --text-color--pretty-light: #889;
-  --text-color--very-light: #bbc;
-  --text-color--link: #4040e7;
-  --text-color--result-link: blue;
-  --text-color--markdown-link: #4040e7;
-  --text-color--private-default: #518680;
-  --text-color--private-link: #02796d;
-  --text-color--error: #f00;
-  --bg-color--default: #fff;
-  --bg-color--secondary: #fafafd;
-  --bg-color--light: #fafafd;
-  --bg-color--semi-light: #f0f0f6;
-  --bg-color--private-light: #f5faf7;
-  --bg-color--private-semi-light: #edf6f1;
-  --bg-color--light-highlight: #f7faff;
-  --bg-color--selected: var(--text-color--link);
-  --bg-color--unread: #f2f3ff;
-  --bg-color--error: #fee;
+  background: var(--bg-color--button);
+  border: 1px solid var(--border-color--button);
+  border-radius: 3px;
+  box-shadow: 0 1px 1px var(--box-shadow-color--button);
+  padding: 5px 10px;
+  color: var(--text-color--button);
+  outline: 0;
+  cursor: pointer;
 }
 
 @media (prefers-color-scheme: dark) {
-  body {
-    --border-color--default: #669;
-    --border-color--light: #558;
-    --border-color--dark: #88a;
-    --border-color--semi-light: #447;
-    --border-color--very-light: #334;
-    --border-color--private-light: #3a5a4c;
-    --border-color--unread: #9497f5;
-    --text-color--default: #ccd;
-    --text-color--lightish: #bbc;
-    --text-color--light: #aab;
-    --text-color--pretty-light: #99a;
-    --text-color--very-light: #557;
-    --text-color--link: #5d80ff;
-    --text-color--result-link: #587bfb;
-    --text-color--markdown-link: #5d80ff;
-    --text-color--private-default: #69a59e;
-    --text-color--private-link: #04a294;
-    --text-color--error: #f00;
-    --bg-color--default: #223;
-    --bg-color--secondary: #1b1b2b;
-    --bg-color--light: #334;
-    --bg-color--semi-light: #445;
-    --bg-color--private-light: #202f2f;
-    --bg-color--private-semi-light: #354a48;
-    --bg-color--light-highlight: #3e3e5a;
-    --bg-color--selected: var(--text-color--link);
-    --bg-color--unread: #333658;
-    --bg-color--error: #fee;
+  button {
+    --bg-color--button: #335;
+    --bg-color--button--hover: #446;
+    --bg-color--button--active: #eee;
+    --bg-color--button--pressed: #6d6d79;
+    --bg-color--button--disabled: #445;
+    --bg-color--primary-button: #5289f7;
+    --bg-color--primary-button--hover: rgb(73, 126, 234);
+    --bg-color--transparent-button: transparent;
+    --bg-color--transparent-button--hover: #445;
+    --bg-color--transparent-button--pressed: rgba(0,0,0,.1);
+    --bg-color--button-gray: #fafafa;
+    --bg-color--button-gray--hover: #f5f5f5;
+    --text-color--button: #ccd;
+    --text-color--button--pressed: #fff;
+    --text-color--button--disabled: #aac;
+    --text-color--primary-button: #fff;
+    --border-color--button: #779;
+    --border-color--primary-button: #2864dc;
+    --box-shadow-color--button: rgba(0,0,0,.05);
+    --box-shadow-color--button--hover: rgba(0,0,0,.5);
+    --box-shadow-color--transparent-button: rgba(0,0,0,.25);
   }
 }
-`;
 
-    const cssStr$2 = css`
-${cssStr}
-${cssStr$1}
-
-.link {
-  color: var(--blue);
+button:hover {
+  background: var(--bg-color--button--hover);
 }
 
-.link:hover {
-  text-decoration: underline;
+button:active {
+  background: var(--bg-color--button--active);
 }
 
-.btn.nofocus,
-.btn[disabled="disabled"],
-.btn.disabled,
-.btn:disabled {
-  outline: 0;
-  box-shadow: none;
+button.big {
+  padding: 6px 12px;
 }
 
-.btn {
-  display: inline-block;
-  height: 30px;
-  padding: 0 10px;
-  border: 1px solid #ddd;
-  background: #fafafa;
-  border-radius: 2px;
-  color: var(--text-color--default);
-  font-size: 13px;
-  line-height: 26px;
-  letter-spacing: 0.25px;
-  font-weight: 400;
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.btn.small {
-  height: 24px;
-  line-height: 20px;
-}
-
-.btn.small * {
-  vertical-align: top;
-  line-height: 20px;
-}
-
-.btn.plain {
-  background: none;
-  border: none;
-  color: var(--text-color--pretty-light);
-  line-height: 28px;
-  padding: 0 3px;
-}
-
-.btn.plain:hover {
-  color: var(--color-text);
-  background: none;
-}
-
-.btn.plain:focus {
-  box-shadow: none;
-}
-
-.btn i {
-  line-height: 100%;
-  line-height: 30px;
-  vertical-align: middle;
-}
-
-.btn i:last-child {
-  margin-left: 2px;
-  margin-right: 0;
-}
-
-.btn i:first-child {
-  margin-left: 0;
-  margin-right: 2px;
-}
-
-.btn i:first-child:last-child {
-  margin-left: 0;
-  margin-right: 0;
-}
-
-.btn:focus {
-  outline: none;
-}
-
-.btn.full-width {
+button.block {
+  display: block;
   width: 100%;
 }
 
-.btn.center {
-  text-align: center;
+button.pressed {
+  box-shadow: inset 0 1px 1px var(--box-shadow-color--button--hover);
+  background: var(--bg-color--button--pressed);
+  color: var(--text-color--button--pressed);
+  border-color: transparent;
+  border-radius: 4px;
 }
 
-.btn.thick {
-  font-size: 14px;
-  font-weight: normal;
-  height: 35px;
-  line-height: 32px;
-  padding: 0 12px;
+button.primary {
+  background: var(--bg-color--primary-button);
+  border-color: var(--border-color--primary-button);
+  color: var(--text-color--primary-button);
+  box-shadow: 0 1px 1px rgba(0,0,0,.1);
 }
 
-.btn.pressed {
-  box-shadow: inset 0px 0 5px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(to top, #ddd, #ccc);
+button.primary:hover {
+  background: var(--bg-color--primary-button--hover);
 }
 
-.btn.pressed:hover {
-  box-shadow: inset 0px 0 2px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(to top, #ddd, #ccc);
-  cursor: default;
+button.gray {
+  background: var(--bg-color--button-gray);
 }
 
-.btn:hover {
-  text-decoration: none;
-  background: #eee;
+button.gray:hover {
+  background: var(--bg-color--button-gray--hover);
 }
 
-.btn[disabled="disabled"],
-.btn.disabled,
-.btn:disabled {
-  cursor: default !important;
-  background: #fafafa !important;
-  color: rgba(0, 0, 0, 0.4) !important;
-  border: 1px solid #eee !important;
-  font-weight: 400 !important;
-  -webkit-font-smoothing: initial !important;
-}
-
-.btn[disabled="disabled"] .spinner,
-.btn.disabled .spinner,
-.btn:disabled .spinner {
-  color: #aaa !important;
-}
-
-.btn[disabled="disabled"]:hover,
-.btn.disabled:hover,
-.btn:disabled:hover {
-  background: #fafafa;
-}
-
-.btn[disabled="disabled"] *,
-.btn.disabled *,
-.btn:disabled * {
+button[disabled] {
+  border-color: var(--border-color--semi-light) !important;
+  background: var(--bg-color--button--disabled) !important;
+  color: var(--text-color--button--disabled) !important;
   cursor: default !important;
 }
 
-.btn .spinner {
-  display: inline-block;
-  position: relative;
-  top: 1px;
+button.rounded {
+  border-radius: 16px;
+}
+
+button.flat {
+  box-shadow: none; 
+}
+
+button.noborder {
+  border-color: transparent;
+}
+
+button.transparent {
+  background: var(--bg-color--transparent-button);
+  border-color: transparent;
+  box-shadow: none; 
+}
+
+button.transparent[disabled] {
+  border-color: transparent !important;
+}
+
+button.transparent:hover {
+  background: var(--bg-color--transparent-button--hover);
+}
+
+button.transparent.pressed {
+  background: var(--bg-color--transparent-button--pressed);
+  box-shadow: inset 0 1px 2px var(--box-shadow-color--transparent-button);
   color: inherit;
 }
 
-.btn.warning {
-  color: #fff;
-  background: #cc2f26;
-  border-color: #cc2f26;
-}
-
-.btn.warning.pressed,
-.btn.warning:hover {
-  background: #c42d25;
-  border-color: #c42d25;
-}
-
-.btn.success {
-  background: #41bb56;
-  color: #fff;
-  border-color: #41bb56;
-}
-
-.btn.success.pressed,
-.btn.success:hover {
-  background: #3baa4e;
-  border-color: #3baa4e;
-}
-
-.btn.transparent {
-  border-color: transparent;
-  background: none;
-  font-weight: 400;
-}
-
-.btn.transparent:hover {
-  background: rgba(0, 0, 0, 0.075);
-  color: #424242;
-}
-
-.btn.transparent.disabled {
-  border-color: transparent !important;
-  background: none !important;
-}
-
-.btn.transparent.pressed {
-  background: linear-gradient(to top, #f5f3f3, #ececec);
-  border-color: #dadada;
-}
-
-.btn.primary {
-  background: #2864dc;
-  color: #fff;
-  border: 1px solid #2864dc;
-  transition: background 0.1s ease;
-}
-
-.btn.primary.pressed {
-  box-shadow: inset 0px 0 5px rgba(0, 0, 0, 0.25);
-}
-
-.btn.primary:hover {
-  background: #2357bf;
-}
-
-.btn.nofocus:focus,
-button.nofocus:focus {
-  outline: 0;
+.radio-group button {
+  background: transparent;
+  border: 0;
   box-shadow: none;
 }
 
+.radio-group button.pressed {
+  background: var(--bg-color--button--pressed);
+  border-radius: 30px;
+}
+
+.btn-group {
+  display: inline-flex;
+}
+
+.btn-group button {
+  border-radius: 0;
+  border-right-width: 0;
+}
+
+.btn-group button:first-child {
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+
+.btn-group button:last-child {
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+  border-right-width: 1px;
+}
+
+.btn-group.rounded button:first-child {
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+  padding-left: 14px;
+}
+
+.btn-group.rounded button:last-child {
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+  padding-right: 14px;
+}
 `;
 
-    const cssStr$3 = css`
+    const cssStr$1 = css`
 textarea {
   line-height: 1.4;
 }
@@ -3267,9 +3142,9 @@ label.checkbox-container input[type="checkbox"] {
 
 `;
 
-    const cssStr$4 = css`
-${cssStr$2}
-${cssStr$3}
+    const cssStr$2 = css`
+${cssStr}
+${cssStr$1}
 
 .popup-wrapper {
   position: fixed;
@@ -3515,7 +3390,7 @@ ${cssStr$3}
       }
     }
 
-    BasePopup.styles = [cssStr$4];
+    BasePopup.styles = [cssStr$2];
 
     /**
      * @license
@@ -3651,198 +3526,7 @@ ${cssStr$3}
     });
     //# =unsafe-html.js.map
 
-    const cssStr$5 = css`
-/**
- * New button styles
- * We should replace buttons.css with this
- */
-button {
-  --bg-color--button: #fff;
-  --bg-color--button--hover: #f5f5f5;
-  --bg-color--button--active: #eee;
-  --bg-color--button--pressed: #6d6d79;
-  --bg-color--button--disabled: #fff;
-  --bg-color--primary-button: #5289f7;
-  --bg-color--primary-button--hover: rgb(73, 126, 234);
-  --bg-color--transparent-button: transparent;
-  --bg-color--transparent-button--hover: #f5f5fa;
-  --bg-color--transparent-button--pressed: rgba(0,0,0,.1);
-  --bg-color--button-gray: #fafafa;
-  --bg-color--button-gray--hover: #f5f5f5;
-  --text-color--button: #333;
-  --text-color--button--pressed: #fff;
-  --text-color--button--disabled: #999;
-  --text-color--primary-button: #fff;
-  --border-color--button: #d4d7dc;
-  --border-color--primary-button: #2864dc;
-  --box-shadow-color--button: rgba(0,0,0,.05);
-  --box-shadow-color--button--hover: rgba(0,0,0,.5);
-  --box-shadow-color--transparent-button: rgba(0,0,0,.25);
-
-  background: var(--bg-color--button);
-  border: 1px solid var(--border-color--button);
-  border-radius: 3px;
-  box-shadow: 0 1px 1px var(--box-shadow-color--button);
-  padding: 5px 10px;
-  color: var(--text-color--button);
-  outline: 0;
-  cursor: pointer;
-}
-
-@media (prefers-color-scheme: dark) {
-  button {
-    --bg-color--button: #335;
-    --bg-color--button--hover: #446;
-    --bg-color--button--active: #eee;
-    --bg-color--button--pressed: #6d6d79;
-    --bg-color--button--disabled: #445;
-    --bg-color--primary-button: #5289f7;
-    --bg-color--primary-button--hover: rgb(73, 126, 234);
-    --bg-color--transparent-button: transparent;
-    --bg-color--transparent-button--hover: #445;
-    --bg-color--transparent-button--pressed: rgba(0,0,0,.1);
-    --bg-color--button-gray: #fafafa;
-    --bg-color--button-gray--hover: #f5f5f5;
-    --text-color--button: #ccd;
-    --text-color--button--pressed: #fff;
-    --text-color--button--disabled: #aac;
-    --text-color--primary-button: #fff;
-    --border-color--button: #779;
-    --border-color--primary-button: #2864dc;
-    --box-shadow-color--button: rgba(0,0,0,.05);
-    --box-shadow-color--button--hover: rgba(0,0,0,.5);
-    --box-shadow-color--transparent-button: rgba(0,0,0,.25);
-  }
-}
-
-button:hover {
-  background: var(--bg-color--button--hover);
-}
-
-button:active {
-  background: var(--bg-color--button--active);
-}
-
-button.big {
-  padding: 6px 12px;
-}
-
-button.block {
-  display: block;
-  width: 100%;
-}
-
-button.pressed {
-  box-shadow: inset 0 1px 1px var(--box-shadow-color--button--hover);
-  background: var(--bg-color--button--pressed);
-  color: var(--text-color--button--pressed);
-  border-color: transparent;
-  border-radius: 4px;
-}
-
-button.primary {
-  background: var(--bg-color--primary-button);
-  border-color: var(--border-color--primary-button);
-  color: var(--text-color--primary-button);
-  box-shadow: 0 1px 1px rgba(0,0,0,.1);
-}
-
-button.primary:hover {
-  background: var(--bg-color--primary-button--hover);
-}
-
-button.gray {
-  background: var(--bg-color--button-gray);
-}
-
-button.gray:hover {
-  background: var(--bg-color--button-gray--hover);
-}
-
-button[disabled] {
-  border-color: var(--border-color--semi-light) !important;
-  background: var(--bg-color--button--disabled) !important;
-  color: var(--text-color--button--disabled) !important;
-  cursor: default !important;
-}
-
-button.rounded {
-  border-radius: 16px;
-}
-
-button.flat {
-  box-shadow: none; 
-}
-
-button.noborder {
-  border-color: transparent;
-}
-
-button.transparent {
-  background: var(--bg-color--transparent-button);
-  border-color: transparent;
-  box-shadow: none; 
-}
-
-button.transparent[disabled] {
-  border-color: transparent !important;
-}
-
-button.transparent:hover {
-  background: var(--bg-color--transparent-button--hover);
-}
-
-button.transparent.pressed {
-  background: var(--bg-color--transparent-button--pressed);
-  box-shadow: inset 0 1px 2px var(--box-shadow-color--transparent-button);
-  color: inherit;
-}
-
-.radio-group button {
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-}
-
-.radio-group button.pressed {
-  background: var(--bg-color--button--pressed);
-  border-radius: 30px;
-}
-
-.btn-group {
-  display: inline-flex;
-}
-
-.btn-group button {
-  border-radius: 0;
-  border-right-width: 0;
-}
-
-.btn-group button:first-child {
-  border-top-left-radius: 3px;
-  border-bottom-left-radius: 3px;
-}
-
-.btn-group button:last-child {
-  border-top-right-radius: 3px;
-  border-bottom-right-radius: 3px;
-  border-right-width: 1px;
-}
-
-.btn-group.rounded button:first-child {
-  border-top-left-radius: 14px;
-  border-bottom-left-radius: 14px;
-  padding-left: 14px;
-}
-
-.btn-group.rounded button:last-child {
-  border-top-right-radius: 14px;
-  border-bottom-right-radius: 14px;
-  padding-right: 14px;
-}
-`;
-
-    const cssStr$6 = css`
+    const cssStr$3 = css`
 *[data-tooltip] {
   position: relative;
 }
@@ -3956,7 +3640,7 @@ button.transparent.pressed {
 }
 `;
 
-    const cssStr$7 = css`
+    const cssStr$4 = css`
 .spinner {
   display: inline-block;
   height: 14px;
@@ -3979,11 +3663,11 @@ button.transparent.pressed {
 }
 `;
 
-    const cssStr$8 = css`
-${cssStr$5}
+    const cssStr$5 = css`
+${cssStr}
+${cssStr$1}
 ${cssStr$3}
-${cssStr$6}
-${cssStr$7}
+${cssStr$4}
 
 :host {
   display: block;
@@ -4261,39 +3945,6 @@ ctzn-record {
       return domain
     }
 
-    function createResourceSlug (href, title) {
-      var slug;
-      try {
-        var hrefp = new URL(href);
-        if (hrefp.pathname === '/' && !hrefp.search && !hrefp.hash) {
-          // at the root path - use the hostname for the filename
-          if (DRIVE_KEY_REGEX.test(hrefp.hostname) && !!title.trim()) {
-            // ...unless it's a hyper key
-            slug = slugify(title.trim());
-          } else {
-            slug = slugify(hrefp.hostname);
-          }
-        } else if (typeof title === 'string' && !!title.trim()) {
-          // use the title if available on subpages
-          slug = slugify(title.trim());
-        } else {
-          // use parts of the url
-          slug = slugify(hrefp.hostname + hrefp.pathname + hrefp.search + hrefp.hash);
-        }
-      } catch (e) {
-        // weird URL, just use slugified version of it
-        slug = slugify(href);
-      }
-      return slug.toLowerCase()
-    }
-
-    const reservedChars = /[^\w]/g;
-    const endingDashes = /([-]+$)/g;
-    const extraDashes = /(-[-]+)/g;
-    function slugify (str = '') {
-      return str.replace(reservedChars, '-').replace(endingDashes, '').replace(extraDashes, '-')
-    }
-
     function isSameOrigin (a, b) {
     	return getOrigin(a) === getOrigin(b)
     }
@@ -4337,7 +3988,7 @@ ctzn-record {
       }
     }
 
-    const cssStr$9 = css`
+    const cssStr$6 = css`
 :host {
   --toast-min-width: 350px;
   --toast-padding: 10px 15px;
@@ -4450,7 +4101,7 @@ ctzn-record {
     `
       }
     }
-    BeakerToast.styles = cssStr$9;
+    BeakerToast.styles = cssStr$6;
 
     customElements.define('ctzn-toast', BeakerToast);
 
@@ -4532,153 +4183,7 @@ ctzn-record {
     });
     //# =class-map.js.map
 
-    /*
-    Usage:
-
-    <ctzn-img-fallbacks>
-      <img src="/foo.png" slot="img1">
-      <img src="/bar.png" slot="img2">
-      <img src="/baz.png" slot="img3">
-    </ctzn-img-fallbacks>
-    */
-
-    class ImgFallbacks extends LitElement {
-      static get properties () {
-        return {
-          currentImage: {type: Number}
-        }
-      }
-
-      constructor () {
-        super();
-        this.currentImage = 1;
-      }
-
-      render () {
-        return html`<slot name="img${this.currentImage}" @slotchange=${this.onSlotChange}></slot>`
-      }
-
-      onSlotChange (e) {
-        var img = this.shadowRoot.querySelector('slot').assignedElements()[0];
-        if (img) img.addEventListener('error', this.onError.bind(this));
-      }
-
-      onError (e) {
-        this.currentImage = this.currentImage + 1;
-      }
-    }
-
-    customElements.define('ctzn-img-fallbacks', ImgFallbacks);
-
-    /* globals beaker */
-
-    // exported api
-    // =
-
-    class SitesListPopup extends BasePopup {
-      static get properties () {
-        return {isLoading: {type: Boolean}}
-      }
-
-      static get styles () {
-        return [cssStr$5, cssStr$7, cssStr$4, css`
-      .loading {
-        padding: 10px 10px 0;
-      }
-      .sites {
-        margin: -5px 0 0 !important;
-      }
-      .site {
-        display: flex;
-        align-items: center;
-        padding: 8px 4px;
-        font-size: 14px;
-      }
-      .site:hover {
-        background: var(--bg-color--light);
-      }
-      .site .thumb {
-        display: block;
-        width: 24px;
-        height: 24px;
-        object-fit: cover;
-        border-radius: 50%;
-        margin-right: 10px;
-      }
-      .site .title {
-        font-weight: 500;
-      }
-      .site .url {
-        color: var(--text-color--light);
-      }
-    `]
-      }
-
-      constructor ({title, sites}) {
-        super();
-        this.title = title;
-        if (sites instanceof Promise) {
-          this.isLoading = true;
-          this.sites = undefined;
-          sites.then(s => {
-            this.isLoading = false;
-            this.sites = s;
-          });
-        } else {
-          this.isLoading = false;
-          this.sites = sites;
-        }
-      }
-
-      // management
-      //
-
-      static async create (title, sites) {
-        return BasePopup.create(SitesListPopup, {title, sites})
-      }
-
-      static destroy () {
-        return BasePopup.destroy('sites-list-popup')
-      }
-
-      // rendering
-      // =
-
-      renderTitle () {
-        return this.title || 'Sites'
-      }
-
-      renderBody () {
-        return html`
-      <link rel="stylesheet" href=${(new URL('../../../css/fontawesome.css', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()}>
-      <div class="sites">
-        ${this.isLoading ? html`
-          <div class="loading"><span class="spinner"></span></div>
-        ` : html`
-          ${repeat(this.sites, site => this.renderSite(site))}
-        `}
-      </div>
-    `
-      }
-
-      renderSite (site) {
-        const title = site.title || 'Untitled';
-        return html`
-      <a href=${site.url} class="site" title=${title} target="_blank">
-        <ctzn-img-fallbacks>
-          <img class="thumb" src="${site.url}/thumb" slot="img1">
-          <img class="thumb" src=${(new URL('../../../img/default-user-thumb', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()} slot="img2">
-        </ctzn-img-fallbacks>
-        <span class="details">
-          <span class="title">${title}</span>
-        </span>
-      </a>
-    `
-      }
-    }
-    customElements.define('sites-list-popup', SitesListPopup);
-
-    const cssStr$a = css`
+    const cssStr$7 = css`
 .markdown :-webkit-any(h1, h2, h3, h4, h5) {
   font-family: arial;
 }
@@ -4700,11 +4205,11 @@ ctzn-record {
 }
 `;
 
-    const cssStr$b = css`
-${cssStr$5}
+    const cssStr$8 = css`
+${cssStr}
+${cssStr$1}
 ${cssStr$3}
-${cssStr$6}
-${cssStr$a}
+${cssStr$7}
 
 /** COMMON RECORD STYLES **/
 
@@ -5743,7 +5248,7 @@ a:hover {
     });
     //# =if-defined.js.map
 
-    const cssStr$c = css`
+    const cssStr$9 = css`
 .dropdown {
   position: relative;
 
@@ -6200,7 +5705,7 @@ a:hover {
     }
 
     BeakerContextMenu.styles = css`
-${cssStr$c}
+${cssStr$9}
 
 .context-menu {
   position: fixed;
@@ -6534,10 +6039,10 @@ a.dropdown-item {
       }
     }
 
-    const cssStr$d = css`
-${cssStr$5}
-${cssStr$6}
-${cssStr$a}
+    const cssStr$a = css`
+${cssStr}
+${cssStr$3}
+${cssStr$7}
 
 nav {
   display: flex;
@@ -6716,7 +6221,7 @@ input[type="file"] {
       }
 
       static get styles () {
-        return cssStr$d
+        return cssStr$a
       }
 
       get isEmpty () {
@@ -7089,7 +6594,7 @@ input[type="file"] {
       }
 
       static get styles () {
-        return cssStr$b
+        return cssStr$8
       }
 
       constructor () {
@@ -8114,7 +7619,7 @@ input[type="file"] {
       }
 
       static get styles () {
-        return cssStr$8
+        return cssStr$5
       }
 
       constructor () {
@@ -8593,7 +8098,7 @@ input[type="file"] {
       }
 
       static get styles () {
-        return [cssStr$4, css`
+        return [cssStr$2, css`
     .popup-inner {
       width: 100%;
       max-width: 900px;
@@ -9340,36 +8845,7 @@ input[type="file"] {
       return (new URL(window.location)).searchParams.get(k) || fallback
     }
 
-    const cssStr$e = css`
-body {
-  --system-font: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Ubuntu, Cantarell, "Oxygen Sans", "Helvetica Neue", sans-serif;
-  --code-font: Consolas, 'Lucida Console', Monaco, monospace;
-}
-
-body {
-  font-family: var(--system-font);
-}
-
-code {
-  font-family: var(--code-font);
-  font-style: normal;
-}
-
-`;
-
-    const cssStr$f = css`
-${cssStr}
-${cssStr$e}
-${cssStr$2}
-${cssStr$3}
-
-body {
-  background: #f5f5f7;
-  color: #333;
-}
-`;
-
-    const cssStr$g = css`
+    const cssStr$b = css`
 header {
   display: flex;
   justify-content: space-between;
@@ -9400,12 +8876,11 @@ header ctzn-header-session a {
 }
 `;
 
-    const cssStr$h = css`
-${cssStr$f}
-${cssStr$5}
-${cssStr$6}
-${cssStr$7}
-${cssStr$g}
+    const cssStr$c = css`
+${cssStr}
+${cssStr$3}
+${cssStr$4}
+${cssStr$b}
 
 :host {
   display: block;
@@ -9413,6 +8888,15 @@ ${cssStr$g}
 
 .hidden {
   display: none !important;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 h2 {
@@ -9635,46 +9119,6 @@ ctzn-record-feed {
   --ctzn-record-feed--default-margin: 20px;
 }
 
-.intro {
-  margin: 10px 0;
-}
-
-.intro .explainer {
-  padding: 10px;
-  font-size: 18px;
-  text-align: center;
-}
-
-.intro h4 {
-  font-size: 21px;
-  margin: 22px 0 10px;
-}
-
-.intro a {
-  color: var(--text-color--link);
-  cursor: pointer;
-}
-
-.intro a:hover {
-  text-decoration: underline;
-}
-
-.intro button {
-  font-size: 15px;
-}
-
-.intro .sign-in {
-  background: var(--bg-color--secondary);
-  padding: 10px;
-  width: 200px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.intro .sign-in button {
-  margin-right: 5px;
-}
-
 .empty {
   font-size: 16px;
   letter-spacing: 0.7px;
@@ -9760,11 +9204,11 @@ ctzn-record-feed {
 
     customElements.define('ctzn-header-session', HeaderSession);
 
-    const cssStr$i = css`
-${cssStr$5}
+    const cssStr$d = css`
+${cssStr}
+${cssStr$1}
 ${cssStr$3}
-${cssStr$6}
-${cssStr$7}
+${cssStr$4}
 
 :host {
   display: block;
@@ -9912,7 +9356,7 @@ h2 a:hover {
       }
 
       static get styles () {
-        return cssStr$i
+        return cssStr$d
       }
 
       constructor () {
@@ -10209,666 +9653,43 @@ h2 a:hover {
       return acc
     }
 
-    const cssStr$j = css`
-${cssStr$5}
-${cssStr$3}
-${cssStr$6}
-${cssStr$7}
+    /*
+    Usage:
 
-:host {
-  display: block;
-  position: relative;
-}
+    <ctzn-img-fallbacks>
+      <img src="/foo.png" slot="img1">
+      <img src="/bar.png" slot="img2">
+      <img src="/baz.png" slot="img3">
+    </ctzn-img-fallbacks>
+    */
 
-a {
-  text-decoration: none;
-  cursor: initial;
-}
-
-a[href]:hover {
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-h2 {
-  box-sizing: border-box;
-  letter-spacing: 1px;
-  margin: 6px 0 8px;
-  font-weight: bold;
-  font-size: 11px;
-  color: var(--text-color--pretty-light);
-  text-transform: uppercase;
-}
-
-.container {
-}
-
-.sites.single-row {
-  display: grid;
-  justify-content: flex-start;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  grid-gap: 15px;
-}
-
-.site {
-  position: relative;
-  background: var(--bg-color--default);
-}
-
-.sites.full .site {
-  display: flex;
-  align-items: flex-start;
-  border-top: 1px solid var(--border-color--very-light);
-  padding: 6px 0 4px;
-}
-
-.sites.full .site:last-child {
-  border-bottom-width: 1px;
-}
-
-.site .thumb {
-  padding: 8px 10px 4px;
-}
-
-.sites.single-row .site .thumb {
-  border-bottom: 1px solid var(--border-color--very-light);
-  padding: 8px 10px 4px;
-}
-
-.sites.full .site .thumb {
-  padding: 8px 10px 8px 0;
-}
-
-.site .thumb img {
-  display: inline-block;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.sites.full .site .thumb img {
-  display: block;
-}
-
-.sites.single-row .site button {
-  position: absolute;
-  font-size: 12px;
-  top: 6px;
-  right: 4px;
-  box-shadow: none;
-  border-radius: 16px;
-}
-
-.sites.full .site button {
-  align-self: normal;
-  white-space: nowrap;
-}
-
-.site .info {
-  flex: 1;
-  font-size: 13px;
-  line-height: 1;
-  padding: 8px 12px 10px;
-}
-
-.sites.full .site .info {
-  padding: 12px 4px; 
-}
-
-.site .title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.site .title a {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-color--default);
-}
-
-.site .description {
-  margin-top: 6px;
-  word-break: break-word;
-}
-
-.fork-of {
-  margin-top: 6px;
-  color: var(--text-color--light);
-  font-size: 12px;
-}
-
-.fork-of a {
-  color: var(--text-color--link);
-}
-
-.label {
-  position: relative;
-  top: -1px;
-  background: var(--bg-color--semi-light);
-  padding: 1px 4px 2px;
-  border-radius: 4px;
-  font-size: 10px;
-}
-
-.sites.single-row .site .description {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.site .known-subscribers {
-  margin-top: 4px;
-}
-
-.site .known-subscribers a {
-  color: var(--text-color--light);
-}
-
-.site .known-subscribers a strong {
-  color: var(--text-color--default);
-}
-
-.sites.full .site .ctrls {
-  margin-top: 8px;
-}
-
-.sites.full .site .ctrls button {
-  font-size: 11px;
-  padding: 3px 6px;
-}
-
-.empty {
-  font-size: 16px;
-  letter-spacing: 0.7px;
-  color: var(--text-color--light);
-  padding: 60px 0px;
-  background: var(--bg-color--light);
-  text-align: center;
-}
-`;
-
-    function writeToClipboard (str) {
-      var textarea = document.createElement('textarea');
-      textarea.textContent = str;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-    }
-
-    const EXPLORER_URL = site => `beaker://explorer/${site.url.slice('hyper://'.length)}`;
-
-    class SitesList extends LitElement {
+    class ImgFallbacks extends LitElement {
       static get properties () {
         return {
-          listing: {type: String},
-          singleRow: {type: Boolean, attribute: 'single-row'},
-          filter: {type: String},
-          limit: {type: Number},
-          profile: {type: Object},
-          sites: {type: Array},
-          emptyMessage: {type: String, attribute: 'empty-message'},
+          currentImage: {type: Number}
         }
-      }
-
-      static get styles () {
-        return cssStr$j
       }
 
       constructor () {
         super();
-        this.listing = undefined;
-        this.singleRow = false;
-        this.filter = undefined;
-        this.limit = undefined;
-        this.profile = undefined;
-        this.sites = undefined;
-        this.emptyMessage = undefined;
-
-        // query state
-        this.activeQuery = undefined;
+        this.currentImage = 1;
       }
-
-      get profileUrl () {
-        return this.profile?.url
-      }
-
-      get isLoading () {
-        return !this.sites || !!this.activeQuery
-      }
-
-      async load () {
-        this.queueQuery();
-      }
-
-      updated (changedProperties) {
-        if (typeof this.sites === 'undefined') {
-          if (!this.activeQuery) {
-            this.queueQuery();
-          }
-        }
-        if (changedProperties.has('singleRow') && changedProperties.get('singleRow') != this.singleRow) {
-          this.queueQuery();
-        } else if (changedProperties.has('filter') && changedProperties.get('filter') != this.filter) {
-          this.queueQuery();
-        } else if (changedProperties.has('listing') && changedProperties.get('listing') != this.listing) {
-          this.queueQuery();
-        }
-      }
-
-      getSiteIdent (site) {
-        if (isSameOrigin(site.url, this.profileUrl)) {
-          return 'profile'
-        }
-        if (isSameOrigin(site.url, 'hyper://private')) {
-          return 'private'
-        }
-        return undefined
-      }
-
-      queueQuery () {
-        if (!this.activeQuery) {
-          this.activeQuery = this.query();
-          this.requestUpdate();
-        } else {
-          this.activeQuery = this.activeQuery.catch(e => undefined).then(r => {
-            this.activeQuery = undefined;
-            this.queueQuery();
-          });
-        }
-      }
-
-      async query () {
-        emit(this, 'load-state-updated');
-
-        var sites;
-        var isFiltered = false;
-        if (this.listing === 'mine') {
-          sites = await beaker.drives.list({includeSystem: true});
-          sites = sites.filter(s => s.info?.writable);
-          sites = await Promise.all(sites.map(async s => {
-            let res = await beaker.index.gql(`
-          query Graph($origin: String!, $profileUrl: String!) {
-            isSubscribedByUser: backlinkCount(
-              origins: [$profileUrl]
-              links: {origin: $origin}
-              paths: ["/subscriptions/*.goto"]
-            )
-            isSubscriberToUser: recordCount(
-              origins: [$origin]
-              links: {origin: $profileUrl}
-              paths: ["/subscriptions/*.goto"]
-            )
-            subCount: backlinkCount(
-              links: {origin: $origin}
-              paths: ["/subscriptions/*.goto"]
-              indexes: ["local", "network"]
-            )
-          }
-        `, {profileUrl: this.profileUrl, origin: s.url});
-            return {
-              origin: s.url,
-              url: s.url,
-              title: s.info?.title || 'Untitled',
-              description: s.info?.description,
-              writable: s.info?.writable,
-              forkOf: s.forkOf,
-              isSubscribedByUser: res.isSubscribedByUser,
-              isSubscriberToUser: res.isSubscriberToUser,
-              subCount: res.subCount
-            }
-          }));
-        } else if (this.listing === 'subscribed') {
-          let {subs} = await beaker.index.gql(`
-        query Subscriptions($profileUrl: String!) {
-          subs: records(paths: ["/subscriptions/*.goto"], origins: [$profileUrl]) {
-            linkedSites {
-              url
-              title
-              description
-              writable
-              isSubscribedByUser: backlinkCount(
-                origins: [$profileUrl]
-                paths: ["/subscriptions/*.goto"]
-              )
-              isSubscriberToUser: recordCount(
-                links: {origin: $profileUrl}
-                paths: ["/subscriptions/*.goto"]
-              )
-              subCount: backlinkCount(paths: ["/subscriptions/*.goto"] indexes: ["local", "network"])
-            }
-          }
-        }
-      `, {profileUrl: this.profileUrl});
-          sites = subs.map(sub => sub.linkedSites[0]);
-        } else if (this.listing === 'subscribers') {
-          let {subs} = await beaker.index.gql(`
-        query Subscribers($profileUrl: String!) {
-          subs: records(paths: ["/subscriptions/*.goto"], links: {origin: $profileUrl}, indexes: ["local", "network"]) {
-            site (cached: true) {
-              url
-              title
-              description
-              writable
-              isSubscribedByUser: backlinkCount(
-                origins: [$profileUrl]
-                paths: ["/subscriptions/*.goto"]
-              )
-              isSubscriberToUser: recordCount(
-                links: {origin: $profileUrl}
-                paths: ["/subscriptions/*.goto"]
-              )
-              subCount: backlinkCount(paths: ["/subscriptions/*.goto"] indexes: ["local", "network"])
-            }
-          }
-        }
-      `, {profileUrl: this.profileUrl});
-          sites = subs.map(sub => sub.site);
-        } else if (this.listing === 'network') {
-          isFiltered = true;
-          let res = await beaker.index.gql(`
-        query Sites (
-          $profileUrl: String!
-          ${this.filter ? `$search: String!` : ''}
-        ) {
-          sites (
-            ${this.filter ? `search: $search"` : ''}
-            indexes: ["network"]
-            limit: 15
-          ) {
-            url
-            title
-            description
-            writable
-            isSubscribedByUser: backlinkCount(
-              origins: [$profileUrl]
-              paths: ["/subscriptions/*.goto"]
-            )
-            isSubscriberToUser: recordCount(
-              links: {origin: $profileUrl}
-              paths: ["/subscriptions/*.goto"]
-            )
-            subCount: backlinkCount(paths: ["/subscriptions/*.goto"] indexes: ["local", "network"])
-          }
-        }
-      `, {profileUrl: this.profileUrl, search: this.filter});
-          sites = res.sites;
-        } else {
-          isFiltered = true;
-          let res = await beaker.index.gql(`
-        query Sites(
-          $profileUrl: String!
-          ${this.filter ? `$search: String!` : ''}
-        ) {
-          sites (
-            ${this.filter ? `search: $search` : ''}
-            indexes: ["local", "network"]
-          ) {
-            url
-            title
-            description
-            writable
-            isSubscribedByUser: backlinkCount(
-              origins: [$profileUrl]
-              paths: ["/subscriptions/*.goto"]
-            )
-            isSubscriberToUser: recordCount(
-              links: {origin: $profileUrl}
-              paths: ["/subscriptions/*.goto"]
-            )
-            subCount: backlinkCount(paths: ["/subscriptions/*.goto"] indexes: ["local", "network"])
-          }
-        }
-      `, {profileUrl: this.profileUrl, search: this.filter});
-          sites = res.sites;
-        }
-
-        if (this.filter && !isFiltered) {
-          sites = sites.filter(s => (
-            (s.title || '').toLowerCase().includes(this.filter.toLowerCase())
-            || (s.description || '').toLowerCase().includes(this.filter.toLowerCase())
-          ));
-        }
-        if (this.singleRow) {
-          sites = sites.slice(0, 3);
-        } else if (this.limit) {
-          sites = sites.slice(0, this.limit);
-        }
-
-        if (!isFiltered) {
-          sites.sort((a, b) => a.title.localeCompare(b.title));
-        }
-
-        // always put the profile and private site on top
-        moveToTopIfExists(sites, this.profile?.url);
-        moveToTopIfExists(sites, 'hyper://private/');
-        this.sites = sites;
-        console.log(this.sites);
-        this.activeQuery = undefined;
-        emit(this, 'load-state-updated');
-      }
-
-      isSubscribed (site) {
-        return site.isSubscribedByUser
-      }
-
-      // rendering
-      // =
 
       render () {
-        if (!this.sites) {
-          return html`
-        <div class="sites empty">
-          <span class="spinner"></span>
-        </div>
-      `
-        }
-        if (!this.sites.length) {
-          if (!this.emptyMessage) return html``
-          return html`
-        <link rel="stylesheet" href=${(new URL('../../css/fontawesome.css', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()}>
-        <div class="sites empty">
-          <span>${this.emptyMessage}</div></span>
-        </div>
-      `
-        }
-        return html`
-      <link rel="stylesheet" href=${(new URL('../../css/fontawesome.css', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()}>
-      <div class="container">
-        <div class="sites ${this.singleRow ? 'single-row' : 'full'}">
-          ${repeat(this.sites, site => site.url, site => this.renderSite(site))}
-        </div>
-      </div>
-    `
+        return html`<slot name="img${this.currentImage}" @slotchange=${this.onSlotChange}></slot>`
       }
 
-      renderSite (site) {
-        var title = site.title || toNiceDomain(site.url);
-        return html`
-      <div class="site">
-        <div class="thumb">
-          <a href=${site.url} title=${title}>
-            <ctzn-img-fallbacks>
-              <img src="${site.url}/thumb" slot="img1">
-              <img src=${(new URL('../../img/default-user-thumb', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()} slot="img2">
-            </ctzn-img-fallbacks>
-          </a>
-        </div>
-        <div class="info">
-          <div class="title"><a href=${site.url} title=${title}>${title}</a></div>
-          <div class="description">${shorten(site.description, 200)}</div>
-          ${site.forkOf ? html`
-            <div class="fork-of">
-              <span class="label">${site.forkOf.label}</span>
-              Fork of <a href="hyper://${site.forkOf.key}">${toNiceDomain(`hyper://${site.forkOf.key}`)}</a>
-            </div>
-          ` : ''}
-          ${!isSameOrigin(site.url, 'hyper://private') && (!site.writable || site.subCount > 0) ? html`
-            <div class="known-subscribers">
-              <a
-                href="#" 
-                class="tooltip-top"
-                @click=${e => this.onClickShowSubscribers(e, site)}
-              >
-                <strong>${site.subCount}</strong>
-                ${pluralize(site.subCount, 'subscriber')}
-              </a>
-            </div>
-          ` : ''}
-          <div class="ctrls">
-            ${site.writable ? html`
-              ${isSameOrigin(site.url, 'hyper://private') ? html`
-                <span class="label">My Private Site</span></div>
-              ` : isSameOrigin(site.url, this.profileUrl || '') ? html`
-                <span class="label">My Profile Site</span></div>
-              ` : html`
-                <span class="label">My Site</span>
-              `}
-              <button class="transparent" @click=${e => this.onClickMenu(e, site)}>
-                <span class="fas fa-fw fa-ellipsis-h"></span>
-              </button>
-            ` : html`
-              <button @click=${e => this.onToggleSubscribe(e, site)}>
-                ${this.isSubscribed(site) ? html`
-                  <span class="fas fa-fw fa-check"></span> Subscribed
-                ` : html`
-                  <span class="fas fa-fw fa-rss"></span> Subscribe
-                `}
-              </button>
-            `}
-          </div>
-        </div>
-      </div>
-    `
+      onSlotChange (e) {
+        var img = this.shadowRoot.querySelector('slot').assignedElements()[0];
+        if (img) img.addEventListener('error', this.onError.bind(this));
       }
 
-      // events
-      // =
-
-      async onClickShowSubscribers (e, site) {
-        e.preventDefault();
-        e.stopPropagation();
-        let sites = /* dont await */ beaker.index.gql(`
-      query ($origin: String!) {
-        records (links: {origin: $origin} paths: ["/subscriptions/*.goto"]) {
-          site {
-            url
-            title
-          }
-        }
-      }
-    `, {origin: site.url}).then(({records}) => records.map(r => r.site));
-        SitesListPopup.create('Subscribers', sites);
-      }
-
-      async onToggleSubscribe (e, site) {
-        var drive = beaker.hyperdrive.drive(this.profile.url);
-        if (this.isSubscribed(site)) {
-          site.isSubscribedByUser = false;
-          site.subCount--;
-          this.requestUpdate();
-
-          let res = await drive.query({
-            path: '/subscriptions/*.goto',
-            metadata: {href: site.url}
-          });
-          await drive.unlink(res[0].path);
-        } else {
-          site.isSubscribedByUser = true;
-          site.subCount++;
-          this.requestUpdate();
-
-          let slug = createResourceSlug(site.url, site.title);
-          let filename = await getAvailableName('/subscriptions', slug, drive, 'goto'); // avoid collisions
-          await drive.writeFile(`/subscriptions/${filename}`, '', {metadata: {
-            href: site.url,
-            title: site.title
-          }});
-        }
-      }
-
-      async onClickMenu (e, site) {
-        var items = [
-          {
-            label: 'Open in a New Tab',
-            click: () => window.open(site.url)
-          },
-          {
-            label: 'Copy Site Link',
-            click: () => {
-              writeToClipboard(site.url);
-              create('Copied to clipboard');
-            }
-          },
-          {type: 'separator'},
-          {
-            label: 'Explore Files',
-            click: () => window.open(EXPLORER_URL(site))
-          },
-          {
-            label: 'Fork this Site',
-            click: () => this.onForkSite(site)
-          },
-          {type: 'separator'},
-          {
-            label: 'Edit Properties',
-            click: () => this.onEditProps(site)
-          },
-          {
-            label: site.writable ? 'Remove from My Library' : 'Stop hosting',
-            disabled: !!this.getSiteIdent(site),
-            click: () => this.onRemoveSite(site)
-          }
-        ];
-        var fns = {};
-        for (let i = 0; i < items.length; i++) {
-          if (items[i].id) continue
-          let id = `item=${i}`;
-          items[i].id = id;
-          fns[id] = items[i].click;
-          delete items[i].click;
-        }
-
-        var choice = await beaker.browser.showContextMenu(items);
-        if (fns[choice]) fns[choice]();
-      }
-
-      async onForkSite (site) {
-        site = await beaker.hyperdrive.forkDrive(site.url);
-        create('Site created');
-        window.open(site.url);
-        this.load();
-      }
-
-      async onEditProps (site) {
-        await beaker.shell.drivePropertiesDialog(site.url);
-        this.load();
-      }
-
-      async onRemoveSite (site) {
-        await beaker.drives.remove(site.url);
-        const undo = async () => {
-          await beaker.drives.configure(site.url);
-          this.load();
-          this.requestUpdate();
-        };
-        create('Site removed', '', 10e3, {label: 'Undo', click: undo});
-        this.load();
+      onError (e) {
+        this.currentImage = this.currentImage + 1;
       }
     }
 
-    customElements.define('ctzn-sites-list', SitesList);
-
-    function moveToTopIfExists (arr, url) {
-      var i = arr.findIndex(v => v.url === url);
-      if (i !== -1) {
-        let item = arr[i];
-        arr.splice(i, 1);
-        arr.unshift(item);
-      }
-    }
+    customElements.define('ctzn-img-fallbacks', ImgFallbacks);
 
     const TITLE = document.title;
 
@@ -10886,7 +9707,7 @@ h2 {
       }
 
       static get styles () {
-        return cssStr$h
+        return cssStr$c
       }
 
       constructor () {

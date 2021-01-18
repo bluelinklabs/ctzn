@@ -11,7 +11,6 @@ import css from '../css/main.css.js'
 import './com/header-session.js'
 import './com/post-composer.js'
 import './com/record-feed.js'
-import './com/sites-list.js'
 import './com/img-fallbacks.js'
 
 const TITLE = document.title

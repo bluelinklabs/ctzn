@@ -1,13 +1,11 @@
 import {css} from '../vendor/lit-element/lit-element.js'
-import commonCSS from './common.css.js'
-import buttonsCSS from './buttons2.css.js'
-import tooltipCSS from './tooltip.css.js'
-import inputsCSS from './inputs.css.js'
+import buttonsCSS from './com/buttons.css.js'
+import tooltipCSS from './com/tooltip.css.js'
+import inputsCSS from './com/inputs.css.js'
 import spinnerCSS from './com/spinner.css.js'
 import headerCSS from './com/header.css.js'
 
 const cssStr = css`
-${commonCSS}
 ${buttonsCSS}
 ${tooltipCSS}
 ${inputsCSS}
@@ -20,6 +18,15 @@ ${headerCSS}
 
 .hidden {
   display: none !important;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 .login-form {

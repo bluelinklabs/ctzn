@@ -3,7 +3,7 @@ import { classMap } from '../../vendor/lit-element/lit-html/directives/class-map
 import { repeat } from '../../vendor/lit-element/lit-html/directives/repeat.js'
 import { unsafeHTML } from '../../vendor/lit-element/lit-html/directives/unsafe-html.js'
 import { asyncReplace } from '../../vendor/lit-element/lit-html/directives/async-replace.js'
-import { SitesListPopup } from './popups/sites-list.js'
+// import { SitesListPopup } from './popups/sites-list.js'
 import css from '../../css/com/record.css.js'
 import { removeMarkdown } from '../../vendor/remove-markdown.js'
 import { shorten, toNiceDomain, pluralize, fancyUrlAsync, isSameOrigin, joinPath } from '../lib/strings.js'

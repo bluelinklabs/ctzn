@@ -1,3 +1,5 @@
+import {css} from '../../vendor/lit-element/lit-element.js'
+const cssStr = css`
 /**
  * New button styles
  * We should replace buttons.css with this
@@ -26,7 +28,7 @@ button {
   --box-shadow-color--transparent-button: rgba(0,0,0,.25);
 
   background: var(--bg-color--button);
-  border: 1px solid var(--border-color--semi-light);
+  border: 1px solid var(--border-color--button);
   border-radius: 3px;
   box-shadow: 0 1px 1px var(--box-shadow-color--button);
   padding: 5px 10px;
@@ -37,10 +39,10 @@ button {
 
 @media (prefers-color-scheme: dark) {
   button {
-    --bg-color--button: #446;
-    --bg-color--button--hover: #668;
+    --bg-color--button: #335;
+    --bg-color--button--hover: #446;
     --bg-color--button--active: #eee;
-    --bg-color--button--pressed: #2c2c31;
+    --bg-color--button--pressed: #6d6d79;
     --bg-color--button--disabled: #445;
     --bg-color--primary-button: #5289f7;
     --bg-color--primary-button--hover: rgb(73, 126, 234);
@@ -186,3 +188,5 @@ button.transparent.pressed {
   border-bottom-right-radius: 14px;
   padding-right: 14px;
 }
+`
+export default cssStr

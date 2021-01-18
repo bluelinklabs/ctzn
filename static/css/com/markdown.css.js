@@ -1,4 +1,4 @@
-import {css} from '../vendor/lit-element/lit-element.js'
+import {css} from '../../vendor/lit-element/lit-element.js'
 
 const cssStr = css`
 .markdown :-webkit-any(h1, h2, h3, h4, h5) {

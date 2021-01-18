@@ -1,12 +1,10 @@
 import {css} from '../vendor/lit-element/lit-element.js'
-import commonCSS from './common.css.js'
-import buttonsCSS from './buttons2.css.js'
-import tooltipCSS from './tooltip.css.js'
+import buttonsCSS from './com/buttons.css.js'
+import tooltipCSS from './com/tooltip.css.js'
 import spinnerCSS from './com/spinner.css.js'
 import headerCSS from './com/header.css.js'
 
 const cssStr = css`
-${commonCSS}
 ${buttonsCSS}
 ${tooltipCSS}
 ${spinnerCSS}
@@ -18,6 +16,15 @@ ${headerCSS}
 
 .hidden {
   display: none !important;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 h2 {
@@ -238,46 +245,6 @@ ctzn-sites-list {
 
 ctzn-record-feed {
   --ctzn-record-feed--default-margin: 20px;
-}
-
-.intro {
-  margin: 10px 0;
-}
-
-.intro .explainer {
-  padding: 10px;
-  font-size: 18px;
-  text-align: center;
-}
-
-.intro h4 {
-  font-size: 21px;
-  margin: 22px 0 10px;
-}
-
-.intro a {
-  color: var(--text-color--link);
-  cursor: pointer;
-}
-
-.intro a:hover {
-  text-decoration: underline;
-}
-
-.intro button {
-  font-size: 15px;
-}
-
-.intro .sign-in {
-  background: var(--bg-color--secondary);
-  padding: 10px;
-  width: 200px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.intro .sign-in button {
-  margin-right: 5px;
 }
 
 .empty {
