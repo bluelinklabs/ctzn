@@ -6,12 +6,42 @@ export class PublicServerDB extends BaseHyperbeeDB {
     await super.setup()
     this.users = await this.getTable('https://ctzn.network/user.json')
     this.featuredPostsIdx = await this.getTable('https://ctzn.network/featured-post-idx.json')
+    this.followsIdx = await this.getTable('https://ctzn.network/follow-idx.json')
     this.commentsIdx = await this.getTable('https://ctzn.network/comment-idx.json')
     this.votesIdx = await this.getTable('https://ctzn.network/vote-idx.json')
   }
 
   async onDatabaseCreated () {
     console.log('New public server database created, key:', this.key.toString('hex'))
+  }
+
+  async updateFollowsIndex (change, followerUrl) {
+    const release = await lock('follows-idx')
+    try {
+      let followsIdxEntry = await this.followsIdx.get(change.value.subjectUrl).catch(e => undefined)
+      if (!followsIdxEntry) {
+        followsIdxEntry = {
+          key: change.value.subjectUrl,
+          value: {
+            userUrl: change.value.subjectUrl,
+            followerUrls: []
+          }
+        }
+      }
+      let followerUrlIndex = followsIdxEntry.value.followerUrls.indexOf(followerUrl)
+      if (change.type === 'put') {
+        if (followerUrlIndex === -1) {
+          followsIdxEntry.value.followerUrls.push(followerUrl)
+        }
+      } else if (change.type === 'del') {
+        if (followerUrlIndex !== -1) {
+          followsIdxEntry.value.followerUrls.splice(followerUrlIndex, 1)
+        }
+      }
+      await this.followsIdx.put(followsIdxEntry.key, followsIdxEntry.value)
+    } finally {
+      release()
+    }
   }
 
   async updateCommentsIndex (change) {

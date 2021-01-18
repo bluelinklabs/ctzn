@@ -36,8 +36,6 @@ test.after.always(async t => {
 })
 
 test('basic CRUD', async t => {
-
-  console.log(posts[0])
   await api.accounts.login({username: 'bobo', password: 'password'})
   await api.votes.put({subjectUrl: posts[0].url, vote: 1})
   await api.votes.put({subjectUrl: posts[1].url, vote: -1})
