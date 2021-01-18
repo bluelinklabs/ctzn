@@ -111,6 +111,7 @@ export class PrivateServerDB extends BaseHyperbeeDB {
   async setup () {
     await super.setup()
     this.accounts = await this.getTable('https://ctzn.network/account.json')
+    this.accountSessions = await this.getTable('https://ctzn.network/account-session.json')
   }
   
   async onDatabaseCreated () {
