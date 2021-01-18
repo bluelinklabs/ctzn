@@ -4,18 +4,26 @@
   "title": "Vote Index",
   "description": "Aggregated vote counts on a piece of content",
   "type": "object",
-  "required": ["subjectUrl", "upvoteCount", "downvoteCount"],
+  "required": ["subjectUrl", "upvoteUrls", "downvoteUrls"],
   "additionalProperties": false,
   "properties": {
     "subjectUrl": {
       "type": "string",
       "format": "uri"
     },
-    "upvoteCount": {
-      "type": "number"
+    "upvoteUrls": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      }
     },
-    "downvoteCount": {
-      "type": "number"
+    "downvoteUrls": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      }
     }
   }
 }

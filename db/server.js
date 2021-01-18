@@ -42,6 +42,39 @@ export class PublicServerDB extends BaseHyperbeeDB {
       release()
     }
   }
+
+  async updateVotesIndex (change) {
+    const release = await lock('votes-idx')
+    try {
+      let votesIdxEntry = await this.votesIdx.get(change.value.subjectUrl).catch(e => undefined)
+      if (!votesIdxEntry) {
+        votesIdxEntry = {
+          key: change.key,
+          value: {
+            subjectUrl: change.value.subjectUrl,
+            upvoteUrls: [],
+            downvoteUrls: []
+          }
+        }
+      }
+      let upvoteUrlIndex = votesIdxEntry.value.upvoteUrls.indexOf(change.url)
+      if (upvoteUrlIndex !== -1) votesIdxEntry.value.upvoteUrls.splice(upvoteUrlIndex, 1)
+      let downvoteUrlIndex = votesIdxEntry.value.downvoteUrls.indexOf(change.url)
+      if (downvoteUrlIndex !== -1) votesIdxEntry.value.downvoteUrls.splice(downvoteUrlIndex, 1)
+
+      if (change.type === 'put') {
+        if (change.value.vote === 1) {
+          votesIdxEntry.value.upvoteUrls.push(change.url)
+        } else if (change.value.vote === -1) {
+          votesIdxEntry.value.downvoteUrls.push(change.url)
+        }
+      }
+
+      await this.votesIdx.put(votesIdxEntry.key, votesIdxEntry.value)
+    } finally {
+      release()
+    }
+  }
 }
 
 export class PrivateServerDB extends BaseHyperbeeDB {
