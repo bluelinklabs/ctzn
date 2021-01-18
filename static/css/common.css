@@ -35,6 +35,7 @@ body {
   --text-color--markdown-link: #4040e7;
   --text-color--private-default: #518680;
   --text-color--private-link: #02796d;
+  --text-color--warning: #d7a92b;
   --text-color--error: #f00;
   --bg-color--default: #fff;
   --bg-color--secondary: #fafafd;
@@ -67,6 +68,7 @@ body {
     --text-color--markdown-link: #5d80ff;
     --text-color--private-default: #69a59e;
     --text-color--private-link: #04a294;
+    --text-color--warning: #d7a92b;
     --text-color--error: #f00;
     --bg-color--default: #223;
     --bg-color--secondary: #1b1b2b;

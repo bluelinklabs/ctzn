@@ -3,7 +3,7 @@ import {LitElement, html} from '../../vendor/lit-element/lit-element.js'
 export class HeaderSession extends LitElement {
   static get properties () {
     return {
-      session: {type: Object}
+      profile: {type: Object}
     }
   }
 
@@ -15,16 +15,16 @@ export class HeaderSession extends LitElement {
   constructor () {
     super()
     this.api = undefined
-    this.session = undefined
+    this.profile = undefined
   }
 
   render () {
-    if (this.session) {
+    if (this.profile) {
       return html`
-        <a href="/profile">${this.session.username}</a> |
+        <a href="/profile">${this.profile.username}</a> |
         <a href="#" @click=${this.onClickLogout}>Logout</a>
       `
-    } else if (this.session === null) {
+    } else if (this.profile === null) {
       return html`
         <a href="/login">Login</a> |
         <a href="/signup">Signup</a>

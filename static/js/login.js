@@ -6,7 +6,7 @@ import './com/header-session.js'
 class CtznLogin extends LitElement {
   static get properties () {
     return {
-      session: {type: Object},
+      profile: {type: Object},
       isLoggingIn: {type: Boolean},
       currentError: {type: String}
     }
@@ -19,7 +19,7 @@ class CtznLogin extends LitElement {
   constructor () {
     super()
     this.api = undefined
-    this.session = undefined
+    this.profile = undefined
     this.isLoggingIn = false
     this.currentError = undefined
     this.load()
@@ -27,7 +27,7 @@ class CtznLogin extends LitElement {
 
   async load () {
     this.api = await createRpcApi()
-    this.session = await this.api.accounts.whoami()
+    this.profile = await this.api.accounts.whoami()
   }
 
   firstUpdated () {
@@ -45,7 +45,7 @@ class CtznLogin extends LitElement {
           <div class="brand">
             <a href="/" title="CTZN">CTZN</a>
           </div>
-          <ctzn-header-session .api=${this.api} .session=${this.session}></ctzn-header-session>
+          <ctzn-header-session .api=${this.api} .profile=${this.profile}></ctzn-header-session>
         </header>
         <div class="login-form">
           <form @submit=${this.onSubmit}>

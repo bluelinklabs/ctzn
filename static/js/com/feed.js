@@ -1,15 +1,15 @@
 import { LitElement, html } from '../../vendor/lit-element/lit-element.js'
 import { repeat } from '../../vendor/lit-element/lit-html/directives/repeat.js'
-// import { getRecordType } from '../records.js'
-import css from '../../css/com/record-feed.css.js'
+import css from '../../css/com/feed.css.js'
 import { emit } from '../lib/dom.js'
-import './record.js'
+import './post.js'
 
-export class RecordFeed extends LitElement {
+export class Feed extends LitElement {
   static get properties () {
     return {
+      api: {type: Object},
+      profile: {type: Object},
       pathQuery: {type: Array},
-      tagQuery: {type: Array},
       showDateTitles: {type: Boolean, attribute: 'show-date-titles'},
       dateTitleRange: {type: String, attribute: 'date-title-range'},
       forceRenderMode: {type: String, attribute: 'force-render-mode'},
@@ -22,8 +22,7 @@ export class RecordFeed extends LitElement {
       sources: {type: Array},
       results: {type: Array},
       emptyMessage: {type: String, attribute: 'empty-message'},
-      noMerge: {type: Boolean, attribute: 'no-merge'},
-      profileUrl: {type: String, attribute: 'profile-url'}
+      noMerge: {type: Boolean, attribute: 'no-merge'}
     }
   }
 
@@ -33,8 +32,8 @@ export class RecordFeed extends LitElement {
 
   constructor () {
     super()
-    this.pathQuery = undefined
-    this.tagQuery = undefined
+    this.api = undefined
+    this.profile = undefined
     this.showDateTitles = false
     this.dateTitleRange = undefined
     this.forceRenderMode = undefined
@@ -48,7 +47,6 @@ export class RecordFeed extends LitElement {
     this.results = undefined
     this.emptyMessage = undefined
     this.noMerge = false
-    this.profileUrl = ''
 
     // query state
     this.activeQuery = undefined
@@ -65,6 +63,7 @@ export class RecordFeed extends LitElement {
   }
 
   updated (changedProperties) {
+    if (!this.api) return
     if (typeof this.results === 'undefined') {
       if (!this.activeQuery) {
         this.queueQuery()
@@ -73,10 +72,6 @@ export class RecordFeed extends LitElement {
     if (changedProperties.has('filter') && changedProperties.get('filter') != this.filter) {
       this.queueQuery()
     } else if (changedProperties.has('pathQuery') && changedProperties.get('pathQuery') != this.pathQuery) {
-      // NOTE ^ to correctly track this, the query arrays must be reused
-      this.results = undefined // clear results while loading
-      this.queueQuery()
-    } else if (changedProperties.has('taqQuery') && changedProperties.get('taqQuery') != this.taqQuery) {
       // NOTE ^ to correctly track this, the query arrays must be reused
       this.results = undefined // clear results while loading
       this.queueQuery()
@@ -103,84 +98,12 @@ export class RecordFeed extends LitElement {
     this.abortController = new AbortController()
     var results = []
     // because we collapse results, we need to run the query until the limit is fulfilled
-    let offset = 0
+    let lt = undefined
     do {
-      let {subresults} = await beaker.index.gql(`
-        query Feed (
-          $paths: [String]!
-          $offset: Int!
-          ${this.tagQuery ? `$tags: [String!]!` : ''}
-          ${this.sources ? `$origins: [String]!` : ''}
-          ${this.filter ? `$search: String!` : ''}
-          ${this.limit ? `$limit: Int!` : ''}
-          ${this.notifications ? `$profileUrl: String!` : ''}
-        ) {
-          subresults: records (
-            paths: $paths
-            ${this.sources ? `origins: $origins` : ''}
-            ${this.filter ? `search: $search` : ''}
-            ${this.limit ? `limit: $limit` : ''}
-            ${this.tagQuery ? `
-              backlinks: {
-                paths: ["/tags/*.goto"]
-                metadata: [
-                  {key: "tag/id", values: $tags}
-                ]
-              }
-            ` : ''}
-            ${this.notifications ? `
-              links: {origin: $profileUrl}
-              excludeOrigins: [$profileUrl]
-              indexes: ["local", "network"]
-            ` : ''}
-            offset: $offset
-            sort: "crtime",
-            reverse: true
-          ) {
-            type
-            path
-            url
-            ctime
-            mtime
-            rtime
-            metadata
-            index
-            content
-            ${this.notifications ? `
-            links {
-              source
-              url
-            }
-            ` : ''}
-            site {
-              url
-              title
-            }
-            votes: backlinks(paths: ["/votes/*.goto"]) {
-              url
-              metadata
-              site { url title }
-            }
-            tags: backlinks(paths: ["/tags/*.goto"]) {
-              url
-              metadata
-              site { url title }
-            }
-            commentCount: backlinkCount(paths: ["/comments/*.md"])
-          }
-        }
-      `, {
-        paths: this.pathQuery,
-        tags: this.tagQuery,
-        origins: this.sources,
-        search: this.filter,
-        offset,
-        limit: this.limit,
-        profileUrl: this.profileUrl
-      })
+      let subresults = await this.api.posts.listUserFeed('pfrazee', {limit: this.limit, reverse: true, lt})
       if (subresults.length === 0) break
       
-      offset += subresults.length
+      lt = subresults[subresults.length - 1].key
       if (!this.noMerge) {
         subresults = subresults.reduce(reduceMultipleActions, [])
       }
@@ -250,24 +173,17 @@ export class RecordFeed extends LitElement {
     `
   }
   
-  renderNormalResult (result) {
-    var renderMode = this.forceRenderMode || ({
-      'comment': 'card',
-      'microblogpost': 'card',
-      'subscription': 'action',
-      'tag': 'wrapper',
-      'vote': 'wrapper'
-    })[getRecordType(result)] || 'link'
+  renderNormalResult (post) {
     return html`
-      <ctzn-record
-        .record=${result}
+      <ctzn-post
+        .api=${this.api}
+        .post=${post}
+        .profile=${this.profile}
         ?is-notification=${!!this.notifications}
-        ?is-unread=${result.ctime > this.notifications?.unreadSince}
+        ?is-unread=${post.ctime > this.notifications?.unreadSince}
         class=${this.recordClass}
-        render-mode=${renderMode}
         show-context
-        profile-url=${this.profileUrl}
-      ></ctzn-record>
+      ></ctzn-post>
     `
   }
 
@@ -280,11 +196,11 @@ export class RecordFeed extends LitElement {
     return html`
       <ctzn-record
         .record=${result}
+        .profile=${this.profile}
         class=${this.recordClass}
         render-mode=${renderMode}
         search-terms=${this.filter}
         show-context
-        profile-url=${this.profileUrl}
       ></ctzn-record>
     `
   }
@@ -293,7 +209,7 @@ export class RecordFeed extends LitElement {
   // =
 }
 
-customElements.define('ctzn-record-feed', RecordFeed)
+customElements.define('ctzn-feed', Feed)
 
 function isArrayEq (a, b) {
   if (!a && !!b) return false
@@ -313,6 +229,10 @@ function dateHeader (ts, range) {
 }
 
 function reduceMultipleActions (acc, result) {
+  acc.push(result)
+  return acc
+
+  // TODO
   let last = acc[acc.length - 1]
   if (last) {
     if (last.site.url === result.site.url && getRecordType(result) === 'subscription' && getRecordType(last) === 'subscription') {

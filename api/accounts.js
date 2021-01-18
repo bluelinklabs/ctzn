@@ -1,6 +1,7 @@
 import { createValidator } from '../lib/schemas.js'
 import { v4 as uuidv4 } from 'uuid'
 import { privateServerDb } from '../db/index.js'
+import { constructUserUrl } from '../lib/strings.js'
 
 const registerParam = createValidator({
   type: 'object',
@@ -13,7 +14,13 @@ const registerParam = createValidator({
 
 export function setup (wsServer) {
   wsServer.register('accounts.whoami', async (params, client) => {
-    if (client.auth) return {username: client.auth.username, sessionId: client.auth.sessionId}
+    if (client.auth) {
+      return {
+        url: constructUserUrl(client.auth.username),
+        username: client.auth.username,
+        sessionId: client.auth.sessionId
+      }
+    }
     return null
   })
 
@@ -25,6 +32,7 @@ export function setup (wsServer) {
         sessionId: sessionRecord.value.sessionId
       }
       return {
+        url: constructUserUrl(sessionRecord.value.username),
         username: sessionRecord.value.username,
         sessionId: sessionRecord.value.sessionId
       }
@@ -55,6 +63,7 @@ export function setup (wsServer) {
     }
 
     return {
+      url: constructUserUrl(username),
       sessionId: sess.sessionId,
       username
     }

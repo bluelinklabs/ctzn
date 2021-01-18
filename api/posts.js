@@ -1,6 +1,6 @@
 import { createValidator } from '../lib/schemas.js'
-import { userDbs } from '../db/index.js'
-import { constructEntryUrl } from '../lib/strings.js'
+import { publicServerDb, userDbs } from '../db/index.js'
+import { constructEntryUrl, constructUserUrl, extractUserUrl } from '../lib/strings.js'
 
 const listParam = createValidator({
   type: 'object',
@@ -32,8 +32,11 @@ export function setup (wsServer) {
     if (!userDb) throw new Error('User database not found')
 
     const entries = await userDb.posts.list(opts)
+    const authorsCache = {}
     for (let entry of entries) {
       entry.url = constructEntryUrl(userDb.posts.schema.url, username, entry.key)
+      entry.author = await fetchAuthor(username, authorsCache)
+      entry.votes = await fetchVotes(entry)
     }
     return entries
   })
@@ -51,6 +54,8 @@ export function setup (wsServer) {
       throw new Error('Post not found')
     }
     postEntry.url = constructEntryUrl(userDb.posts.schema.url, username, postEntry.key)
+    postEntry.author = await fetchAuthor(username)
+    entry.votes = await fetchVotes(entry)
 
     return postEntry
   })
@@ -92,4 +97,32 @@ export function setup (wsServer) {
 
     await userDb.posts.del(key)
   })
+}
+
+async function fetchAuthor (authorUsername, cache = undefined) {
+  if (cache && cache[authorUsername]) {
+    return cache[authorUsername]
+  } else {
+    let userDb = userDbs.get(authorUsername)
+    let profileEntry
+    if (userDb) profileEntry = await userDb.profile.get('self')
+    let author = {
+      url: constructUserUrl(authorUsername),
+      username: authorUsername,
+      displayName: profileEntry?.value?.displayName || authorUsername
+    }
+    if (cache) cache[authorUsername] = author
+    return author
+  }
+}
+
+async function fetchVotes (post) {
+  let votesIdxEntry
+  try {
+    votesIdxEntry = await publicServerDb.votesIdx.get(post.url)
+  } catch (e) {}
+  return {
+    upvoterUrls: (votesIdxEntry?.value?.upvoteUrls || []).map(extractUserUrl),
+    downvoterUrls: (votesIdxEntry?.value?.downvoteUrls || []).map(extractUserUrl)
+  }
 }

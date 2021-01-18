@@ -2863,7 +2863,13 @@
             target[prop] = new Proxy({}, {
               get (target, prop2) {
                 if (!(prop2 in target)) {
-                  target[prop2] = (...params) => ws.call(`${prop}.${prop2}`, params);
+                  target[prop2] = async (...params) => {
+                    try {
+                      return await ws.call(`${prop}.${prop2}`, params)
+                    } catch (e) {
+                      throw new Error(e.data || e.message)
+                    }
+                  };
                 }
                 return target[prop2]
               }
@@ -3583,7 +3589,7 @@ a:hover {
     class HeaderSession extends LitElement {
       static get properties () {
         return {
-          session: {type: Object}
+          profile: {type: Object}
         }
       }
 
@@ -3595,16 +3601,16 @@ a:hover {
       constructor () {
         super();
         this.api = undefined;
-        this.session = undefined;
+        this.profile = undefined;
       }
 
       render () {
-        if (this.session) {
+        if (this.profile) {
           return html`
-        <a href="/profile">${this.session.username}</a> |
+        <a href="/profile">${this.profile.username}</a> |
         <a href="#" @click=${this.onClickLogout}>Logout</a>
       `
-        } else if (this.session === null) {
+        } else if (this.profile === null) {
           return html`
         <a href="/login">Login</a> |
         <a href="/signup">Signup</a>
@@ -3627,7 +3633,7 @@ a:hover {
     class CtznLogin extends LitElement {
       static get properties () {
         return {
-          session: {type: Object},
+          profile: {type: Object},
           isLoggingIn: {type: Boolean},
           currentError: {type: String}
         }
@@ -3640,7 +3646,7 @@ a:hover {
       constructor () {
         super();
         this.api = undefined;
-        this.session = undefined;
+        this.profile = undefined;
         this.isLoggingIn = false;
         this.currentError = undefined;
         this.load();
@@ -3648,7 +3654,7 @@ a:hover {
 
       async load () {
         this.api = await create();
-        this.session = await this.api.accounts.whoami();
+        this.profile = await this.api.accounts.whoami();
       }
 
       firstUpdated () {
@@ -3666,7 +3672,7 @@ a:hover {
           <div class="brand">
             <a href="/" title="CTZN">CTZN</a>
           </div>
-          <ctzn-header-session .api=${this.api} .session=${this.session}></ctzn-header-session>
+          <ctzn-header-session .api=${this.api} .profile=${this.profile}></ctzn-header-session>
         </header>
         <div class="login-form">
           <form @submit=${this.onSubmit}>

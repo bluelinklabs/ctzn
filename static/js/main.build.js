@@ -3870,21 +3870,6 @@ ctzn-record {
 
 `;
 
-    function findParent (node, test) {
-      if (typeof test === 'string') {
-        // classname default
-        var cls = test;
-        test = el => el.classList && el.classList.contains(cls);
-      }
-
-      while (node) {
-        if (test(node)) {
-          return node
-        }
-        node = node.parentNode;
-      }
-    }
-
     function emit (el, evt, opts = {}) {
       opts.bubbles = ('bubbles' in opts) ? opts.bubbles : true;
       opts.composed = ('composed' in opts) ? opts.composed : true;
@@ -3906,26 +3891,6 @@ ctzn-record {
       return base + suffix
     }
 
-    function shorten (str, n = 6) {
-      if (str.length > (n + 3)) {
-        return str.slice(0, n) + '...'
-      }
-      return str
-    }
-
-    function joinPath (...args) {
-      var str = args[0];
-      for (let v of args.slice(1)) {
-        v = v && typeof v === 'string' ? v : '';
-        let left = str.endsWith('/');
-        let right = v.startsWith('/');
-        if (left !== right) str += v;
-        else if (left) str += v.slice(1);
-        else str += '/' + v;
-      }
-      return str
-    }
-
     function toDomain (str) {
       if (!str) return ''
       try {
@@ -3943,16 +3908,6 @@ ctzn-record {
         domain = `${domain.slice(0, len)}..${domain.slice(-2)}`;
       }
       return domain
-    }
-
-    function isSameOrigin (a, b) {
-    	return getOrigin(a) === getOrigin(b)
-    }
-
-    function getOrigin (str) {
-    	let i = str.indexOf('://');
-    	let j = str.indexOf('/', i + 3);
-    	return str.slice(0, j === -1 ? undefined : j)
     }
 
     function fancyUrl (str, siteTitle) {
@@ -4184,34 +4139,9 @@ ctzn-record {
     //# =class-map.js.map
 
     const cssStr$7 = css`
-.markdown :-webkit-any(h1, h2, h3, h4, h5) {
-  font-family: arial;
-}
-.markdown pre { font-size: 13px; }
-.markdown :-webkit-any(video, audio, img) { max-width: 100%; }
-.markdown a { color: var(--text-color--markdown-link); }
-.markdown hr { border: 0; border-bottom: 1px solid var(--border-color--semi-light); }
-.markdown blockquote {
-  border-left: 10px solid var(--bg-color--semi-light);
-  margin: 0 0 0.6em;
-  padding: 1px 0px 1px 16px;
-  color: var(--text-color--light);
-}
-.subject-content .markdown blockquote + blockquote {
-  margin-top: -14px;
-}
-.subject-content .markdown blockquote p {
-  margin: 0;
-}
-`;
-
-    const cssStr$8 = css`
 ${cssStr}
 ${cssStr$1}
 ${cssStr$3}
-${cssStr$7}
-
-/** COMMON RECORD STYLES **/
 
 :host {
   display: block;
@@ -4229,7 +4159,7 @@ a:hover {
   cursor: pointer;
 }
 
-.record .favicon {
+.post .favicon {
   display: block;
   width: 16px;
   height: 16px;
@@ -4239,28 +4169,8 @@ a:hover {
   font-size: 14px;
 }
 
-.record .sysicon {
-  display: inline-block;
-  width: 100%;
-  font-size: 12px;
-  line-height: 30px;
-  color: var(--text-color--private-link);
-  text-align: center;
-}
-
-.record .title a {
+.post .title a {
   color: var(--color-text--default);
-}
-
-.unknown-link {
-  display: inline-block;
-  max-width: 100%;
-  box-sizing: border-box;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--text-color--result-link);
-  padding: 10px 14px;
 }
 
 .vote-ctrl :-webkit-any(.far, .fas) {
@@ -4307,29 +4217,6 @@ a:hover {
   font-size: 12px;
 }
 
-.tag-ctrl {
-  display: inline-block;
-  padding: 0 4px;
-  border-radius: 4px;
-  color: var(--text-color--pretty-light);
-}
-
-.tag-ctrl:hover {
-  text-decoration: none;
-  background: var(--bg-color--semi-light);
-}
-
-.tag-ctrl .fa-tag {
-  -webkit-text-stroke: 1px var(--text-color--pretty-light);
-  color: transparent;
-  font-size: 10px;
-}
-
-.tag {
-  color: var(--text-color--pretty-light);
-  margin-right: 4px;
-}
-
 .notification {
   padding: 5px 4px 4px 48px;
   margin-right: 19px;
@@ -4359,359 +4246,28 @@ a:hover {
   background-size: 100%;
 }
 
-/** EXPANDED LINK STYLES **/
-
-.record.expanded-link {
-  display: flex;
-  align-items: center;
-  color: var(--text-color--lightish);
-}
-
-.record.expanded-link .thumb {
-  display: block;
-  width: 100px;
-  flex: 0 0 100px;
-  height: 100px;
-  background: var(--bg-color--light);
-  overflow: hidden;
-  margin-right: 30px;
-  display: none;
-}
-
-.record.expanded-link .thumb img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.record.expanded-link .info {
-  flex: 1;
-  overflow: hidden;
-}
-
-.record.expanded-link .title {
-  margin-bottom: 6px;
-  font-weight: 500;
-  font-size: 18px;
-}
-
-.record.expanded-link .title a {
-  color: var(--text-color--result-link);
-}
-
-.record.expanded-link.private .title a {
-  color: var(--text-color--private-link);
-}
-
-.record.expanded-link .href {
-  font-size: 14px;
-  margin-bottom: 4px;
-}
-
-.record.expanded-link .href a {
-  color: var(--text-color--light);
-}
-
-.record.expanded-link .href .fa-angle-right {
-  font-size: 11px;
-}
-
-.record.expanded-link .origin {
-  display: flex;
-  align-items: center;
-  font-size: 13px;
-}
-
-.record.expanded-link .origin-note {
-  margin-right: 5px;
-}
-
-.record.expanded-link .author {
-  color: var(--text-color--lightish);
-  font-weight: 500;
-  margin-right: 6px;
-}
-
-.record.expanded-link.private .author {
-  color: var(--text-color--private-default);
-}
-
-.record.expanded-link .type {
-  margin: 0 6px;
-}
-
-.record.expanded-link .date {
-  color: var(--text-color--light);
-  margin: 0 6px;
-}
-
-.record.expanded-link .excerpt {
-  white-space: initial;
-  color: var(--text-color--light);
-  margin-top: 10px;
-  line-height: 1.3;
-  font-size: 15px;
-  letter-spacing: 0.4px;
-}
-
-.record.expanded-link .ctrl {
-  margin-left: 6px;
-  font-size: 12px;
-  color: var(--text-color--light);
-  cursor: pointer;
-}
-
-.record.expanded-link .ctrl:hover {
-  text-decoration: underline;
-}
-
-.record.expanded-link .vote-ctrl {
-  margin: 0 5px;
-}
-
-.record.expanded-link .vote-ctrl a {
-  margin-right: 0px;
-}
-
-.record.expanded-link .comment-ctrl {
-  margin: 0 0 0 2px;
-}
-
-/** ACTION STYLES **/
-
-.record.action {
-  display: flex;
-  align-items: center;
-  color: var(--text-color--lightish);
-}
-
-:host([thread-view]) .record.action,
-:host(.small) .record.action {
-  padding: 8px 14px;
-  align-items: baseline;
-  color: var(--text-color--light);
-  font-size: 13px;
-}
-
-.record.action.unread {
-  background: var(--bg-color--unread);
-  box-shadow: 0 0 0 5px var(--bg-color--unread);
-  border-radius: 1px;
-}
-
-:host([thread-view]) .record.action.unread {
-  box-shadow: none;
-}
-
-.record.action > * {
-  margin-right: 5px;
-}
-
-.record.action .thumb {
-  display: block;
-  width: 30px;
-  flex: 0 0 30px;
-  height: 30px;
-  background: var(--bg-color--semi-light);
-  border-radius: 50%;
-  margin-right: 18px;
-  position: relative;
-  top: 1px;
-}
-
-:host([thread-view]) .record.action .thumb {
-  width: 14px;
-  height: 14px;
-  flex: 0 0 14px;
-  margin: 0 5px 0 0;
-  top: 2px;
-}
-
-:host(.small) .record.action .thumb {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
-  margin: 0 10px 0 0;
-  top: 5px;
-}
-
-.record.action .thumb img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.record.action .author {
-  color: var(--text-color--default);
-  font-weight: 600;
-}
-
-.record.action .subject,
-.record.action .others {
-  color: var(--text-color--result-link);
-}
-
-:host([thread-view]) .record.action .author {
-  font-weight: normal;
-}
-
-.record.action .action a {
-  color: var(--text-color--link);
-}
-
-.record.action .date {
-  color: inherit;
-}
-
-.action-content {
-  letter-spacing: 0.1px;
-  line-height: 1.4;
-  font-size: 14px;
-  padding: 10px;
-  margin: 0px 30px 10px;
-  border: 1px solid var(--border-color--light);
-  border-radius: 4px;
-}
-
-.action-content a {
-  color: var(--text-color--default);
-}
-
-:host([noborders]) .action-content {
-  padding: 0 30px 10px;
-  margin: -3px 0 0;
-  border: 0;
-}
-
-/** LINK STYLES **/
-
-.record.link {
-  display: flex;
-  align-items: center;
-  color: var(--text-color--lightish);
-}
-
-:host([as-context]) .record.link {
-  padding: 8px 14px 10px;
-}
-
-.record.link.unread {
-  background: var(--bg-color--unread);
-  box-shadow: 0 0 0 5px var(--bg-color--unread);
-  border-radius: 1px;
-}
-
-.record.link .thumb {
-  display: block;
-  width: 30px;
-  flex: 0 0 30px;
-  height: 30px;
-  background: var(--bg-color--semi-light);
-  border-radius: 50%;
-  margin-right: 18px;
-  position: relative;
-  top: 1px;
-}
-
-:host([nothumb]) .record.link .thumb {
-  display: none;
-}
-
-.record.link.private .thumb {
-  background: var(--bg-color--private-light);
-}
-
-.record.link .thumb img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.record.link .container {
-  flex: 1;
-}
-
-.record.link .action-description {
-  display: flex;
-  align-items: center;
-  font-size: 13px;
-  padding-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.record.link .origin .author {
-  color: var(--text-color--lightish);
-  font-weight: 600;
-}
-
-.record.link.private .origin .author {
-  color: var(--text-color--private-default);
-}
-
-.record.link .title {
-  color: var(--text-color--light); 
-}
-
-.record.link .title .link-title {
-  letter-spacing: 0.5px;
-  font-size: 17px;
-  font-weight: 500;
-  color: var(--text-color--result-link);
-}
-
-.record.link.private .title .link-title {
-  color: var(--text-color--private-link);
-}
-
-.record.link .title .link-origin {
-  color: inherit;
-}
-
-.record.link .date a {
-  color: var(--text-color--light);
-}
-
-.record.link .ctrls {
-  font-size: 13px;
-  color: var(--text-color--light);
-  margin-top: 2px;
-}
-
-.record.link .ctrls .vote-ctrl a {
-  margin-right: 0px;
-}
-
-.record.link .ctrls .comment-ctrl {
-  margin: 0 0 0 2px;
-}
-
 /** CARD STYLES **/
 
-.record.card {
+.post.card {
   position: relative;
   display: grid;
   grid-template-columns: 45px 1fr;
   color: var(--text-color--lightish);
 }
 
-.record.card.unread {
+.post.card.unread {
   background: var(--bg-color--unread);
   box-shadow: 0 0 0 5px var(--bg-color--unread);
   margin-bottom: 5px;
   border-radius: 1px;
 }
 
-.record.card .info {
+.post.card .info {
   display: flex;
   align-items: center;
 }
 
-.record.card .thumb {
+.post.card .thumb {
   display: block;
   width: 30px;
   height: 30px;
@@ -4721,22 +4277,14 @@ a:hover {
   top: 8px;
 }
 
-.record.card.private .thumb {
-  background: var(--bg-color--private-light);
-}
-
-.record.card .thumb img {
+.post.card .thumb img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-:host([noborders]) .record.card .thumb .sysicon {
-  line-height: 33px;
-}
-
-.record.card .arrow {
+.post.card .arrow {
   content: '';
   display: block;
   position: absolute;
@@ -4751,20 +4299,15 @@ a:hover {
   transform: rotate(-45deg);
 }
 
-.record.card.private .arrow {
-  border-left-style: dashed;
-  border-top-style: dashed;
-}
-
-.record.card.is-notification .arrow {
+.post.card.is-notification .arrow {
   background: var(--bg-color--light);
 }
 
-.record.card.unread .arrow {
+.post.card.unread .arrow {
   border-color: var(--border-color--unread);
 }
 
-.record.card .container {
+.post.card .container {
   border: 1px solid var(--border-color--light);
   border-radius: 4px;
   background: var(--bg-color--default);
@@ -4772,21 +4315,17 @@ a:hover {
   min-width: 0; /* this is a hack to make the overflow: hidden work */
 }
 
-.record.card.private .container {
-  border-style: dashed;
-}
-
-.record.card .container:hover {
+.post.card .container:hover {
   cursor: pointer;
   border-color: var(--border-color--dark);
 }
 
-.record.card.unread .container {
+.post.card.unread .container {
   background: transparent;
   border-color: var(--border-color--unread);
 }
 
-.record.card .header {
+.post.card .header {
   display: flex;
   align-items: baseline;
   font-size: 14px;
@@ -4794,35 +4333,34 @@ a:hover {
   color: var(--text-color--light);
 }
 
-.record.card .header > * {
+.post.card .header > * {
   margin-right: 5px;
   white-space: nowrap;
 }
 
-.record.card .origin .icon {
+.post.card .origin .icon {
   margin-right: 5px;
 }
 
-.record.card .header a {
+.post.card .header a {
   color: inherit;
 }
 
-.record.card .origin .author {
+.post.card .origin .author {
+}
+
+.post.card .origin .author.displayname {
+  color: var(--text-color--default);
   font-weight: 600;
   font-size: 15px;
-  color: var(--text-color--default);
 }
 
-.record.card.private .origin .author {
-  color: var(--text-color--private-default);
-}
-
-.record.card .title {
+.post.card .title {
   font-weight: normal;
   letter-spacing: 0.5px;
 }
 
-.record.card .title a {
+.post.card .title a {
   color: var(--text-color--result-link);
 }
 
@@ -4839,7 +4377,7 @@ a:hover {
   border-top-right-radius: 3px;
 }
 
-.record.card .content {
+.post.card .content {
   white-space: initial;
   word-break: break-word;
   color: var(--text-color--default);
@@ -4849,73 +4387,60 @@ a:hover {
   padding: 0px 12px;
 }
 
-.record.card.constrain-height .content {
-  max-height: 50px;
-  overflow: hidden;
-}
+.post.card .content > :first-child { margin-top: 0; }
+.post.card .content > :last-child { margin-bottom: 0; }
 
-.record.card .content > :first-child { margin-top: 0; }
-.record.card .content > :last-child { margin-bottom: 0; }
-
-.record.card .read-more {
-  padding: 2px 12px;
-}
-
-.record.card .read-more a {
-  color: var(--text-color--link);
-}
-
-.record.card .ctrls {
+.post.card .ctrls {
   padding: 8px 12px;
   font-size: 12px;
 }
 
-.record.card ctzn-post-composer {
+.post.card ctzn-post-composer {
   display: block;
   padding: 10px;
 }
 
-:host([noborders]) .record.card {
+:host([noborders]) .post.card {
   grid-template-columns: 34px 1fr;
 }
 
-:host([noborders]) .record.card .thumb {
+:host([noborders]) .post.card .thumb {
   margin: 5px 0 0;
   width: 36px;
   height: 36px;
 }
 
-:host([noborders]) .record.card .arrow,
-:host([nothumb]) .record.card .arrow {
+:host([noborders]) .post.card .arrow,
+:host([nothumb]) .post.card .arrow {
   display: none;
 }
 
-:host([noborders]) .record.card .container {
+:host([noborders]) .post.card .container {
   border-color: transparent !important;
   background: none;
 }
 
-:host([nothumb]) .record.card {
+:host([nothumb]) .post.card {
   display: block;
 }
 
-:host([nothumb]) .record.card .thumb {
+:host([nothumb]) .post.card .thumb {
   display: none;
 }
 
-:host([noborders]) .record.card ctzn-post-composer {
+:host([noborders]) .post.card ctzn-post-composer {
   margin-left: -36px;
 }
 
 /** COMMENT STYLES **/
 
-.record.comment {
+.post.comment {
   position: relative;
   padding: 10px 14px 8px;
   border-radius: 4px;
 }
 
-.record.comment::before {
+.post.comment::before {
   content: "";
   display: block;
   position: absolute;
@@ -4926,65 +4451,61 @@ a:hover {
   background: var(--border-color--semi-light);
 }
 
-.record.comment.unread {
+.post.comment.unread {
   background: var(--bg-color--unread);
   box-shadow: 0 0 0 5px var(--bg-color--unread);
   border-radius: 1px;
   border: 1px solid var(--border-color--unread);
 }
 
-.record.comment .header {
+.post.comment .header {
   display: flex;
   align-items: center;
   font-size: 13px;
   padding: 0 0 4px;
 }
 
-.record.comment .header > * {
+.post.comment .header > * {
   margin-right: 5px;
   white-space: nowrap;
 }
 
-.record.comment .header a {
+.post.comment .header a {
   color: var(--text-color--light);
 }
 
-.record.comment .thumb {
+.post.comment .thumb {
   width: 14px;
   height: 14px;
   background: var(--bg-color--semi-light);
   border-radius: 50%;
 }
 
-.record.comment .thumb img {
+.post.comment .thumb img {
   display: block;
   width: 14px;
   height: 14px;
   object-fit: cover;
 }
 
-.record.comment .origin .author {
+.post.comment .origin .author {
   color: var(--text-color--default);
 }
 
-.record.comment.private .origin .author {
-  color: var(--text-color--private-default);
-}
-
-.record.comment .title {
+.post.comment .title {
   font-weight: normal;
   letter-spacing: 0.5px;
 }
 
-.record.comment .title a {
+.post.comment .title a {
   color: var(--text-color--result-link);
 }
 
-.record.comment .action {
+.post.comment .action {
   color: var(--text-color--light);
 }
 
-.record.comment .context {
+.post.comment .context {
   box-sizing: border-box;
   font-size: 12px;
   white-space: nowrap;
@@ -4992,7 +4513,7 @@ a:hover {
   text-overflow: ellipsis;
 }
 
-.record.comment .content {
+.post.comment .content {
   white-space: initial;
   color: var(--text-color--default);
   line-height: 1.3125;
@@ -5001,1190 +4522,117 @@ a:hover {
   padding-left: 18px;
 }
 
-.record.comment.constrain-height .content {
+.post.comment.constrain-height .content {
   max-height: 50px;
   overflow: hidden;
 }
 
-.record.comment .content > :first-child { margin-top: 0; }
-.record.comment .content > :last-child { margin-bottom: 0; }
+.post.comment .content > :first-child { margin-top: 0; }
+.post.comment .content > :last-child { margin-bottom: 0; }
 
-.record.comment .read-more {
+.post.comment .read-more {
   padding: 4px 18px 0;
 }
 
-.record.comment .read-more a {
+.post.comment .read-more a {
   color: var(--text-color--link);
 }
 
-.record.comment .ctrls {
+.post.comment .ctrls {
   padding: 6px 0 0 18px;
 }
 
-.record.comment .ctrls a {
+.post.comment .ctrls a {
   display: inline-block;
   color: var(--text-color--light);
   font-size: 13px;
 }
 
-.record.comment .ctrls a:hover {
+.post.comment .ctrls a:hover {
   cursor: pointer;
   color: var(--text-color--default);
 }
 
-.record.comment .ctrls a.reply {
+.post.comment .ctrls a.reply {
   margin-right: 18px;
 }
 
-.record.comment .ctrls a :-webkit-any(.far, .fas) {
+.post.comment .ctrls a :-webkit-any(.far, .fas) {
   color: var(--text-color--very-light);
 }
 
-.record.comment .ctrls a .fa-tag {
+.post.comment .ctrls a .fa-tag {
   color: transparent;
   -webkit-text-stroke: 1px var(--text-color--very-light);
 }
 
-.record.comment .ctrls a small {
+.post.comment .ctrls a small {
   position: relative;
   top: -1px;
   letter-spacing: 0.5px;
   font-weight: 500;
 }
 
-.record.comment ctzn-post-composer {
+.post.comment ctzn-post-composer {
   display: block;
   padding: 10px 20px;
 }
 
-/** WRAPPER STYLES **/
+`;
 
-.record.wrapper {
-  display: flex;
-  align-items: ceflex-startnter;
-  color: var(--text-color--lightish);
+    const cssStr$8 = css`
+${cssStr}
+${cssStr$1}
+${cssStr$3}
+
+.editor {
+  margin-bottom: 6px;
 }
 
-:host([as-context]) .record.wrapper {
-  padding: 10px 12px;
-}
-
-.record.wrapper.unread {
-  background: var(--bg-color--unread);
-  box-shadow: 0 0 0 5px var(--bg-color--unread);
-  border-radius: 1px;
-}
-
-.record.wrapper .thumb {
-  display: block;
-  width: 20px;
-  flex: 0 0 20px;
-  height: 20px;
-  background: var(--bg-color--semi-light);
-  border-radius: 50%;
-  margin-right: 18px;
-  margin-left: 10px;
-}
-
-:host([nothumb]) .record.wrapper .thumb {
-  display: none;
-}
-
-.record.wrapper.private .thumb {
-  background: var(--bg-color--private-light);
-}
-
-.record.wrapper .thumb img {
-  display: block;
+textarea {
+  font-family: var(--system-font);
+  font-size: 15px;
+  margin: 0;
+  padding: 12px 16px;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  box-sizing: border-box;
+  resize: none;
 }
 
-.record.wrapper .container {
-  flex: 1;
-}
-
-.record.wrapper .notification {
-  padding: 0 0 5px;
-}
-
-.record.wrapper .subject {
+.char-limit {
+  padding: 0 5px;
   color: var(--text-color--light);
 }
 
-
-`;
-
-    /*
-    Modified by PRF to include:
-
-     - options.keepHtmll
-
-
-    https://github.com/stiang/remove-markdown
-
-    The MIT License (MIT)
-
-    Copyright (c) 2015 Stian Grytøyr
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
-    */
-
-    function removeMarkdown (md, options) {
-      options = options || {};
-      options.keepHtml = options.hasOwnProperty('keepHtml') ? options.keepHtml : false; // ADDITION -prf
-      options.listUnicodeChar = options.hasOwnProperty('listUnicodeChar') ? options.listUnicodeChar : false;
-      options.stripListLeaders = options.hasOwnProperty('stripListLeaders') ? options.stripListLeaders : true;
-      options.gfm = options.hasOwnProperty('gfm') ? options.gfm : true;
-      options.useImgAltText = options.hasOwnProperty('useImgAltText') ? options.useImgAltText : true;
-
-      var output = md || '';
-
-      // Remove horizontal rules (stripListHeaders conflict with this rule, which is why it has been moved to the top)
-      output = output.replace(/^(-\s*?|\*\s*?|_\s*?){3,}\s*$/gm, '');
-
-      try {
-        if (options.stripListLeaders) {
-          if (options.listUnicodeChar)
-            output = output.replace(/^([\s\t]*)([\*\-\+]|\d+\.)\s+/gm, options.listUnicodeChar + ' $1');
-          else
-            output = output.replace(/^([\s\t]*)([\*\-\+]|\d+\.)\s+/gm, '$1');
-        }
-        if (options.gfm) {
-          output = output
-            // Header
-            .replace(/\n={2,}/g, '\n')
-            // Fenced codeblocks
-            .replace(/~{3}.*\n/g, '')
-            // Strikethrough
-            .replace(/~~/g, '')
-            // Fenced codeblocks
-            .replace(/`{3}.*\n/g, '');
-        }
-        if (!options.keepHtml) {
-          // ADDITION -prf
-          output = output
-            // Remove HTML tags
-            .replace(/<[^>]*>/g, '');
-        }
-        output = output
-          // Remove setext-style headers
-          .replace(/^[=\-]{2,}\s*$/g, '')
-          // Remove footnotes?
-          .replace(/\[\^.+?\](\: .*?$)?/g, '')
-          .replace(/\s{0,2}\[.*?\]: .*?$/g, '')
-          // Remove images
-          .replace(/\!\[(.*?)\][\[\(].*?[\]\)]/g, options.useImgAltText ? '$1' : '')
-          // Remove inline links
-          .replace(/\[(.*?)\][\[\(].*?[\]\)]/g, '$1')
-          // Remove blockquotes
-          .replace(/^\s{0,3}>\s?/g, '')
-          // Remove reference-style links?
-          .replace(/^\s{1,2}\[(.*?)\]: (\S+)( ".*?")?\s*$/g, '')
-          // Remove atx-style headers
-          .replace(/^(\n)?\s{0,}#{1,6}\s+| {0,}(\n)?\s{0,}#{0,} {0,}(\n)?\s{0,}$/gm, '$1$2$3')
-          // Remove emphasis (repeat the line to remove double emphasis)
-          .replace(/([\*_]{1,3})(\S.*?\S{0,1})\1/g, '$2')
-          .replace(/([\*_]{1,3})(\S.*?\S{0,1})\1/g, '$2')
-          // Remove code blocks
-          .replace(/(`{3,})(.*?)\1/gm, '$2')
-          // Remove inline code
-          .replace(/`(.+?)`/g, '$1')
-          // Replace two or more newlines with exactly two? Not entirely sure this belongs here...
-          .replace(/\n{2,}/g, '\n\n');
-      } catch(e) {
-        console.error(e);
-        return md;
-      }
-      return output;
-    }
-
-    /**
-     * @license
-     * Copyright (c) 2018 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    /**
-     * For AttributeParts, sets the attribute if the value is defined and removes
-     * the attribute if the value is undefined.
-     *
-     * For other part types, this directive is a no-op.
-     */
-    const ifDefined = directive((value) => (part) => {
-        if (value === undefined && part instanceof AttributePart) {
-            if (value !== part.value) {
-                const name = part.committer.name;
-                part.committer.element.removeAttribute(name);
-            }
-        }
-        else {
-            part.setValue(value);
-        }
-    });
-    //# =if-defined.js.map
-
-    const cssStr$9 = css`
-.dropdown {
-  position: relative;
-
-  --text-color--dropdown-default: #333;
-  --text-color--dropdown-section: #aaa;
-  --text-color--dropdown-icon: rgba(0, 0, 0, 0.65);
-  --text-color--dropdown-btn--pressed: #dadada;
-  --text-color--title: gray;
-  --bg-color--dropdown: #fff;
-  --bg-color--dropdown-item--hover: #eee;
-  --border-color--dropdown: #dadada;
-  --border-color--dropdown-item: #eee;
-  --border-color--dropdown-section: rgba(0,0,0,.1);
-  --border-color--dropdown-separator: #ddd;
-}
-
-@media (prefers-color-scheme: dark) {
-  .dropdown {
-    --text-color--dropdown-default: #ccd;
-    --text-color--dropdown-section: #aaa;
-    --text-color--dropdown-icon: #eef;
-    --text-color--dropdown-btn--pressed: #2c2c31;
-    --text-color--title: gray;
-    --bg-color--dropdown: #334;
-    --bg-color--dropdown-item--hover: #445;
-    --border-color--dropdown: #556;
-    --border-color--dropdown-item: #669;
-    --border-color--dropdown-section: rgba(0,0,0,.1);
-    --border-color--dropdown-separator: #ddd;
-  }
-}
-
-.dropdown.open .toggleable:not(.primary) {
-  background: var(--text-color--dropdown-btn--pressed);
-  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
-  border-color: transparent;
-  outline: 0;
-}
-
-.toggleable-container .dropdown-items {
-  display: none;
-}
-
-.toggleable-container.hover:hover .dropdown-items,
-.toggleable-container.open .dropdown-items {
-  display: block;
-}
-
-.dropdown-items {
-  width: 270px;
-  position: absolute;
-  right: 0px;
-  z-index: 3000;
-  background: var(--bg-color--dropdown);
-  color: var(--text-color--dropdown-default);
-  border: 1px solid var(--border-color--dropdown);
-  border-radius: 0px;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-}
-
-.dropdown-items .section {
-  border-bottom: 1px solid var(--border-color--dropdown-section);
-  padding: 5px 0;
-}
-
-.dropdown-items .section-header {
-  padding: 2px 10px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dropdown-items .section-header.light {
-  color: var(--text-color--dropdown-section);
-  font-weight: 500;
-}
-
-.dropdown-items .section-header.small {
-  font-size: 12px;
-}
-
-.dropdown-items hr {
-  border: 0;
-  border-bottom: 1px solid var(--border-color--dropdown-separator);
-}
-
-.dropdown-items.thin {
-  width: 170px;
-}
-
-.dropdown-items.wide {
-  width: 400px;
-}
-
-.dropdown-items.compact .dropdown-item {
-  padding: 2px 15px;
-  border-bottom: 0;
-}
-
-.dropdown-items.compact .description {
-  margin-left: 0;
-}
-
-.dropdown-items.compact hr {
-  margin: 5px 0;
-}
-
-.dropdown-items.roomy .dropdown-item {
-  padding: 10px 15px;
-}
-
-.dropdown-items.very-roomy .dropdown-item {
-  padding: 16px 40px 16px 20px;
-}
-
-.dropdown-items.rounded {
-  border-radius: 16px;
-}
-
-.dropdown-items.no-border .dropdown-item {
-  border-bottom: 0;
-}
-
-.dropdown-items.center {
-  left: 50%;
-  right: unset;
-  transform: translateX(-50%);
-}
-
-.dropdown-items.left {
-  right: initial;
-  left: 0;
-}
-
-.dropdown-items.over {
-  top: 0;
-}
-
-.dropdown-items.top {
-  bottom: calc(100% + 5px);
-}
-
-.dropdown-items.with-triangle:before {
-  content: '';
-  position: absolute;
-  top: -8px;
-  right: 10px;
-  width: 12px;
-  height: 12px;
-  z-index: 3;
-  width: 0;
-  height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-bottom: 8px solid var(--bg-color--dropdown);
-}
-
-.dropdown-items.with-triangle.left:before {
-  left: 10px;
-}
-
-.dropdown-items.with-triangle.center:before {
-  left: 43%;
-}
-
-.dropdown-title {
-  border-bottom: 1px solid var(--border-color--dropdown-item);
-  padding: 2px 8px;
-  font-size: 11px;
-  color: var(--text-color--title);
-}
-
-.dropdown-item {
-  display: block;
-  padding: 7px 15px;
-  border-bottom: 1px solid var(--border-color--dropdown-item);
-}
-
-.dropdown-item.disabled {
-  opacity: 0.25;
-}
-
-.dropdown-item.no-border {
-  border-bottom: 0;
-}
-
-.dropdown-item.selected {
-  background: var(--bg-color--dropdown-item--hover);  
-}
-
-.dropdown-item:hover:not(.no-hover) {
-  background: var(--bg-color--dropdown-item--hover);
-  cursor: pointer;
-}
-
-.dropdown-item:hover:not(.no-hover) i:not(.fa-check-square) {
-  color: var(--text-color--dropdown-default);
-}
-
-.dropdown-item:hover:not(.no-hover) .description {
-  color: var(--text-color--dropdown-default);
-}
-
-.dropdown-item:hover:not(.no-hover).disabled {
-  background: inherit;
-  cursor: default;
-}
-
-.dropdown-item .fa,
-.dropdown-item i {
-  display: inline-block;
-  width: 20px;
-  color: var(--text-color--dropdown-icon);
-}
-
-.dropdown-item .fa-fw {
-  margin-left: -3px;
-  margin-right: 3px;
-}
-
-.dropdown-item img {
-  display: inline-block;
-  width: 16px;
-  position: relative;
-  top: 3px;
-  margin-right: 6px;
-}
-
-.dropdown-item .btn .fa {
-  color: inherit;
-}
-
-.dropdown-item .label {
-  font-weight: 500;
-  margin-bottom: 3px;
-}
-
-.dropdown-item .description {
-  color: var(--text-color--muted);
-  margin: 0;
-  margin-left: 23px;
-  margin-bottom: 3px;
-  line-height: 1.5;
-}
-
-.dropdown-item .description.small {
-  font-size: 12.5px;
-}
-
-.dropdown-item:first-of-type {
-  border-radius: 2px 2px 0 0;
-}
-
-.dropdown-item:last-of-type {
-  border-radius: 0 0 2px 2px;
-}
-
-`;
-
-    // globals
-    // =
-
-    var resolve;
-
-    // exported api
-    // =
-
-    // create a new context menu
-    // - returns a promise that will resolve to undefined when the menu goes away
-    // - example usage:
-    /*
-    create({
-      // where to put the menu
-      x: e.clientX,
-      y: e.clientY,
-
-      // align edge to right instead of left
-      right: true,
-
-      // use triangle
-      withTriangle: true,
-
-      // roomy style
-      roomy: true,
-
-      // no borders on items
-      noBorders: false,
-
-      // additional styles on dropdown-items
-      style: 'font-size: 14px',
-
-      // parent element to append to
-      parent: document.body,
-
-      // url to fontawesome css
-      fontAwesomeCSSUrl: '/css/font-awesome.css',
-
-      // menu items
-      items: [
-        // icon from font-awesome
-        {icon: 'fa fa-link', label: 'Copy link', click: () => writeToClipboard('...')}
-      ]
-
-      // instead of items, can give render()
-      render () {
-        return html`
-          <img src="smile.png" onclick=${contextMenu.destroy} />
-        `
-      }
-    }
-    */
-    function create$1 (opts) {
-      // destroy any existing
-      destroy$1();
-
-      // extract attrs
-      var parent = opts.parent || document.body;
-
-      // render interface
-      parent.appendChild(new BeakerContextMenu(opts));
-      document.addEventListener('keyup', onKeyUp);
-      document.addEventListener('click', onClickAnywhere);
-
-      // return promise
-      return new Promise(_resolve => {
-        resolve = _resolve;
-      })
-    }
-
-    function destroy$1 (value) {
-      const el = document.querySelector('ctzn-context-menu');
-      if (el) {
-        el.parentNode.removeChild(el);
-        document.removeEventListener('keyup', onKeyUp);
-        document.removeEventListener('click', onClickAnywhere);
-        resolve(value);
-      }
-    }
-
-    // global event handlers
-    // =
-
-    function onKeyUp (e) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (e.keyCode === 27) {
-        destroy$1();
-      }
-    }
-
-    function onClickAnywhere (e) {
-      if (!findParent(e.target, el => el.tagName === 'ctzn-CONTEXT-MENU')) {
-        // click is outside the context-menu, destroy
-        destroy$1();
-      }
-    }
-
-    // internal
-    // =
-
-    class BeakerContextMenu extends LitElement {
-      constructor ({x, y, right, center, top, withTriangle, roomy, veryRoomy, rounded, noBorders, style, items, fontAwesomeCSSUrl, render}) {
-        super();
-        this.x = x;
-        this.y = y;
-        this.right = right || false;
-        this.center = center || false;
-        this.top = top || false;
-        this.withTriangle = withTriangle || false;
-        this.roomy = roomy || false;
-        this.veryRoomy = veryRoomy || false;
-        this.rounded = rounded || false;
-        this.noBorders = noBorders || false;
-        this.customStyle = style || undefined;
-        this.items = items;
-        this.fontAwesomeCSSUrl = fontAwesomeCSSUrl || '/css/fontawesome.css';
-        this.customRender = render;
-      }
-
-      // calls the global destroy
-      // (this function exists so that custom renderers can destroy with this.destroy)
-      destroy () {
-        destroy$1();
-      }
-
-      // rendering
-      // =
-
-      render () {
-        const cls = classMap({
-          'dropdown-items': true,
-          right: this.right,
-          center: this.center,
-          left: !this.right,
-          top: this.top,
-          'with-triangle': this.withTriangle,
-          roomy: this.roomy,
-          'very-roomy': this.veryRoomy,
-          rounded: this.rounded,
-          'no-border': this.noBorders
-        });
-        var style = '';
-        if (this.x) style += `left: ${this.x}px; `;
-        if (this.y) style += `top: ${this.y}px; `;
-        return html`
-      ${this.fontAwesomeCSSUrl ? html`<link rel="stylesheet" href="${this.fontAwesomeCSSUrl}">` : ''}
-      <div class="context-menu dropdown" style="${style}">
-        ${this.customRender
-          ? this.customRender.call(this)
-          : html`
-            <div class="${cls}" style="${ifDefined(this.customStyle)}">
-              ${this.items.map(item => {
-                if (item === '-') {
-                  return html`<hr />`
-                }
-                if (item.type === 'html') {
-                  return item
-                }
-                var icon = item.icon;
-                if (typeof icon === 'string' && !icon.includes(' ')) {
-                  icon = 'fa fa-' + icon;
-                }
-                if (item.disabled) {
-                  return html`
-                    <div class="dropdown-item disabled">
-                      ${icon !== false ? html`<i class="${icon}"></i>` : ''}
-                      ${item.label}
-                    </div>
-                  `
-                }
-                if (item.href) {
-                  return html`
-                    <a class="dropdown-item ${item.selected ? 'selected' : ''}" href=${item.href}>
-                      ${icon !== false ? html`<i class="${icon}"></i>` : ''}
-                      ${item.label}
-                    </a>
-                  `
-                }
-                return html`
-                  <div class="dropdown-item ${item.selected ? 'selected' : ''}" @click=${() => { destroy$1(); item.click(); }}>
-                    ${typeof icon === 'string'
-                      ? html`<i class="${icon}"></i>`
-                      : icon ? icon : ''}
-                    ${item.label}
-                  </div>
-                `
-              })}
-            </div>`
-        }
-      </div>`
-      }
-    }
-
-    BeakerContextMenu.styles = css`
-${cssStr$9}
-
-.context-menu {
-  position: fixed;
-  z-index: 10000;
-}
-
-.dropdown-items {
-  width: auto;
-  white-space: nowrap;
-}
-
-a.dropdown-item {
-  color: inherit;
-  text-decoration: none;
-}
-
-.dropdown-item,
-.dropdown-items.roomy .dropdown-item {
-  padding-right: 30px; /* add a little cushion to the right */
-}
-
-/* custom icon css */
-.fa-long-arrow-alt-right.custom-link-icon {
-  position: relative;
-  transform: rotate(-45deg);
-  left: 1px;
-}
-.fa-custom-path-icon:after {
-  content: './';
-  letter-spacing: -1px;
-  font-family: var(--code-font);
-}
-`;
-
-    customElements.define('ctzn-context-menu', BeakerContextMenu);
-
-    function create$2 ({x, y, record, profileUrl, onAdd, onRemove}) {
-      return create$1({
-        x,
-        y,
-        noBorders: true,
-        render () {
-          setTimeout(() => {
-            this.shadowRoot.querySelector('input').focus();
-          }, 50);
-          const onKeyupInput = async e => {
-            var input = e.currentTarget;
-            var value = input.value.toLowerCase().trim();
-            value = value.replace(/[^a-z0-9-]/g, '').slice(0, 25);
-            input.value = value;
-            if (e.code === 'Enter') {
-              input.value = '';
-              let url = await onAdd(value);
-              record.tags.push({
-                url,
-                metadata: {'tag/id': value},
-                site: {url: profileUrl, title: 'You'}
-              });
-              this.requestUpdate();
-            }
-          };
-          const onClickRemove = async (e, tag) => {
-            record.tags = record.tags.filter(t => t !== tag);
-            this.requestUpdate();
-            await onRemove(tag);
-            this.requestUpdate();
-          };
-          return html`
-        <style>
-          .tags-dropdown {
-            width: 250px !important;
-            font-size: 14px;
-            border-radius: 22px !important;
-          }
-          .tags-dropdown input {
-            border-radius: 16px;
-            box-sizing: border-box;
-            border: 1px solid var(--border-color--default);
-            padding: 6px 12px;
-            margin: 9px 10px 9px;
-            width: calc(100% - 20px);
-            outline: 0;
-          }
-          .tags-dropdown input:focus {
-            border-color: var(--border-color--focused);
-            box-shadow: 0 0 2px #7599ff77;
-          }
-          .tags-dropdown .tags {
-            max-height: 25vh;
-            overflow-y: scroll !important;
-            background: var(--bg-color--light);
-            border-top: 1px solid var(--border-color--default);
-            padding: 8px 15px 10px;
-            font-size: 12px;
-            line-height: 20px;
-          }
-          .tags-dropdown .dropdown-item.hide {
-            display: none;
-          }
-          .tags-dropdown .tags a {
-            color: var(--text-color--link);
-            text-decoration: none;
-            cursor: pointer;
-          }
-          .tags-dropdown .tags a.remove {
-            color: var(--text-color--light);
-          }
-        </style>
-        <div class="tags-dropdown dropdown-items with-triangle no-border center">
-          <input placeholder="Add a tag..." autofocus @keyup=${onKeyupInput}>
-          ${record.tags.length ? html`
-            <div class="tags">
-              ${record.tags.filter(item => !!item.metadata['tag/id']).map(tag => {
-                return html`
-                  <div class="tag">
-                    #${tag.metadata['tag/id'].slice(0, 25)}
-                    ${isSameOrigin(tag.site.url, profileUrl) ? html`
-                      <a class="remove" @click=${e => onClickRemove(e, tag)} title="Remove tag">
-                        <span class="fas fa-times"></span>
-                      </a>
-                    ` : ''}
-                    &ndash; <a href=${tag.site.url}>${tag.site.title}</a>
-                  </div>
-                `
-              })}
-            </div>
-          ` : ''}
-        </div>
-      `
-        }
-      })
-    }
-
-    function debouncer (ms, fallback) {
-      let stack = [];
-      let running = false;
-
-      async function pop () {
-        if (!stack.length) {
-          running = false;
-          return
-        }
-        running = true;
-        const startTime = Date.now();
-        const { run, cancel } = stack.pop();
-        for (let i = 0; i < stack.length; i++) {
-          stack.pop().cancel();
-        }
-        try {
-          await run();
-        } finally {
-          const diff = ms - (Date.now() - startTime);
-          if (diff < 0) return pop()
-          else setTimeout(pop, diff);
-        }
-      }
-
-      return async function push (task) {
-        return new Promise((resolve, reject) => {
-          stack.push({
-            run: () => task().then(resolve, reject),
-            // Resolve with empty search results if cancelled.
-            cancel: () => resolve(fallback)
-          });
-          if (!running) pop();
-        })
-      }
-    }
-
-    /* globals monaco */
-
-    function registerSuggestions () {
-      MarkdownSuggestions.register();
-    }
-
-    class MarkdownSuggestions {
-      constructor () {
-        this.mdLinkQueryRegex = /\[(.*?)\]/;
-        this.mdMentionQueryRegex = /@(\w*)/;
-        this.searchDebouncer = debouncer$1(100);
-        beaker.session.get().then(async (session) => {
-          this.profile = session ? session.user : undefined;
-        });
-      }
-
-      static register () {
-        // TODO: Currently must provide "wildcard" trigger characters (workaround).
-        const triggerCharacters = [...'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'];
-        const handler = new MarkdownSuggestions();
-        monaco.languages.registerCompletionItemProvider('markdown', {
-          triggerCharacters,
-          provideCompletionItems: handler.provideCompletionItems.bind(handler)
-        });
-      }
-
-      async completeLinkSuggestions (term, match, value) {
-        // If the query is only one char, wait until it's longer.
-        if (term.length === 1) {
-          return null
-        }
-        const {queryResults} = await this.searchDebouncer(() => beaker.index.gql(`
-      query Search ($search: String!) {
-        queryResults: records(
-          search: $search,
-          paths: ["/blog/*.md"],
-          limit: 10
-        ) {
-          url
-          path
-          metadata
-          site { title }
-        }
-      }
-    `, {search: term}));
-        const suggestions = queryResults.map(s => {
-          var type = 'blogpost';
-          if (s.path.startsWith('/pages/')) type = 'page';
-          const title = s.metadata.title || s.url.split('/').pop();
-          const detail = s.site.title;
-          return {
-            kind: 7, // "Interface"
-            label: title ? `(${type}) - ${title}` : `(${type})`,
-            detail,
-            range: match.range,
-            filterText: value,
-            insertText: `[${title}](${s.url})`
-          }
-        });
-        return { suggestions }
-      }
-
-      async completePeopleSuggestions (term, match, value) {
-        const {queryResults} = await this.searchDebouncer(() => beaker.index.gql(`
-      query Search($search: String!) {
-        queryResults: sites(search: $search, limit: 10) { url, title }
-      }
-    `, {search: term}));
-        const suggestions = queryResults.map(s => {
-          return {
-            kind: 7, // "Interface"
-            label: s.title,
-            range: match.range,
-            filterText: value,
-            insertText: `[@${s.title}](${s.url})`
-          }
-        });
-
-        {
-          let title = this.profile?.title.toLowerCase() || '';
-          if (title.includes(term.toLowerCase())) {
-            suggestions.unshift({
-              kind: 7, // "Interface"
-              label: this.profile.title,
-              range: match.range,
-              filterText: value,
-              insertText: `[@${this.profile.title}](hyper://${this.profile.key})`
-            });
-          }
-        }
-
-        return { suggestions }
-      }
-
-      async provideCompletionItems (model, position) {
-        // link match
-        var matches = model.findMatches(this.mdLinkQueryRegex, {
-          startColumn: 1,
-          endColumn: model.getLineMaxColumn(position.lineNumber),
-          startLineNumber: position.lineNumber,
-          endLineNumber: position.lineNumber
-        }, true, false, null, true);
-        var match = matches.length && matches.find(m => m.range.containsPosition(position));
-        if (match) {
-          let term = match.matches[1];
-          let value = model.getValueInRange(match.range); 
-          if (term.startsWith('@')) return this.completePeopleSuggestions(term.slice(1), match, value)
-          return this.completeLinkSuggestions(term, match, value)
-        }
-
-        // mention match
-        var matches = model.findMatches(this.mdMentionQueryRegex, {
-          startColumn: 1,
-          endColumn: model.getLineMaxColumn(position.lineNumber),
-          startLineNumber: position.lineNumber,
-          endLineNumber: position.lineNumber
-        }, true, false, null, true);
-        var match = matches.length && matches.find(m => m.range.containsPosition(position));
-        if (match) {
-          let term = match.matches[1];
-          let value = model.getValueInRange(match.range); 
-          return this.completePeopleSuggestions(term, match, value)
-        }
-
-        return null
-      }
-    }
-
-    function debouncer$1 (ms, fallback) {
-      let stack = [];
-      let running = false;
-
-      async function pop () {
-        if (!stack.length) {
-          running = false;
-          return
-        }
-        running = true;
-        const startTime = Date.now();
-        const { run, cancel } = stack.pop();
-        for (let i = 0; i < stack.length; i++) {
-          stack.pop().cancel();
-        }
-        try {
-          await run();
-        } finally {
-          const diff = ms - (Date.now() - startTime);
-          if (diff < 0) return pop()
-          else setTimeout(pop, diff);
-        }
-      }
-
-      return async function push (task) {
-        return new Promise((resolve, reject) => {
-          stack.push({
-            run: () => task().then(resolve, reject),
-            // Resolve with empty search results if cancelled.
-            cancel: () => resolve(fallback)
-          });
-          if (!running) pop();
-        })
-      }
-    }
-
-    const cssStr$a = css`
-${cssStr}
-${cssStr$3}
-${cssStr$7}
-
-nav {
-  display: flex;
-  border-top-left-radius: 3px;
-  border-top-right-radius: 3px;
-}
-
-nav a {
-  border: 1px solid transparent;
-  padding: 5px 14px;
-}
-
-nav a.current {
-  position: relative;
-  background: var(--bg-color--default);
-  border: 1px solid var(--border-color--light);
-  border-bottom: 1px solid transparent;
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
-}
-
-nav a.current:after {
-  content: '';
-  background: var(--bg-color--default);
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -2px;
-  height: 2px;
-  z-index: 1;
-}
-
-nav a:hover:not(.current) {
-  text-decoration: none;
-  cursor: pointer;
-  background: var(--bg-color--light);
-}
-
-.view {
-  position: relative;
-  background: var(--bg-color--default);
-  border: 1px solid var(--border-color--light);
-  border-radius: 4px;
-  border-top-left-radius: 0;
-  padding: 14px 0 2px;
-  margin-bottom: 6px;
-}
-
-.placeholder {
-  position: absolute;
-  top: 15px;
-  left: 13px;
-  color: var(--text-color--pretty-light);
-  z-index: 1;
-  pointer-events: none;
-}
-
-.editor {
-  height: 150px;
-  position: relative;
-}
-
-.editor.hidden {
-  display: none;
-}
-
-textarea.hidden {
-  display: none;
-}
-
-.preview {
-  font-size: 14px;
-  background: var(--bg-color--default);
-  color: var(--text-color--default);
-  padding: 0px 14px 14px;
-}
-.preview > :first-child {
-  margin-top: 0;
-}
-.preview > :last-child {
-  margin-bottom: 0;
-}
-
-.tags {
-  display: flex;
-  align-items: center;
-  background: var(--bg-color--default);
-  border: 1px solid var(--border-color--light);
-  border-radius: 4px;
-  padding: 6px 12px;
-  margin-bottom: 6px;
-}
-
-.tags .fas {
-  margin-right: 6px;
-  font-size: 12px;
-  -webkit-text-stroke: 1px var(--text-color--default);
-  color: transparent;
+.char-limit.close {
+  font-weight: bold;
+  color: var(--text-color--warning);
 }
 
-.tags input {
-  flex: 1;
-  border: 0;
-  outline: 0;
+.char-limit.over {
+  font-weight: bold;
+  color: var(--text-color--error);
 }
 
 .actions {
   display: flex;
-  align-items: center;
   justify-content: space-between;
 }
 
-.visibility {
-  display: inline-block;
-  background: var(--bg-color--semi-light);
-  border-radius: 4px;
-  padding: 5px;
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.visibility.disabled {
-  cursor: default;
-}
-
-input[type="file"] {
-  display: none;
+button {
+  font-size: 15px;
 }
 `;
 
     /* globals beaker monaco */
 
-    var _currentComposer = undefined;
-    window.addEventListener('paste', onGlobalPaste);
+    const CHAR_LIMIT = 256;
 
     class PostComposer extends LitElement {
       static get properties () {
         return {
-          driveUrl: {type: String, attribute: 'drive-url'},
+          api: {type: Object},
           placeholder: {type: String},
-          currentView: {type: String},
           draftText: {type: String, attribute: 'draft-text'},
           subject: {type: String},
           parent: {type: String},
@@ -6194,633 +4642,214 @@ input[type="file"] {
 
       constructor () {
         super();
-        _currentComposer = this;
-        this.driveUrl = undefined;
+        this.api = undefined;
         this.placeholder = 'What\'s new?';
-        this.currentView = 'edit';
         this.draftText = '';
-        this.tags = '';
-        this._visibility = 'public';
         this.subject = undefined;
         this.parent = undefined;
-        this.editor = undefined;
-        this.blobs = [];
-        this.profile = undefined;
-        this.searchQueryId = 0;
-        this.searchDebouncer = debouncer(100);
-      }
-
-      async connectedCallback () {
-        super.connectedCallback();
-        if (this.driveUrl) {
-          this.profile = await beaker.hyperdrive.getInfo(this.driveUrl);
-        } else {
-          this.profile = (await beaker.session.get())?.user;
-        }
-        this.requestUpdate();
-      }
-
-      static get styles () {
-        return cssStr$a
-      }
-
-      get isEmpty () {
-        return !this.draftText
-      }
-
-      get mustBePrivate () {
-        if (this.subject && this.subject.startsWith('hyper://private')) return true
-        if (this.parent && this.parent.startsWith('hyper://private')) return true
-        return false
-      }
-
-      get visibility () {
-        if (this.mustBePrivate) {
-          return 'private'
-        }
-        return this._visibility
-      }
-
-      set visibility (v) {
-        this._visibility = v;
-      }
-
-      async createEditor () {
-        return new Promise((resolve, reject) => {
-          window.require.config({baseUrl: (new URL('..', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()});
-          window.require(['vs/editor/editor.main'], () => {
-            registerSuggestions();
-            var isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            monaco.editor.defineTheme('custom-dark', {
-              base: 'vs-dark',
-              inherit: true,
-              rules: [{ background: '222233' }],
-              colors: {'editor.background': '#222233'}
-            });
-            this.editor = monaco.editor.create(this.shadowRoot.querySelector('.editor'), {
-              automaticLayout: true,
-              contextmenu: false,
-              dragAndDrop: true,
-              fixedOverflowWidgets: true,
-              folding: false,
-              lineNumbers: false,
-              links: true,
-              minimap: {enabled: false},
-              model: monaco.editor.createModel(this.draftText, 'markdown'),
-              renderLineHighlight: 'none',
-              roundedSelection: false,
-              theme: isDarkMode ? 'custom-dark' : undefined,
-              wordWrap: 'on'
-            });
-            resolve();
-          });
-        })
-      }
-
-      insertImage (file) {
-        var url = URL.createObjectURL(file);
-        this.blobs.push({file, url});
-
-        var newlines = '\n\n';
-        if (!this.draftText || this.draftText.endsWith('\n\n')) {
-          newlines = '';
-        } else if (this.draftText.endsWith('\n')) {
-          newlines = '\n';
-        }
-        this.draftText += `${newlines}![${file.name.replace(/]/g, '')}](${url})\n`;
-        this.editor.setValue(this.draftText);
-        this.editor.setPosition({column: 0, lineNumber: this.editor.getModel().getLineCount()});
-      }
-
-      // rendering
-      // =
-
-      render () {
-        const mustBePrivate = this.mustBePrivate;
-        const navItem = (id, label) => html`
-      <a
-        class=${this.currentView === id ? 'current' : ''}
-        @click=${e => { this.currentView = id; }}
-      >${label}</a>
-    `;
-        return html`
-      <link rel="stylesheet" href=${(new URL('../../css/fontawesome.css', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()}>
-      <link rel="stylesheet" href=${(new URL('../vs/editor/editor.main.css', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()}>
-      <form @submit=${this.onSubmit}>
-        <nav>
-          ${navItem('edit', 'Write')}
-          ${navItem('preview', 'Preview')}
-        </nav>
-
-        <div class="view">
-          ${this.isEmpty && this.currentView === 'edit' ? html`<div class="placeholder">${this.placeholder}</div>` : ''}
-          <div class="editor ${this.currentView === 'edit' ? '' : 'hidden'}" @contextmenu=${this.onContextmenu}></div>
-          ${this.currentView === 'preview' ? this.renderPreview() : ''}
-        </div>
-
-        <div class="tags">
-          <span class="fas fa-tag"></span>
-          <input placeholder="Tags, separated by spaces" @keyup=${this.onKeyupTags}>
-        </div>
-
-        <div class="actions">
-          <div class="ctrls">
-            <input type="file" class="image-select" accept=".png,.gif,.jpg,.jpeg" @change=${this.onChangeImage}>
-            <button class="transparent tooltip-right" @click=${this.onClickAddImage} data-tooltip="Add Image">
-              <span class="far fa-fw fa-image"></span>
-            </button>
-          </div>
-          <div>
-            ${this.driveUrl ? html`
-              <a
-                class="visibility disabled tooltip-top"
-                data-tooltip="Posting to ${this.profile?.title}"
-              >
-                <span class="fas fa-fw fa-globe-africa"></span> Posting to ${this.profile?.title}
-              </a>
-            ` : html`
-              <a
-                class="visibility ${mustBePrivate ? 'disabled' : ''} tooltip-top"
-                data-tooltip=${mustBePrivate ? 'Must be private as you are commenting on private content' : 'Choose who can see this content'}
-                @click=${this.onClickVisibility}
-              >
-                ${this.visibility === 'private' ? html`
-                  <span class="fas fa-fw fa-lock"></span> Private
-                ` : html`
-                  <span class="fas fa-fw fa-globe-africa"></span> Public
-                `}
-                ${mustBePrivate ? '' : html`<span class="fas fa-fw fa-caret-down"></span>`}
-              </a>
-            `}
-            <button @click=${this.onCancel} tabindex="4">Cancel</button>
-            <button type="submit" class="primary" tabindex="3" ?disabled=${this.isEmpty}>
-              ${this.visibility === 'private' ? 'Save privately' : 'Publish publicly'}
-            </button>
-          </div>
-        </div>
-      </form>
-    `
-      }
-
-      renderPreview () {
-        if (!this.draftText) { 
-          return html`<div class="preview"><small><span class="fas fa-fw fa-info"></span> You can use Markdown to format your post.</small></div>`
-        }
-        return html`
-      <div class="preview markdown">
-        ${unsafeHTML(beaker.markdown.toHTML(this.draftText))}
-      </div>
-    `
-      }
-
-      async firstUpdated () {
-        await this.createEditor();
-        this.editor.focus();
-        this.editor.onDidChangeModelContent(e => {
-          this.draftText = this.editor.getValue();
-        });
-      }
-      
-      // events
-      // =
-
-      async onContextmenu (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        create$1({
-          x: e.clientX,
-          y: e.clientY,
-          noBorders: true,
-          style: `padding: 6px 0`,
-          items: [
-            {label: 'Cut', click: () => {
-              this.editor.focus();
-              document.execCommand('cut');
-            }},
-            {label: 'Copy', click: () => {
-              this.editor.focus();
-              document.execCommand('copy');
-            }},
-            {label: 'Paste', click: () => {
-              this.editor.focus();
-              document.execCommand('paste');
-            }},
-            '-',
-            {label: 'Select All', click: () => {
-              this.editor.setSelection(this.editor.getModel().getFullModelRange());
-            }},
-            '-',
-            {label: 'Undo', click: () => {
-              this.editor.trigger('contextmenu', 'undo');
-            }},
-            {label: 'Redo', click: () => {
-              this.editor.trigger('contextmenu', 'redo');
-            }},
-          ]
-        });
-      }
-
-      onKeyupTags (e) {
-        var input = e.currentTarget;
-        this.tags = input.value.toLowerCase();
-        this.tags = this.tags.replace(/[^a-z0-9- ]/g, '');
-        input.value = this.tags;
-      }
-
-      onClickAddImage (e) {
-        e.preventDefault();
-        this.currentView = 'edit';
-        this.shadowRoot.querySelector('.image-select').click();
-      }
-
-      onChangeImage (e) {
-        var file = e.currentTarget.files[0];
-        if (!file) return
-        this.insertImage(file);
-      }
-
-      onClickVisibility (e) {
-        if (this.mustBePrivate) return
-        var rect = e.currentTarget.getClientRects()[0];
-        e.preventDefault();
-        e.stopPropagation();
-        const items = [
-          {icon: 'fas fa-lock', label: 'Private (Only Me)', click: () => { this.visibility = 'private'; } },
-          {icon: 'fas fa-globe-africa', label: 'Public (Everybody)', click: () => { this.visibility = 'public'; } }
-        ];
-        create$1({
-          x: rect.left,
-          y: rect.bottom,
-          noBorders: true,
-          roomy: true,
-          rounded: true,
-          style: `padding: 6px 0`,
-          items
-        });
-      }
-
-      onCancel (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        this.draftText = '';
-        this.currentView = 'edit';
-        this.dispatchEvent(new CustomEvent('cancel'));
-        _currentComposer = undefined;
-      }
-
-      async onSubmit (e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (!this.draftText) {
-          return
-        }
-
-        if (!this.profile) {
-          throw new Error('.profile is missing')
-        }
-
-        var driveUrl = this.driveUrl;
-        if (!driveUrl) {
-          driveUrl = this.visibility === 'private' ? 'hyper://private' : this.profile.url;
-        }
-        var drive = beaker.hyperdrive.drive(driveUrl);
-        var filename = '' + Date.now();
-        var folder = '';
-        var postBody = this.draftText;
-        if (this.subject || this.parent) {
-          folder = '/comments/';
-        } else {
-          folder = '/microblog/';
-        }
-
-        // write all images to the drive and replace their URLs in the post
-        var i = 1;
-        var blobsToWrite = this.blobs.filter(b => this.draftText.includes(b.url));
-        for (let blob of blobsToWrite) {
-          let ext = blob.file.name.split('.').pop();
-          let path = `${folder}${filename}-${i++}.${ext}`;
-
-          let buf = await blob.file.arrayBuffer();
-          await drive.writeFile(path, buf);
-
-          let url = joinPath(driveUrl, path);
-          while (postBody.includes(blob.url)) {
-            postBody = postBody.replace(blob.url, url);
-          }
-        }
-
-        if (this.subject || this.parent) {
-          let subject = this.subject;
-          let parent = this.parent;
-          if (subject === parent) parent = undefined; // not needed
-          await drive.writeFile(`${folder}${filename}.md`, postBody, {
-            metadata: {
-              'comment/subject': subject ? normalizeUrl(subject) : undefined,
-              'comment/parent': parent ? normalizeUrl(parent) : undefined
-            }
-          });
-        } else {
-          await drive.writeFile(`${folder}${filename}.md`, postBody);
-        }
-        var url = joinPath(driveUrl, `${folder}${filename}.md`);
-
-        var tags = this.tags.trim();
-        if (tags) {
-          let tagFilename = Date.now();
-          for (let tag of tags.split(' ').filter(Boolean)) {
-            tag = tag.trim();
-            if (!tag) continue
-            await drive.writeFile(`/tags/${tagFilename++}.goto`, '', {
-              metadata: {href: url, 'tag/id': tag}
-            });
-          }
-        }
-        
-        this.draftText = '';
-        this.tags = '';
-        this.currentView = 'edit';
-        this.dispatchEvent(new CustomEvent('publish', {detail: {url}}));
-        _currentComposer = undefined;
-      }
-    }
-
-    customElements.define('ctzn-post-composer', PostComposer);
-
-    // handles image-pasting
-    function onGlobalPaste (e) {
-      if (!_currentComposer || !_currentComposer.editor) {
-        return
-      }
-      var editor = _currentComposer.editor;
-      if (editor.hasTextFocus()) {
-        let items = e.clipboardData.items;
-        for (let i = 0; i < items.length; i++) {
-          let matches = items[i].type.match(/^image\/(png|jpg|jpeg|gif)$/i);
-          if (matches) {
-            _currentComposer.insertImage(items[i].getAsFile());
-          }
-        }
-      }
-    }
-
-    function normalizeUrl (url) {
-      try {
-        // strips the hash segment
-        let {protocol, hostname, port, pathname, search} = new URL(url);
-        return `${protocol}//${hostname}${(port ? `:${port}` : '')}${pathname || '/'}${search}`
-      } catch (e) {
-        return url
-      }
-    }
-
-    class Record extends LitElement {
-      static get properties () {
-        return {
-          record: {type: Object},
-          loadRecordUrl: {type: String, attribute: 'record-url'},
-          renderMode: {type: String, attribute: 'render-mode'},
-          isNotification: {type: Boolean, attribute: 'is-notification'},
-          isUnread: {type: Boolean, attribute: 'is-unread'},
-          searchTerms: {type: String, attribute: 'search-terms'},
-          showContext: {type: Boolean, attribute: 'show-context'},
-          constrainHeight: {type: Boolean, attribute: 'constrain-height'},
-          profileUrl: {type: String, attribute: 'profile-url'},
-          actionTarget: {type: String, attribute: 'action-target'},
-          isReplyOpen: {type: Boolean},
-          viewContentOnClick: {type: Boolean, attribute: 'view-content-on-click'},
-          showReadMore: {type: Boolean}
-        }
       }
 
       static get styles () {
         return cssStr$8
       }
 
-      constructor () {
-        super();
-        this.record = undefined;
-        this.loadRecordUrl = undefined;
-        this.renderMode = undefined;
-        this.isNotification = false;
-        this.isUnread = false;
-        this.searchTerms = undefined;
-        this.showContext = false;
-        this.constrainHeight = false;
-        this.profileUrl = undefined;
-        this.actionTarget = undefined;
-        this.isReplyOpen = false;
-        this.viewContentOnClick = false;
-        this.showReadMore = false;
-
-        // helper state
-        this.hasLoadedSignals = false;
-        this.hasCheckedOverflow = false;
-        this.isMouseDown = false;
-        this.isMouseDragging = false;
+      get canPost () {
+        return this.draftText.length > 0 && this.draftText.length <= CHAR_LIMIT
       }
 
-      updated (changedProperties) {
-        let markdownEl = this.shadowRoot.querySelector('.markdown');
-        if (markdownEl) {
-          this.attachImageLoaders(markdownEl);
+      firstUpdated () {
+        this.shadowRoot.querySelector('textarea').focus();
+      }
+
+      get charLimitDanger () {
+        if (this.draftText.length > CHAR_LIMIT) {
+          return 'over'
         }
-
-        if (this.record && this.constrainHeight && !this.hasCheckedOverflow && document.visibilityState === 'visible') {
-          this.hasCheckedOverflow = true;
-          this.whenContentLoaded().then(r => {
-            if (this.isContentOverflowing) {
-              this.showReadMore = true;
-            }
-          });
+        if (this.draftText.length > CHAR_LIMIT - 50) {
+          return 'close'
         }
-        if ((!this.record && this.loadRecordUrl) || changedProperties.has('loadRecordUrl') && changedProperties.get('loadRecordUrl') != this.recordUrl) {
-          this.load();
-        }
-      }
-
-      async load () {
-        let {record} = await beaker.index.gql(`
-      query Record ($url: String!) {
-        record (url: $url) {
-          type
-          path
-          url
-          ctime
-          mtime
-          rtime
-          metadata
-          index
-          content
-          site {
-            url
-            title
-          }
-          votes: backlinks(paths: ["/votes/*.goto"]) {
-            url
-            metadata
-            site { url title }
-          }
-          tags: backlinks(paths: ["/tags/*.goto"]) {
-            url
-            metadata
-            site { url title }
-          }
-          commentCount: backlinkCount(paths: ["/comments/*.md"])
-        }
-      }
-    `, {url: this.loadRecordUrl});
-        this.record = record;
-        if (!this.renderMode) {
-          this.renderMode = getPreferredRenderMode(this.record);
-          this.setAttribute('render-mode', this.renderMode);
-        }
-      }
-
-      async reloadSignals () {
-        let {votes, tags, commentCount} = await beaker.index.gql(`
-      query Signals ($href: String!) {
-        votes: records(paths: ["/votes/*.goto"] links: {url: $href}) {
-          url
-          metadata
-          site { url title }
-        }
-        tags: records(paths: ["/tags/*.goto"] links: {url: $href}) {
-          url
-          metadata
-          site { url title }
-        }
-        commentCount: recordCount(paths: ["/comments/*.md"] links: {url: $href})
-      }
-    `, {href: this.record.url});
-        this.record.votes = votes;
-        this.record.tags = tags;
-        this.record.commentCount = commentCount;
-        this.requestUpdate();
-      }
-
-      get myVote () {
-        return this.record?.votes.find(v => isSameOrigin(v.site.url, this.profileUrl) || isSameOrigin(v.site.url, 'hyper://private'))
-      }
-
-      get upvoteCount () {
-        return (new Set(this.record?.votes.filter(v => v.metadata['vote/value'] == 1).map(v => v.site.url))).size
-      }
-
-      get downvoteCount () {
-        return (new Set(this.record?.votes.filter(v => v.metadata['vote/value'] == -1).map(v => v.site.url))).size    
-      }
-
-      async whenContentLoaded () {
-        let images = Array.from(this.shadowRoot.querySelectorAll('.content img'));
-        images = images.filter(el => !el.complete);
-        while (images.length) {
-          await new Promise(r => setTimeout(r, 10));
-          images = images.filter(el => !el.complete);
-        }
-      }
-
-      get isContentOverflowing () {
-        try {
-          let content = this.shadowRoot.querySelector('.content');
-          if (this.renderMode === 'card') {
-            return content.clientHeight >= 50 || content.scrollHeight >= 50
-          }
-          if (this.renderMode === 'comment') {
-            return content.clientHeight >= 50 || content.scrollHeight >= 50
-          }
-        } catch {}
-        return false
-      }
-
-      attachImageLoaders (el) {
-        for (let img of Array.from(el.querySelectorAll('img'))) {
-          if (!img.complete) {
-            img.classList.add('image-loading');
-            img.addEventListener('load', e => img.classList.remove('image-loading'));
-            img.addEventListener('error', e => img.classList.remove('image-loading'));
-          }
-        }
+        return 'fine'
       }
 
       // rendering
       // =
 
       render () {
-        if (!this.record) {
-          if (this.loadRecordUrl) {
-            return html`
-          <a class="unknown-link" href=${this.loadRecordUrl}>
-            ${asyncReplace(fancyUrlAsync(this.loadRecordUrl))}
-          </a>
-        `
-          }
-          return html``
+        return html`
+      <link rel="stylesheet" href=${(new URL('../../css/fontawesome.css', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()}>
+      <link rel="stylesheet" href=${(new URL('../vs/editor/editor.main.css', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()}>
+      <form @submit=${this.onSubmit}>
+        <div class="editor">
+          <textarea placeholder=${this.placeholder} @keyup=${this.onTextareaKeyup}></textarea>
+        </div>
+
+        <div class="actions">
+          <div class="ctrls">
+            <span class="char-limit ${this.charLimitDanger}">
+              ${this.draftText.length} / ${CHAR_LIMIT}
+            </span>
+          </div>
+          <div>
+            <button @click=${this.onCancel} tabindex="4">Cancel</button>
+            <button type="submit" class="primary" tabindex="3" ?disabled=${!this.canPost}>
+              Post
+            </button>
+          </div>
+        </div>
+      </form>
+    `
+      }
+      
+      // events
+      // =
+
+      onTextareaKeyup (e) {
+        this.draftText = e.currentTarget.value;
+      }
+
+      onCancel (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.draftText = '';
+        this.dispatchEvent(new CustomEvent('cancel'));
+      }
+
+      async onSubmit (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!this.canPost) {
+          return
         }
-        switch (this.renderMode) {
-          case 'card': return this.renderAsCard()
-          case 'comment': return this.renderAsComment()
-          case 'action': return this.renderAsAction()
-          case 'expanded-link': return this.renderAsExpandedLink()
-          case 'wrapper': return this.renderResultAsWrapper()
-          case 'link':
-          default:
-            return this.renderResultAsLink()
+
+        let res;
+        try {
+          if (this.subject || this.parent) {
+            alert('todo');
+            // TODO handle comments
+            // let subject = this.subject
+            // let parent = this.parent
+            // if (subject === parent) parent = undefined // not needed
+            // await drive.writeFile(`${folder}${filename}.md`, postBody, {
+            //   metadata: {
+            //     'comment/subject': subject ? normalizeUrl(subject) : undefined,
+            //     'comment/parent': parent ? normalizeUrl(parent) : undefined
+            //   }
+            // })
+          } else {
+            res = await this.api.posts.create({text: this.draftText});
+          }
+        } catch (e) {
+          create(e.message, 'error');
+          console.error(e);
+          return
+        }
+        
+        this.draftText = '';
+        this.dispatchEvent(new CustomEvent('publish', {detail: res}));
+      }
+    }
+
+    customElements.define('ctzn-post-composer', PostComposer);
+
+    class Post extends LitElement {
+      static get properties () {
+        return {
+          api: {type: Object},
+          post: {type: Object},
+          profile: {type: Object},
+          isNotification: {type: Boolean, attribute: 'is-notification'},
+          isUnread: {type: Boolean, attribute: 'is-unread'},
+          searchTerms: {type: String, attribute: 'search-terms'},
+          showContext: {type: Boolean, attribute: 'show-context'},
+          isReplyOpen: {type: Boolean},
+          viewContentOnClick: {type: Boolean, attribute: 'view-content-on-click'}
         }
       }
 
-      renderAsCard () {
-        const res = this.record;
-        const rtype = getRecordType(res);
+      static get styles () {
+        return cssStr$7
+      }
+
+      constructor () {
+        super();
+        this.api = undefined;
+        this.post = undefined;
+        this.profile = undefined;
+        this.isNotification = false;
+        this.isUnread = false;
+        this.searchTerms = undefined;
+        this.showContext = false;
+        this.isReplyOpen = false;
+        this.viewContentOnClick = false;
+
+        // helper state
+        this.isMouseDown = false;
+        this.isMouseDragging = false;
+      }
+
+      get myVote () {
+        if (this.post?.votes.upvoterUrls.includes(this.profile?.url)) {
+          return 1
+        }
+        if (this.post?.votes.downvoterUrls.includes(this.profile?.url)) {
+          return -1
+        }
+      }
+
+      get upvoteCount () {
+        return this.post?.votes.upvoterUrls.length
+      }
+
+      get downvoteCount () {
+        return this.post?.votes.downvoterUrls.length
+      }
+
+      async reloadSignals () {
+        this.post.votes = await this.api.votes.getVotesForSubject(this.post.url);
+        this.requestUpdate();
+      }
+
+      // rendering
+      // =
+
+      render () {
+        if (!this.post) {
+          return html``
+        }
 
         var context = undefined;
-        switch (rtype) {
-          case 'comment':
-            context = res.metadata['comment/parent'] || res.metadata['comment/subject'];
-            break
-        }
-
-        var shouldShowContent = ['comment', 'microblogpost'].includes(rtype);
-        if (shouldShowContent && !res.content) {
-          return html`
-        <a class="unknown-link" href=${res.url}>
-          ${asyncReplace(fancyUrlAsync(res.url))}
-        </a>
-      `
-        }
+        // TODO
+        // switch (rtype) {
+        //   case 'comment':
+        //     context = this.post.metadata['comment/parent'] || this.post.metadata['comment/subject']
+        //     break
+        // }
 
         return html`
       <link rel="stylesheet" href=${(new URL('../../css/fontawesome.css', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()}>
       ${this.isNotification ? this.renderNotification() : ''}
       ${this.showContext && context ? html`
         <div class="card-context">
-          <ctzn-record
-            record-url=${context}
-            render-mode="wrapper"
-            constrain-height
+          <ctzn-post
+            post-url=${context}
             noborders
             nothumb
             as-context
             profile-url=${this.profileUrl}
-          ></ctzn-record>
+          ></ctzn-post>
         </div>
       ` : ''}
       <div
         class=${classMap({
-          record: true,
+          post: true,
           card: true,
-          'private': res.url.startsWith('hyper://private'),
-          'constrain-height': this.constrainHeight,
           'is-notification': this.isNotification,
           unread: this.isUnread
         })}
       >
-        <a class="thumb" href=${res.site.url} title=${res.site.title} data-tooltip=${res.site.title}>
-          ${res.url.startsWith('hyper://private') ? html`
-            <span class="sysicon fas fa-lock"></span>
-          ` : html`
-            <img class="favicon" src="${res.site.url}/thumb">
-          `}
+        <a class="thumb" href=${this.post.author.url} title=${this.post.author.displayName} data-tooltip=${this.post.author.displayName}>
+          <img class="favicon" src="${this.post.author.url}/thumb">
         </a>
         <span class="arrow"></span>
         <div
@@ -6831,409 +4860,121 @@ input[type="file"] {
         >
           <div class="header">
             <div class="origin">
-              ${res.url.startsWith('hyper://private/') ? html`
-                <a class="author" href=${res.site.url} title=${res.site.title}>
-                  Private
-                  ${getRecordType(res)}
-                </a>
-              ` : html`
-                <a class="author" href=${res.site.url} title=${res.site.title}>
-                  ${res.site.title}
-                </a>
-              `}
+              <a class="author displayname" href=${this.post.author.url} title=${this.post.author.displayName}>
+                ${this.post.author.displayName}
+              </a>
+              <a class="author username" href=${this.post.author.url} title=${this.post.author.username}>
+                @${this.post.author.username}
+              </a>
             </div>
             <span>&middot;</span>
             <div class="date">
-              <a href=${res.url} data-tooltip=${(new Date(res.ctime)).toLocaleString()}>
-                ${relativeDate(res.ctime)}
+              <a href=${this.post.url} data-tooltip=${(new Date(this.post.value.createdAt)).toLocaleString()}>
+                ${relativeDate(this.post.value.createdAt)}
               </a>
             </div>
           </div>
           <div class="content markdown">
-            ${res.content ? (this.renderMatchText('content') || unsafeHTML(beaker.markdown.toHTML(res.content))) : ''}
-          </div>
-          ${this.showReadMore ? html`
-            <div class="read-more">
-              <a @click=${this.onClickReadMore}>Read more <span class="fas fa-angle-down"></span></a>
-            </div>
-          ` : ''}
-          <div class="ctrls">
-            ${this.renderVoteCtrl()}
-            ${this.renderCommentsCtrl()}
-            ${this.renderTagsCtrl()}
-          </div>
-        </div>
-      </div>
-    `
-      }
-
-      renderAsComment () {
-        const res = this.record;
-
-        var context = undefined;
-        switch (getRecordType(res)) {
-          case 'comment':
-            context = res.metadata['comment/subject'] || res.metadata['comment/parent'];
-            break
-        }
-
-        return html`
-      <link rel="stylesheet" href=${(new URL('../../css/fontawesome.css', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()}>
-      ${this.isNotification ? this.renderNotification() : ''}
-      <div
-        class=${classMap({
-          record: true,
-          comment: true,
-          'private': res.url.startsWith('hyper://private'),
-          'constrain-height': this.constrainHeight,
-          'is-notification': this.isNotification,
-          unread: this.isUnread
-        })}
-      >
-        <div class="header">
-          <a class="thumb" href=${res.site.url} title=${res.site.title} data-tooltip=${res.site.title}>
-            <img class="favicon" src="${res.site.url}/thumb">
-          </a>
-          <div class="origin">
-            ${res.url.startsWith('hyper://private/') ? html`
-              <a class="author" href=${res.site.url} title=${res.site.title}>Private comment</a>
-            ` : html`
-              <a class="author" href=${res.site.url} title=${res.site.title}>
-                ${res.site.title}
-              </a>
-            `}
-          </div>
-          ${this.actionTarget ? html`
-            <span class="action">mentioned ${this.actionTarget}</span>
-          ` : ''}
-          <div class="date">
-            <a href=${res.url} data-tooltip=${(new Date(res.ctime)).toLocaleString()}>
-              ${relativeDate(res.ctime)}
-            </a>
-          </div>
-          ${this.showContext && context ? html`
-            <span>&middot;</span>
-            <div class="context">
-              <a href=${context}>
-                ${asyncReplace(fancyUrlAsync(context))}
-              </a>
-            </div>
-          ` : ''}
-        </div>
-        <div class="content markdown">
-          ${this.renderMatchText('content') || unsafeHTML(beaker.markdown.toHTML(res.content))}
-        </div>
-        ${this.showReadMore ? html`
-          <div class="read-more">
-            <a @click=${this.onClickReadMore}>Read more <span class="fas fa-angle-down"></span></a>
-          </div>
-        ` : ''}
-        <div class="ctrls">
-          ${this.renderVoteCtrl()}
-          <a class="reply" @click=${this.onClickReply}><span class="fas fa-fw fa-reply"></span> <small>Reply</small></a>
-          ${this.renderTagsCtrl()}
-        </div>
-        ${this.isReplyOpen ? html`
-          <ctzn-post-composer
-            subject=${this.record.metadata['comment/subject'] || this.record.url}
-            parent=${this.record.url}
-            placeholder="Write your comment"
-            @publish=${this.onPublishReply}
-            @cancel=${this.onCancelReply}
-          ></ctzn-post-composer>
-        ` : ''}
-      </div>
-    `
-      }
-
-      renderAsAction () {
-        const res = this.record;
-        const rtype = getRecordType(res);
-       
-        var subject;
-        if (['subscription', 'vote'].includes(rtype)) {
-          subject = isSameOrigin(res.metadata.href, this.profileUrl) ? 'you' : fancyUrlAsync(res.metadata.href);
-        } else {
-          if (!res.path.endsWith('.goto') && res.metadata.title) subject = res.metadata.title;
-          else if (res.content) subject = shorten(removeMarkdown(res.content), 150);
-          else if (rtype !== 'unknown') subject = `a ${rtype}`;
-          else subject = fancyUrlAsync(res.url);
-        }
-        var showContentAfter = res.content && ['microblogpost', 'comment'].includes(rtype);
-
-        return html`
-      <div
-        class=${classMap({
-          record: true,
-          action: true,
-          'private': res.url.startsWith('hyper://private'),
-          'is-notification': this.isNotification,
-          unread: this.isUnread
-        })}
-      >
-        <a class="thumb" href=${res.site.url} title=${res.site.title} data-tooltip=${res.site.title}>
-          <img class="favicon" src="${res.site.url}/thumb">
-        </a>
-        <div>
-          <a class="author" href=${res.site.url} title=${res.site.title}>
-            ${res.site.url === 'hyper://private' ? 'I privately' : res.site.title}
-          </a>
-          ${rtype === 'subscription' ? html`
-            <span class="action">subscribed to</span>
-            <a class="subject" href=${res.metadata.href}>${typeof subject === 'string' ? subject : asyncReplace(subject)}</a>
-          ` : this.actionTarget ? html`
-            ${rtype === 'vote' ? html`
-              <span class="action">${res.metadata['vote/value'] == -1 ? 'downvoted' : 'upvoted'}</span>
-              <a class="subject" href=${res.metadata.href}>${this.actionTarget}</a>
-            ` : rtype === 'bookmark' ? html`
-              <span class="action">bookmarked ${this.actionTarget}</span>
-            ` : rtype === 'tag' ? html`
-              <span class="action">tagged ${this.actionTarget} <a @click=${e => this.onViewTag(e, res.metadata['tag/id'])}>#${res.metadata['tag/id']}</a></span>
-            ` : rtype === 'comment' ? html`
-              <span class="action">commented on ${this.actionTarget}</span>
-            ` : showContentAfter ? html`
-              <span class="action">mentioned ${this.actionTarget}</span>
-            ` : html`
-              <span class="action">mentioned ${this.actionTarget} in</span>
-              <a class="subject" href=${res.url}>${typeof subject === 'string' ? subject : asyncReplace(subject)}</a>
-            `}
-          ` : html`
-            ${rtype === 'vote' ? html`
-              <span class="action">${res.metadata['vote/value'] == -1 ? 'downvoted' : 'upvoted'}</span>
-              <a class="subject" href=${res.metadata.href}>${subject}</a>
-            ` : rtype === 'bookmark' ? html`
-              <span class="action">bookmarked <a href=${res.metadata.href} target="_blank">${res.metadata.title || res.metadata.href}</a></span>
-            ` : rtype === 'blogpost' ? html`
-              <span class="action">published <a href=${res.url} target="_blank">${res.metadata.title || res.path}</a></span>
-            ` : ''}
-          `}
-          ${res.mergedItems ? html`
-            <span>and</span>
-            <a
-              class="others"
-              href="#"
-              data-tooltip=${shorten(res.mergedItems.map(r => r.metadata.title || 'Untitled').join(', '), 100)}
-              @click=${e => this.onClickShowSites(e, res.mergedItems)}
-            >${res.mergedItems.length} other ${pluralize(res.mergedItems.length, 'site')}</a>
-          ` : ''}
-          <a class="date" href=${res.url}>${relativeDate(res.ctime)}</a>
-        </div>
-      </div>
-      ${showContentAfter ? html`
-        <div class="action-content">
-          <a href=${res.url} title=${subject}>${subject}</a>
-        </div>
-      ` : ''}
-    `
-      }
-
-      renderAsExpandedLink () {
-        const res = this.record;
-
-        var title = res.metadata.title || res.url.split('/').pop();
-        var content = res.content;
-        var isBookmark = false;
-        var href = undefined;
-        var recordType = getRecordType(res);
-        switch (recordType) {
-          case 'bookmark':
-            isBookmark = true;
-            href = res.metadata.href;
-            break
-          case 'comment':
-          case 'microblogpost':
-            title = removeMarkdown(removeFirstMdHeader(res.content));
-            break
-        }
-        href = href || res.url;
-
-        return html`
-    <link rel="stylesheet" href=${(new URL('../../css/fontawesome.css', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()}>
-      <div class="record expanded-link ${res.url.startsWith('hyper://private') ? 'private' : ''}">
-        <a class="thumb" href=${href} title=${res.site.title}>
-          ${this.renderThumb(res)}
-        </a>
-        <div class="info">
-          <div class="title"><a href=${href}>${this.renderMatchText('title') || shorten(title, 150)}</a></div>
-          <div class="origin">
-            ${isBookmark ? html`
-              <span class="origin-note"><span class="far fa-fw fa-star"></span> Bookmarked by</span>
-              <a class="author" href=${res.site.url} title=${res.site.title}>
-                ${res.site.url === 'hyper://private/' ? 'Me (Private)' : res.site.title}
-              </a>
-            ` : (
-              res.site.url === 'hyper://private/' ? html`
-                <span class="sysicon fas fa-fw fa-lock"></span>
-                <a class="author" href=${res.site.url} title=${res.site.title}>
-                  Me (Private)
-                </a>
-              ` : html`
-                <img class="favicon" src="${res.site.url}/thumb">
-                <a class="author" href=${res.site.url} title=${res.site.title}>
-                  ${res.site.title}
-                </a>
-              `)
-            }
-            <span>|</span>
-            ${recordType === 'bookmark' ? html`<span class="type"><span class="far fa-star"></span> Bookmark</span>` : ''}
-            ${recordType === 'page' ? html`<span class="type"><span class="far fa-file"></span> Page</span>` : ''}
-            ${recordType === 'blogpost' ? html`<span class="type"><span class="fas fa-blog"></span> Blogpost</span>` : ''}
-            ${recordType === 'comment' ? html`<span class="type"><span class="far fa-comments"></span> Comment</span>` : ''}
-            ${recordType === 'microblogpost' ? html`<span class="type"><span class="far fa-comment-alt"></span> Post</span>` : ''}
-            <span>|</span>
-            <a class="date" href=${href}>${niceDate(res.ctime)}</a>
-            <span>|</span>
-            ${this.renderVoteCtrl()}
-            ${this.renderCommentsCtrl()}
-            ${this.renderTagsCtrl()}
-          </div>
-          ${content ? html`
-            <div class="excerpt">
-              ${this.renderMatchText('content') || shorten(removeMarkdown(removeFirstMdHeader(content)), 300)}
-            </div>
-          ` : ''}
-        </div>
-      </a>
-    `
-      }
-
-      renderResultAsLink () {
-        const res = this.record;
-        var recordType = getRecordType(res);
-
-        var href = undefined;
-        switch (recordType) {
-          case 'comment': href = res.metadata['comment/subject']; break
-          case 'bookmark': href = res.metadata.href; break
-        }
-        href = href || res.url;
-
-        var hrefp;
-        if (recordType === 'bookmark' && href) {
-          try {
-            hrefp = new URL(href);
-          } catch {}
-        }
-
-        var title = res.metadata['title'] || ({
-          'bookmark': niceDate(res.ctime),
-          'blogpost': niceDate(res.ctime),
-          'microblogpost': niceDate(res.ctime),
-          'page': niceDate(res.ctime),
-          'comment': niceDate(res.ctime)
-        })[recordType] || res.url.split('/').pop() || niceDate(res.ctime);
-
-        return html`
-      <link rel="stylesheet" href=${(new URL('../../css/fontawesome.css', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()}>
-      ${this.isNotification ? this.renderNotification() : ''}
-      <div
-        class=${classMap({
-          record: true,
-          link: true,
-          'private': res.url.startsWith('hyper://private'),
-          'is-notification': this.isNotification,
-          unread: this.isUnread
-        })}
-      >
-        <a class="thumb" href=${res.site.url} title=${res.site.title} data-tooltip=${res.site.title}>
-          ${res.url.startsWith('hyper://private') ? html`
-            <span class="sysicon fas fa-lock"></span>
-          ` : html`
-            <img class="favicon" src="${res.site.url}/thumb">
-          `}
-        </a>
-        <div class="container">
-          <div class="title">
-            <a class="link-title" href=${href}>${shorten(title, 500)}</a>
-            ${hrefp ? html`
-              <a class="link-origin" href=${hrefp.origin}>${toNiceDomain(hrefp.hostname)}</a>
-            ` : ''}
+            ${this.post.value.text ? (this.renderMatchText() || this.post.value.text) : ''}
           </div>
           <div class="ctrls">
-            ${recordType === 'bookmark' ? html`<span class="far fa-star"></span>` : ''}
-            ${recordType === 'page' ? html`<span class="far fa-file"></span>` : ''}
-            ${recordType === 'blogpost' ? html`<span class="fas fa-blog"></span>` : ''}
-            by
-            <span class="origin">
-              <a class="author" href=${res.site.url} title=${res.site.title}>
-                ${res.site.url === 'hyper://private' ? 'Me (Private)' : res.site.title}
-              </a>
-            </span>
-            <span class="date">
-              <a href=${res.url} data-tooltip=${(new Date(res.ctime)).toLocaleString()}>
-                ${relativeDate(res.ctime)}
-              </a>
-            </span>
             ${this.renderVoteCtrl()}
             ${this.renderCommentsCtrl()}
-            ${this.renderTagsCtrl()}
           </div>
         </div>
       </div>
     `
       }
 
-      renderResultAsWrapper () {
-        const res = this.record;
-        var recordType = getRecordType(res);
+      // TODO
+      // renderAsComment () {
+      //   const res = this.record
 
-        return html`
-      <link rel="stylesheet" href=${(new URL('../../css/fontawesome.css', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()}>
-      <div
-        class=${classMap({
-          record: true,
-          wrapper: true,
-          'private': res.url.startsWith('hyper://private'),
-          'is-notification': this.isNotification,
-          unread: this.isUnread
-        })}
-      >
-        <a class="thumb" href=${res.site.url} title=${res.site.title} data-tooltip=${res.site.title}>
-          ${res.url.startsWith('hyper://private') ? html`
-            <span class="sysicon fas fa-lock"></span>
-          ` : html`
-            <img class="favicon" src="${res.site.url}/thumb">
-          `}
-        </a>
-        <div class="container">
-          ${this.isNotification ? this.renderNotification() : ''}
-          <a class="subject" href=${res.metadata.href || res.url} @click=${this.onViewWrapperThread}>
-            ${asyncReplace(loadAndSimpleRender(res.metadata.href || res.url))}
-          </a>
-        </div>
-      </div>
-    `
-      }
+      //   var context = undefined
+      //   switch (getRecordType(res)) {
+      //     case 'comment':
+      //       context = res.metadata['comment/subject'] || res.metadata['comment/parent']
+      //       break
+      //   }
 
-      renderThumb (url = undefined) {
-        url = url || this.record.url;
-        if (url && /\.(png|jpe?g|gif)$/.test(url)) {
-          return html`<img src=${url}>`
-        }
-        var icon = 'far fa-file-alt';
-        switch (getRecordType(this.record)) {
-          case 'blogpost': icon = 'fas fa-blog'; break
-          case 'page': icon = 'far fa-file-alt'; break
-          case 'bookmark': icon = 'fas fa-star'; break
-          case 'microblogpost': icon = 'fas fa-stream'; break
-          case 'comment': icon = 'far fa-comment'; break
-        }
-        return html`
-      <span class="icon">
-        <span class="fa-fw ${icon}"></span>
-      </span>
-    `
-      }
+      //   return html`
+      //     <link rel="stylesheet" href=${(new URL('../../css/fontawesome.css', import.meta.url)).toString()}>
+      //     ${this.isNotification ? this.renderNotification() : ''}
+      //     <div
+      //       class=${classMap({
+      //         record: true,
+      //         comment: true,
+      //         'private': res.url.startsWith('hyper://private'),
+      //         'constrain-height': this.constrainHeight,
+      //         'is-notification': this.isNotification,
+      //         unread: this.isUnread
+      //       })}
+      //     >
+      //       <div class="header">
+      //         <a class="thumb" href=${res.site.url} title=${res.site.title} data-tooltip=${res.site.title}>
+      //           <img class="favicon" src="${res.site.url}/thumb">
+      //         </a>
+      //         <div class="origin">
+      //           ${res.url.startsWith('hyper://private/') ? html`
+      //             <a class="author" href=${res.site.url} title=${res.site.title}>Private comment</a>
+      //           ` : html`
+      //             <a class="author" href=${res.site.url} title=${res.site.title}>
+      //               ${res.site.title}
+      //             </a>
+      //           `}
+      //         </div>
+      //         ${this.actionTarget ? html`
+      //           <span class="action">mentioned ${this.actionTarget}</span>
+      //         ` : ''}
+      //         <div class="date">
+      //           <a href=${res.url} data-tooltip=${(new Date(res.ctime)).toLocaleString()}>
+      //             ${relativeDate(res.ctime)}
+      //           </a>
+      //         </div>
+      //         ${this.showContext && context ? html`
+      //           <span>&middot;</span>
+      //           <div class="context">
+      //             <a href=${context}>
+      //               ${asyncReplace(fancyUrlAsync(context))}
+      //             </a>
+      //           </div>
+      //         ` : ''}
+      //       </div>
+      //       <div class="content markdown">
+      //         ${this.renderMatchText('content') || unsafeHTML(beaker.markdown.toHTML(res.content))}
+      //       </div>
+      //       ${this.showReadMore ? html`
+      //         <div class="read-more">
+      //           <a @click=${this.onClickReadMore}>Read more <span class="fas fa-angle-down"></span></a>
+      //         </div>
+      //       ` : ''}
+      //       <div class="ctrls">
+      //         ${this.renderVoteCtrl()}
+      //         <a class="reply" @click=${this.onClickReply}><span class="fas fa-fw fa-reply"></span> <small>Reply</small></a>
+      //         ${this.renderTagsCtrl()}
+      //       </div>
+      //       ${this.isReplyOpen ? html`
+      //         <ctzn-post-composer
+      //           subject=${this.record.metadata['comment/subject'] || this.record.url}
+      //           parent=${this.record.url}
+      //           placeholder="Write your comment"
+      //           @publish=${this.onPublishReply}
+      //           @cancel=${this.onCancelReply}
+      //         ></ctzn-post-composer>
+      //       ` : ''}
+      //     </div>
+      //   `
+      // }
 
       renderVoteCtrl () {
-        var myVote = this.myVote?.metadata['vote/value'];
+        var myVote = this.myVote;
         return html`
       <span class="vote-ctrl">
-        <a class="up ${myVote == 1 ? 'pressed' : ''}" data-tooltip="Upvote" @click=${e => this.onToggleVote(e, 1)}>
+        <a class="up ${myVote === 1 ? 'pressed' : ''}" data-tooltip="Upvote" @click=${e => this.onToggleVote(e, 1)}>
           <span class="far fa-thumbs-up"></span>
           <span class="count">${this.upvoteCount}</span>
         </a>
-        <a class="down ${myVote == -1 ? 'pressed' : ''}" data-tooltip="Downvote" @click=${e => this.onToggleVote(e, -1)}>
+        <a class="down ${myVote === -1 ? 'pressed' : ''}" data-tooltip="Downvote" @click=${e => this.onToggleVote(e, -1)}>
           <span class="far fa-thumbs-down"></span>
           <span class="count">${this.downvoteCount}</span>
         </a>
@@ -7242,101 +4983,70 @@ input[type="file"] {
       }
 
       renderCommentsCtrl () {
-        return html`
-      <a class="comment-ctrl" @click=${this.onViewThread}>
-        <span class="far fa-comment"></span>
-        ${this.record?.commentCount}
-      </a>
-    `
+        return '' // TODO
       }
 
-      renderTagsCtrl () {
-        return html`
-      <a class="tag-ctrl" @click=${this.onClickTags}>
-        <span class="fas fa-tag"></span>
-      </a>
-      ${repeat(this.record?.tags || [], tag => tag.url, tag => {
-        var id = tag.metadata['tag/id'];
-        if (!id) return ''
-        return html`<a class="tag" @click=${e => this.onViewTag(e, id)}>#${id}</a>`
-      })}
-    `
-      }
-
-      renderMatchText (key) {
+      renderMatchText () {
         if (!this.searchTerms) return undefined
-        let v = key === 'content' ? this.record.content : this.record.metadata[key];
+        let v = this.post.value.text;
         if (!v) return undefined
         let re = new RegExp(`(${this.searchTerms.replace(/([\s]+)/g, '|')})`, 'gi');
-        let text = removeMarkdown(v).replace(re, match => `<b>${match}</b>`);
-
-        // if there were no facet highlights then it was a link url (or similar) that matched
-        // and `removeMarkdown()` has hidden that, which makes the result confusing
-        // so we need to show the markdown syntax if that's the case
-        let start = text.indexOf('<b>');
-        if (start === -1) {
-          text = v.replace(re, match => `<b>${match}</b>`);
-          start = text.indexOf('<b>');
-        }
-
-        // slice to the matched text
-        if (start > 50) text = `...${text.slice(start - 50)}`;
-        let end = text.indexOf('</b>');
-        if ((text.length - end) > 200) text = `${text.slice(0, end + 200)}...`;
-
-        return unsafeHTML(text)
+        let text = v.replace(re, match => `<b>${match}</b>`);
+        return text // TODO unsafeHTML
       }
 
       renderNotification () {
-        const res = this.record;
-        const link = res.links.find(l => l.url.startsWith(this.profileUrl));
-        var type = getRecordType(res);
-        var description = 'linked to';
-        var afterdesc = '';
-        if (type === 'vote') {
-          if (res.metadata['vote/value'] == '1') {
-            description = 'upvoted';
-          } else if (res.metadata['vote/value'] == '-1') {
-            description = 'downvoted';
-          }
-        } else if (type === 'tag') {
-          let tag = res.metadata['tag/id'];
-          if (tag) {
-            description = 'tagged';
-            afterdesc = html`
-          as <strong><a @click=${e => this.onViewTag(e, tag)}>#${tag}</a></strong>
-        `;
-          }
-        } else if (link.source === 'content') {
-          if (type === 'microblogpost' || type === 'comment') {
-            description = 'mentioned';
-          }
-        } else if (link.source === 'metadata:href') {
-          if (type === 'bookmark') {
-            description = 'bookmarked';
-          } else if (type === 'subscription') {
-            description = 'subscribed to';
-          }
-        } else if (link.source === 'metadata:comment/subject') {
-          description = 'commented on';
-        } else if (link.source === 'metadata:comment/parent') {
-          description = 'replied to';
-        }
-        var where = ({
-          'page': 'in',
-          'blogpost': 'in'
-        })[type] || '';
-        return html`
-      <div class="notification">
-        ${res.site.title}
-        ${description}
-        <a href=${link.url}>
-          ${asyncReplace(getNotificationSubjectStream(link.url, this.profileUrl))}
-        </a>
-        ${where}
-        ${afterdesc}
-      </div>
-    `
+        return ''
+        // TODO
+        // const res = this.record
+        // const link = res.links.find(l => l.url.startsWith(this.profileUrl))
+        // var type = getRecordType(res)
+        // var description = 'linked to'
+        // var afterdesc = ''
+        // if (type === 'vote') {
+        //   if (res.metadata['vote/value'] == '1') {
+        //     description = 'upvoted'
+        //   } else if (res.metadata['vote/value'] == '-1') {
+        //     description = 'downvoted'
+        //   }
+        // } else if (type === 'tag') {
+        //   let tag = res.metadata['tag/id']
+        //   if (tag) {
+        //     description = 'tagged'
+        //     afterdesc = html`
+        //       as <strong><a @click=${e => this.onViewTag(e, tag)}>#${tag}</a></strong>
+        //     `
+        //   }
+        // } else if (link.source === 'content') {
+        //   if (type === 'microblogpost' || type === 'comment') {
+        //     description = 'mentioned'
+        //   }
+        // } else if (link.source === 'metadata:href') {
+        //   if (type === 'bookmark') {
+        //     description = 'bookmarked'
+        //   } else if (type === 'subscription') {
+        //     description = 'subscribed to'
+        //   }
+        // } else if (link.source === 'metadata:comment/subject') {
+        //   description = 'commented on'
+        // } else if (link.source === 'metadata:comment/parent') {
+        //   description = 'replied to'
+        // }
+        // var where = ({
+        //   'page': 'in',
+        //   'blogpost': 'in'
+        // })[type] || ''
+        // return html`
+        //   <div class="notification">
+        //     ${res.site.title}
+        //     ${description}
+        //     <a href=${link.url}>
+        //       ${asyncReplace(getNotificationSubjectStream(link.url, this.profileUrl))}
+        //     </a>
+        //     ${where}
+        //     ${afterdesc}
+        //   </div>
+        // `
       }
 
       // events
@@ -7366,56 +5076,9 @@ input[type="file"] {
         }
       }
 
-      onViewTag (e, tag) {
-        emit(this, 'view-tag', {detail: {tag}});
-      }
-
-      async onViewWrapperThread (e) {
-        if (!this.viewContentOnClick && e.button === 0 && !e.metaKey && !e.ctrlKey) {
-          e.preventDefault();
-          e.stopPropagation();
-          let {record} = await beaker.index.gql(`
-        query Record ($url: String!) {
-          record (url: $url) {
-            type
-            path
-            url
-            ctime
-            mtime
-            rtime
-            metadata
-            index
-            content
-            site {
-              url
-              title
-            }
-            votes: backlinks(paths: ["/votes/*.goto"]) {
-              url
-              metadata
-              site { url title }
-            }
-            tags: backlinks(paths: ["/tags/*.goto"]) {
-              url
-              metadata
-              site { url title }
-            }
-            commentCount: backlinkCount(paths: ["/comments/*.md"])
-          }
-        }
-      `, {url: this.record.metadata.href});
-          emit(this, 'view-thread', {detail: {record}});
-        }
-      }
-
-      onClickReadMore () {
-        this.constrainHeight = false;
-        this.showReadMore = false;
-      }
-
       onMousedownCard (e) {
         for (let el of e.path) {
-          if (el.tagName === 'A' || el.tagName === 'ctzn-POST-COMPOSER') return
+          if (el.tagName === 'A' || el.tagName === 'CTZN-POST-COMPOSER') return
         }
         this.isMouseDown = true;
         this.isMouseDragging = false;
@@ -7440,151 +5103,33 @@ input[type="file"] {
 
       onClickShowSites (e, results) {
         e.preventDefault();
-        SitesListPopup.create('Subscribed Sites', results.map(r => ({
-          url: r.metadata.href,
-          title: r.metadata.title || 'Untitled'
-        })));
+        // TODO
+        // SitesListPopup.create('Subscribed Sites', results.map(r => ({
+        //   url: r.metadata.href,
+        //   title: r.metadata.title || 'Untitled'
+        // })))
       }
 
       async onToggleVote (e, value) {
-        if (this.myVote) {
-          if (this.myVote.metadata['vote/value'] == value) {
-            await beaker.hyperdrive.unlink(this.myVote.url);
-          } else {
-            await beaker.hyperdrive.updateMetadata(this.myVote.url, {'vote/value': value});
-          }
+        if (this.myVote && this.myVote === value) {
+          await this.api.votes.del(this.post.url);
         } else {
-          var drive = this.record.url.startsWith('hyper://private')
-            ? beaker.hyperdrive.drive('hyper://private')
-            : beaker.hyperdrive.drive(this.profileUrl);
-          await drive.writeFile(`/votes/${Date.now()}.goto`, '', {
-            metadata: {
-              href: this.record.url,
-              'vote/value': value
-            }
-          });
+          try {
+            await this.api.votes.put({
+              subjectUrl: this.post.url, 
+              vote: value
+            });
+          } catch (e) {
+            create(e.message, 'error');
+            console.error(e);
+            return
+          }
         }
         this.reloadSignals();
       }
-
-      onClickTags (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var rect = e.currentTarget.getClientRects()[0];
-        create$2({
-          x: rect.left,
-          y: rect.bottom,
-          record: this.record,
-          profileUrl: this.profileUrl,
-          onAdd: async (tagId) => {
-            let url = joinPath(this.profileUrl, `/tags/${Date.now()}.goto`);
-            await beaker.hyperdrive.writeFile(url, '', {
-              metadata: {
-                href: this.record.url,
-                'tag/id': tagId
-              }
-            });
-            this.reloadSignals();
-            return url
-          },
-          onRemove: async (tag) => {
-            await beaker.hyperdrive.unlink(tag.url);
-            await this.reloadSignals();
-          }
-        });
-      }
     }
 
-    customElements.define('ctzn-record', Record);
-
-    function removeFirstMdHeader (str = '') {
-      return str.replace(/(^#\s.*\r?\n)/, '').trim()
-    }
-
-    var _notificationSubjectCache = {};
-    async function getNotificationSubject (url) {
-      if (_notificationSubjectCache[url]) {
-        return _notificationSubjectCache[url]
-      }
-      try {
-        let {record} = await beaker.index.gql(`
-      query Record($url: String!) {
-        record (url: $url) {
-          path
-          metadata
-        }
-      }
-    `, {url});
-        if (record.metadata.title) {
-          return `"${record.metadata.title}"`
-        }
-        switch (getRecordType(record)) {
-          case 'comment': return 'your comment'
-          case 'page': return 'your page'
-          case 'blogpost': return 'your blog post'
-          case 'microblogpost': return 'your post'
-        }
-      } catch {}
-      return 'your page'
-    }
-
-    async function* getNotificationSubjectStream (url, profileUrl) {
-      if (isRootUrl(url)) {
-        if (url === profileUrl) {
-          yield 'you';
-        } else {
-          yield 'your site';
-        }
-      } else {
-        yield await getNotificationSubject(url);
-      }
-    }
-
-    var _loadAndSimpleRenderCache = {};
-    async function* loadAndSimpleRender (url) {
-      if (_loadAndSimpleRenderCache[url]) {
-        yield _loadAndSimpleRenderCache[url];
-        return
-      }
-      yield html`Loading...`;
-      try {
-        let st = await beaker.hyperdrive.stat(url);
-        if (st.metadata.title) {
-          _loadAndSimpleRenderCache[url] = st.metadata.title;
-          yield st.metadata.title;
-          return
-        }
-        if (url.endsWith('.md')) {
-          let content = await beaker.hyperdrive.readFile(url);
-          _loadAndSimpleRenderCache[url] = shorten(removeMarkdown(content), 200);
-          yield _loadAndSimpleRenderCache[url];
-          return
-        }
-      } catch {}
-      for await (let v of fancyUrlAsync(url)) {
-        yield v;
-      }
-    }
-
-    function isRootUrl (url) {
-      try {
-        return (new URL(url)).pathname === '/'
-      } catch {
-        return false
-      }
-    }
-
-    const today = (new Date()).toLocaleDateString('default', { year: 'numeric', month: 'short', day: 'numeric' });
-    const yesterday = (new Date(Date.now() - 8.64e7)).toLocaleDateString('default', { year: 'numeric', month: 'short', day: 'numeric' });
-    function niceDate (ts, {largeIntervals} = {largeIntervals: false}) {
-      var date = (new Date(ts)).toLocaleDateString('default', { year: 'numeric', month: 'short', day: 'numeric' });
-      if (date === today) return 'Today'
-      if (date === yesterday) return 'Yesterday'
-      if (largeIntervals) {
-        return (new Date(ts)).toLocaleDateString('default', { year: 'numeric', month: 'long' })
-      }
-      return date
-    }
+    customElements.define('ctzn-post', Post);
 
     const MINUTE = 1e3 * 60;
     const HOUR = 1e3 * 60 * 60;
@@ -7594,8 +5139,9 @@ input[type="file"] {
     function relativeDate (d) {
       const nowMs = Date.now();
       const endOfTodayMs = +((new Date).setHours(23,59,59,999));
-      var diff = nowMs - d;
-      var dayDiff = Math.floor((endOfTodayMs - d) / DAY);
+      const dMs = +(new Date(d));
+      let diff = nowMs - dMs;
+      let dayDiff = Math.floor((endOfTodayMs - dMs) / DAY);
       if (diff < (MINUTE * 5)) return 'just now'
       if (diff < HOUR) return rtf.format(Math.ceil(diff / MINUTE * -1), 'minute')
       if (dayDiff < 1) return rtf.format(Math.ceil(diff / HOUR * -1), 'hour')
@@ -8811,7 +6357,7 @@ input[type="file"] {
         }
     }
 
-    async function create$3 (endpoint = 'ws://localhost:3000/') {
+    async function create$1 (endpoint = 'ws://localhost:3000/') {
       const ws = new Client(endpoint);
       await new Promise(resolve => ws.on('open', resolve));
       const api = new Proxy({}, {
@@ -8821,7 +6367,13 @@ input[type="file"] {
             target[prop] = new Proxy({}, {
               get (target, prop2) {
                 if (!(prop2 in target)) {
-                  target[prop2] = (...params) => ws.call(`${prop}.${prop2}`, params);
+                  target[prop2] = async (...params) => {
+                    try {
+                      return await ws.call(`${prop}.${prop2}`, params)
+                    } catch (e) {
+                      throw new Error(e.data || e.message)
+                    }
+                  };
                 }
                 return target[prop2]
               }
@@ -8845,7 +6397,7 @@ input[type="file"] {
       return (new URL(window.location)).searchParams.get(k) || fallback
     }
 
-    const cssStr$b = css`
+    const cssStr$9 = css`
 header {
   display: flex;
   justify-content: space-between;
@@ -8876,11 +6428,11 @@ header ctzn-header-session a {
 }
 `;
 
-    const cssStr$c = css`
+    const cssStr$a = css`
 ${cssStr}
 ${cssStr$3}
 ${cssStr$4}
-${cssStr$b}
+${cssStr$9}
 
 :host {
   display: block;
@@ -8914,7 +6466,7 @@ h2 a {
   display: grid;
   grid-template-columns: 30px 1fr;
   gap: 15px;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .composer .thumb {
@@ -9163,7 +6715,7 @@ ctzn-record-feed {
     class HeaderSession extends LitElement {
       static get properties () {
         return {
-          session: {type: Object}
+          profile: {type: Object}
         }
       }
 
@@ -9175,16 +6727,16 @@ ctzn-record-feed {
       constructor () {
         super();
         this.api = undefined;
-        this.session = undefined;
+        this.profile = undefined;
       }
 
       render () {
-        if (this.session) {
+        if (this.profile) {
           return html`
-        <a href="/profile">${this.session.username}</a> |
+        <a href="/profile">${this.profile.username}</a> |
         <a href="#" @click=${this.onClickLogout}>Logout</a>
       `
-        } else if (this.session === null) {
+        } else if (this.profile === null) {
           return html`
         <a href="/login">Login</a> |
         <a href="/signup">Signup</a>
@@ -9204,7 +6756,7 @@ ctzn-record-feed {
 
     customElements.define('ctzn-header-session', HeaderSession);
 
-    const cssStr$d = css`
+    const cssStr$b = css`
 ${cssStr}
 ${cssStr$1}
 ${cssStr$3}
@@ -9270,51 +6822,9 @@ h2 a:hover {
   box-sizing: border-box;
 }
 
-.results ctzn-record {
+.results ctzn-post {
   display: block;
-  margin: var(--ctzn-record-feed--default-margin, 10px) 0;
-}
-
-.results ctzn-record[render-mode="link"] {
-  margin: var(--ctzn-record-feed--link-margin--grouped, 18px) 0;
-}
-.results ctzn-record:not([render-mode="link"]) + ctzn-record[render-mode="link"] {
-  margin-top: var(--ctzn-record-feed--link-margin, 24px);
-}
-.results ctzn-record[render-mode="link"] + ctzn-record:not([render-mode="link"]) {
-  margin-top: var(--ctzn-record-feed--link-margin, 24px);
-}
-
-.results ctzn-record[render-mode="expanded-link"] {
-  margin: var(--ctzn-record-feed--expanded-link-margin, 20px) 0;
-}
-
-.results ctzn-record[render-mode="action"] {
-  margin: var(--ctzn-record-feed--action-margin, 16px) 0;
-}
-
-.results ctzn-record.small[render-mode="action"] {
-  margin: var(--ctzn-record-feed--small-action-margin, 4px) 0;
-}
-
-.results ctzn-record[render-mode="comment"] {
-  margin: var(--ctzn-record-feed--comment-margin--grouped, 10px) 0 var(--ctzn-record-feed--comment-margin--grouped, 10px) 45px;
-}
-.results ctzn-record:not([render-mode="comment"]) + ctzn-record[render-mode="comment"] {
-  margin-top: var(--ctzn-record-feed--comment-margin, 24px);
-}
-.results ctzn-record[render-mode="comment"] + ctzn-record:not([render-mode="comment"]) {
-  margin-top: var(--ctzn-record-feed--comment-margin, 24px);
-}
-
-.results ctzn-record[render-mode="wrapper"] {
-  margin: var(--ctzn-record-feed--wrapper-margin--grouped, 18px) 0;
-}
-.results ctzn-record:not([render-mode="wrapper"]) + ctzn-record[render-mode="wrapper"] {
-  margin-top: var(--ctzn-record-feed--wrapper-margin, 18px);
-}
-.results ctzn-record[render-mode="wrapper"] + ctzn-record:not([render-mode="wrapper"]) {
-  margin-top: var(--ctzn-record-feed--wrapper-margin, 18px);
+  margin: var(--ctzn-feed--default-margin, 10px) 0;
 }
 
 .empty {
@@ -9333,11 +6843,12 @@ h2 a:hover {
 }
 `;
 
-    class RecordFeed extends LitElement {
+    class Feed extends LitElement {
       static get properties () {
         return {
+          api: {type: Object},
+          profile: {type: Object},
           pathQuery: {type: Array},
-          tagQuery: {type: Array},
           showDateTitles: {type: Boolean, attribute: 'show-date-titles'},
           dateTitleRange: {type: String, attribute: 'date-title-range'},
           forceRenderMode: {type: String, attribute: 'force-render-mode'},
@@ -9350,19 +6861,18 @@ h2 a:hover {
           sources: {type: Array},
           results: {type: Array},
           emptyMessage: {type: String, attribute: 'empty-message'},
-          noMerge: {type: Boolean, attribute: 'no-merge'},
-          profileUrl: {type: String, attribute: 'profile-url'}
+          noMerge: {type: Boolean, attribute: 'no-merge'}
         }
       }
 
       static get styles () {
-        return cssStr$d
+        return cssStr$b
       }
 
       constructor () {
         super();
-        this.pathQuery = undefined;
-        this.tagQuery = undefined;
+        this.api = undefined;
+        this.profile = undefined;
         this.showDateTitles = false;
         this.dateTitleRange = undefined;
         this.forceRenderMode = undefined;
@@ -9376,7 +6886,6 @@ h2 a:hover {
         this.results = undefined;
         this.emptyMessage = undefined;
         this.noMerge = false;
-        this.profileUrl = '';
 
         // query state
         this.activeQuery = undefined;
@@ -9393,6 +6902,7 @@ h2 a:hover {
       }
 
       updated (changedProperties) {
+        if (!this.api) return
         if (typeof this.results === 'undefined') {
           if (!this.activeQuery) {
             this.queueQuery();
@@ -9401,10 +6911,6 @@ h2 a:hover {
         if (changedProperties.has('filter') && changedProperties.get('filter') != this.filter) {
           this.queueQuery();
         } else if (changedProperties.has('pathQuery') && changedProperties.get('pathQuery') != this.pathQuery) {
-          // NOTE ^ to correctly track this, the query arrays must be reused
-          this.results = undefined; // clear results while loading
-          this.queueQuery();
-        } else if (changedProperties.has('taqQuery') && changedProperties.get('taqQuery') != this.taqQuery) {
           // NOTE ^ to correctly track this, the query arrays must be reused
           this.results = undefined; // clear results while loading
           this.queueQuery();
@@ -9431,84 +6937,12 @@ h2 a:hover {
         this.abortController = new AbortController();
         var results = [];
         // because we collapse results, we need to run the query until the limit is fulfilled
-        let offset = 0;
+        let lt = undefined;
         do {
-          let {subresults} = await beaker.index.gql(`
-        query Feed (
-          $paths: [String]!
-          $offset: Int!
-          ${this.tagQuery ? `$tags: [String!]!` : ''}
-          ${this.sources ? `$origins: [String]!` : ''}
-          ${this.filter ? `$search: String!` : ''}
-          ${this.limit ? `$limit: Int!` : ''}
-          ${this.notifications ? `$profileUrl: String!` : ''}
-        ) {
-          subresults: records (
-            paths: $paths
-            ${this.sources ? `origins: $origins` : ''}
-            ${this.filter ? `search: $search` : ''}
-            ${this.limit ? `limit: $limit` : ''}
-            ${this.tagQuery ? `
-              backlinks: {
-                paths: ["/tags/*.goto"]
-                metadata: [
-                  {key: "tag/id", values: $tags}
-                ]
-              }
-            ` : ''}
-            ${this.notifications ? `
-              links: {origin: $profileUrl}
-              excludeOrigins: [$profileUrl]
-              indexes: ["local", "network"]
-            ` : ''}
-            offset: $offset
-            sort: "crtime",
-            reverse: true
-          ) {
-            type
-            path
-            url
-            ctime
-            mtime
-            rtime
-            metadata
-            index
-            content
-            ${this.notifications ? `
-            links {
-              source
-              url
-            }
-            ` : ''}
-            site {
-              url
-              title
-            }
-            votes: backlinks(paths: ["/votes/*.goto"]) {
-              url
-              metadata
-              site { url title }
-            }
-            tags: backlinks(paths: ["/tags/*.goto"]) {
-              url
-              metadata
-              site { url title }
-            }
-            commentCount: backlinkCount(paths: ["/comments/*.md"])
-          }
-        }
-      `, {
-            paths: this.pathQuery,
-            tags: this.tagQuery,
-            origins: this.sources,
-            search: this.filter,
-            offset,
-            limit: this.limit,
-            profileUrl: this.profileUrl
-          });
+          let subresults = await this.api.posts.listUserFeed('pfrazee', {limit: this.limit, reverse: true, lt});
           if (subresults.length === 0) break
           
-          offset += subresults.length;
+          lt = subresults[subresults.length - 1].key;
           if (!this.noMerge) {
             subresults = subresults.reduce(reduceMultipleActions, []);
           }
@@ -9578,24 +7012,17 @@ h2 a:hover {
     `
       }
       
-      renderNormalResult (result) {
-        var renderMode = this.forceRenderMode || ({
-          'comment': 'card',
-          'microblogpost': 'card',
-          'subscription': 'action',
-          'tag': 'wrapper',
-          'vote': 'wrapper'
-        })[getRecordType(result)] || 'link';
+      renderNormalResult (post) {
         return html`
-      <ctzn-record
-        .record=${result}
+      <ctzn-post
+        .api=${this.api}
+        .post=${post}
+        .profile=${this.profile}
         ?is-notification=${!!this.notifications}
-        ?is-unread=${result.ctime > this.notifications?.unreadSince}
+        ?is-unread=${post.ctime > this.notifications?.unreadSince}
         class=${this.recordClass}
-        render-mode=${renderMode}
         show-context
-        profile-url=${this.profileUrl}
-      ></ctzn-record>
+      ></ctzn-post>
     `
       }
 
@@ -9608,11 +7035,11 @@ h2 a:hover {
         return html`
       <ctzn-record
         .record=${result}
+        .profile=${this.profile}
         class=${this.recordClass}
         render-mode=${renderMode}
         search-terms=${this.filter}
         show-context
-        profile-url=${this.profileUrl}
       ></ctzn-record>
     `
       }
@@ -9621,7 +7048,7 @@ h2 a:hover {
       // =
     }
 
-    customElements.define('ctzn-record-feed', RecordFeed);
+    customElements.define('ctzn-feed', Feed);
 
     function isArrayEq (a, b) {
       if (!a && !!b) return false
@@ -9641,14 +7068,6 @@ h2 a:hover {
     }
 
     function reduceMultipleActions (acc, result) {
-      let last = acc[acc.length - 1];
-      if (last) {
-        if (last.site.url === result.site.url && getRecordType(result) === 'subscription' && getRecordType(last) === 'subscription') {
-          last.mergedItems = last.mergedItems || [];
-          last.mergedItems.push(result);
-          return acc
-        }
-      }
       acc.push(result);
       return acc
     }
@@ -9696,7 +7115,6 @@ h2 a:hover {
     class CtznApp extends LitElement {
       static get properties () {
         return {
-          session: {type: Object},
           profile: {type: Object},
           unreadNotificationCount: {type: Number},
           isComposingPost: {type: Boolean},
@@ -9707,12 +7125,11 @@ h2 a:hover {
       }
 
       static get styles () {
-        return cssStr$c
+        return cssStr$a
       }
 
       constructor () {
         super();
-        this.session = undefined;
         this.profile = undefined;
         this.unreadNotificationCount = 0;
         this.isComposingPost = false;
@@ -9745,12 +7162,11 @@ h2 a:hover {
       }
 
       async load ({clearCurrent} = {clearCurrent: false}) {
-        this.api = await create$3();
-        this.session = await this.api.accounts.whoami();
-        if (!this.session) {
+        this.api = await create$1();
+        this.profile = await this.api.accounts.whoami();
+        if (!this.profile) {
           return this.requestUpdate()
         }
-        this.profile = this.session.user;
         this.checkNotifications();
         if (this.shadowRoot.querySelector('ctzn-record-feed')) {
           this.loadTime = Date.now();
@@ -9765,7 +7181,6 @@ h2 a:hover {
       }
 
       async checkNewItems () {
-        if (!this.session) return
         if (location.pathname === '/notifications') {
           this.numNewItems = this.unreadNotificationCount;
           return
@@ -9786,7 +7201,7 @@ h2 a:hover {
       }
 
       async checkNotifications () {
-        if (!this.session) return
+        if (!this.profile) return
         // TODO check for notifications
         // var {count} = await beaker.index.gql(`
         //   query Notifications ($profileUrl: String!, $clearTime: Long!) {
@@ -9823,7 +7238,7 @@ h2 a:hover {
           <div class="brand">
             <a href="/" title="CTZN">CTZN</a>
           </div>
-          <ctzn-header-session .api=${this.api} .session=${this.session}></ctzn-header-session>
+          <ctzn-header-session .api=${this.api} .profile=${this.profile}></ctzn-header-session>
         </header>
         ${this.renderCurrentView()}
       </main>
@@ -9855,8 +7270,9 @@ h2 a:hover {
       }
 
       renderCurrentView () {
-        if (!this.session) ;
-        // if (!this.profile) return ''
+        if (!this.api) {
+          return ''
+        }
         var hasSearchQuery = !!this.searchQuery;
         if (hasSearchQuery) {
           return html`
@@ -9887,7 +7303,7 @@ h2 a:hover {
               <img class="thumb" src="${this.profile?.url}/thumb">
               ${this.isComposingPost ? html`
                 <ctzn-post-composer
-                  drive-url=${this.profile?.url || ''}
+                  .api=${this.api}
                   @publish=${this.onPublishPost}
                   @cancel=${this.onCancelPost}
                 ></ctzn-post-composer>
@@ -9901,17 +7317,15 @@ h2 a:hover {
             <div class="reload-page ${this.numNewItems > 0 ? 'visible' : ''}" @click=${e => this.load()}>
               ${this.numNewItems} new ${pluralize(this.numNewItems, 'update')}
             </div>
-            ${''/* TODO render feed <ctzn-record-feed
-              .pathQuery=${PATH_QUERIES[location.pathname.slice(1) || 'all']}
-              .tagQuery=${this.tagFilter}
+            <ctzn-feed
+              .api=${this.api}
+              .profile=${this.profile}
               .notifications=${location.pathname === '/notifications' ? {unreadSince: this.cachedNotificationsClearTime} : undefined}
               limit="50"
               @load-state-updated=${this.onFeedLoadStateUpdated}
               @view-thread=${this.onViewThread}
-              @view-tag=${this.onViewTag}
               @publish-reply=${this.onPublishReply}
-              profile-url=${this.profile ? this.profile.url : ''}
-            ></ctzn-record-feed>*/}
+            ></ctzn-feed>
           </div>
           ${this.renderRightSidebar()}
         </div>
@@ -9989,22 +7403,6 @@ h2 a:hover {
       onPublishReply (e) {
         create('Reply published', '', 10e3);
         this.load();
-      }
-
-      async onClickSignin () {
-        // TODO signin
-        // await beaker.session.request({
-        //   permissions: {
-        //     publicFiles: [
-        //       {path: '/subscriptions/*.goto', access: 'write'},
-        //       {path: '/microblog/*.md', access: 'write'},
-        //       {path: '/comments/*.md', access: 'write'},
-        //       {path: '/tags/*.goto', access: 'write'},
-        //       {path: '/votes/*.goto', access: 'write'}
-        //     ]
-        //   }
-        // })
-        location.reload();
       }
     }
 

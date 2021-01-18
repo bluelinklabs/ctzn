@@ -7,7 +7,7 @@ import { emit } from '../lib/dom.js'
 import { fancyUrlAsync } from '../lib/strings.js'
 import * as toast from './toast.js'
 // import { getRecordType } from '../records.js'
-import './record.js'
+import './post.js'
 import './post-composer.js'
 
 export class RecordThread extends LitElement {

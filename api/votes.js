@@ -1,5 +1,5 @@
 import { publicServerDb, userDbs } from '../db/index.js'
-import { constructEntryUrl } from '../lib/strings.js'
+import { constructEntryUrl, extractUserUrl } from '../lib/strings.js'
 
 export function setup (wsServer) {
   wsServer.register('votes.getVotesForSubject', async ([subjectUrl]) => {
@@ -9,8 +9,8 @@ export function setup (wsServer) {
     } catch (e) {}
     return {
       subjectUrl,
-      upvoteUrls: votesIdxEntry?.value?.upvoteUrls || [],
-      downvoteUrls: votesIdxEntry?.value?.downvoteUrls || []
+      upvoterUrls: (votesIdxEntry?.value?.upvoteUrls || []).map(extractUserUrl),
+      downvoterUrls: (votesIdxEntry?.value?.downvoteUrls || []).map(extractUserUrl)
     }
   })
 

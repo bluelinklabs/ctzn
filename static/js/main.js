@@ -10,7 +10,7 @@ import * as QP from './lib/qp.js'
 import css from '../css/main.css.js'
 import './com/header-session.js'
 import './com/post-composer.js'
-import './com/record-feed.js'
+import './com/feed.js'
 import './com/img-fallbacks.js'
 
 const TITLE = document.title
@@ -18,7 +18,6 @@ const TITLE = document.title
 class CtznApp extends LitElement {
   static get properties () {
     return {
-      session: {type: Object},
       profile: {type: Object},
       unreadNotificationCount: {type: Number},
       isComposingPost: {type: Boolean},
@@ -34,7 +33,6 @@ class CtznApp extends LitElement {
 
   constructor () {
     super()
-    this.session = undefined
     this.profile = undefined
     this.unreadNotificationCount = 0
     this.isComposingPost = false
@@ -68,11 +66,10 @@ class CtznApp extends LitElement {
 
   async load ({clearCurrent} = {clearCurrent: false}) {
     this.api = await createRpcApi()
-    this.session = await this.api.accounts.whoami()
-    if (!this.session) {
+    this.profile = await this.api.accounts.whoami()
+    if (!this.profile) {
       return this.requestUpdate()
     }
-    this.profile = this.session.user
     this.checkNotifications()
     if (this.shadowRoot.querySelector('ctzn-record-feed')) {
       this.loadTime = Date.now()
@@ -87,7 +84,6 @@ class CtznApp extends LitElement {
   }
 
   async checkNewItems () {
-    if (!this.session) return
     if (location.pathname === '/notifications') {
       this.numNewItems = this.unreadNotificationCount
       return
@@ -108,7 +104,7 @@ class CtznApp extends LitElement {
   }
 
   async checkNotifications () {
-    if (!this.session) return
+    if (!this.profile) return
     // TODO check for notifications
     // var {count} = await beaker.index.gql(`
     //   query Notifications ($profileUrl: String!, $clearTime: Long!) {
@@ -145,7 +141,7 @@ class CtznApp extends LitElement {
           <div class="brand">
             <a href="/" title="CTZN">CTZN</a>
           </div>
-          <ctzn-header-session .api=${this.api} .session=${this.session}></ctzn-header-session>
+          <ctzn-header-session .api=${this.api} .profile=${this.profile}></ctzn-header-session>
         </header>
         ${this.renderCurrentView()}
       </main>
@@ -177,10 +173,9 @@ class CtznApp extends LitElement {
   }
 
   renderCurrentView () {
-    if (!this.session) {
-      // TODO render logged-out state
+    if (!this.api) {
+      return ''
     }
-    // if (!this.profile) return ''
     var hasSearchQuery = !!this.searchQuery
     if (hasSearchQuery) {
       return html`
@@ -211,7 +206,7 @@ class CtznApp extends LitElement {
               <img class="thumb" src="${this.profile?.url}/thumb">
               ${this.isComposingPost ? html`
                 <ctzn-post-composer
-                  drive-url=${this.profile?.url || ''}
+                  .api=${this.api}
                   @publish=${this.onPublishPost}
                   @cancel=${this.onCancelPost}
                 ></ctzn-post-composer>
@@ -225,17 +220,15 @@ class CtznApp extends LitElement {
             <div class="reload-page ${this.numNewItems > 0 ? 'visible' : ''}" @click=${e => this.load()}>
               ${this.numNewItems} new ${pluralize(this.numNewItems, 'update')}
             </div>
-            ${''/* TODO render feed <ctzn-record-feed
-              .pathQuery=${PATH_QUERIES[location.pathname.slice(1) || 'all']}
-              .tagQuery=${this.tagFilter}
+            <ctzn-feed
+              .api=${this.api}
+              .profile=${this.profile}
               .notifications=${location.pathname === '/notifications' ? {unreadSince: this.cachedNotificationsClearTime} : undefined}
               limit="50"
               @load-state-updated=${this.onFeedLoadStateUpdated}
               @view-thread=${this.onViewThread}
-              @view-tag=${this.onViewTag}
               @publish-reply=${this.onPublishReply}
-              profile-url=${this.profile ? this.profile.url : ''}
-            ></ctzn-record-feed>*/}
+            ></ctzn-feed>
           </div>
           ${this.renderRightSidebar()}
         </div>
@@ -313,22 +306,6 @@ class CtznApp extends LitElement {
   onPublishReply (e) {
     toast.create('Reply published', '', 10e3)
     this.load()
-  }
-
-  async onClickSignin () {
-    // TODO signin
-    // await beaker.session.request({
-    //   permissions: {
-    //     publicFiles: [
-    //       {path: '/subscriptions/*.goto', access: 'write'},
-    //       {path: '/microblog/*.md', access: 'write'},
-    //       {path: '/comments/*.md', access: 'write'},
-    //       {path: '/tags/*.goto', access: 'write'},
-    //       {path: '/votes/*.goto', access: 'write'}
-    //     ]
-    //   }
-    // })
-    location.reload()
   }
 }
 
