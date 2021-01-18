@@ -9,7 +9,8 @@ export async function createServer () {
   const inst = await start({
     debugMode: true,
     port,
-    configDir: tmpdir.path
+    configDir: tmpdir.path,
+    simulateHyperspace: true
   })
   console.log('Storing config in', tmpdir.path)
 

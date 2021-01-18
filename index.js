@@ -9,7 +9,7 @@ import { setOrigin } from './lib/strings.js'
 
 let app
 
-export async function start ({debugMode, port, configDir}) {
+export async function start ({debugMode, port, configDir, simulateHyperspace}) {
   configDir = configDir || path.join(os.homedir(), '.ctzn')
   if (debugMode) {
     schemas.setDebugEndpoint(port)
@@ -53,7 +53,7 @@ export async function start ({debugMode, port, configDir}) {
     let s = app.listen(port, async () => {
       console.log(`Example app listening at http://localhost:${port}`)
 
-      await db.setup({configDir})
+      await db.setup({configDir, simulateHyperspace})
       r(s)
     })
   })
