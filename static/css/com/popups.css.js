@@ -34,6 +34,7 @@ ${inputscss}
 }
 
 .popup-inner .head {
+  box-sizing: border-box;
   position: relative;
   background: var(--bg-color--semi-light);
   padding: 7px 12px;

@@ -1,5 +1,5 @@
 import { publicServerDb, userDbs } from '../db/index.js'
-import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
+import { constructEntryUrl, parseEntryUrl, constructUserUrl, extractUserUrl } from '../lib/strings.js'
 
 export function setup (wsServer) {
   wsServer.register('comments.getThread', async ([subjectUrl]) => {
@@ -94,6 +94,7 @@ export function setup (wsServer) {
 }
 
 async function fetchIndexedComments (commentsIdxEntry) {
+  const authorsCache = {}
   const commentEntries = await Promise.all(commentsIdxEntry.value.commentUrls.map(async (commentUrl) => {
     try {
       const {username, key} = parseEntryUrl(commentUrl)
@@ -103,8 +104,11 @@ async function fetchIndexedComments (commentsIdxEntry) {
 
       const commentEntry = await userDb.comments.get(key)
       commentEntry.url = constructEntryUrl(userDb.comments.schema.url, username, key)
+      commentEntry.author = await fetchAuthor(username, authorsCache)
+      commentEntry.votes = await fetchVotes(commentEntry)
       return commentEntry
     } catch (e) {
+      console.log(e)
       return undefined
     }
   }))
@@ -135,4 +139,32 @@ function commentEntriesToThread (commentEntries) {
     }
   })
   return rootCommentEntries
+}
+
+async function fetchAuthor (authorUsername, cache = undefined) {
+  if (cache && cache[authorUsername]) {
+    return cache[authorUsername]
+  } else {
+    let userDb = userDbs.get(authorUsername)
+    let profileEntry
+    if (userDb) profileEntry = await userDb.profile.get('self')
+    let author = {
+      url: constructUserUrl(authorUsername),
+      username: authorUsername,
+      displayName: profileEntry?.value?.displayName || authorUsername
+    }
+    if (cache) cache[authorUsername] = author
+    return author
+  }
+}
+
+async function fetchVotes (comment) {
+  let votesIdxEntry
+  try {
+    votesIdxEntry = await publicServerDb.votesIdx.get(comment.url)
+  } catch (e) {}
+  return {
+    upvoterUrls: (votesIdxEntry?.value?.upvoteUrls || []).map(extractUserUrl),
+    downvoterUrls: (votesIdxEntry?.value?.downvoteUrls || []).map(extractUserUrl)
+  }
 }

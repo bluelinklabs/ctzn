@@ -4,7 +4,7 @@ import { classMap } from '../../vendor/lit-element/lit-html/directives/class-map
 import css from '../../css/com/post.css.js'
 import { emit } from '../lib/dom.js'
 import * as toast from './toast.js'
-import './post-composer.js'
+import './composer.js'
 
 
 export class Post extends LitElement {
@@ -58,6 +58,16 @@ export class Post extends LitElement {
 
   get downvoteCount () {
     return this.post?.votes.downvoterUrls.length
+  }
+
+  get commentCount () {
+    if (typeof this.post?.commentCount !== 'undefined') {
+      return this.post.commentCount
+    }
+    if (typeof this.post?.replies !== 'undefined') {
+      return this.post.replies.length
+    }
+    return 0
   }
 
   async reloadSignals () {
@@ -209,13 +219,13 @@ export class Post extends LitElement {
   //         ${this.renderTagsCtrl()}
   //       </div>
   //       ${this.isReplyOpen ? html`
-  //         <ctzn-post-composer
+  //         <ctzn-composer
   //           subject=${this.record.metadata['comment/subject'] || this.record.url}
   //           parent=${this.record.url}
   //           placeholder="Write your comment"
   //           @publish=${this.onPublishReply}
   //           @cancel=${this.onCancelReply}
-  //         ></ctzn-post-composer>
+  //         ></ctzn-composer>
   //       ` : ''}
   //     </div>
   //   `
@@ -238,11 +248,10 @@ export class Post extends LitElement {
   }
 
   renderCommentsCtrl () {
-    return '' // TODO
     return html`
       <a class="comment-ctrl" @click=${this.onViewThread}>
         <span class="far fa-comment"></span>
-        ${this.record?.commentCount}
+        ${this.commentCount}
       </a>
     `
   }
@@ -333,13 +342,13 @@ export class Post extends LitElement {
     if (!this.viewContentOnClick && e.button === 0 && !e.metaKey && !e.ctrlKey) {
       e.preventDefault()
       e.stopPropagation()
-      emit(this, 'view-thread', {detail: {record: this.record}})
+      emit(this, 'view-thread', {detail: {post: this.post}})
     }
   }
 
   onMousedownCard (e) {
     for (let el of e.path) {
-      if (el.tagName === 'A' || el.tagName === 'CTZN-POST-COMPOSER') return
+      if (el.tagName === 'A' || el.tagName === 'CTZN-composer') return
     }
     this.isMouseDown = true
     this.isMouseDragging = false
@@ -356,7 +365,7 @@ export class Post extends LitElement {
     if (!this.isMouseDragging) {
       e.preventDefault()
       e.stopPropagation()
-      emit(this, 'view-thread', {detail: {record: this.record}})
+      emit(this, 'view-thread', {detail: {post: this.post}})
     }
     this.isMouseDown = false
     this.isMouseDragging = false

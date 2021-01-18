@@ -2,7 +2,7 @@
 import { html, css } from '../../../vendor/lit-element/lit-element.js'
 import { BasePopup } from './base.js'
 import popupsCSS from '../../../css/com/popups.css.js'
-import '../record-thread.js'
+import '../thread.js'
 
 // exported api
 // =
@@ -10,9 +10,9 @@ import '../record-thread.js'
 export class ViewThreadPopup extends BasePopup {
   constructor (opts) {
     super()
-    this.recordUrl = opts.recordUrl
-    this.profileUrl = opts.profileUrl
-    this.onViewTag = opts.onViewTag
+    this.api = opts.api
+    this.postUrl = opts.postUrl
+    this.profile = opts.profile
   }
 
   static get properties () {
@@ -25,7 +25,7 @@ export class ViewThreadPopup extends BasePopup {
     return [popupsCSS, css`
     .popup-inner {
       width: 100%;
-      max-width: 900px;
+      max-width: 700px;
       border-radius: 6px;
       overflow: visible;
     }
@@ -56,13 +56,13 @@ export class ViewThreadPopup extends BasePopup {
 
   renderBody () {
     return html`
-      <ctzn-record-thread
-        record-url=${this.recordUrl}
-        profile-url=${this.profileUrl}
+      <ctzn-thread
+        .api=${this.api}
+        post-url=${this.postUrl}
+        .profile=${this.profile}
         @load=${this.onLoadThread}
         @view-thread=${this.onViewThread}
-        @view-tag=${this.onViewTag}
-      ></ctzn-record-thread>
+      ></ctzn-thread>
     `
   }
 
@@ -70,7 +70,7 @@ export class ViewThreadPopup extends BasePopup {
   // =
 
   onLoadThread () {
-    this.shadowRoot.querySelector('ctzn-record-thread').scrollHighlightedPostIntoView()
+    this.shadowRoot.querySelector('ctzn-thread').scrollHighlightedPostIntoView()
   }
 
   onViewThread (e) {

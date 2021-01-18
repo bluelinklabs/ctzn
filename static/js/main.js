@@ -9,7 +9,7 @@ import { pluralize, getOrigin, createResourceSlug } from './lib/strings.js'
 import * as QP from './lib/qp.js'
 import css from '../css/main.css.js'
 import './com/header-session.js'
-import './com/post-composer.js'
+import './com/composer.js'
 import './com/feed.js'
 import './com/img-fallbacks.js'
 
@@ -205,11 +205,11 @@ class CtznApp extends LitElement {
             <div class="composer">
               <img class="thumb" src="${this.profile?.url}/thumb">
               ${this.isComposingPost ? html`
-                <ctzn-post-composer
+                <ctzn-composer
                   .api=${this.api}
                   @publish=${this.onPublishPost}
                   @cancel=${this.onCancelPost}
-                ></ctzn-post-composer>
+                ></ctzn-composer>
               ` : html`
                 <div class="compose-post-prompt" @click=${this.onComposePost}>
                   What's new?
@@ -283,9 +283,9 @@ class CtznApp extends LitElement {
 
   onViewThread (e) {
     ViewThreadPopup.create({
-      recordUrl: e.detail.record.url,
-      profileUrl: this.profile.url,
-      onViewTag: this.onViewTag.bind(this)
+      api: this.api,
+      postUrl: e.detail.post.url,
+      profile: this.profile
     })
   }
 

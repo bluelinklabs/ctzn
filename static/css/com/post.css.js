@@ -260,7 +260,7 @@ a:hover {
   font-size: 12px;
 }
 
-.post.card ctzn-post-composer {
+.post.card ctzn-composer {
   display: block;
   padding: 10px;
 }
@@ -293,7 +293,7 @@ a:hover {
   display: none;
 }
 
-:host([noborders]) .post.card ctzn-post-composer {
+:host([noborders]) .post.card ctzn-composer {
   margin-left: -36px;
 }
 
@@ -438,7 +438,7 @@ a:hover {
   font-weight: 500;
 }
 
-.post.comment ctzn-post-composer {
+.post.comment ctzn-composer {
   display: block;
   padding: 10px 20px;
 }

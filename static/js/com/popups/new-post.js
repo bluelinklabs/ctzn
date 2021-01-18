@@ -2,7 +2,7 @@
 import { html, css } from '../../../vendor/lit-element/lit-element.js'
 import { BasePopup } from './base.js'
 import popupsCSS from '../../../css/com/popups.css.js'
-import '../post-composer.js'
+import '../composer.js'
 
 // exported api
 // =
@@ -62,11 +62,11 @@ export class NewPostPopup extends BasePopup {
 
   renderBody () {
     return html`
-      <ctzn-post-composer
+      <ctzn-composer
         drive-url=${this.driveUrl || ''}
         @publish=${this.onPublish}
         @cancel=${this.onCancel}
-      ></ctzn-post-composer>
+      ></ctzn-composer>
     `
   }
 

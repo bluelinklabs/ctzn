@@ -1,17 +1,17 @@
 /* globals beaker monaco */
 import { LitElement, html } from '../../vendor/lit-element/lit-element.js'
 import * as toast from './toast.js'
-import css from '../../css/com/post-composer.css.js'
+import css from '../../css/com/composer.css.js'
 
 const CHAR_LIMIT = 256
 
-class PostComposer extends LitElement {
+class Composer extends LitElement {
   static get properties () {
     return {
       api: {type: Object},
       placeholder: {type: String},
       draftText: {type: String, attribute: 'draft-text'},
-      subject: {type: String},
+      subjectUrl: {type: String, attribute: 'subject-url'},
       parent: {type: String},
       _visibility: {type: String}
     }
@@ -22,7 +22,7 @@ class PostComposer extends LitElement {
     this.api = undefined
     this.placeholder = 'What\'s new?'
     this.draftText = ''
-    this.subject = undefined
+    this.subjectUrl = undefined
     this.parent = undefined
   }
 
@@ -101,18 +101,12 @@ class PostComposer extends LitElement {
 
     let res
     try {
-      if (this.subject || this.parent) {
-        alert('todo')
-        // TODO handle comments
-        // let subject = this.subject
-        // let parent = this.parent
-        // if (subject === parent) parent = undefined // not needed
-        // await drive.writeFile(`${folder}${filename}.md`, postBody, {
-        //   metadata: {
-        //     'comment/subject': subject ? normalizeUrl(subject) : undefined,
-        //     'comment/parent': parent ? normalizeUrl(parent) : undefined
-        //   }
-        // })
+      if (this.subjectUrl || this.parent) {
+        res = await this.api.comments.create({
+          subjectUrl: this.subjectUrl,
+          // parentCommentUrl: TODO,
+          text: this.draftText
+        })
       } else {
         res = await this.api.posts.create({text: this.draftText})
       }
@@ -127,4 +121,4 @@ class PostComposer extends LitElement {
   }
 }
 
-customElements.define('ctzn-post-composer', PostComposer)
+customElements.define('ctzn-composer', Composer)

@@ -3175,6 +3175,7 @@ ${cssStr$1}
 }
 
 .popup-inner .head {
+  box-sizing: border-box;
   position: relative;
   background: var(--bg-color--semi-light);
   padding: 7px 12px;
@@ -3412,119 +3413,7 @@ ${cssStr$1}
         function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
         function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
     };
-    /**
-     * A directive that renders the items of an async iterable[1], replacing
-     * previous values with new values, so that only one value is ever rendered
-     * at a time.
-     *
-     * Async iterables are objects with a [Symbol.asyncIterator] method, which
-     * returns an iterator who's `next()` method returns a Promise. When a new
-     * value is available, the Promise resolves and the value is rendered to the
-     * Part controlled by the directive. If another value other than this
-     * directive has been set on the Part, the iterable will no longer be listened
-     * to and new values won't be written to the Part.
-     *
-     * [1]: https://github.com/tc39/proposal-async-iteration
-     *
-     * @param value An async iterable
-     * @param mapper An optional function that maps from (value, index) to another
-     *     value. Useful for generating templates for each item in the iterable.
-     */
-    const asyncReplace = directive((value, mapper) => async (part) => {
-        var e_1, _a;
-        if (!(part instanceof NodePart)) {
-            throw new Error('asyncReplace can only be used in text bindings');
-        }
-        // If we've already set up this particular iterable, we don't need
-        // to do anything.
-        if (value === part.value) {
-            return;
-        }
-        // We nest a new part to keep track of previous item values separately
-        // of the iterable as a value itself.
-        const itemPart = new NodePart(part.options);
-        part.value = value;
-        let i = 0;
-        try {
-            for (var value_1 = __asyncValues(value), value_1_1; value_1_1 = await value_1.next(), !value_1_1.done;) {
-                let v = value_1_1.value;
-                // Check to make sure that value is the still the current value of
-                // the part, and if not bail because a new value owns this part
-                if (part.value !== value) {
-                    break;
-                }
-                // When we get the first value, clear the part. This let's the
-                // previous value display until we can replace it.
-                if (i === 0) {
-                    part.clear();
-                    itemPart.appendIntoPart(part);
-                }
-                // As a convenience, because functional-programming-style
-                // transforms of iterables and async iterables requires a library,
-                // we accept a mapper function. This is especially convenient for
-                // rendering a template for each item.
-                if (mapper !== undefined) {
-                    // This is safe because T must otherwise be treated as unknown by
-                    // the rest of the system.
-                    v = mapper(v, i);
-                }
-                itemPart.setValue(v);
-                itemPart.commit();
-                i++;
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (value_1_1 && !value_1_1.done && (_a = value_1.return)) await _a.call(value_1);
-            }
-            finally { if (e_1) throw e_1.error; }
-        }
-    });
     //# =async-replace.js.map
-
-    /**
-     * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    // For each part, remember the value that was last rendered to the part by the
-    // unsafeHTML directive, and the DocumentFragment that was last set as a value.
-    // The DocumentFragment is used as a unique key to check if the last value
-    // rendered to the part was with unsafeHTML. If not, we'll always re-render the
-    // value passed to unsafeHTML.
-    const previousValues = new WeakMap();
-    /**
-     * Renders the result as HTML, rather than text.
-     *
-     * Note, this is unsafe to use with any user-provided input that hasn't been
-     * sanitized or escaped, as it may lead to cross-site-scripting
-     * vulnerabilities.
-     */
-    const unsafeHTML = directive((value) => (part) => {
-        if (!(part instanceof NodePart)) {
-            throw new Error('unsafeHTML can only be used in text bindings');
-        }
-        const previousValue = previousValues.get(part);
-        if (previousValue !== undefined && isPrimitive(value) &&
-            value === previousValue.value && part.value === previousValue.fragment) {
-            return;
-        }
-        const template = document.createElement('template');
-        template.innerHTML = value; // innerHTML casts to string internally
-        const fragment = document.importNode(template.content, true);
-        part.setValue(fragment);
-        previousValues.set(part, { value, fragment });
-    });
-    //# =unsafe-html.js.map
 
     const cssStr$3 = css`
 *[data-tooltip] {
@@ -3704,96 +3593,6 @@ ctzn-record {
   padding: 0 10px;
 }
 
-.subject ctzn-record[render-mode="link"] {
-  margin: 10px 6px;
-}
-
-:host([full-page]) .subject.card {
-  margin-bottom: 10px;
-}
-
-.subject .simple-link {
-  display: inline-block;
-  margin: 10px 2px;
-  font-size: 14px;
-  font-weight: 500;
-  text-decoration: none;
-  color: var(--text-color--link);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
-}
-
-.subject .simple-link .spinner {
-  width: 10px;
-  height: 10px;
-  margin-right: 5px;
-  position: relative;
-  top: 2px;
-}
-
-.subject .not-found:hover {
-  text-decoration: underline;
-}
-
-.subject-content {
-  background: var(--bg-color--default);
-  padding: 0 16px;
-  margin-bottom: 10px;
-}
-
-.subject-content > :-webkit-any(img, video, audio) {
-  display: block;
-  margin: 14px auto;
-  max-width: 100%;
-}
-
-.subject-content pre {
-  max-width: 100%;
-  overflow: auto;
-}
-
-.subject-content .markdown {
-  line-height: 1.4;
-  letter-spacing: 0.1px;
-  margin-bottom: 30px;
-  font-size: 15px;
-}
-
-.subject-content .markdown :-webkit-any(h1, h2, h3, h4, h5) {
-  font-family: arial;
-}
-
-.subject-content .markdown hr {
-  border: 0;
-  border-top: 1px solid var(--border-color--light);
-  margin: 2em 0;
-}
-
-.subject-content .markdown a {
-  color: var(--text-color--markdown-link);
-}
-
-.subject-content .markdown blockquote {
-  border-left: 10px solid var(--bg-color--semi-light);
-  margin: 0 0 0.6em;
-  padding: 1px 0px 1px 16px;
-  color: var(--text-color--light);
-}
-
-.subject-content .markdown blockquote + blockquote {
-  margin-top: -14px;
-}
-
-.subject-content .markdown blockquote p {
-  margin: 0;
-}
-
-.subject-content .markdown * {
-  max-width: 100%;
-}
-
 .comments-header {
   background: var(--bg-color--light);
   padding: 10px;
@@ -3808,23 +3607,6 @@ ctzn-record {
 
 .comments-header > div:first-child {
   margin: 0 4px 10px;
-}
-
-.extended-comments-header {
-  position: relative;
-  margin: 20px 12px 14px;
-  border-top: 1px solid var(--border-color--light);
-}
-
-.extended-comments-header .label {
-  position: absolute;
-  font-size: 11px;
-  font-weight: bold;
-  color: var(--text-color--light);
-  padding: 0 4px;
-  top: -8px;
-  left: 10px;
-  background: var(--bg-color--default);
 }
 
 .comment-prompt {
@@ -3847,11 +3629,12 @@ ctzn-record {
   border-left: 1px solid var(--border-color--semi-light);
 }
 
-.replies ctzn-record {
+.replies ctzn-post {
   display: block;
+  margin-bottom: 10px;
 }
 
-.replies ctzn-record.highlight {
+.replies ctzn-post.highlight {
   background: var(--bg-color--unread);
 }
 
@@ -3884,63 +3667,9 @@ ctzn-record {
 
     var _head = document.head || document.getElementsByTagName('head')[0]; // https://stackoverflow.com/a/2995536
 
-    const DRIVE_KEY_REGEX = /[0-9a-f]{64}/i;
-
     function pluralize (num, base, suffix = 's') {
       if (num === 1) { return base }
       return base + suffix
-    }
-
-    function toDomain (str) {
-      if (!str) return ''
-      try {
-        var urlParsed = new URL(str);
-        return urlParsed.hostname
-      } catch (e) {
-        // ignore, not a url
-      }
-      return str
-    }
-
-    function toNiceDomain (str, len=4) {
-      var domain = str.includes('://') ? toDomain(str) : str;
-      if (DRIVE_KEY_REGEX.test(domain)) {
-        domain = `${domain.slice(0, len)}..${domain.slice(-2)}`;
-      }
-      return domain
-    }
-
-    function fancyUrl (str, siteTitle) {
-      try {
-        let url = new URL(str);
-        let parts = [siteTitle || toNiceDomain(url.hostname)].concat(url.pathname.split('/').filter(Boolean));
-        return parts.join(' › ') + (url.search ? ` ? ${url.search.slice(1)}` : '')
-      } catch (e) {
-        return str
-      }
-    }
-
-    var _fancyUrlAsyncCache = {};
-    async function* fancyUrlAsync (str) {
-      try {
-        let url = new URL(str);
-        if (_fancyUrlAsyncCache[url.origin]) {
-          yield fancyUrl(str, _fancyUrlAsyncCache[url.origin]);
-          return
-        }
-        yield fancyUrl(str);
-        if (url.protocol === 'hyper:') {
-          let {site} = await beaker.index.gql(`
-        query Site ($origin: String!) {
-          site(url: $origin, cached: true) { title }
-        }
-      `, {origin: url.origin});
-          _fancyUrlAsyncCache[url.origin] = site.title;
-          yield fancyUrl(str, site.title);
-        }
-      } catch (e) {
-        return str
-      }
     }
 
     const cssStr$6 = css`
@@ -4395,7 +4124,7 @@ a:hover {
   font-size: 12px;
 }
 
-.post.card ctzn-post-composer {
+.post.card ctzn-composer {
   display: block;
   padding: 10px;
 }
@@ -4428,7 +4157,7 @@ a:hover {
   display: none;
 }
 
-:host([noborders]) .post.card ctzn-post-composer {
+:host([noborders]) .post.card ctzn-composer {
   margin-left: -36px;
 }
 
@@ -4573,7 +4302,7 @@ a:hover {
   font-weight: 500;
 }
 
-.post.comment ctzn-post-composer {
+.post.comment ctzn-composer {
   display: block;
   padding: 10px 20px;
 }
@@ -4628,13 +4357,13 @@ button {
 
     const CHAR_LIMIT = 256;
 
-    class PostComposer extends LitElement {
+    class Composer extends LitElement {
       static get properties () {
         return {
           api: {type: Object},
           placeholder: {type: String},
           draftText: {type: String, attribute: 'draft-text'},
-          subject: {type: String},
+          subjectUrl: {type: String, attribute: 'subject-url'},
           parent: {type: String},
           _visibility: {type: String}
         }
@@ -4645,7 +4374,7 @@ button {
         this.api = undefined;
         this.placeholder = 'What\'s new?';
         this.draftText = '';
-        this.subject = undefined;
+        this.subjectUrl = undefined;
         this.parent = undefined;
       }
 
@@ -4724,18 +4453,12 @@ button {
 
         let res;
         try {
-          if (this.subject || this.parent) {
-            alert('todo');
-            // TODO handle comments
-            // let subject = this.subject
-            // let parent = this.parent
-            // if (subject === parent) parent = undefined // not needed
-            // await drive.writeFile(`${folder}${filename}.md`, postBody, {
-            //   metadata: {
-            //     'comment/subject': subject ? normalizeUrl(subject) : undefined,
-            //     'comment/parent': parent ? normalizeUrl(parent) : undefined
-            //   }
-            // })
+          if (this.subjectUrl || this.parent) {
+            res = await this.api.comments.create({
+              subjectUrl: this.subjectUrl,
+              // parentCommentUrl: TODO,
+              text: this.draftText
+            });
           } else {
             res = await this.api.posts.create({text: this.draftText});
           }
@@ -4750,7 +4473,7 @@ button {
       }
     }
 
-    customElements.define('ctzn-post-composer', PostComposer);
+    customElements.define('ctzn-composer', Composer);
 
     class Post extends LitElement {
       static get properties () {
@@ -4803,6 +4526,16 @@ button {
 
       get downvoteCount () {
         return this.post?.votes.downvoterUrls.length
+      }
+
+      get commentCount () {
+        if (typeof this.post?.commentCount !== 'undefined') {
+          return this.post.commentCount
+        }
+        if (typeof this.post?.replies !== 'undefined') {
+          return this.post.replies.length
+        }
+        return 0
       }
 
       async reloadSignals () {
@@ -4954,13 +4687,13 @@ button {
       //         ${this.renderTagsCtrl()}
       //       </div>
       //       ${this.isReplyOpen ? html`
-      //         <ctzn-post-composer
+      //         <ctzn-composer
       //           subject=${this.record.metadata['comment/subject'] || this.record.url}
       //           parent=${this.record.url}
       //           placeholder="Write your comment"
       //           @publish=${this.onPublishReply}
       //           @cancel=${this.onCancelReply}
-      //         ></ctzn-post-composer>
+      //         ></ctzn-composer>
       //       ` : ''}
       //     </div>
       //   `
@@ -4983,7 +4716,12 @@ button {
       }
 
       renderCommentsCtrl () {
-        return '' // TODO
+        return html`
+      <a class="comment-ctrl" @click=${this.onViewThread}>
+        <span class="far fa-comment"></span>
+        ${this.commentCount}
+      </a>
+    `
       }
 
       renderMatchText () {
@@ -5072,13 +4810,13 @@ button {
         if (!this.viewContentOnClick && e.button === 0 && !e.metaKey && !e.ctrlKey) {
           e.preventDefault();
           e.stopPropagation();
-          emit(this, 'view-thread', {detail: {record: this.record}});
+          emit(this, 'view-thread', {detail: {post: this.post}});
         }
       }
 
       onMousedownCard (e) {
         for (let el of e.path) {
-          if (el.tagName === 'A' || el.tagName === 'CTZN-POST-COMPOSER') return
+          if (el.tagName === 'A' || el.tagName === 'CTZN-composer') return
         }
         this.isMouseDown = true;
         this.isMouseDragging = false;
@@ -5095,7 +4833,7 @@ button {
         if (!this.isMouseDragging) {
           e.preventDefault();
           e.stopPropagation();
-          emit(this, 'view-thread', {detail: {record: this.record}});
+          emit(this, 'view-thread', {detail: {post: this.post}});
         }
         this.isMouseDown = false;
         this.isMouseDragging = false;
@@ -5150,16 +4888,16 @@ button {
       return rtf.format(Math.floor(dayDiff / 365) * -1, 'year')
     }
 
-    class RecordThread extends LitElement {
+    class Thread extends LitElement {
       static get properties () {
         return {
-          recordUrl: {type: String, attribute: 'record-url'},
-          profileUrl: {type: String, attribute: 'profile-url'},
+          api: {type: Object},
+          postUrl: {type: String, attribute: 'post-url'},
+          profile: {type: Object},
           isFullPage: {type: Boolean, attribute: 'full-page'},
           setDocumentTitle: {type: Boolean, attribute: 'set-document-title'},
-          subject: {type: Object},
-          replies: {type: Array},
-          networkReplies: {type: Array},
+          post: {type: Object},
+          thread: {type: Array},
           isCommenting: {type: Boolean}
         }
       }
@@ -5170,206 +4908,42 @@ button {
 
       constructor () {
         super();
-        this.recordUrl = '';
+        this.postUrl = '';
         this.isFullPage = false;
         this.setDocumentTitle = false;
-        this.subjectUrl = undefined;
-        this.subject = undefined;
         this.commentCount = 0;
-        this.relatedItemCount = 0;
-        this.replies = undefined;
-        this.networkReplies = undefined;
-        this.profileUrl = '';
+        this.post = undefined;
+        this.thread = undefined;
+        this.profile = undefined;
         this.isCommenting = false;
         this.isLoading = false;
       }
 
       reset () {
-        this.subject = undefined;
+        this.post = undefined;
+        this.thread = undefined;
         this.commentCount = 0;
-        this.relatedItemCount = 0;
-        this.replies = undefined;
-        this.networkReplies = undefined;
-      }
-
-      async fetchRecordOrSite (url) {
-        var v;
-        var isSite = false;
-        try {
-          let urlp = new URL(url);
-          isSite = urlp.pathname === '/' && !urlp.search;
-        } catch {}
-        try {
-          if (isSite) {
-            let {site} = await beaker.index.gql(`
-          query Site($url: String!) {
-            site(url: $url) {
-              url
-              title
-              description
-              writable
-            }
-          }
-        `, {url});
-            v = site;
-            v.isSite = true;
-          } else {
-            let {record} = await beaker.index.gql(`
-          query Record($url: String!) {
-            record (url: $url) {
-              type
-              path
-              url
-              ctime
-              mtime
-              rtime
-              metadata
-              index
-              content
-              site {
-                url
-                title
-              }
-              votes: backlinks(paths: ["/votes/*.goto"]) {
-                url
-                metadata
-                site { url title }
-              }
-              tags: backlinks(paths: ["/tags/*.goto"]) {
-                url
-                metadata
-                site { url title }
-              }
-              commentCount: backlinkCount(paths: ["/comments/*.md"])
-            }
-          }
-        `, {url});
-            v = record;
-          }
-        } catch {}
-        return v
       }
 
       async load () {
         this.isLoading = true;
         this.reset();
-        var record = await this.fetchRecordOrSite(this.recordUrl);
-        this.subjectUrl = record?.metadata?.['comment/subject'] || this.recordUrl;
-        /* dont await */ this.loadSubject(record);
-        /* dont await */ this.loadComments(record);
+        try {
+          this.post = await this.api.posts.get(this.postUrl);
+          this.thread = await this.api.comments.getThread(this.postUrl);
+        } catch (e) {
+          create(e.message, 'error');
+          console.error(e);
+        }
+        console.log(this.post);
+        console.log(this.thread);
         this.isLoading = false;
       }
 
-      async loadSubject (record) {
-        var subjectUrl = record?.metadata?.['comment/subject'];
-        var subject;
-        if (subjectUrl) {
-          subject = await this.fetchRecordOrSite(subjectUrl);
-        } else {
-          subject = record;
-        }
-        if (!subject) subject = {url: subjectUrl || this.recordUrl, notFound: true};
-        this.subject = subject;
-        if (this.setDocumentTitle && this.subject.metadata.title) {
-          document.title = this.subject.metadata.title;
-        }
-        await this.requestUpdate();
-        emit(this, 'load');
-      }
-
-      async loadComments (record) {
-        // local first
-        let {replies} = await beaker.index.gql(`
-      query Replies ($href: String!) {
-        replies: records (
-          links: {url: $href}
-          indexes: ["local"]
-          sort: "crtime",
-          reverse: true
-        ) {
-          type
-          path
-          url
-          ctime
-          mtime
-          rtime
-          metadata
-          index
-          content
-          site {
-            url
-            title
-          }
-          votes: backlinks(paths: ["/votes/*.goto"]) {
-            url
-            metadata
-            site { url title }
-          }
-          tags: backlinks(paths: ["/tags/*.goto"]) {
-            url
-            metadata
-            site { url title }
-          }
-          commentCount: backlinkCount(paths: ["/comments/*.md"])
-        }
-      }
-    `, {href: stripUrlHash(this.subjectUrl)});
-        this.commentCount = replies.filter(r => getRecordType(r) === 'comment').length;
-        this.relatedItemCount = replies.length - this.commentCount;
-        this.replies = toThreadTree(replies);
-        await this.requestUpdate();
-        this.scrollHighlightedPostIntoView();
-        emit(this, 'load');
-
-        // then try network
-        var {networkReplies} = await beaker.index.gql(`
-      query Replies ($href: String!) {
-        networkReplies: records (
-          links: {url: $href}
-          indexes: ["network"]
-          sort: "crtime",
-          reverse: true
-        ) {
-          type
-          path
-          url
-          ctime
-          mtime
-          rtime
-          metadata
-          index
-          content
-          site {
-            url
-            title
-          }
-          votes: backlinks(paths: ["/votes/*.goto"]) {
-            url
-            metadata
-            site { url title }
-          }
-          tags: backlinks(paths: ["/tags/*.goto"]) {
-            url
-            metadata
-            site { url title }
-          }
-          commentCount: backlinkCount(paths: ["/comments/*.md"])
-        }
-      }
-    `, {href: stripUrlHash(this.subjectUrl)});
-        networkReplies = networkReplies.filter(reply => 
-          !reply.path.startsWith('/votes/') // filter out votes
-          && !replies.find(reply2 => reply.url === reply2.url) // filter out in-network items
-        );
-        this.networkReplies = toThreadTree(networkReplies);
-        await this.requestUpdate();
-        emit(this, 'load');
-      }
-
       updated (changedProperties) {
-        if (typeof this.subject === 'undefined' && !this.isLoading) {
+        if (typeof this.post === 'undefined' && !this.isLoading) {
           this.load();
-        } else if (changedProperties.has('recordUrl') && changedProperties.get('recordUrl') != this.recordUrl) {
+        } else if (changedProperties.has('postUrl') && changedProperties.get('postUrl') != this.postUrl) {
           this.load();
         }
       }
@@ -5380,161 +4954,49 @@ button {
         } catch {}
       }
 
-      get actionTarget () {
-        let urlp = new URL(this.subjectUrl);
-        if (this.subject) {
-          let desc = ({
-            'microblogpost': 'this post',
-            'blogpost': 'this blogpost',
-          })[getRecordType(this.subject)];
-          if (desc) return desc
-        }
-        return `this ${urlp.pathname === '/' ? 'site' : 'page'}`
-      }
-
       // rendering
       // =
 
       render () {
-        var mode = 'link';
-        if (this.subject && ['comment', 'microblogpost'].includes(getRecordType(this.subject))) {
-          mode = 'card';
-        }
         return html`
-      ${this.subject ? html`
-        ${this.subject.isSite ? html`
-          <div class="subject link">
-            <a class="simple-link" href="${this.subject.url}">
-              ${this.subject.title || asyncReplace(fancyUrlAsync(this.subject.url))}
-            </a>
-          </div>
-        ` : this.isFullPage && mode === 'link' && this.subject.url.startsWith('hyper') ? html`
-          <div class="subject-content">${this.renderSubjectContent()}</div>
+      <div class="subject">
+        ${this.post ? html`
+          <ctzn-post
+            .api=${this.api}
+            .post=${this.post}
+            .profile=${this.profile}
+            noborders
+            view-content-on-click
+            @publish-reply=${this.onPublishReply}
+          ></ctzn-post>
         ` : html`
-          <div class="subject ${mode}">
-            ${this.subject.notFound ? html`
-              <a class="simple-link" href="${this.subject.url}">
-                ${asyncReplace(fancyUrlAsync(this.subject.url))}
-              </a>
-            ` : html`
-              <ctzn-record
-                .record=${this.subject}
-                render-mode=${mode}
-                noborders
-                view-content-on-click
-                profile-url=${this.profileUrl}
-                @publish-reply=${this.onPublishReply}
-              ></ctzn-record>
-            `}
-          </div>
+          <span class="spinner"></span>
         `}
-      ` : html`
-        <div class="subject link">
-          <a class="simple-link" href="${this.subjectUrl}">
-            <span class="spinner"></span>
-            ${asyncReplace(fancyUrlAsync(this.subjectUrl))}
-          </a>
-        </div>
-      `}
-      ${this.replies ? html`
+      </div>
+      ${this.thread ? html`
         <div class="comments">
           <div class="comments-header">
             <div>
               <strong>Comments (${this.commentCount})</strong>
-              and related items (${this.relatedItemCount}) from your network
             </div>
             ${this.isCommenting ? html`
-              <ctzn-post-composer
-                subject=${this.subject.metadata?.['comment/subject'] || this.subject.url}
-                parent=${this.subject.url}
+              <ctzn-composer
+                .api=${this.api}
+                subject-url=${this.post.url}
                 placeholder="Write your comment"
                 @publish=${this.onPublishComment}
                 @cancel=${this.onCancelComment}
-              ></ctzn-post-composer>
+              ></ctzn-composer>
             ` : html`
               <div class="comment-prompt" @click=${this.onStartComment}>
                 Write your comment
               </div>
             `}
           </div>
-          <div class="extended-comments-header">
-            <div class="label">
-              My Network
-            </div>
-          </div>
-          ${this.renderReplies(this.replies)}
-        </div>
-      ` : ''}
-      ${!this.networkReplies || this.networkReplies.length ? html`
-        <div class="comments">
-          <div class="extended-comments-header">
-            <div class="label">
-              Extended Network
-            </div>
-          </div>
-          ${this.networkReplies ? this.renderReplies(this.networkReplies) : html`<div class="comments-loading"><span class="spinner"></span></div>`}
+          ${this.renderReplies(this.thread)}
         </div>
       ` : ''}
     `
-      }
-
-      renderSubjectContent () {
-        if (/\.(png|jpe?g|gif|svg|webp)$/i.test(this.subject.url)) {
-          return html`<img src=${this.subject.url} title=${this.subject.url}>`
-        } else if (/\.(mp4|webm|mov)$/i.test(this.subject.url)) {
-          return html`<video controls><source src=${this.subject.url}></video>`
-        } else if (/\.(mp3|ogg)$/i.test(this.subject.url)) {
-          return html`<audio controls><source src=${this.subject.url}></audio>`
-        } else if (/\.(pdf|doc|zip|docx|rar|gz|tar)$/i.test(this.subject.url)) {
-          let filename = this.subject.url.split('/').pop();
-          return html`
-        <p>Download: <a href=${this.subject.url} download=${filename} title=${`Download ${filename}`}>${filename}</a></p>
-      `
-        } else {
-          let self = this;
-          const loadFile = async function* () {
-            yield html`<div class="loading"><span class="spinner"></span> Loading...</div>`;
-            try {
-              let content = await beaker.hyperdrive.readFile(self.subject.url);
-              if (self.subject.url.endsWith('.md')) {
-                yield html`<div class="markdown">${unsafeHTML(beaker.markdown.toHTML(content))}</div>`;
-              } else {
-                yield html`<pre>${content}</pre>`;
-              }
-            } catch (e) {
-              if (e.message.includes('NotFoundError')) {
-                yield html`
-              <link rel="stylesheet" href=${(new URL('../../css/fontawesome.css', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()}>
-              <div class="error">
-                <h2>File not found</h2>
-                <div>There is no file or folder at this URL. <span class="far fa-frown"></span></div>
-              </div>
-            `;
-              } else {
-                yield html`
-              <link rel="stylesheet" href=${(new URL('../../css/fontawesome.css', (document.currentScript && document.currentScript.src || new URL('main.build.js', document.baseURI).href))).toString()}>
-              <div class="error">
-                <h2>Uhoh!</h2>
-                <p>This file wasn't able to load. <span class="far fa-frown"></span></p>
-                <p>Possible causes:</p>
-                <ul>
-                  <li>Nobody hosting the file is online.</li>
-                  <li>Connections to online peers failed.</li>
-                  <li>Your Internet is down.</li>
-                </ul>
-                <details>
-                  <summary>Error Details</summary>
-                  ${e.toString()}
-                </details>
-              </div>
-            `;
-              }
-            }
-          };
-          return html`
-        ${asyncReplace(loadFile())}
-      `
-        }
       }
 
       renderReplies (replies) {
@@ -5542,20 +5004,15 @@ button {
         return html`
       <div class="replies">
         ${repeat(replies, r => r.url, reply => {
-          var mode = 'action';
-          if (reply.content && ['comment', 'microblogpost'].includes(getRecordType(reply))) {
-            mode = 'comment';
-          }
           return html`
-            <ctzn-record
-              class=${this.recordUrl === reply.url ? 'highlight' : ''}
-              .record=${reply}
-              render-mode=${mode}
+            <ctzn-post
+              class=${/*TODO this.recordUrl === reply.url ? 'highlight' : ''*/''}
+              .api=${this.api}
+              .post=${reply}
+              .profile=${this.profile}
               thread-view
-              action-target=${this.actionTarget}
-              profile-url=${this.profileUrl}
               @publish-reply=${this.onPublishReply}
-            ></ctzn-record>
+            ></ctzn-post>
             ${reply.replies?.length ? this.renderReplies(reply.replies) : ''}
           `
         })}
@@ -5580,49 +5037,13 @@ button {
         this.isCommenting = false;
       }
       
-
       onPublishReply (e) {
         create('Reply published', '', 10e3);
         this.load();
       }
     }
 
-    customElements.define('ctzn-record-thread', RecordThread);
-
-    function toThreadTree (replies) {
-      var repliesByUrl = {};
-      replies.forEach(reply => { repliesByUrl[reply.url] = reply; });
-
-      var rootReplies = [];
-      replies.forEach(reply => {
-        if (reply.metadata['comment/parent']) {
-          let parent = repliesByUrl[reply.metadata['comment/parent']];
-          if (!parent) {
-            reply.isMissingParent = true;
-            rootReplies.push(reply);
-            return
-          }
-          if (!parent.replies) {
-            parent.replies = [];
-            parent.replyCount = 0;
-          }
-          parent.replies.push(reply);
-        } else {
-          rootReplies.push(reply);
-        }
-      });
-      return rootReplies
-    }
-
-    function stripUrlHash (url) {
-      try {
-        let i = url.indexOf('#');
-        if (i !== -1) return url.slice(0, i)
-        return url
-      } catch (e) {
-        return url
-      }
-    }
+    customElements.define('ctzn-thread', Thread);
 
     /* globals beaker */
 
@@ -5632,9 +5053,9 @@ button {
     class ViewThreadPopup extends BasePopup {
       constructor (opts) {
         super();
-        this.recordUrl = opts.recordUrl;
-        this.profileUrl = opts.profileUrl;
-        this.onViewTag = opts.onViewTag;
+        this.api = opts.api;
+        this.postUrl = opts.postUrl;
+        this.profile = opts.profile;
       }
 
       static get properties () {
@@ -5647,7 +5068,7 @@ button {
         return [cssStr$2, css`
     .popup-inner {
       width: 100%;
-      max-width: 900px;
+      max-width: 700px;
       border-radius: 6px;
       overflow: visible;
     }
@@ -5678,13 +5099,13 @@ button {
 
       renderBody () {
         return html`
-      <ctzn-record-thread
-        record-url=${this.recordUrl}
-        profile-url=${this.profileUrl}
+      <ctzn-thread
+        .api=${this.api}
+        post-url=${this.postUrl}
+        .profile=${this.profile}
         @load=${this.onLoadThread}
         @view-thread=${this.onViewThread}
-        @view-tag=${this.onViewTag}
-      ></ctzn-record-thread>
+      ></ctzn-thread>
     `
       }
 
@@ -5692,7 +5113,7 @@ button {
       // =
 
       onLoadThread () {
-        this.shadowRoot.querySelector('ctzn-record-thread').scrollHighlightedPostIntoView();
+        this.shadowRoot.querySelector('ctzn-thread').scrollHighlightedPostIntoView();
       }
 
       onViewThread (e) {
@@ -7302,11 +6723,11 @@ h2 a:hover {
             <div class="composer">
               <img class="thumb" src="${this.profile?.url}/thumb">
               ${this.isComposingPost ? html`
-                <ctzn-post-composer
+                <ctzn-composer
                   .api=${this.api}
                   @publish=${this.onPublishPost}
                   @cancel=${this.onCancelPost}
-                ></ctzn-post-composer>
+                ></ctzn-composer>
               ` : html`
                 <div class="compose-post-prompt" @click=${this.onComposePost}>
                   What's new?
@@ -7380,9 +6801,9 @@ h2 a:hover {
 
       onViewThread (e) {
         ViewThreadPopup.create({
-          recordUrl: e.detail.record.url,
-          profileUrl: this.profile.url,
-          onViewTag: this.onViewTag.bind(this)
+          api: this.api,
+          postUrl: e.detail.post.url,
+          profile: this.profile
         });
       }
 
