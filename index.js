@@ -27,7 +27,20 @@ export async function start ({debugMode, port, configDir, simulateHyperspace}) {
   app.use('/css', express.static('static/css'))
   app.use('/js', express.static('static/js'))
   app.use('/vendor', express.static('static/vendor'))
+  app.use('/webfonts', express.static('static/webfonts'))
   app.use('/_schemas', express.static('schemas'))
+
+  app.get('/login', (req, res) => {
+    res.render('login')
+  })
+
+  app.get('/signup', (req, res) => {
+    res.render('signup')
+  })
+
+  app.get('/forgot-password', (req, res) => {
+    res.render('forgot-password')
+  })
 
   app.get('/notifications', (req, res) => {
     res.render('notifications')
@@ -60,11 +73,6 @@ export async function start ({debugMode, port, configDir, simulateHyperspace}) {
 
   const wsServer = new WebSocketServer({server})
   api.setup(wsServer)
-
-  // DEBUG always authed as me for now -prf
-  wsServer.on('connection', client => {
-    client.auth = {username: 'pfrazee'}
-  })
 
   // process.on('SIGINT', close)
   // process.on('SIGTERM', close)

@@ -69,7 +69,7 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: 0;
-  border: 1px solid rgba(41, 95, 203, 0.8);
+  border: 1px solid var(--border-color--focused);
   box-shadow: 0 0 0 2px rgba(41, 95, 203, 0.2);
 }
 

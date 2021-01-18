@@ -3,8 +3,10 @@
 @import "./typography.css";
 @import "./buttons.css";
 @import "./inputs.css";
+@import "./fontawesome.css";
 
 body {
   background: var(--bg-color--default);
   color: var(--text-color--default);
+  font-size: 15px;
 }

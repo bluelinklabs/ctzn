@@ -3,12 +3,14 @@ import commonCSS from './common.css.js'
 import buttonsCSS from './buttons2.css.js'
 import tooltipCSS from './tooltip.css.js'
 import spinnerCSS from './com/spinner.css.js'
+import headerCSS from './com/header.css.js'
 
 const cssStr = css`
 ${commonCSS}
 ${buttonsCSS}
 ${tooltipCSS}
 ${spinnerCSS}
+${headerCSS}
 
 :host {
   display: block;
@@ -16,45 +18,6 @@ ${spinnerCSS}
 
 .hidden {
   display: none !important;
-}
-
-input:focus {
-  border-color: var(--border-color--focused);
-  box-shadow: 0 0 2px #7599ff77;
-}
-
-.tags-bar {
-  background: var(--bg-color--secondary);
-  color: var(--text-color--default);
-  padding: 6px 8px;
-  font-size: 10px;
-  line-height: 1;
-  border-bottom: 1px solid var(--border-color--light);
-  margin-bottom: 24px;
-}
-
-.tags-bar a {
-  color: inherit;
-  margin-right: 4px;
-}
-
-.tags-bar a:hover {
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-.tags-bar .fa-tag {
-  color: var(--text-color--pretty-light);
-  margin-right: 4px;
-  font-size: 9px;
-}
-
-.tags-bar .sep {
-  margin: 0px 4px;
-  font-size: 9px;
-  line-height: 8px;
-  position: relative;
-  top: -1px;
 }
 
 h2 {
@@ -238,33 +201,6 @@ main {
   padding: 1px 4px 2px;
   font-size: 9px;
   font-weight: bold;
-}
-
-.suggested-sites .site {
-  margin: 10px 0;
-  padding: 10px;
-  border-radius: 4px;
-  background: var(--bg-color--secondary);
-}
-
-.suggested-sites .site .title a {
-  color: var(--text-color--link);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-}
-
-.suggested-sites .site .subscribers {
-  margin-bottom: 2px;
-}
-
-.suggested-sites .site .subscribers a {
-  color: var(--text-color--pretty-light);
-}
-
-.suggested-sites .site button {
-  font-size: 11px;
-  letter-spacing: 0.5px;
 }
 
 .alternatives {

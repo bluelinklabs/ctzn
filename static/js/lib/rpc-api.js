@@ -1,9 +1,9 @@
 import * as rpcWebsockets from '../../vendor/rpc-websockets/bundle.js'
 
-export async function create (endpoint) {
-  var ws = new rpcWebsockets.Client(endpoint)
+export async function create (endpoint = 'ws://localhost:3000/') {
+  const ws = new rpcWebsockets.Client(endpoint)
   await new Promise(resolve => ws.on('open', resolve))
-  return new Proxy({}, {
+  const api = new Proxy({}, {
     get (target, prop) {
       // generate rpc calls as needed
       if (!(prop in target)) {
@@ -20,4 +20,12 @@ export async function create (endpoint) {
       return target[prop]
     }
   })
+
+  if (localStorage.sessionId) {
+    if (!(await api.accounts.resumeSession(localStorage.sessionId))) {
+      localStorage.removeItem('sessionId')
+    }
+  }
+
+  return api
 }
