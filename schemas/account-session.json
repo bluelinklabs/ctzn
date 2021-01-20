@@ -1,20 +1,25 @@
 {
   "$id": "https://ctzn.network/account-session.json",
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Internal record of active session with a user account.",
-  "type": "object",
-  "required": ["sessionId", "username", "createdAt"],
-  "additionalProperties": false,
-  "properties": {
-    "sessionId": {
-      "type": "string"
-    },
-    "username": {
-      "type": "string"
-    },
-    "createdAt": {
-      "type": "string",
-      "format": "date-time"
+  "$schema": "http://schema-tables.org/schema",
+  "title": "Account session",
+  "description": "Internal record of active session with a user account.",
+  "type": "json",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["sessionId", "username", "createdAt"],
+    "additionalProperties": false,
+    "properties": {
+      "sessionId": {
+        "type": "string"
+      },
+      "username": {
+        "type": "string"
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      }
     }
   }
 }

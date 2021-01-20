@@ -1,14 +1,19 @@
 {
   "$id": "https://ctzn.network/account.json",
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Internal record of user account registrations.",
-  "type": "object",
-  "required": ["email"],
-  "additionalProperties": false,
-  "properties": {
-    "email": {
-      "type": "string",
-      "format": "email"
+  "$schema": "http://schema-tables.org/schema",
+  "title": "Account",
+  "description": "Internal record of user account registrations.",
+  "type": "json",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["email"],
+    "additionalProperties": false,
+    "properties": {
+      "email": {
+        "type": "string",
+        "format": "email"
+      }
     }
   }
 }

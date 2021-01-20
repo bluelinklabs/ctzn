@@ -1,20 +1,24 @@
 {
   "$id": "https://ctzn.network/post.json",
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "http://schema-tables.org/schema",
   "title": "Post",
   "description": "A social media feed post",
-  "type": "object",
-  "required": ["text", "createdAt"],
-  "additionalProperties": false,
-  "properties": {
-    "text": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 256
-    },
-    "createdAt": {
-      "type": "string",
-      "format": "date-time"
+  "type": "json",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["text", "createdAt"],
+    "additionalProperties": false,
+    "properties": {
+      "text": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      }
     }
   }
 }

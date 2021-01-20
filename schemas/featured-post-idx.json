@@ -1,15 +1,19 @@
 {
   "$id": "https://ctzn.network/featured-post-idx.json",
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "http://schema-tables.org/schema",
   "title": "Featured Posts Index",
   "description": "Aggregated posts which are trending on the server",
-  "type": "object",
-  "required": ["postUrl"],
-  "additionalProperties": false,
-  "properties": {
-    "postUrl": {
-      "type": "string",
-      "format": "uri"
+  "type": "json",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["postUrl"],
+    "additionalProperties": false,
+    "properties": {
+      "postUrl": {
+        "type": "string",
+        "format": "uri"
+      }
     }
   }
 }

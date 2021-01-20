@@ -4,6 +4,7 @@ import Hyperbee from 'hyperbee'
 import pump from 'pump'
 import concat from 'concat-stream'
 import through2 from 'through2'
+import codecs from 'codecs'
 
 export class BaseHyperbeeDB {
   constructor (key) {
@@ -70,6 +71,10 @@ class Table {
     this.db = db
     this.bee = this.db.bee.sub('tables').sub(String(id))
     this.schema = schema
+    if (this.schema.schemaObject.type === 'binary') {
+      // TODO this should be an option to set in hyperbee sub()
+      this.bee.valueEncoding = codecs.binary
+    }
     this.id = id
   }
 

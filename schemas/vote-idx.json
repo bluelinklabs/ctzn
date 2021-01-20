@@ -1,28 +1,32 @@
 {
   "$id": "https://ctzn.network/vote-idx.json",
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "http://schema-tables.org/schema",
   "title": "Vote Index",
   "description": "Aggregated vote counts on a piece of content",
-  "type": "object",
-  "required": ["subjectUrl", "upvoteUrls", "downvoteUrls"],
-  "additionalProperties": false,
-  "properties": {
-    "subjectUrl": {
-      "type": "string",
-      "format": "uri"
-    },
-    "upvoteUrls": {
-      "type": "array",
-      "items": {
+  "type": "json",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["subjectUrl", "upvoteUrls", "downvoteUrls"],
+    "additionalProperties": false,
+    "properties": {
+      "subjectUrl": {
         "type": "string",
         "format": "uri"
-      }
-    },
-    "downvoteUrls": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "format": "uri"
+      },
+      "upvoteUrls": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "downvoteUrls": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "format": "uri"
+        }
       }
     }
   }

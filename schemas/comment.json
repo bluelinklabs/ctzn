@@ -1,28 +1,32 @@
 {
   "$id": "https://ctzn.network/comment.json",
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "http://schema-tables.org/schema",
   "title": "Comment",
   "description": "A threaded comment on posts, media, etc",
-  "type": "object",
-  "required": ["subjectUrl", "text", "createdAt"],
-  "additionalProperties": false,
-  "properties": {
-    "subjectUrl": {
-      "type": "string",
-      "format": "uri"
-    },
-    "parentCommentUrl": {
-      "type": "string",
-      "format": "uri"
-    },
-    "text": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 256
-    },
-    "createdAt": {
-      "type": "string",
-      "format": "date-time"
+  "type": "json",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["subjectUrl", "text", "createdAt"],
+    "additionalProperties": false,
+    "properties": {
+      "subjectUrl": {
+        "type": "string",
+        "format": "uri"
+      },
+      "parentCommentUrl": {
+        "type": "string",
+        "format": "uri"
+      },
+      "text": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      }
     }
   }
 }
