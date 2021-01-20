@@ -8,5 +8,6 @@ export class UserDB extends BaseHyperbeeDB {
     this.votes = await this.getTable('https://ctzn.network/vote.json')
     this.comments = await this.getTable('https://ctzn.network/comment.json')
     this.follows = await this.getTable('https://ctzn.network/follow.json')
+    this.media = await this.getTable('https://ctzn.network/media.json')
   }
 }

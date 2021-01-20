@@ -3,9 +3,12 @@ import { Server as WebSocketServer } from 'rpc-websockets'
 import * as db from './db/index.js'
 import * as api from './api/index.js'
 import * as path from 'path'
+import { fileURLToPath } from 'url'
 import * as os from 'os'
 import * as schemas from './lib/schemas.js'
 import { setOrigin } from './lib/strings.js'
+
+const DEFAULT_USER_THUMB_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'static', 'img', 'default-user-thumb.jpg')
 
 let app
 
@@ -52,6 +55,26 @@ export async function start ({debugMode, port, configDir, simulateHyperspace}) {
 
   app.get('/search', (req, res) => {
     res.render('search')
+  })
+
+  app.get('/:username([^\/]{3,})/avatar', async (req, res) => {
+    try {
+      const userDb = db.userDbs.get(req.params.username)
+      if (!userDb) {
+        res.sendFile(DEFAULT_USER_THUMB_PATH)
+        return
+      }
+
+      const entry = await userDb.media.get('avatar')
+      if (!entry) {
+        res.sendFile(DEFAULT_USER_THUMB_PATH)
+        return
+      }
+      res.send(entry.value)
+    } catch (e) {
+      console.log(e)
+      res.sendFile(DEFAULT_USER_THUMB_PATH)
+    }
   })
 
   app.get('/:username([^\/]{3,})', (req, res) => {

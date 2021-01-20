@@ -24,4 +24,12 @@ export function setup (wsServer) {
     const url = constructUserUrl(client.auth.username)
     return {key: client.auth.username, url}
   })
+
+  wsServer.register('profiles.putAvatar', async ([avatarBase64], client) => {
+    if (!client?.auth) throw new Error('Must be logged in')
+    const userDb = userDbs.get(client.auth.username)
+    if (!userDb) throw new Error('User database not found')
+
+    await userDb.media.put('avatar', Buffer.from(avatarBase64, 'base64'))
+  })
 }

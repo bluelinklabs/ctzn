@@ -6600,7 +6600,7 @@ h2 a:hover {
           <ctzn-header-session .api=${this.api} .profile=${this.profile}></ctzn-header-session>
         </header>
         <div class="profile-banner">
-          <img class="avatar" src="/img/default-user-thumb.jpg">
+          <img class="avatar" src="/${this.username}/avatar">
           <h2 class="display-name">${this.userProfile?.value.displayName}</h2>
           <h2 class="username">@${this.username}</h2>
           ${this.userProfile?.value.description ? html`

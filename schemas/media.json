@@ -1,0 +1,7 @@
+{
+  "$id": "https://ctzn.network/media.json",
+  "$schema": "http://schema-tables.org/schema",
+  "title": "Media",
+  "description": "General store of any media (images, video, audio, etc)",
+  "type": "binary"
+}
