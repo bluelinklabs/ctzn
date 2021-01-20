@@ -284,7 +284,7 @@ class CtznApp extends LitElement {
   onViewThread (e) {
     ViewThreadPopup.create({
       api: this.api,
-      postUrl: e.detail.post.url,
+      subjectUrl: e.detail.subject.url,
       profile: this.profile
     })
   }

@@ -11,7 +11,7 @@ export class ViewThreadPopup extends BasePopup {
   constructor (opts) {
     super()
     this.api = opts.api
-    this.postUrl = opts.postUrl
+    this.subjectUrl = opts.subjectUrl
     this.profile = opts.profile
   }
 
@@ -58,7 +58,7 @@ export class ViewThreadPopup extends BasePopup {
     return html`
       <ctzn-thread
         .api=${this.api}
-        post-url=${this.postUrl}
+        subject-url=${this.subjectUrl}
         .profile=${this.profile}
         @load=${this.onLoadThread}
         @view-thread=${this.onViewThread}
@@ -74,7 +74,8 @@ export class ViewThreadPopup extends BasePopup {
   }
 
   onViewThread (e) {
-    this.recordUrl = e.detail.record.url
+    this.subjectUrl = e.detail.subject.url
+    this.requestUpdate()
   }
 }
 

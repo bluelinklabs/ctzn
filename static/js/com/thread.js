@@ -14,7 +14,7 @@ export class Thread extends LitElement {
   static get properties () {
     return {
       api: {type: Object},
-      postUrl: {type: String, attribute: 'post-url'},
+      subjectUrl: {type: String, attribute: 'subject-url'},
       profile: {type: Object},
       isFullPage: {type: Boolean, attribute: 'full-page'},
       setDocumentTitle: {type: Boolean, attribute: 'set-document-title'},
@@ -30,7 +30,7 @@ export class Thread extends LitElement {
 
   constructor () {
     super()
-    this.postUrl = ''
+    this.subjectUrl = ''
     this.isFullPage = false
     this.setDocumentTitle = false
     this.commentCount = 0
@@ -47,12 +47,25 @@ export class Thread extends LitElement {
     this.commentCount = 0
   }
 
+  get subjectSchemaUrl () {
+    const urlp = new URL(this.subjectUrl)
+    const pathParts = urlp.pathname.split('/')
+    return `https://${pathParts.slice(3, -1).join('/')}.json`
+  }
+
   async load () {
     this.isLoading = true
-    this.reset()
+    // this.reset() TODO causes a flash of the loading spinner, needed?
+    console.log('loading', this.subjectUrl)
     try {
-      this.post = await this.api.posts.get(this.postUrl)
-      this.thread = await this.api.comments.getThread(this.postUrl)
+      if (this.subjectSchemaUrl === 'https://ctzn.network/post.json') {
+        this.post = await this.api.posts.get(this.subjectUrl)
+        this.thread = await this.api.comments.getThread(this.subjectUrl)
+      } else if (this.subjectSchemaUrl === 'https://ctzn.network/comment.json') {
+        let comment = await this.api.comments.get(this.subjectUrl)
+        this.post = await this.api.posts.get(comment.value.subjectUrl)
+        this.thread = await this.api.comments.getThread(comment.value.subjectUrl)
+      }
     } catch (e) {
       toast.create(e.message, 'error')
       console.error(e)
@@ -65,7 +78,7 @@ export class Thread extends LitElement {
   updated (changedProperties) {
     if (typeof this.post === 'undefined' && !this.isLoading) {
       this.load()
-    } else if (changedProperties.has('postUrl') && changedProperties.get('postUrl') != this.postUrl) {
+    } else if (changedProperties.has('subjectUrl') && changedProperties.get('subjectUrl') != this.subjectUrl) {
       this.load()
     }
   }
@@ -81,7 +94,7 @@ export class Thread extends LitElement {
 
   render () {
     return html`
-      <div class="subject">
+      <div class="item ${this.subjectUrl === this.post?.url ? 'highlight' : ''}">
         ${this.post ? html`
           <ctzn-post
             .api=${this.api}
@@ -91,30 +104,13 @@ export class Thread extends LitElement {
             view-content-on-click
             @publish-reply=${this.onPublishReply}
           ></ctzn-post>
+          ${this.subjectUrl === this.post?.url ? this.renderCommentBox() : ''}
         ` : html`
           <span class="spinner"></span>
         `}
       </div>
       ${this.thread ? html`
         <div class="comments">
-          <div class="comments-header">
-            <div>
-              <strong>Comments (${this.commentCount})</strong>
-            </div>
-            ${this.isCommenting ? html`
-              <ctzn-composer
-                .api=${this.api}
-                subject-url=${this.post.url}
-                placeholder="Write your comment"
-                @publish=${this.onPublishComment}
-                @cancel=${this.onCancelComment}
-              ></ctzn-composer>
-            ` : html`
-              <div class="comment-prompt" @click=${this.onStartComment}>
-                Write your comment
-              </div>
-            `}
-          </div>
           ${this.renderReplies(this.thread)}
         </div>
       ` : ''}
@@ -126,18 +122,43 @@ export class Thread extends LitElement {
     return html`
       <div class="replies">
         ${repeat(replies, r => r.url, reply => {
+          const isSubject = this.subjectUrl === reply.url
           return html`
-            <ctzn-post
-              class=${/*TODO this.recordUrl === reply.url ? 'highlight' : ''*/''}
-              .api=${this.api}
-              .post=${reply}
-              .profile=${this.profile}
-              thread-view
-              @publish-reply=${this.onPublishReply}
-            ></ctzn-post>
+          <div class="item ${isSubject ? 'highlight' : ''}">
+              <ctzn-post
+                .api=${this.api}
+                .post=${reply}
+                .profile=${this.profile}
+                noborders
+                thread-view
+                @publish-reply=${this.onPublishReply}
+              ></ctzn-post>
+              ${isSubject ? this.renderCommentBox() : ''}
+            </div>
             ${reply.replies?.length ? this.renderReplies(reply.replies) : ''}
           `
         })}
+      </div>
+    `
+  }
+
+  renderCommentBox () {
+    return html`
+      <div class="comment-box">
+        ${this.isCommenting ? html`
+          <ctzn-composer
+            .api=${this.api}
+            subject-url=${this.post.url}
+            parent-url=${this.subjectUrl}
+            placeholder="Write your comment"
+            @publish=${this.onPublishComment}
+            @cancel=${this.onCancelComment}
+          ></ctzn-composer>
+        ` : html`
+          <div class="comment-prompt" @click=${this.onStartComment}>
+            Write your comment
+          </div>
+        `}
       </div>
     `
   }
@@ -151,6 +172,7 @@ export class Thread extends LitElement {
 
   onPublishComment (e) {
     toast.create('Comment published', '', 10e3)
+    console.log(1)
     this.load()
     this.isCommenting = false
   }

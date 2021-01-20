@@ -3586,27 +3586,21 @@ ctzn-record {
   padding: 0 10px;
 }
 
-.subject {
+.item {
   background: var(--bg-color--default);
   border: 1px solid var(--border-color--light);
   border-radius: 4px;
   padding: 0 10px;
+  margin: 0 0 10px;
 }
 
-.comments-header {
-  background: var(--bg-color--light);
-  padding: 10px;
-  margin-bottom: 2px;
-  font-size: 13px;
-  color: var(--text-color--light);
+.item.highlight {
+  background: var(--bg-color--highlight);
+  border-color: var(--border-color--highlight);
 }
 
-.comments-header strong {
-  color: var(--text-color--default);
-}
-
-.comments-header > div:first-child {
-  margin: 0 4px 10px;
+.comment-box {
+  margin: 2px 0px 10px 48px;
 }
 
 .comment-prompt {
@@ -3619,23 +3613,10 @@ ctzn-record {
   color: var(--text-color--light);
 }
 
-.comment-prompt + .replies {
-  margin-top: 10px;
-}
-
-.replies .replies {
-  margin: 0 0 0 19px;
+.replies {
+  margin: 0 0 0 10px;
   padding-left: 10px;
   border-left: 1px solid var(--border-color--semi-light);
-}
-
-.replies ctzn-post {
-  display: block;
-  margin-bottom: 10px;
-}
-
-.replies ctzn-post.highlight {
-  background: var(--bg-color--unread);
 }
 
 .error {
@@ -4364,7 +4345,7 @@ button {
           placeholder: {type: String},
           draftText: {type: String, attribute: 'draft-text'},
           subjectUrl: {type: String, attribute: 'subject-url'},
-          parent: {type: String},
+          parentUrl: {type: String, attribute: 'parent-url'},
           _visibility: {type: String}
         }
       }
@@ -4375,7 +4356,7 @@ button {
         this.placeholder = 'What\'s new?';
         this.draftText = '';
         this.subjectUrl = undefined;
-        this.parent = undefined;
+        this.parentUrl = undefined;
       }
 
       static get styles () {
@@ -4453,10 +4434,10 @@ button {
 
         let res;
         try {
-          if (this.subjectUrl || this.parent) {
+          if (this.subjectUrl || this.parentUrl) {
             res = await this.api.comments.create({
               subjectUrl: this.subjectUrl,
-              // parentCommentUrl: TODO,
+              parentCommentUrl: this.parentUrl && this.parentUrl !== this.subjectUrl ? this.parentUrl : undefined,
               text: this.draftText
             });
           } else {
@@ -4464,7 +4445,6 @@ button {
           }
         } catch (e) {
           create(e.message, 'error');
-          console.error(e);
           return
         }
         
@@ -4810,7 +4790,7 @@ button {
         if (!this.viewContentOnClick && e.button === 0 && !e.metaKey && !e.ctrlKey) {
           e.preventDefault();
           e.stopPropagation();
-          emit(this, 'view-thread', {detail: {post: this.post}});
+          emit(this, 'view-thread', {detail: {subject: this.post}});
         }
       }
 
@@ -4833,7 +4813,7 @@ button {
         if (!this.isMouseDragging) {
           e.preventDefault();
           e.stopPropagation();
-          emit(this, 'view-thread', {detail: {post: this.post}});
+          emit(this, 'view-thread', {detail: {subject: this.post}});
         }
         this.isMouseDown = false;
         this.isMouseDragging = false;
@@ -4892,7 +4872,7 @@ button {
       static get properties () {
         return {
           api: {type: Object},
-          postUrl: {type: String, attribute: 'post-url'},
+          subjectUrl: {type: String, attribute: 'subject-url'},
           profile: {type: Object},
           isFullPage: {type: Boolean, attribute: 'full-page'},
           setDocumentTitle: {type: Boolean, attribute: 'set-document-title'},
@@ -4908,7 +4888,7 @@ button {
 
       constructor () {
         super();
-        this.postUrl = '';
+        this.subjectUrl = '';
         this.isFullPage = false;
         this.setDocumentTitle = false;
         this.commentCount = 0;
@@ -4925,12 +4905,25 @@ button {
         this.commentCount = 0;
       }
 
+      get subjectSchemaUrl () {
+        const urlp = new URL(this.subjectUrl);
+        const pathParts = urlp.pathname.split('/');
+        return `https://${pathParts.slice(3, -1).join('/')}.json`
+      }
+
       async load () {
         this.isLoading = true;
-        this.reset();
+        // this.reset() TODO causes a flash of the loading spinner, needed?
+        console.log('loading', this.subjectUrl);
         try {
-          this.post = await this.api.posts.get(this.postUrl);
-          this.thread = await this.api.comments.getThread(this.postUrl);
+          if (this.subjectSchemaUrl === 'https://ctzn.network/post.json') {
+            this.post = await this.api.posts.get(this.subjectUrl);
+            this.thread = await this.api.comments.getThread(this.subjectUrl);
+          } else if (this.subjectSchemaUrl === 'https://ctzn.network/comment.json') {
+            let comment = await this.api.comments.get(this.subjectUrl);
+            this.post = await this.api.posts.get(comment.value.subjectUrl);
+            this.thread = await this.api.comments.getThread(comment.value.subjectUrl);
+          }
         } catch (e) {
           create(e.message, 'error');
           console.error(e);
@@ -4943,7 +4936,7 @@ button {
       updated (changedProperties) {
         if (typeof this.post === 'undefined' && !this.isLoading) {
           this.load();
-        } else if (changedProperties.has('postUrl') && changedProperties.get('postUrl') != this.postUrl) {
+        } else if (changedProperties.has('subjectUrl') && changedProperties.get('subjectUrl') != this.subjectUrl) {
           this.load();
         }
       }
@@ -4959,7 +4952,7 @@ button {
 
       render () {
         return html`
-      <div class="subject">
+      <div class="item ${this.subjectUrl === this.post?.url ? 'highlight' : ''}">
         ${this.post ? html`
           <ctzn-post
             .api=${this.api}
@@ -4969,30 +4962,13 @@ button {
             view-content-on-click
             @publish-reply=${this.onPublishReply}
           ></ctzn-post>
+          ${this.subjectUrl === this.post?.url ? this.renderCommentBox() : ''}
         ` : html`
           <span class="spinner"></span>
         `}
       </div>
       ${this.thread ? html`
         <div class="comments">
-          <div class="comments-header">
-            <div>
-              <strong>Comments (${this.commentCount})</strong>
-            </div>
-            ${this.isCommenting ? html`
-              <ctzn-composer
-                .api=${this.api}
-                subject-url=${this.post.url}
-                placeholder="Write your comment"
-                @publish=${this.onPublishComment}
-                @cancel=${this.onCancelComment}
-              ></ctzn-composer>
-            ` : html`
-              <div class="comment-prompt" @click=${this.onStartComment}>
-                Write your comment
-              </div>
-            `}
-          </div>
           ${this.renderReplies(this.thread)}
         </div>
       ` : ''}
@@ -5004,18 +4980,43 @@ button {
         return html`
       <div class="replies">
         ${repeat(replies, r => r.url, reply => {
+          const isSubject = this.subjectUrl === reply.url;
           return html`
-            <ctzn-post
-              class=${/*TODO this.recordUrl === reply.url ? 'highlight' : ''*/''}
-              .api=${this.api}
-              .post=${reply}
-              .profile=${this.profile}
-              thread-view
-              @publish-reply=${this.onPublishReply}
-            ></ctzn-post>
+          <div class="item ${isSubject ? 'highlight' : ''}">
+              <ctzn-post
+                .api=${this.api}
+                .post=${reply}
+                .profile=${this.profile}
+                noborders
+                thread-view
+                @publish-reply=${this.onPublishReply}
+              ></ctzn-post>
+              ${isSubject ? this.renderCommentBox() : ''}
+            </div>
             ${reply.replies?.length ? this.renderReplies(reply.replies) : ''}
           `
         })}
+      </div>
+    `
+      }
+
+      renderCommentBox () {
+        return html`
+      <div class="comment-box">
+        ${this.isCommenting ? html`
+          <ctzn-composer
+            .api=${this.api}
+            subject-url=${this.post.url}
+            parent-url=${this.subjectUrl}
+            placeholder="Write your comment"
+            @publish=${this.onPublishComment}
+            @cancel=${this.onCancelComment}
+          ></ctzn-composer>
+        ` : html`
+          <div class="comment-prompt" @click=${this.onStartComment}>
+            Write your comment
+          </div>
+        `}
       </div>
     `
       }
@@ -5029,6 +5030,7 @@ button {
 
       onPublishComment (e) {
         create('Comment published', '', 10e3);
+        console.log(1);
         this.load();
         this.isCommenting = false;
       }
@@ -5054,7 +5056,7 @@ button {
       constructor (opts) {
         super();
         this.api = opts.api;
-        this.postUrl = opts.postUrl;
+        this.subjectUrl = opts.subjectUrl;
         this.profile = opts.profile;
       }
 
@@ -5101,7 +5103,7 @@ button {
         return html`
       <ctzn-thread
         .api=${this.api}
-        post-url=${this.postUrl}
+        subject-url=${this.subjectUrl}
         .profile=${this.profile}
         @load=${this.onLoadThread}
         @view-thread=${this.onViewThread}
@@ -5117,7 +5119,8 @@ button {
       }
 
       onViewThread (e) {
-        this.recordUrl = e.detail.record.url;
+        this.subjectUrl = e.detail.subject.url;
+        this.requestUpdate();
       }
     }
 
@@ -6802,7 +6805,7 @@ h2 a:hover {
       onViewThread (e) {
         ViewThreadPopup.create({
           api: this.api,
-          postUrl: e.detail.post.url,
+          subjectUrl: e.detail.subject.url,
           profile: this.profile
         });
       }

@@ -14,6 +14,15 @@ export function setup (wsServer) {
   })
 
   wsServer.register('comments.get', async ([username, key]) => {
+    if (!key && username) {
+      let parsed = parseEntryUrl(username, {enforceOurOrigin: true})
+      username = parsed.username
+      key = parsed.key
+      if (parsed.schemaUrl !== 'https://ctzn.network/comment.json') {
+        throw new Error('Not a comment URL')
+      }
+    }
+
     const userDb = userDbs.get(username)
     if (!userDb) throw new Error('User database not found')
 

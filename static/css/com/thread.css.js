@@ -38,27 +38,21 @@ ctzn-record {
   padding: 0 10px;
 }
 
-.subject {
+.item {
   background: var(--bg-color--default);
   border: 1px solid var(--border-color--light);
   border-radius: 4px;
   padding: 0 10px;
+  margin: 0 0 10px;
 }
 
-.comments-header {
-  background: var(--bg-color--light);
-  padding: 10px;
-  margin-bottom: 2px;
-  font-size: 13px;
-  color: var(--text-color--light);
+.item.highlight {
+  background: var(--bg-color--highlight);
+  border-color: var(--border-color--highlight);
 }
 
-.comments-header strong {
-  color: var(--text-color--default);
-}
-
-.comments-header > div:first-child {
-  margin: 0 4px 10px;
+.comment-box {
+  margin: 2px 0px 10px 48px;
 }
 
 .comment-prompt {
@@ -71,23 +65,10 @@ ctzn-record {
   color: var(--text-color--light);
 }
 
-.comment-prompt + .replies {
-  margin-top: 10px;
-}
-
-.replies .replies {
-  margin: 0 0 0 19px;
+.replies {
+  margin: 0 0 0 10px;
   padding-left: 10px;
   border-left: 1px solid var(--border-color--semi-light);
-}
-
-.replies ctzn-post {
-  display: block;
-  margin-bottom: 10px;
-}
-
-.replies ctzn-post.highlight {
-  background: var(--bg-color--unread);
 }
 
 .error {

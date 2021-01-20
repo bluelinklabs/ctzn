@@ -342,7 +342,7 @@ export class Post extends LitElement {
     if (!this.viewContentOnClick && e.button === 0 && !e.metaKey && !e.ctrlKey) {
       e.preventDefault()
       e.stopPropagation()
-      emit(this, 'view-thread', {detail: {post: this.post}})
+      emit(this, 'view-thread', {detail: {subject: this.post}})
     }
   }
 
@@ -365,7 +365,7 @@ export class Post extends LitElement {
     if (!this.isMouseDragging) {
       e.preventDefault()
       e.stopPropagation()
-      emit(this, 'view-thread', {detail: {post: this.post}})
+      emit(this, 'view-thread', {detail: {subject: this.post}})
     }
     this.isMouseDown = false
     this.isMouseDragging = false

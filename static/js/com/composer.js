@@ -12,7 +12,7 @@ class Composer extends LitElement {
       placeholder: {type: String},
       draftText: {type: String, attribute: 'draft-text'},
       subjectUrl: {type: String, attribute: 'subject-url'},
-      parent: {type: String},
+      parentUrl: {type: String, attribute: 'parent-url'},
       _visibility: {type: String}
     }
   }
@@ -23,7 +23,7 @@ class Composer extends LitElement {
     this.placeholder = 'What\'s new?'
     this.draftText = ''
     this.subjectUrl = undefined
-    this.parent = undefined
+    this.parentUrl = undefined
   }
 
   static get styles () {
@@ -101,10 +101,10 @@ class Composer extends LitElement {
 
     let res
     try {
-      if (this.subjectUrl || this.parent) {
+      if (this.subjectUrl || this.parentUrl) {
         res = await this.api.comments.create({
           subjectUrl: this.subjectUrl,
-          // parentCommentUrl: TODO,
+          parentCommentUrl: this.parentUrl && this.parentUrl !== this.subjectUrl ? this.parentUrl : undefined,
           text: this.draftText
         })
       } else {
@@ -112,7 +112,6 @@ class Composer extends LitElement {
       }
     } catch (e) {
       toast.create(e.message, 'error')
-      console.error(e)
       return
     }
     
