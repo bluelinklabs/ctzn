@@ -203,7 +203,7 @@ class CtznApp extends LitElement {
         <div class="twocol">
           <div>
             <div class="composer">
-              <img class="thumb" src="/img/default-user-thumb.jpg">
+              <img class="thumb" src="/${this.profile?.username}/avatar">
               ${this.isComposingPost ? html`
                 <ctzn-composer
                   .api=${this.api}

@@ -114,7 +114,7 @@ export class Post extends LitElement {
         })}
       >
         <a class="thumb" href=${this.post.author.url} title=${this.post.author.displayName} data-tooltip=${this.post.author.displayName}>
-          <img class="favicon" src="/img/default-user-thumb.jpg">
+          <img class="favicon" src="/${this.post.author.username}/avatar">
         </a>
         <span class="arrow"></span>
         <div

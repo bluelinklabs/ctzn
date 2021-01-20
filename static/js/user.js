@@ -138,12 +138,20 @@ class CtznUser extends LitElement {
   }
 
   async onClickEditProfile (e) {
-    let newProfile = await EditProfilePopup.create(this.userProfile.value)
+    let newProfile = await EditProfilePopup.create(this.username, this.userProfile.value)
     try {
-      await this.api.profiles.put(newProfile)
-      this.userProfile.value = newProfile
+      await this.api.profiles.put(newProfile.profile)
+      this.userProfile.value = newProfile.profile
+      if (newProfile.uploadedAvatar) {
+        toast.create('Uploading avatar...')
+        await this.api.profiles.putAvatar(newProfile.uploadedAvatar.base64buf)
+      }
       toast.create('Profile updated', 'success')
       this.requestUpdate()
+
+      if (newProfile.uploadedAvatar) {
+        setTimeout(() => location.reload(), 1e3)
+      }
     } catch (e) {
       toast.create(e.message, 'error')
       console.error(e)
