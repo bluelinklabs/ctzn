@@ -81,6 +81,7 @@ ${inputscss}
 .popup-inner input {
   display: block;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .popup-inner label.toggle {

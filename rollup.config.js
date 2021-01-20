@@ -19,5 +19,12 @@ export default [
       file: 'static/js/signup.build.js',
       format: 'iife'
     }
+  },
+  {
+    input: 'static/js/user.js',
+    output: {
+      file: 'static/js/user.build.js',
+      format: 'iife'
+    }
   }
 ]

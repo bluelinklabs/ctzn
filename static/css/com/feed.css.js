@@ -72,7 +72,7 @@ h2 a:hover {
 
 .results ctzn-post {
   display: block;
-  margin: var(--ctzn-feed--default-margin, 10px) 0;
+  margin: 0 0 var(--ctzn-feed--default-margin, 10px) 0;
 }
 
 .empty {

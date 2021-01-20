@@ -3205,6 +3205,7 @@ textarea {
   color: var(--text-color--default);
   background: var(--bg-color--default);
   border: 1px solid #d9d9d9;
+  font-family: inherit;
 }
 textarea {
   padding: 7px;

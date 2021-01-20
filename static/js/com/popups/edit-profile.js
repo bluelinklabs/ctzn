@@ -5,25 +5,17 @@ import popupsCSS from '../../../css/com/popups.css.js'
 // exported api
 // =
 
-export class BeakerEditProfile extends BasePopup {
+export class EditProfilePopup extends BasePopup {
   constructor (profile) {
     super()
     this.profile = profile
-    this.isCreate = !profile.title && !profile.description
   }
 
   // management
   //
 
   static async create (profile) {
-    return BasePopup.create(BeakerEditProfile, profile)
-  }
-
-  static async runFlow (profiles) {
-    var profile = await profiles.me()
-    var newValues = await BeakerEditProfile.create(profile)
-    await beaker.hyperdrive.drive(profile.url).configure(newValues)
-    return profiles.me()
+    return BasePopup.create(EditProfilePopup, profile)
   }
 
   static destroy () {
@@ -34,20 +26,20 @@ export class BeakerEditProfile extends BasePopup {
   // =
 
   renderTitle () {
-    return `${this.isCreate ? 'Create' : 'Edit'} your profile`
+    return `Edit your profile`
   }
 
   renderBody () {
     return html`
       <form @submit=${this.onSubmit}>      
         <div class="controls">
-          <img src="${this.profile.url}/thumb">
+          <img src="/img/default-user-thumb.jpg">
 
-          <label for="title-input">Name</label>
-          <input autofocus type="text" class="huge" id="title-input" name="title" value="${this.profile.title}" placeholder="Anonymous" />
+          <label for="displayName-input">Display Name</label>
+          <input autofocus type="text" id="displayName-input" name="displayName" value="${this.profile.displayName}" placeholder="Anonymous" />
 
           <label for="description-input">Bio</label>
-          <textarea class="big" id="description-input" name="description">${this.profile.description}</textarea>
+          <textarea id="description-input" name="description">${this.profile.description}</textarea>
         </div>
 
         <div class="actions">
@@ -66,13 +58,27 @@ export class BeakerEditProfile extends BasePopup {
     e.stopPropagation()
     this.dispatchEvent(new CustomEvent('resolve', {
       detail: {
-        title: e.target.title.value,
+        displayName: e.target.displayName.value,
         description: e.target.description.value
       }
     }))
   }
 }
-BeakerEditProfile.styles = [popupsCSS, css`
+EditProfilePopup.styles = [popupsCSS, css`
+input,
+textarea {
+  font-size: 17px;
+}
+
+input {
+  padding: 0 8px;
+  line-height: 32px;
+}
+
+textarea {
+  padding: 4px 8px;
+}
+
 img {
   display: block;
   margin: 10px auto;
@@ -105,4 +111,4 @@ img {
 }
 `]
 
-customElements.define('ctzn-edit-profile', BeakerEditProfile)
+customElements.define('ctzn-edit-profile', EditProfilePopup)
