@@ -51,7 +51,9 @@ export function setup (wsServer) {
     if (!userDb) throw new Error('User database not found')
     
     const followEntry = await userDb.follows.get(subjectUrl)
-    followEntry.url = constructEntryUrl(userDb.follows.schema.url, username, subjectUrl)
+    if (followEntry) {
+      followEntry.url = constructEntryUrl(userDb.follows.schema.url, username, subjectUrl)
+    }
     return followEntry
   })
 

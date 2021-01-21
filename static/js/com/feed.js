@@ -9,6 +9,7 @@ export class Feed extends LitElement {
     return {
       api: {type: Object},
       profile: {type: Object},
+      source: {type: String},
       pathQuery: {type: Array},
       showDateTitles: {type: Boolean, attribute: 'show-date-titles'},
       dateTitleRange: {type: String, attribute: 'date-title-range'},
@@ -19,7 +20,6 @@ export class Feed extends LitElement {
       limit: {type: Number},
       notifications: {type: Object},
       filter: {type: String},
-      sources: {type: Array},
       results: {type: Array},
       emptyMessage: {type: String, attribute: 'empty-message'},
       noMerge: {type: Boolean, attribute: 'no-merge'}
@@ -43,7 +43,6 @@ export class Feed extends LitElement {
     this.limit = undefined
     this.filter = undefined
     this.notifications = undefined
-    this.sources = undefined
     this.results = undefined
     this.emptyMessage = undefined
     this.noMerge = false
@@ -75,7 +74,7 @@ export class Feed extends LitElement {
       // NOTE ^ to correctly track this, the query arrays must be reused
       this.results = undefined // clear results while loading
       this.queueQuery()
-    } else if (changedProperties.has('sources') && !isArrayEq(this.sources, changedProperties.get('sources'))) {
+    } else if (changedProperties.has('source') && !isArrayEq(this.source, changedProperties.get('source'))) {
       this.queueQuery()
     }
   }
@@ -100,7 +99,7 @@ export class Feed extends LitElement {
     // because we collapse results, we need to run the query until the limit is fulfilled
     let lt = undefined
     do {
-      let subresults = await this.api.posts.listUserFeed('pfrazee', {limit: this.limit, reverse: true, lt})
+      let subresults = await this.api.posts.listUserFeed(this.source || 'pfrazee', {limit: this.limit, reverse: true, lt})
       if (subresults.length === 0) break
       
       lt = subresults[subresults.length - 1].key

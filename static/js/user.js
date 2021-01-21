@@ -3,6 +3,7 @@ import { ViewThreadPopup } from './com/popups/view-thread.js'
 import { EditProfilePopup } from './com/popups/edit-profile.js'
 import * as toast from './com/toast.js'
 import { create as createRpcApi } from './lib/rpc-api.js'
+import { pluralize } from './lib/strings.js'
 import css from '../css/user.css.js'
 import './com/header-session.js'
 import './com/feed.js'
@@ -13,7 +14,9 @@ class CtznUser extends LitElement {
     return {
       profile: {type: Object},
       userProfile: {type: Object},
-      isEmpty: {type: Boolean},
+      followers: {type: Array},
+      following: {type: Array},
+      isEmpty: {type: Boolean}
     }
   }
 
@@ -25,6 +28,8 @@ class CtznUser extends LitElement {
     super()
     this.profile = undefined
     this.userProfile = undefined
+    this.followers = undefined
+    this.following = undefined
     this.isEmpty = false
 
     this.username = (new URL(location)).pathname.split('/')[1]
@@ -32,12 +37,32 @@ class CtznUser extends LitElement {
     this.load()
   }
 
-  async load ({clearCurrent} = {clearCurrent: false}) {
+  get amIFollowing () {
+    return !!this.followers?.find?.(url => url === this.profile.url)
+  }
+
+  get isFollowingMe () {
+    return !!this.following?.find?.(f => f.value.subjectUrl === this.profile.url)
+  }
+
+  get userUrl () {
+    return `${(new URL(location)).origin}/${this.username}`
+  }
+
+  async load () {
     this.api = await createRpcApi()
     this.profile = await this.api.accounts.whoami()
     console.log(this.profile)
     this.userProfile = await this.api.profiles.get(this.username)
-    console.log(this.userProfile)
+    const [userProfile, followers, following] = await Promise.all([
+      this.api.profiles.get(this.username),
+      this.api.follows.listFollowers(this.username).then(res => res.followerUrls),
+      this.api.follows.listFollows(this.username)
+    ])
+    this.userProfile = userProfile
+    this.followers = followers
+    this.following = following
+    console.log({userProfile, followers, following})
   }
 
   get isLoading () {
@@ -49,6 +74,8 @@ class CtznUser extends LitElement {
   // =
 
   render () {
+    const nFollowers = this.followers?.length || 0
+    const nFollowing = this.following?.length || 0
     return html`
       <link rel="stylesheet" href="/css/fontawesome.css">
       <main>
@@ -66,9 +93,9 @@ class CtznUser extends LitElement {
             <p class="bio">${this.userProfile?.value.description}</p>
           ` : ''}
           <p class="stats">
-            <span class="stat"><span class="stat-number">TODO</span> followers</span>
+            <span class="stat"><span class="stat-number">${this.followers?.length}</span> ${pluralize(nFollowers, 'Follower')}</span>
             &middot;
-            <span class="stat"><span class="stat-number">TODO</span> follows</span>
+            <span class="stat"><span class="stat-number">${this.following?.length}</span> Following</span>
           </p>
         </div>
         ${this.renderCurrentView()}
@@ -85,7 +112,11 @@ class CtznUser extends LitElement {
               ${this.profile.username === this.username ? html`
                 <button class="primary" @click=${this.onClickEditProfile}>Edit profile</button>
               ` : html`
-                <button class="primary">Follow @pfrazee</button>
+                ${this.amIFollowing === true ? html`
+                  <button @click=${this.onClickUnfollow}>Unfollow @${this.username}</button>
+                ` : this.amIFollowing === false ? html`
+                  <button class="primary" @click=${this.onClickFollow}>Follow @${this.username}</button>
+                ` : ``}
               `}
             ` : html`
               TODO logged out UI
@@ -105,6 +136,7 @@ class CtznUser extends LitElement {
         <div>
           ${this.isEmpty ? this.renderEmptyMessage() : ''}
           <ctzn-feed
+            .source=${this.username}
             .api=${this.api}
             .profile=${this.profile}
             limit="50"
@@ -121,8 +153,7 @@ class CtznUser extends LitElement {
   renderEmptyMessage () {
     return html`
       <div class="empty">
-        <div class="fas fa-stream"></div>
-        <div>Subscribe to sites to see what's new</div>
+        <div>${this.userProfile.value.displayName} hasn't posted anything yet.</div>
       </div>
     `
   }
@@ -156,6 +187,16 @@ class CtznUser extends LitElement {
       toast.create(e.message, 'error')
       console.error(e)
     }
+  }
+
+  async onClickFollow (e) {
+    await this.api.follows.follow(this.userUrl)
+    this.followers = await this.api.follows.listFollowers(this.username).then(res => res.followerUrls)
+  }
+
+  async onClickUnfollow (e) {
+    await this.api.follows.unfollow(this.userUrl)
+    this.followers = await this.api.follows.listFollowers(this.username).then(res => res.followerUrls)
   }
 
   onViewThread (e) {

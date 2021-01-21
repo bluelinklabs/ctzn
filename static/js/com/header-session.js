@@ -21,7 +21,7 @@ export class HeaderSession extends LitElement {
   render () {
     if (this.profile) {
       return html`
-        <a href="/profile">${this.profile.username}</a> |
+        <a href="/${this.profile.username}">${this.profile.username}</a> |
         <a href="#" @click=${this.onClickLogout}>Logout</a>
       `
     } else if (this.profile === null) {

@@ -82,7 +82,7 @@ export async function start ({debugMode, port, configDir, simulateHyperspace}) {
 
   const server = await new Promise(r => {
     let s = app.listen(port, async () => {
-      console.log(`Example app listening at http://localhost:${port}`)
+      console.log(`CTZN server listening at http://localhost:${port}`)
 
       await db.setup({configDir, simulateHyperspace})
       r(s)

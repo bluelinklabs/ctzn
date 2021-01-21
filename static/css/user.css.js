@@ -178,16 +178,9 @@ ctzn-record-feed {
   font-size: 16px;
   letter-spacing: 0.7px;
   color: var(--text-color--light);
-  padding: 160px 0px 170px;
-  background: var(--bg-color--default);
+  padding: 60px 0px;
+  background: var(--bg-color--light);
   text-align: center;
-  margin: 10px 0;
-}
-
-.empty :-webkit-any(.fas, .far) {
-  font-size: 58px;
-  color: var(--text-color--very-light);
-  margin: 0 0 30px;
 }
 
 .sidebar .user-controls button {
