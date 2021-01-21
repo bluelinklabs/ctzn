@@ -71,10 +71,10 @@ class CtznApp extends LitElement {
       return this.requestUpdate()
     }
     this.checkNotifications()
-    if (this.shadowRoot.querySelector('ctzn-record-feed')) {
+    if (this.shadowRoot.querySelector('ctzn-feed')) {
       this.loadTime = Date.now()
       this.numNewItems = 0
-      this.shadowRoot.querySelector('ctzn-record-feed').load({clearCurrent})
+      this.shadowRoot.querySelector('ctzn-feed').load({clearCurrent})
     }
     if (location.pathname === '/notifications') {
       this.notificationsClearTime = Date.now()
@@ -126,7 +126,7 @@ class CtznApp extends LitElement {
   }
 
   get isLoading () {
-    let queryViewEls = Array.from(this.shadowRoot.querySelectorAll('ctzn-record-feed'))
+    let queryViewEls = Array.from(this.shadowRoot.querySelectorAll('ctzn-feed'))
     return !!queryViewEls.find(el => el.isLoading)
   }
 
@@ -184,7 +184,7 @@ class CtznApp extends LitElement {
             ${''/* TODO render search results 
             ${this.renderSites('all')}
             <h3 class="feed-heading">Discussion</h3>
-            <ctzn-record-feed
+            <ctzn-feed
               .pathQuery=${PATH_QUERIES.search.discussion}
               .filter=${this.searchQuery}
               limit="50"
@@ -193,7 +193,7 @@ class CtznApp extends LitElement {
               @view-thread=${this.onViewThread}
               @publish-reply=${this.onPublishReply}
               profile-url=${this.profile ? this.profile.url : ''}
-            ></ctzn-record-feed>*/}
+            ></ctzn-feed>*/}
           </div>
           ${this.renderRightSidebar()}
         </div>
