@@ -1,6 +1,6 @@
 import { createValidator } from '../lib/schemas.js'
 import { publicServerDb, userDbs } from '../db/index.js'
-import { constructEntryUrl, parseEntryUrl, constructUserUrl, extractUserUrl } from '../lib/strings.js'
+import { constructEntryUrl, parseEntryUrl, constructUserUrl, extractUserUrl, parseUserUrl } from '../lib/strings.js'
 
 const listParam = createValidator({
   type: 'object',
@@ -42,8 +42,40 @@ export function setup (wsServer) {
     return entries
   })
 
-  wsServer.register('posts.listMyFeed', async params => {
-    return 'todo'
+  wsServer.register('posts.listHomeFeed', async ([opts], client) => {
+    // TODO add pagination. For now, just return nothing when more results are requested.
+    if (opts?.lt) return []
+
+    if (!client?.auth) throw new Error('Must be logged in')
+    const userDb = userDbs.get(client.auth.username)
+    if (!userDb) throw new Error('User database not found')
+
+    const followEntries = await userDb.follows.list()
+    followEntries.unshift({value: {subjectUrl: constructUserUrl(client.auth.username)}})
+    let postEntries = (await Promise.all(followEntries.map(async followEntry => {
+      const followedUsername = parseUserUrl(followEntry.value.subjectUrl).username
+      const followedUserDb = userDbs.get(followedUsername)
+      if (!followedUserDb) return []
+      
+      const entries = await followedUserDb.posts.list({limit: 10, reverse: true})
+      for (let entry of entries) {
+        entry.author = {username: followedUsername}
+        entry.url = constructEntryUrl(followedUserDb.posts.schema.url, followedUsername, entry.key)
+      }
+      return entries
+    }))).flat()
+
+    postEntries.sort((a, b) => Number(new Date(b.value.createdAt)) - Number(new Date(a.value.createdAt)))
+    postEntries = postEntries.slice(0, 100)
+
+    const authorsCache = {}
+    for (let entry of postEntries) {
+      entry.author = await fetchAuthor(entry.author.username, authorsCache)
+      entry.votes = await fetchVotes(entry)
+      entry.commentCount = await fetchCommentCount(entry)
+    }
+
+    return postEntries
   })
 
   wsServer.register('posts.get', async ([username, key]) => {

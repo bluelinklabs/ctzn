@@ -99,7 +99,12 @@ export class Feed extends LitElement {
     // because we collapse results, we need to run the query until the limit is fulfilled
     let lt = undefined
     do {
-      let subresults = await this.api.posts.listUserFeed(this.source || 'pfrazee', {limit: this.limit, reverse: true, lt})
+      let subresults
+      if (this.source) {
+        subresults = await this.api.posts.listUserFeed(this.source, {limit: this.limit, reverse: true, lt})
+      } else {
+        subresults = await this.api.posts.listHomeFeed({limit: this.limit, reverse: true, lt})
+      }
       if (subresults.length === 0) break
       
       lt = subresults[subresults.length - 1].key
