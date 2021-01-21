@@ -28,11 +28,11 @@ export class Header extends LitElement {
       <link rel="stylesheet" href="/css/fontawesome.css">
       <header>
         <a href="/" class=${this.getNavClass('/')}>
-          <span class="fas fa-stream"></span>
+          <span class="fas navicon fa-stream"></span>
           Home
         </a>
         <a href="/notifications" class=${this.getNavClass('/notifications')}>
-          <span class="far fa-bell"></span>
+          <span class="far navicon fa-bell"></span>
           Notifications
         </a>
         <span class="spacer"></span>

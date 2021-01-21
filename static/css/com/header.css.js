@@ -38,8 +38,7 @@ a.current {
   border-bottom: 2px solid var(--blue);
 }
 
-a .fas,
-a .far {
+a .navicon {
   margin-right: 5px;
 }
 
