@@ -65,12 +65,8 @@ export async function start ({debugMode, port, configDir, simulateHyperspace}) {
         return
       }
 
-      const entry = await userDb.media.get('avatar')
-      if (!entry) {
-        res.sendFile(DEFAULT_USER_THUMB_PATH)
-        return
-      }
-      res.send(entry.value)
+      const s = await userDb.blobs.createReadStream('avatar')
+      s.pipe(res)
     } catch (e) {
       console.log(e)
       res.sendFile(DEFAULT_USER_THUMB_PATH)

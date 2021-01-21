@@ -30,6 +30,6 @@ export function setup (wsServer) {
     const userDb = userDbs.get(client.auth.username)
     if (!userDb) throw new Error('User database not found')
 
-    await userDb.media.put('avatar', Buffer.from(avatarBase64, 'base64'))
+    await userDb.blobs.put('avatar', Buffer.from(avatarBase64, 'base64'))
   })
 }
