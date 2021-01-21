@@ -2,13 +2,11 @@ import {css} from '../vendor/lit-element/lit-element.js'
 import buttonsCSS from './com/buttons.css.js'
 import tooltipCSS from './com/tooltip.css.js'
 import spinnerCSS from './com/spinner.css.js'
-import headerCSS from './com/header.css.js'
 
 const cssStr = css`
 ${buttonsCSS}
 ${tooltipCSS}
 ${spinnerCSS}
-${headerCSS}
 
 :host {
   display: block;
@@ -54,7 +52,7 @@ h2 a {
 }
 
 .compose-post-prompt {
-  border: 1px solid var(--border-color--light);
+  border: 1px solid var(--border-color--very-light);
   padding: 12px 16px;
   border-radius: 4px;
   color: var(--text-color--light);
@@ -169,45 +167,6 @@ main {
   ctzn-sites-list {
     margin-top: 20px;
   }
-}
-
-.nav a {
-  display: block;
-  font-size: 16px;
-  padding: 5px;
-  margin-bottom: 5px;
-}
-
-.nav .fa-fw {
-  display: inline-block;
-  font-size: 12px;
-  margin-right: 4px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  line-height: 28px;
-  color: var(--text-color--default);
-  background: var(--bg-color--semi-light);
-}
-
-.nav a.current {
-  font-weight: 500;
-  color: var(--text-color--markdown-link);
-}
-
-.nav a.current .fa-fw {
-  color: #fff;
-  background: var(--text-color--markdown-link);
-}
-
-.nav sup {
-  font-weight: bold;
-  color: #fff;
-  background: var(--text-color--markdown-link);
-  border-radius: 4px;
-  padding: 1px 4px 2px;
-  font-size: 9px;
-  font-weight: bold;
 }
 
 .alternatives {

@@ -2,13 +2,11 @@ import {css} from '../vendor/lit-element/lit-element.js'
 import buttonsCSS from './com/buttons.css.js'
 import tooltipCSS from './com/tooltip.css.js'
 import spinnerCSS from './com/spinner.css.js'
-import headerCSS from './com/header.css.js'
 
 const cssStr = css`
 ${buttonsCSS}
 ${tooltipCSS}
 ${spinnerCSS}
-${headerCSS}
 
 :host {
   display: block;
@@ -30,7 +28,7 @@ a:hover {
 .profile-banner {
   text-align: center;
   padding: 0 0 10px;
-  border-bottom: 1px solid var(--border-color--light);
+  border-bottom: 1px solid var(--border-color--very-light);
   margin-bottom: 20px;
 }
 

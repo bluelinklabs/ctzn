@@ -5,7 +5,7 @@ import * as toast from './com/toast.js'
 import { create as createRpcApi } from './lib/rpc-api.js'
 import { pluralize } from './lib/strings.js'
 import css from '../css/user.css.js'
-import './com/header-session.js'
+import './com/header.js'
 import './com/feed.js'
 import './com/user-list.js'
 
@@ -89,12 +89,7 @@ class CtznUser extends LitElement {
     return html`
       <link rel="stylesheet" href="/css/fontawesome.css">
       <main>
-        <header>
-          <div class="brand">
-            <a href="/" title="CTZN">CTZN</a>
-          </div>
-          <ctzn-header-session .api=${this.api} .profile=${this.profile}></ctzn-header-session>
-        </header>
+        <ctzn-header .api=${this.api} .profile=${this.profile}></ctzn-header>
         <div class="profile-banner">
           <a href="/${this.username}" title=${this.userProfile?.value.displayName} @click=${setView('feed')}>
             <img class="avatar" src="/${this.username}/avatar">

@@ -1,14 +1,11 @@
 import { LitElement, html } from '../vendor/lit-element/lit-element.js'
-import { repeat } from '../vendor/lit-element/lit-html/directives/repeat.js'
 import { ViewThreadPopup } from './com/popups/view-thread.js'
 import * as toast from './com/toast.js'
 import { create as createRpcApi } from './lib/rpc-api.js'
-// import { getAvailableName } from './fs.js'
-import { pluralize, getOrigin, createResourceSlug } from './lib/strings.js'
-// import { typeToQuery } from './records.js'
+import { pluralize } from './lib/strings.js'
 import * as QP from './lib/qp.js'
 import css from '../css/main.css.js'
-import './com/header-session.js'
+import './com/header.js'
 import './com/composer.js'
 import './com/feed.js'
 import './com/img-fallbacks.js'
@@ -43,7 +40,6 @@ class CtznApp extends LitElement {
     this.notificationsClearTime = +localStorage.getItem('notificationsClearTime') || 1
     this.cachedNotificationsClearTime = this.notificationsClearTime
 
-    this.configFromQP()
     this.load()
 
     setInterval(this.checkNewItems.bind(this), 5e3)
@@ -52,16 +48,6 @@ class CtznApp extends LitElement {
     window.addEventListener('popstate', (event) => {
       this.configFromQP()
     })
-  }
-
-  configFromQP () {
-    this.searchQuery = QP.getParam('q', '')
-    
-    if (this.searchQuery) {
-      this.updateComplete.then(() => {
-        this.shadowRoot.querySelector('.search-ctrl input').value = this.searchQuery
-      })
-    }
   }
 
   async load ({clearCurrent} = {clearCurrent: false}) {
@@ -80,6 +66,11 @@ class CtznApp extends LitElement {
       this.notificationsClearTime = Date.now()
       localStorage.setItem('notificationsClearTime', '' + this.notificationsClearTime)
       setTimeout(() => {this.unreadNotificationCount = 0}, 2e3)
+    }
+    
+    if ((new URL(window.location)).searchParams.has('composer')) {
+      this.isComposingPost = true
+      window.history.replaceState({}, null, '/')
     }
   }
 
@@ -137,22 +128,13 @@ class CtznApp extends LitElement {
     return html`
       <link rel="stylesheet" href="/css/fontawesome.css">
       <main>
-        <header>
-          <div class="brand">
-            <a href="/" title="CTZN">CTZN</a>
-          </div>
-          <ctzn-header-session .api=${this.api} .profile=${this.profile}></ctzn-header-session>
-        </header>
+        <ctzn-header .api=${this.api} .profile=${this.profile}></ctzn-header>
         ${this.renderCurrentView()}
       </main>
     `
   }
 
   renderRightSidebar () {
-    const navItem = (path, label) => html`
-      <a class=${location.pathname === path ? 'current' : ''} href=${path}>${label}</a>
-    `
-    let n = this.unreadNotificationCount > 0 ? html` <sup>${this.unreadNotificationCount}</sup>` : ''
     return html`
       <div class="sidebar">
         <div class="sticky">
@@ -163,10 +145,6 @@ class CtznApp extends LitElement {
             ` : ''}
             <input @keyup=${this.onKeyupSearch} placeholder="Search" value=${this.searchQuery}>
           </div>
-          <section class="nav">
-            ${navItem('/', html`<span class="fas fa-fw fa-stream"></span> Timeline`)}
-            ${navItem('/notifications', html`<span class="far fa-fw fa-bell"></span> Notifications${n}`)}
-          </section>
         </div>
       </div>
     `

@@ -1,7 +1,7 @@
 import { LitElement, html } from '../vendor/lit-element/lit-element.js'
 import { create as createRpcApi } from './lib/rpc-api.js'
 import css from '../css/login.css.js'
-import './com/header-session.js'
+import './com/header.js'
 
 class CtznLogin extends LitElement {
   static get properties () {
@@ -41,12 +41,7 @@ class CtznLogin extends LitElement {
     return html`
       <link rel="stylesheet" href="/css/fontawesome.css">
       <main>
-        <header>
-          <div class="brand">
-            <a href="/" title="CTZN">CTZN</a>
-          </div>
-          <ctzn-header-session .api=${this.api} .profile=${this.profile}></ctzn-header-session>
-        </header>
+        <ctzn-header .api=${this.api} .profile=${this.profile}></ctzn-header>
         <div class="login-form">
           <form @submit=${this.onSubmit}>
             <h2>Login</h2>

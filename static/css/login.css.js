@@ -3,14 +3,12 @@ import buttonsCSS from './com/buttons.css.js'
 import tooltipCSS from './com/tooltip.css.js'
 import inputsCSS from './com/inputs.css.js'
 import spinnerCSS from './com/spinner.css.js'
-import headerCSS from './com/header.css.js'
 
 const cssStr = css`
 ${buttonsCSS}
 ${tooltipCSS}
 ${inputsCSS}
 ${spinnerCSS}
-${headerCSS}
 
 :host {
   display: block;

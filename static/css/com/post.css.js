@@ -159,8 +159,8 @@ a:hover {
   height: 8px;
   z-index: 10;
   background: var(--bg-color--default);
-  border-top: 1px solid var(--border-color--light);
-  border-left: 1px solid var(--border-color--light);
+  border-top: 1px solid var(--border-color--very-light);
+  border-left: 1px solid var(--border-color--very-light);
   transform: rotate(-45deg);
 }
 
@@ -173,7 +173,7 @@ a:hover {
 }
 
 .post.card .container {
-  border: 1px solid var(--border-color--light);
+  border: 1px solid var(--border-color--very-light);
   border-radius: 4px;
   background: var(--bg-color--default);
   padding: 2px;
@@ -235,7 +235,7 @@ a:hover {
   opacity: 0.8;
   background: var(--bg-color--secondary);
   box-sizing: border-box;
-  border: 1px solid var(--border-color--light);
+  border: 1px solid var(--border-color--very-light);
   border-bottom: 0;
   margin: 0 0 0 45px;
   border-top-left-radius: 3px;
