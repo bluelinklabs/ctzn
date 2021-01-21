@@ -1,5 +1,5 @@
 import { publicServerDb, userDbs } from '../db/index.js'
-import { constructEntryUrl, constructUserUrl } from '../lib/strings.js'
+import { isUrl, constructEntryUrl, constructUserUrl, parseUserUrl } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
 
 const listParam = createValidator({
@@ -17,7 +17,7 @@ const listParam = createValidator({
 
 export function setup (wsServer) {
   wsServer.register('follows.listFollowers', async ([username]) => {
-    const subjectUrl = constructUserUrl(username)
+    const subjectUrl = isUrl(username) ? username : constructUserUrl(username)
     let followsIdxEntry
     try {
       followsIdxEntry = await publicServerDb.followsIdx.get(subjectUrl)
@@ -29,6 +29,9 @@ export function setup (wsServer) {
   })
 
   wsServer.register('follows.listFollows', async ([username, opts]) => {
+    if (isUrl(username)) {
+      username = parseUserUrl(username).username
+    }
     if (opts) {
       listParam.assert(opts)
     }

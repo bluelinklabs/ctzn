@@ -7,13 +7,14 @@ import { pluralize } from './lib/strings.js'
 import css from '../css/user.css.js'
 import './com/header-session.js'
 import './com/feed.js'
-import './com/img-fallbacks.js'
+import './com/user-list.js'
 
 class CtznUser extends LitElement {
   static get properties () {
     return {
       profile: {type: Object},
       userProfile: {type: Object},
+      currentView: {type: String},
       followers: {type: Array},
       following: {type: Array},
       isEmpty: {type: Boolean}
@@ -28,6 +29,7 @@ class CtznUser extends LitElement {
     super()
     this.profile = undefined
     this.userProfile = undefined
+    this.currentView = 'feed'
     this.followers = undefined
     this.following = undefined
     this.isEmpty = false
@@ -70,12 +72,20 @@ class CtznUser extends LitElement {
     return !!queryViewEls.find(el => el.isLoading)
   }
 
+  setView (str) {
+    this.currentView = str
+  }
+
   // rendering
   // =
 
   render () {
     const nFollowers = this.followers?.length || 0
     const nFollowing = this.following?.length || 0
+    const setView = (str) => e => {
+      e.preventDefault()
+      this.setView(str)
+    }
     return html`
       <link rel="stylesheet" href="/css/fontawesome.css">
       <main>
@@ -86,16 +96,26 @@ class CtznUser extends LitElement {
           <ctzn-header-session .api=${this.api} .profile=${this.profile}></ctzn-header-session>
         </header>
         <div class="profile-banner">
-          <img class="avatar" src="/${this.username}/avatar">
-          <h2 class="display-name">${this.userProfile?.value.displayName}</h2>
-          <h2 class="username">@${this.username}</h2>
+          <a href="/${this.username}" title=${this.userProfile?.value.displayName} @click=${setView('feed')}>
+            <img class="avatar" src="/${this.username}/avatar">
+          </a>
+          <h2 class="display-name">
+            <a href="/${this.username}" title=${this.userProfile?.value.displayName} @click=${setView('feed')}>
+              ${this.userProfile?.value.displayName}
+            </a>
+          </h2>
+          <h2 class="username">
+            <a href="/${this.username}" title="@${this.username}" @click=${setView('feed')}>
+              @${this.username}
+            </a>
+          </h2>
           ${this.userProfile?.value.description ? html`
             <p class="bio">${this.userProfile?.value.description}</p>
           ` : ''}
           <p class="stats">
-            <span class="stat"><span class="stat-number">${this.followers?.length}</span> ${pluralize(nFollowers, 'Follower')}</span>
+            <a class="stat" @click=${setView('followers')}><span class="stat-number">${nFollowers}</span> ${pluralize(nFollowers, 'Follower')}</a>
             &middot;
-            <span class="stat"><span class="stat-number">${this.following?.length}</span> Following</span>
+            <a class="stat" @click=${setView('following')}><span class="stat-number">${nFollowing}</span> Following</a>
           </p>
         </div>
         ${this.renderCurrentView()}
@@ -130,7 +150,28 @@ class CtznUser extends LitElement {
   renderCurrentView () {
     if (!this.api) {
       return ''
-  }
+    }
+    if (this.currentView === 'followers') {
+      return html`
+        <div class="twocol">
+          <div>
+            <h3>${this.followers?.length} ${pluralize(this.followers?.length, 'follower')}</h3>
+            <ctzn-user-list .api=${this.api} .profile=${this.profile} .urls=${this.followers}></ctzn-user-list>
+          </div>
+          ${this.renderRightSidebar()}
+        </div>
+      `
+    } else if (this.currentView === 'following') {
+      return html`
+        <div class="twocol">
+          <div>
+            <h3>Following ${this.following?.length} ${pluralize(this.following?.length, 'account')}</h3>
+            <ctzn-user-list .api=${this.api} .profile=${this.profile} .urls=${this.following.map(f => f.value.subjectUrl)}></ctzn-user-list>
+          </div>
+          ${this.renderRightSidebar()}
+        </div>
+      `      
+    }
     return html`
       <div class="twocol">
         <div>

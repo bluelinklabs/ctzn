@@ -27,17 +27,6 @@ a:hover {
   text-decoration: underline;
 }
 
-h2 {
-  margin: 0px 45px 0px;
-  letter-spacing: 1px;
-  font-size: 24px;
-}
-
-h2 a {
-  color: #5085ff;
-  font-size: 17px;
-}
-
 .profile-banner {
   text-align: center;
   padding: 0 0 10px;
@@ -54,11 +43,15 @@ h2 a {
 }
 
 .profile-banner .display-name {
+  margin: 0;
+  letter-spacing: 1px;
   font-size: 31px;
   font-weight: 500;
 }
 
 .profile-banner .username {
+  margin: 0;
+  letter-spacing: 1px;
   color: var(--text-color--pretty-light);
 }
 
@@ -71,6 +64,7 @@ h2 a {
   font-size: 13px;
   font-weight: 500;
   color: var(--text-color--pretty-light);
+  cursor: pointer;
 }
 
 .profile-banner .stat .stat-number {

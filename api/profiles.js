@@ -1,8 +1,12 @@
 import { userDbs } from '../db/index.js'
-import { constructUserUrl } from '../lib/strings.js'
+import { constructUserUrl, parseUserUrl } from '../lib/strings.js'
 
 export function setup (wsServer) {
   wsServer.register('profiles.get', async ([username]) => {
+    if (username.startsWith('http://') || username.startsWith('https://')) {
+      username = parseUserUrl(username).username
+    }
+
     const userDb = userDbs.get(username)
     if (!userDb) throw new Error('User database not found')
 
