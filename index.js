@@ -68,7 +68,6 @@ export async function start ({debugMode, port, configDir, simulateHyperspace}) {
       const s = await userDb.blobs.createReadStream('avatar')
       s.pipe(res)
     } catch (e) {
-      console.log(e)
       res.sendFile(DEFAULT_USER_THUMB_PATH)
     }
   })

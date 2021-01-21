@@ -39,6 +39,7 @@
     "node-fetch": "^2.6.1",
     "pump": "^3.0.0",
     "rpc-websockets": "^7.4.8",
+    "subcommand": "^2.1.1",
     "through2": "^4.0.2",
     "tmp-promise": "^3.0.2",
     "uuid": "^8.3.2",
