@@ -9,7 +9,7 @@ export class UserList extends LitElement {
     return {
       api: {type: Object},
       profile: {type: Object},
-      urls: {type: Array},
+      ids: {type: Array},
       profiles: {type: Array}
     }
   }
@@ -22,31 +22,31 @@ export class UserList extends LitElement {
     super()
     this.api = undefined
     this.profile = undefined
-    this.urls = undefined
+    this.ids = undefined
     this.profiles = undefined
   }
 
   async load () {
     this.profiles = []
-    for (let url of this.urls) {
-      const profile = await this.api.profiles.get(url)
+    for (let id of this.ids) {
+      const profile = await this.api.profiles.get(id)
       this.profiles.push(profile)
       this.requestUpdate()
 
       const [followers, following] = await Promise.all([
-        this.api.follows.listFollowers(url).then(res => res.followerUrls),
-        this.api.follows.listFollows(url)
+        this.api.follows.listFollowers(id).then(res => res.followerIds),
+        this.api.follows.listFollows(id)
       ])
       profile.numFollowers = followers.length
       profile.numFollowing = following.length
-      profile.isFollowingMe = !!following.find(f => f.value.subjectUrl === this.profile.url)
-      profile.amIFollowing = !!followers.find(f => f === this.profile.url)
+      profile.isFollowingMe = !!following.find(f => f.value.subject.userId === this.profile.userId)
+      profile.amIFollowing = !!followers.find(f => f === this.profile.userId)
       this.requestUpdate()
     }
   }
 
   updated (changedProperties) {
-    if (changedProperties.has('urls') && changedProperties.get('urls') != this.urls) {
+    if (changedProperties.has('ids') && changedProperties.get('ids') != this.ids) {
       this.load()
     }
   }
@@ -63,7 +63,7 @@ export class UserList extends LitElement {
         ${repeat(this.profiles, profile => {
           const nFollowers = profile.numFollowers
           const nFollowing = profile.numFollowing
-          const username = (new URL(profile.url)).pathname.split('/')[1]
+          const userId = (new URL(profile.url)).pathname.split('/')[1]
           return html`
             <div class="profile">
               <div class="header">
@@ -77,7 +77,7 @@ export class UserList extends LitElement {
                   ${profile.value.displayName}
                 </a>
                 <a class="username" href=${profile.url} title=${profile.value.displayName}>
-                  @${username}
+                  ${userId}
                 </a>
               </div>
               <div class="description">${profile.value.description}</div>
@@ -100,7 +100,7 @@ export class UserList extends LitElement {
     if (!this.profile) return ''
     return html`
       <div class="ctrls">
-        ${profile.url === this.profile.url ? html`
+        ${profile.userId === this.profile.userId ? html`
           <span class="label">This is you</span>
         ` : profile.amIFollowing ? html`
           <button @click=${e => this.onClickUnfollow(e, profile)}>Unfollow</button>
@@ -116,14 +116,14 @@ export class UserList extends LitElement {
 
   async onClickFollow (e, profile) {
     e.preventDefault()
-    await this.api.follows.follow(profile.url)
+    await this.api.follows.follow(profile.userId)
     profile.amIFollowing = true
     this.requestUpdate()
   }
 
   async onClickUnfollow (e, profile) {
     e.preventDefault()
-    await this.api.follows.unfollow(profile.url)
+    await this.api.follows.unfollow(profile.userId)
     profile.amIFollowing = false
     this.requestUpdate()
   }

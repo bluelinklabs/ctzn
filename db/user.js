@@ -4,10 +4,10 @@ export class UserDB extends BaseHyperbeeDB {
   async setup () {
     await super.setup()
     await this.blobs.setup()
-    this.profile = await this.getTable('https://ctzn.network/profile.json')
-    this.posts = await this.getTable('https://ctzn.network/post.json')
-    this.votes = await this.getTable('https://ctzn.network/vote.json')
-    this.comments = await this.getTable('https://ctzn.network/comment.json')
-    this.follows = await this.getTable('https://ctzn.network/follow.json')
+    this.profile = this.getTable('ctzn.network/profile')
+    this.posts = this.getTable('ctzn.network/post')
+    this.votes = this.getTable('ctzn.network/vote')
+    this.comments = this.getTable('ctzn.network/comment')
+    this.follows = this.getTable('ctzn.network/follow')
   }
 }

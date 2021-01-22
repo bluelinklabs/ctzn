@@ -1,6 +1,5 @@
 {
-  "$id": "https://ctzn.network/post.json",
-  "$schema": "http://schema-tables.org/schema",
+  "id": "ctzn.network/post",
   "title": "Post",
   "description": "A social media feed post",
   "type": "json",

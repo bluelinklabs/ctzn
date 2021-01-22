@@ -44,20 +44,20 @@ export class Post extends LitElement {
   }
 
   get myVote () {
-    if (this.post?.votes.upvoterUrls.includes(this.profile?.url)) {
+    if (this.post?.votes.upvoterIds.includes(this.profile?.userId)) {
       return 1
     }
-    if (this.post?.votes.downvoterUrls.includes(this.profile?.url)) {
+    if (this.post?.votes.downvoterIds.includes(this.profile?.userId)) {
       return -1
     }
   }
 
   get upvoteCount () {
-    return this.post?.votes.upvoterUrls.length
+    return this.post?.votes.upvoterIds.length
   }
 
   get downvoteCount () {
-    return this.post?.votes.downvoterUrls.length
+    return this.post?.votes.downvoterIds.length
   }
 
   get commentCount () {
@@ -114,7 +114,7 @@ export class Post extends LitElement {
         })}
       >
         <a class="thumb" href=${this.post.author.url} title=${this.post.author.displayName} data-tooltip=${this.post.author.displayName}>
-          <img class="favicon" src="/${this.post.author.username}/avatar">
+          <img class="favicon" src="/${this.post.author.userId}/avatar">
         </a>
         <span class="arrow"></span>
         <div
@@ -128,8 +128,8 @@ export class Post extends LitElement {
               <a class="author displayname" href=${this.post.author.url} title=${this.post.author.displayName}>
                 ${this.post.author.displayName}
               </a>
-              <a class="author username" href=${this.post.author.url} title=${this.post.author.username}>
-                @${this.post.author.username}
+              <a class="author username" href=${this.post.author.url} title=${this.post.author.userId}>
+                ${this.post.author.userId}
               </a>
             </div>
             <span>&middot;</span>

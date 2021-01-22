@@ -43,6 +43,6 @@ tables|2|1 = {...}
 In the internal API, the tables are loaded using an API that looks like:
 
 ```js
-const posts = await userDb.getTable('https://ctzn.com/post.json')
+const posts = userDb.getTable('ctzn.com/post')
 await posts.get(1) // => {...}
 ```

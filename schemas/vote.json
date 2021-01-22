@@ -1,6 +1,5 @@
 {
-  "$id": "https://ctzn.network/vote.json",
-  "$schema": "http://schema-tables.org/schema",
+  "id": "ctzn.network/vote",
   "title": "Vote",
   "description": "A user vote up or down on a piece of content",
   "type": "json",

@@ -5,18 +5,14 @@ import * as api from './api/index.js'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
 import * as os from 'os'
-import * as schemas from './lib/schemas.js'
 import { setOrigin } from './lib/strings.js'
 
 const DEFAULT_USER_THUMB_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'static', 'img', 'default-user-thumb.jpg')
 
 let app
 
-export async function start ({debugMode, port, configDir, simulateHyperspace}) {
+export async function start ({port, configDir, simulateHyperspace}) {
   configDir = configDir || path.join(os.homedir(), '.ctzn')
-  if (debugMode) {
-    schemas.setDebugEndpoint(port)
-  }
   setOrigin(`http://localhost:${port}`)
 
   app = express()
@@ -80,12 +76,16 @@ export async function start ({debugMode, port, configDir, simulateHyperspace}) {
     res.status(404).send('404 Page not found')
   })
 
-  const server = await new Promise(r => {
+  const server = await new Promise((resolve, reject) => {
     let s = app.listen(port, async () => {
       console.log(`CTZN server listening at http://localhost:${port}`)
 
-      await db.setup({configDir, simulateHyperspace})
-      r(s)
+      try {
+        await db.setup({configDir, simulateHyperspace})
+        resolve(s)
+      } catch (e) {
+        reject(e)
+      }
     })
   })
 

@@ -8,14 +8,14 @@ const CANVAS_SIZE = 200
 // =
 
 export class EditProfilePopup extends BasePopup {
-  constructor (username, profile) {
+  constructor (userId, profile) {
     super()
-    this.username = username
+    this.userId = userId
     this.profile = profile
     this.zoom = 1
     this.img = undefined
     this.uploadedAvatar = undefined
-    this.loadImg(`${location.origin}/${username}/avatar`)
+    this.loadImg(`${location.origin}/${userId}/avatar`)
   }
 
   loadImg (url) {
@@ -46,8 +46,8 @@ export class EditProfilePopup extends BasePopup {
   // management
   //
 
-  static async create (username, profile) {
-    return BasePopup.create(EditProfilePopup, username, profile)
+  static async create (userId, profile) {
+    return BasePopup.create(EditProfilePopup, userId, profile)
   }
 
   static destroy () {

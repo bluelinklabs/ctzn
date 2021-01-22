@@ -1,6 +1,5 @@
 {
-  "$id": "https://ctzn.network/comment-idx.json",
-  "$schema": "http://schema-tables.org/schema",
+  "id": "ctzn.network/comment-idx",
   "title": "Comments Index",
   "description": "Aggregated comments on a piece of content",
   "type": "json",

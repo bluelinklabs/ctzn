@@ -34,32 +34,32 @@ class CtznUser extends LitElement {
     this.following = undefined
     this.isEmpty = false
 
-    this.username = (new URL(location)).pathname.split('/')[1]
+    this.userId = (new URL(location)).pathname.split('/')[1]
 
     this.load()
   }
 
   get amIFollowing () {
-    return !!this.followers?.find?.(url => url === this.profile.url)
+    return !!this.followers?.find?.(id => id === this.profile.userId)
   }
 
   get isFollowingMe () {
-    return !!this.following?.find?.(f => f.value.subjectUrl === this.profile.url)
+    return !!this.following?.find?.(f => f.value.subject.userId === this.profile.userId)
   }
 
   get userUrl () {
-    return `${(new URL(location)).origin}/${this.username}`
+    return `${(new URL(location)).origin}/${this.userId}`
   }
 
   async load () {
     this.api = await createRpcApi()
     this.profile = await this.api.accounts.whoami()
     console.log(this.profile)
-    this.userProfile = await this.api.profiles.get(this.username)
+    this.userProfile = await this.api.profiles.get(this.userId)
     const [userProfile, followers, following] = await Promise.all([
-      this.api.profiles.get(this.username),
-      this.api.follows.listFollowers(this.username).then(res => res.followerUrls),
-      this.api.follows.listFollows(this.username)
+      this.api.profiles.get(this.userId),
+      this.api.follows.listFollowers(this.userId).then(res => res.followerIds),
+      this.api.follows.listFollows(this.userId)
     ])
     this.userProfile = userProfile
     this.followers = followers
@@ -91,17 +91,17 @@ class CtznUser extends LitElement {
       <main>
         <ctzn-header .api=${this.api} .profile=${this.profile}></ctzn-header>
         <div class="profile-banner">
-          <a href="/${this.username}" title=${this.userProfile?.value.displayName} @click=${setView('feed')}>
-            <img class="avatar" src="/${this.username}/avatar">
+          <a href="/${this.userId}" title=${this.userProfile?.value.displayName} @click=${setView('feed')}>
+            <img class="avatar" src="/${this.userId}/avatar">
           </a>
           <h2 class="display-name">
-            <a href="/${this.username}" title=${this.userProfile?.value.displayName} @click=${setView('feed')}>
+            <a href="/${this.userId}" title=${this.userProfile?.value.displayName} @click=${setView('feed')}>
               ${this.userProfile?.value.displayName}
             </a>
           </h2>
           <h2 class="username">
-            <a href="/${this.username}" title="@${this.username}" @click=${setView('feed')}>
-              @${this.username}
+            <a href="/${this.userId}" title="${this.userId}" @click=${setView('feed')}>
+              ${this.userId}
             </a>
           </h2>
           ${this.userProfile?.value.description ? html`
@@ -119,18 +119,19 @@ class CtznUser extends LitElement {
   }
 
   renderRightSidebar () {
+    const displayName = this.userProfile?.value.displayName || this.userId
     return html`
       <div class="sidebar">
         <div class="sticky">
           <section class="user-controls">
             ${this.profile ? html`
-              ${this.profile.username === this.username ? html`
+              ${this.profile.userId === this.userId ? html`
                 <button class="primary" @click=${this.onClickEditProfile}>Edit profile</button>
               ` : html`
                 ${this.amIFollowing === true ? html`
-                  <button @click=${this.onClickUnfollow}>Unfollow @${this.username}</button>
+                  <button @click=${this.onClickUnfollow}>Unfollow ${displayName}</button>
                 ` : this.amIFollowing === false ? html`
-                  <button class="primary" @click=${this.onClickFollow}>Follow @${this.username}</button>
+                  <button class="primary" @click=${this.onClickFollow}>Follow ${displayName}</button>
                 ` : ``}
               `}
             ` : html`
@@ -151,7 +152,7 @@ class CtznUser extends LitElement {
         <div class="twocol">
           <div>
             <h3>${this.followers?.length} ${pluralize(this.followers?.length, 'follower')}</h3>
-            <ctzn-user-list .api=${this.api} .profile=${this.profile} .urls=${this.followers}></ctzn-user-list>
+            <ctzn-user-list .api=${this.api} .profile=${this.profile} .ids=${this.followers}></ctzn-user-list>
           </div>
           ${this.renderRightSidebar()}
         </div>
@@ -161,7 +162,7 @@ class CtznUser extends LitElement {
         <div class="twocol">
           <div>
             <h3>Following ${this.following?.length} ${pluralize(this.following?.length, 'account')}</h3>
-            <ctzn-user-list .api=${this.api} .profile=${this.profile} .urls=${this.following.map(f => f.value.subjectUrl)}></ctzn-user-list>
+            <ctzn-user-list .api=${this.api} .profile=${this.profile} .ids=${this.following.map(f => f.value.subject.userId)}></ctzn-user-list>
           </div>
           ${this.renderRightSidebar()}
         </div>
@@ -172,7 +173,7 @@ class CtznUser extends LitElement {
         <div>
           ${this.isEmpty ? this.renderEmptyMessage() : ''}
           <ctzn-feed
-            .source=${this.username}
+            .source=${this.userId}
             .api=${this.api}
             .profile=${this.profile}
             limit="50"
@@ -205,7 +206,7 @@ class CtznUser extends LitElement {
   }
 
   async onClickEditProfile (e) {
-    let newProfile = await EditProfilePopup.create(this.username, this.userProfile.value)
+    let newProfile = await EditProfilePopup.create(this.userId, this.userProfile.value)
     try {
       await this.api.profiles.put(newProfile.profile)
       this.userProfile.value = newProfile.profile
@@ -226,13 +227,13 @@ class CtznUser extends LitElement {
   }
 
   async onClickFollow (e) {
-    await this.api.follows.follow(this.userUrl)
-    this.followers = await this.api.follows.listFollowers(this.username).then(res => res.followerUrls)
+    await this.api.follows.follow(this.userId)
+    this.followers = await this.api.follows.listFollowers(this.userId).then(res => res.followerIds)
   }
 
   async onClickUnfollow (e) {
-    await this.api.follows.unfollow(this.userUrl)
-    this.followers = await this.api.follows.listFollowers(this.username).then(res => res.followerUrls)
+    await this.api.follows.unfollow(this.userId)
+    this.followers = await this.api.follows.listFollowers(this.userId).then(res => res.followerIds)
   }
 
   onViewThread (e) {

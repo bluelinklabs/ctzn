@@ -1,7 +1,7 @@
 import { createValidator } from '../lib/schemas.js'
 import { v4 as uuidv4 } from 'uuid'
-import { privateServerDb } from '../db/index.js'
-import { constructUserUrl } from '../lib/strings.js'
+import { publicServerDb, privateServerDb } from '../db/index.js'
+import { constructUserUrl, constructUserId } from '../lib/strings.js'
 
 const registerParam = createValidator({
   type: 'object',
@@ -16,7 +16,9 @@ export function setup (wsServer) {
   wsServer.register('accounts.whoami', async (params, client) => {
     if (client.auth) {
       return {
+        userId: client.auth.userId,
         url: constructUserUrl(client.auth.username),
+        dbUrl: client.auth.dbUrl,
         username: client.auth.username,
         sessionId: client.auth.sessionId
       }
@@ -27,12 +29,20 @@ export function setup (wsServer) {
   wsServer.register('accounts.resumeSession', async ([sessionId], client) => {
     const sessionRecord = await privateServerDb.accountSessions.get(sessionId)
     if (sessionRecord) {
+      const user = await publicServerDb.users.get(sessionRecord.value.username)
+      if (!user) {
+        throw new Error('User not found')
+      }
       client.auth = {
         username: sessionRecord.value.username,
-        sessionId: sessionRecord.value.sessionId
+        sessionId: sessionRecord.value.sessionId,
+        userId: constructUserId(sessionRecord.value.username),
+        dbUrl: user.value.dbUrl
       }
       return {
+        userId: constructUserId(sessionRecord.value.username),
         url: constructUserUrl(sessionRecord.value.username),
+        dbUrl: user.value.dbUrl,
         username: sessionRecord.value.username,
         sessionId: sessionRecord.value.sessionId
       }
@@ -49,6 +59,11 @@ export function setup (wsServer) {
       throw new Error('Invalid username or password')
     }
 
+    const user = await publicServerDb.users.get(username)
+    if (!user) {
+      throw new Error('User not found')
+    }
+
     // create session
     const sess = {
       sessionId: uuidv4(),
@@ -59,11 +74,15 @@ export function setup (wsServer) {
 
     client.auth = {
       sessionId: sess.sessionId,
-      username
+      userId: constructUserId(username),
+      username,
+      dbUrl: user.value.dbUrl
     }
 
     return {
+      userId: constructUserId(username),
       url: constructUserUrl(username),
+      dbUrl: user.value.dbUrl,
       sessionId: sess.sessionId,
       username
     }

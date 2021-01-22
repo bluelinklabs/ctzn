@@ -45,9 +45,9 @@ export class Header extends LitElement {
     if (this.profile) {
       return html`
         <button class="primary" @click=${this.onClickNewPost}>New Post</button>
-        <a class="profile ${this.getNavClass('/' + this.profile.username)}" href="/${this.profile.username}">
-          <img src="/${this.profile.username}/avatar">
-          ${this.profile.username}
+        <a class="profile ${this.getNavClass('/' + this.profile.userId)}" href="/${this.profile.userId}">
+          <img src="/${this.profile.userId}/avatar">
+          ${this.profile.userId}
         </a>
         <a @click=${this.onClickSessionMenu}><span class="fas fa-caret-down"></span></a>
       `

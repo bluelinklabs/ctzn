@@ -1,24 +1,23 @@
 {
-  "$id": "https://ctzn.network/follow-idx.json",
-  "$schema": "http://schema-tables.org/schema",
+  "id": "ctzn.network/follow-idx",
   "title": "Follows Index",
   "description": "Aggregated follows for users on the server",
   "type": "json",
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["userUrl", "followerUrls"],
+    "required": ["subjectId", "followerIds"],
     "additionalProperties": false,
     "properties": {
-      "userUrl": {
+      "subjectId": {
         "type": "string",
-        "format": "uri"
+        "pattern": ".+@.+"
       },
-      "followerUrls": {
+      "followerIds": {
         "type": "array",
         "items": {
           "type": "string",
-          "format": "uri"
+          "pattern": ".+@.+"
         }
       }
     }

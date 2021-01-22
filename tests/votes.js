@@ -45,35 +45,35 @@ test('basic CRUD', async t => {
 
   let votes1 = await api.votes.getVotesForSubject(posts[0].url)
   t.is(votes1.subjectUrl, posts[0].url)
-  t.is(votes1.upvoterUrls.length, 2)
-  t.is(votes1.downvoterUrls.length, 0)
+  t.is(votes1.upvoterIds.length, 2)
+  t.is(votes1.downvoterIds.length, 0)
 
   let votes2 = await api.votes.getVotesForSubject(posts[1].url)
   t.is(votes2.subjectUrl, posts[1].url)
-  t.is(votes2.upvoterUrls.length, 1)
-  t.is(votes2.downvoterUrls.length, 1)
+  t.is(votes2.upvoterIds.length, 1)
+  t.is(votes2.downvoterIds.length, 1)
 
   await api.accounts.login({username: 'bobo', password: 'password'})
   await api.votes.put({subjectUrl: posts[0].url, vote: -1})
 
   let votes3 = await api.votes.getVotesForSubject(posts[0].url)
   t.is(votes3.subjectUrl, posts[0].url)
-  t.is(votes3.upvoterUrls.length, 1)
-  t.is(votes3.downvoterUrls.length, 1)
+  t.is(votes3.upvoterIds.length, 1)
+  t.is(votes3.downvoterIds.length, 1)
 
   await api.accounts.login({username: 'bobo', password: 'password'})
   await api.votes.del(posts[0].url)
 
   let votes4 = await api.votes.getVotesForSubject(posts[0].url)
   t.is(votes4.subjectUrl, posts[0].url)
-  t.is(votes4.upvoterUrls.length, 1)
-  t.is(votes4.downvoterUrls.length, 0)
+  t.is(votes4.upvoterIds.length, 1)
+  t.is(votes4.downvoterIds.length, 0)
 
   await api.accounts.login({username: 'alicia', password: 'password'})
   await api.votes.del(posts[0].url)
 
   let votes5 = await api.votes.getVotesForSubject(posts[0].url)
   t.is(votes5.subjectUrl, posts[0].url)
-  t.is(votes5.upvoterUrls.length, 0)
-  t.is(votes5.downvoterUrls.length, 0)
+  t.is(votes5.upvoterIds.length, 0)
+  t.is(votes5.downvoterIds.length, 0)
 })

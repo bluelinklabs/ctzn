@@ -1,6 +1,7 @@
 import { publicServerDb, userDbs } from '../db/index.js'
-import { isUrl, constructEntryUrl, constructUserUrl, parseUserUrl } from '../lib/strings.js'
+import { isHyperUrl, constructEntryUrl } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
+import { fetchUserId, fetchUserInfo } from '../lib/network.js'
 
 const listParam = createValidator({
   type: 'object',
@@ -16,21 +17,21 @@ const listParam = createValidator({
 })
 
 export function setup (wsServer) {
-  wsServer.register('follows.listFollowers', async ([username]) => {
-    const subjectUrl = isUrl(username) ? username : constructUserUrl(username)
+  wsServer.register('follows.listFollowers', async ([userId]) => {
+    const userInfo = await fetchUserInfo(userId)
     let followsIdxEntry
     try {
-      followsIdxEntry = await publicServerDb.followsIdx.get(subjectUrl)
+      followsIdxEntry = await publicServerDb.followsIdx.get(userInfo.userId)
     } catch (e) {}
     return {
-      subjectUrl,
-      followerUrls: followsIdxEntry?.value?.followerUrls || []
+      subject: userInfo,
+      followerIds: followsIdxEntry?.value?.followerIds || []
     }
   })
 
-  wsServer.register('follows.listFollows', async ([username, opts]) => {
-    if (isUrl(username)) {
-      username = parseUserUrl(username).username
+  wsServer.register('follows.listFollows', async ([userId, opts]) => {
+    if (isHyperUrl(userId)) {
+      userId = await fetchUserId(userId)
     }
     if (opts) {
       listParam.assert(opts)
@@ -39,66 +40,75 @@ export function setup (wsServer) {
     opts.limit = opts.limit && typeof opts.limit === 'number' ? opts.limit : 100
     opts.limit = Math.max(Math.min(opts.limit, 100), 1)
 
-    const userDb = userDbs.get(username)
+    const userDb = userDbs.get(userId)
     if (!userDb) throw new Error('User database not found')
 
     const entries = await userDb.follows.list(opts)
     for (let entry of entries) {
-      entry.url = constructEntryUrl(userDb.follows.schema.url, username, entry.key)
+      entry.url = constructEntryUrl(userDb.url, 'ctzn.network/follow', entry.key)
     }
     return entries
   })
 
-  wsServer.register('follows.get', async ([username, subjectUrl]) => {
-    const userDb = userDbs.get(username)
+  wsServer.register('follows.get', async ([userId, subjectId]) => {
+    if (isHyperUrl(userId)) {
+      userId = await fetchUserId(userId)
+    }
+    if (isHyperUrl(subjectId)) {
+      subjectId = await fetchUserId(subjectId)
+    }
+
+    const userDb = userDbs.get(userId)
     if (!userDb) throw new Error('User database not found')
     
-    const followEntry = await userDb.follows.get(subjectUrl)
+    const followEntry = await userDb.follows.get(subjectId)
     if (followEntry) {
-      followEntry.url = constructEntryUrl(userDb.follows.schema.url, username, subjectUrl)
+      followEntry.url = constructEntryUrl(userDb.url, 'ctzn.network/follow', followEntry.key)
     }
     return followEntry
   })
 
-  wsServer.register('follows.follow', async ([subjectUrl], client) => {
+  wsServer.register('follows.follow', async ([subject], client) => {
     if (!client?.auth) throw new Error('Must be logged in')
-    const userDb = userDbs.get(client.auth.username)
+    const userDb = userDbs.get(client.auth.userId)
     if (!userDb) throw new Error('User database not found')
 
-    const key = subjectUrl
-    if (!key) throw new Error('Must provide subject URL')
+    const subjectInfo = await fetchUserInfo(subject)
+    const key = subjectInfo.userId
+    if (!key) throw new Error('Must provide subject userId or URL')
     const value = {
-      subjectUrl,
+      subject: subjectInfo,
       createdAt: (new Date()).toISOString()
     }
     await userDb.follows.put(key, value)
-    const url = constructEntryUrl(userDb.follows.schema.url, client.auth.username, key)
+    const url = constructEntryUrl(userDb.url, 'ctzn.network/follow', key)
 
     await publicServerDb.updateFollowsIndex({
       type: 'put',
       url,
       key,
       value
-    }, constructUserUrl(client.auth.username))
+    }, client.auth.userId)
 
     return {key, url}
   })
 
-  wsServer.register('follows.unfollow', async ([subjectUrl], client) => {
+  wsServer.register('follows.unfollow', async ([subject], client) => {
     if (!client?.auth) throw new Error('Must be logged in')
-    const userDb = userDbs.get(client.auth.username)
+    const userDb = userDbs.get(client.auth.userId)
     if (!userDb) throw new Error('User database not found')
 
-    const key = subjectUrl
-    if (!key) throw new Error('Must provide subject URL')
+    const subjectInfo = await fetchUserInfo(subject)
+    const key = subjectInfo.userId
+    if (!key) throw new Error('Must provide subject userId or URL')
     await userDb.follows.del(key)
-    const url = constructEntryUrl(userDb.follows.schema.url, client.auth.username, key)
+    const url = constructEntryUrl(userDb.url, 'ctzn.network/follow',  key)
 
     await publicServerDb.updateFollowsIndex({
       type: 'del',
       url,
       key,
-      value: {subjectUrl}
-    }, constructUserUrl(client.auth.username))
+      value: {subject: subjectInfo}
+    }, client.auth.userId)
   })
 }

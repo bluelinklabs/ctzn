@@ -1,6 +1,5 @@
 {
-  "$id": "https://ctzn.network/user.json",
-  "$schema": "http://schema-tables.org/schema",
+  "id": "ctzn.network/user",
   "title": "User",
   "description": "Record of a user registered on a ctzn server.",
   "type": "json",

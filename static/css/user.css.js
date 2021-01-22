@@ -113,57 +113,10 @@ main {
   .two > :last-child {
     display: none;
   }
-  ctzn-sites-list {
-    margin-top: 20px;
-  }
-}
-
-.nav a {
-  display: block;
-  font-size: 16px;
-  padding: 5px;
-  margin-bottom: 5px;
-}
-
-.nav .fa-fw {
-  display: inline-block;
-  font-size: 12px;
-  margin-right: 4px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  line-height: 28px;
-  color: var(--text-color--default);
-  background: var(--bg-color--semi-light);
-}
-
-.nav a.current {
-  font-weight: 500;
-  color: var(--text-color--markdown-link);
-}
-
-.nav a.current .fa-fw {
-  color: #fff;
-  background: var(--text-color--markdown-link);
-}
-
-.nav sup {
-  font-weight: bold;
-  color: #fff;
-  background: var(--text-color--markdown-link);
-  border-radius: 4px;
-  padding: 1px 4px 2px;
-  font-size: 9px;
-  font-weight: bold;
-}
-
-ctzn-record-feed,
-ctzn-sites-list {
-  margin-bottom: 10px;
 }
 
 ctzn-record-feed {
-  --ctzn-record-feed--default-margin: 20px;
+  margin-bottom: 10px;
 }
 
 .empty {
@@ -181,6 +134,9 @@ ctzn-record-feed {
   display: block;
   width: 100%;
   padding: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 `
 export default cssStr

@@ -4,7 +4,7 @@ import * as hyperspace from './hyperspace.js'
 import { PublicServerDB, PrivateServerDB } from './server.js'
 import { UserDB } from './user.js'
 import * as schemas from '../lib/schemas.js'
-import { HYPER_KEY, hyperUrlToKey } from '../lib/strings.js'
+import { HYPER_KEY, hyperUrlToKey, constructUserId } from '../lib/strings.js'
 import lock from '../lib/lock.js'
 
 let _configDir = undefined
@@ -16,6 +16,7 @@ export let userDbs = new Map()
 
 export async function setup ({configDir, simulateHyperspace}) {
   await hyperspace.setup({simulateHyperspace})
+  await schemas.setup()
   
   _configDir = configDir
   configPath = path.join(configDir, 'dbconfig.json')
@@ -43,9 +44,9 @@ export async function createUser ({username, email, profile}) {
       joinDate: (new Date()).toISOString(),
     }
 
-    ;(await schemas.fetch('https://ctzn.network/profile.json')).assertValid(profile)
-    ;(await schemas.fetch('https://ctzn.network/account.json')).assertValid(account)
-    ;(await schemas.fetch('https://ctzn.network/user.json')).assertValid(user)
+    schemas.get('ctzn.network/profile').assertValid(profile)
+    schemas.get('ctzn.network/account').assertValid(account)
+    schemas.get('ctzn.network/user').assertValid(user)
 
     const userDb = new UserDB(null)
     await userDb.setup()
@@ -54,8 +55,15 @@ export async function createUser ({username, email, profile}) {
     await userDb.profile.put('self', profile)
     await publicServerDb.users.put(username, user)
     await privateServerDb.accounts.put(username, account)
+    await privateServerDb.updateUserDbIndex({
+      type: 'put',
+      value: {
+        userId: constructUserId(username),
+        dbUrl: user.dbUrl
+      }
+    })
     
-    userDbs.set(username, userDb)
+    userDbs.set(constructUserId(username), userDb)
     return userDb
   } finally {
     release()
@@ -109,6 +117,6 @@ async function loadUserDbs () {
   for (let user of users) {
     let userDb = new UserDB(hyperUrlToKey(user.value.dbUrl))
     await userDb.setup()
-    userDbs.set(user.key, userDb)
+    userDbs.set(constructUserId(user.key), userDb)
   }
 }

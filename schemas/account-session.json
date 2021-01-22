@@ -1,6 +1,5 @@
 {
-  "$id": "https://ctzn.network/account-session.json",
-  "$schema": "http://schema-tables.org/schema",
+  "id": "ctzn.network/account-session",
   "title": "Account session",
   "description": "Internal record of active session with a user account.",
   "type": "json",

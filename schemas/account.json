@@ -1,6 +1,5 @@
 {
-  "$id": "https://ctzn.network/account.json",
-  "$schema": "http://schema-tables.org/schema",
+  "id": "ctzn.network/account",
   "title": "Account",
   "description": "Internal record of user account registrations.",
   "type": "json",

@@ -77,34 +77,9 @@ export class BaseHyperbeeDB {
   async onDatabaseCreated () {
   }
 
-  async getTable (schemaUrl) {
-    let schema = await schemas.fetch(schemaUrl)
-    
-    let tableDef = await this.bee.sub('tables').sub('_schemas').get(schemaUrl)
-    if (tableDef && (typeof tableDef.value !== 'object' || typeof tableDef.value?.id !== 'number')) {
-      console.error('Incorrect table definition for', schemaUrl)
-      console.error('Definition:', tableDef)
-      console.error('Must be an object containing a .id number value')
-      process.exit(1)
-    }
-    if (!tableDef) {
-      // find the next unused ID
-      let tableDefs = await new Promise((resolve, reject) => {
-        pump(
-          this.bee.sub('tables').sub('_schemas').createReadStream(),
-          concat(resolve),
-          reject
-        )
-      })
-      tableDefs.sort((a, b) => b.value.id - a.value.id)
-      let highestId = tableDefs[0] ? tableDefs[0].value.id : 0
-      tableDef = {key: schemaUrl, seq: undefined, value: {id: highestId + 1}}
-
-      // save new table definition
-      await this.bee.sub('tables').sub('_schemas').put(schemaUrl, tableDef.value)
-    }
-
-    return new Table(this, schema, tableDef.value.id)
+  getTable (schemaId) {
+    let schema = schemas.get(schemaId)
+    return new Table(this, schema)
   }
 }
 
@@ -116,7 +91,7 @@ class Blobs {
   }
 
   async setup () {
-    this.kv = this.db.bee.sub('blobs')
+    this.kv = this.db.bee.sub('_blobs')
 
     if (!this.db.desc.blobsFeedKey) {
       this.feed = client.corestore().get(null)
@@ -152,11 +127,11 @@ class Blobs {
 }
 
 class Table {
-  constructor (db, schema, id) {
+  constructor (db, schema) {
+    const [domain, name] = schema.id.split('/')
     this.db = db
-    this.bee = this.db.bee.sub('tables').sub(String(id))
+    this.bee = this.db.bee.sub(domain).sub(name)
     this.schema = schema
-    this.id = id
   }
 
   async get (key) {

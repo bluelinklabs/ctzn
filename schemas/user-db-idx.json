@@ -1,0 +1,22 @@
+{
+  "id": "ctzn.network/user-db-idx",
+  "title": "User/Database Index",
+  "description": "An index mapping user database URLs to user IDs",
+  "type": "json",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["userId", "dbUrl"],
+    "additionalProperties": false,
+    "properties": {
+      "userId": {
+        "type": "string",
+        "pattern": ".+@.+"
+      },
+      "dbUrl": {
+        "type": "string",
+        "pattern": "^hyper://([a-f0-9]{64})/$"
+      }
+    }
+  }
+}

@@ -1,6 +1,5 @@
 {
-  "$id": "https://ctzn.network/featured-post-idx.json",
-  "$schema": "http://schema-tables.org/schema",
+  "id": "ctzn.network/featured-post-idx",
   "title": "Featured Posts Index",
   "description": "Aggregated posts which are trending on the server",
   "type": "json",

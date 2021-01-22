@@ -1,6 +1,5 @@
 {
-  "$id": "https://ctzn.network/vote-idx.json",
-  "$schema": "http://schema-tables.org/schema",
+  "id": "ctzn.network/vote-idx",
   "title": "Vote Index",
   "description": "Aggregated vote counts on a piece of content",
   "type": "json",

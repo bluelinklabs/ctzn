@@ -1,18 +1,28 @@
 {
-  "$id": "https://ctzn.network/follow.json",
-  "$schema": "http://schema-tables.org/schema",
+  "id": "ctzn.network/follow",
   "title": "Follow",
   "description": "A social subscription",
   "type": "json",
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["subjectUrl", "createdAt"],
+    "required": ["subject", "createdAt"],
     "additionalProperties": false,
     "properties": {
-      "subjectUrl": {
-        "type": "string",
-        "format": "uri"
+      "subject": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "additionalProperties": false,
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
       },
       "createdAt": {
         "type": "string",

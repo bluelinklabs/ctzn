@@ -1,6 +1,5 @@
 {
-  "$id": "https://ctzn.network/comment.json",
-  "$schema": "http://schema-tables.org/schema",
+  "id": "ctzn.network/comment",
   "title": "Comment",
   "description": "A threaded comment on posts, media, etc",
   "type": "json",

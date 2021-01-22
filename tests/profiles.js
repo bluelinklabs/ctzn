@@ -31,7 +31,9 @@ test('basic CRUD', async t => {
     homepageUrl: 'http://example.com'
   })
 
-  let profile1 = await api.profiles.get('bobo')
+  let profile1 = await api.profiles.get('bobo@localhost')
+  t.is(profile1.userId, 'bobo@localhost')
+  t.truthy(/^hyper:\/\/([0-9a-f]{64})\/$/.test(profile1.dbUrl))
   t.is(profile1.value.displayName, 'Bobo Roberts')
   t.is(profile1.value.description, 'Some person')
   t.is(profile1.value.homepageUrl, 'http://example.com')

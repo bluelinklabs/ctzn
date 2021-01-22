@@ -47,10 +47,10 @@ export class Thread extends LitElement {
     this.commentCount = 0
   }
 
-  get subjectSchemaUrl () {
+  get subjectSchemaId () {
     const urlp = new URL(this.subjectUrl)
     const pathParts = urlp.pathname.split('/')
-    return `https://${pathParts.slice(3, -1).join('/')}.json`
+    return pathParts.slice(3, -1).join('/')
   }
 
   async load () {
@@ -58,10 +58,10 @@ export class Thread extends LitElement {
     // this.reset() TODO causes a flash of the loading spinner, needed?
     console.log('loading', this.subjectUrl)
     try {
-      if (this.subjectSchemaUrl === 'https://ctzn.network/post.json') {
+      if (this.subjectSchemaId === 'ctzn.network/post') {
         this.post = await this.api.posts.get(this.subjectUrl)
         this.thread = await this.api.comments.getThread(this.subjectUrl)
-      } else if (this.subjectSchemaUrl === 'https://ctzn.network/comment.json') {
+      } else if (this.subjectSchemaId === 'ctzn.network/comment') {
         let comment = await this.api.comments.get(this.subjectUrl)
         this.post = await this.api.posts.get(comment.value.subjectUrl)
         this.thread = await this.api.comments.getThread(comment.value.subjectUrl)
