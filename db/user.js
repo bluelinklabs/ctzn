@@ -1,6 +1,6 @@
 import { BaseHyperbeeDB } from './base.js'
 
-export class UserDB extends BaseHyperbeeDB {
+export class PublicUserDB extends BaseHyperbeeDB {
   async setup () {
     await super.setup()
     await this.blobs.setup()
@@ -9,5 +9,11 @@ export class UserDB extends BaseHyperbeeDB {
     this.votes = this.getTable('ctzn.network/vote')
     this.comments = this.getTable('ctzn.network/comment')
     this.follows = this.getTable('ctzn.network/follow')
+  }
+}
+
+export class PrivateUserDB extends BaseHyperbeeDB {
+  async setup () {
+    await super.setup()
   }
 }

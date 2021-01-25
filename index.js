@@ -55,7 +55,7 @@ export async function start ({port, configDir, simulateHyperspace}) {
 
   app.get('/:username([^\/]{3,})/avatar', async (req, res) => {
     try {
-      const userDb = db.userDbs.get(req.params.username)
+      const userDb = db.publicUserDbs.get(req.params.username)
       if (!userDb) {
         res.sendFile(DEFAULT_USER_THUMB_PATH)
         return

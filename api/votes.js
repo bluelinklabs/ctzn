@@ -1,4 +1,4 @@
-import { publicServerDb, userDbs } from '../db/index.js'
+import { publicServerDb, publicUserDbs } from '../db/index.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 
@@ -17,15 +17,15 @@ export function setup (wsServer) {
 
   wsServer.register('votes.put', async ([vote], client) => {
     if (!client?.auth) throw new Error('Must be logged in')
-    const userDb = userDbs.get(client.auth.userId)
-    if (!userDb) throw new Error('User database not found')
+    const publicUserDb = publicUserDbs.get(client.auth.userId)
+    if (!publicUserDb) throw new Error('User database not found')
 
     const key = vote.subjectUrl
     if (!key) throw new Error('Subject URL is required')
     vote.createdAt = (new Date()).toISOString()
-    await userDb.votes.put(key, vote)
+    await publicUserDb.votes.put(key, vote)
     
-    const url = constructEntryUrl(userDb.url, 'ctzn.network/vote', key)
+    const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/vote', key)
     await publicServerDb.updateVotesIndex({
       type: 'put',
       url,
@@ -37,12 +37,12 @@ export function setup (wsServer) {
 
   wsServer.register('votes.del', async ([key], client) => {
     if (!client?.auth) throw new Error('Must be logged in')
-    const userDb = userDbs.get(client.auth.userId)
-    if (!userDb) throw new Error('User database not found')
+    const publicUserDb = publicUserDbs.get(client.auth.userId)
+    if (!publicUserDb) throw new Error('User database not found')
 
-    const url = constructEntryUrl(userDb.url, 'ctzn.network/vote', key)
-    const votesEntry = await userDb.votes.get(key)
-    await userDb.votes.del(key)
+    const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/vote', key)
+    const votesEntry = await publicUserDb.votes.get(key)
+    await publicUserDb.votes.del(key)
     await publicServerDb.updateVotesIndex({
       type: 'del',
       url,

@@ -1,5 +1,5 @@
 import { createValidator } from '../lib/schemas.js'
-import { publicServerDb, userDbs } from '../db/index.js'
+import { publicServerDb, publicUserDbs } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl, constructUserUrl, extractUserUrl, parseUserUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 
@@ -30,13 +30,13 @@ export function setup (wsServer) {
     opts.limit = Math.max(Math.min(opts.limit, 100), 1)
 
     userId = await fetchUserId(userId)
-    const userDb = userDbs.get(userId)
-    if (!userDb) throw new Error('User database not found')
+    const publicUserDb = publicUserDbs.get(userId)
+    if (!publicUserDb) throw new Error('User database not found')
 
-    const entries = await userDb.posts.list(opts)
+    const entries = await publicUserDb.posts.list(opts)
     const authorsCache = {}
     for (let entry of entries) {
-      entry.url = constructEntryUrl(userDb.url, 'ctzn.network/post', entry.key)
+      entry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', entry.key)
       entry.author = await fetchAuthor(userId, authorsCache)
       entry.votes = await fetchVotes(entry)
       entry.commentCount = await fetchCommentCount(entry)
@@ -49,13 +49,13 @@ export function setup (wsServer) {
     if (opts?.lt) return []
 
     if (!client?.auth) throw new Error('Must be logged in')
-    const userDb = userDbs.get(client.auth.userId)
-    if (!userDb) throw new Error('User database not found')
+    const publicUserDb = publicUserDbs.get(client.auth.userId)
+    if (!publicUserDb) throw new Error('User database not found')
 
-    const followEntries = await userDb.follows.list()
+    const followEntries = await publicUserDb.follows.list()
     followEntries.unshift({value: {subject: client.auth}})
     let postEntries = (await Promise.all(followEntries.map(async followEntry => {
-      const followedUserDb = userDbs.get(followEntry.value.subject.userId)
+      const followedUserDb = publicUserDbs.get(followEntry.value.subject.userId)
       if (!followedUserDb) return []
       
       const entries = await followedUserDb.posts.list({limit: 10, reverse: true})
@@ -89,14 +89,14 @@ export function setup (wsServer) {
       key = parsed.key
     }
 
-    const userDb = userDbs.get(userId)
-    if (!userDb) throw new Error('User database not found')
+    const publicUserDb = publicUserDbs.get(userId)
+    if (!publicUserDb) throw new Error('User database not found')
 
-    const postEntry = await userDb.posts.get(key)
+    const postEntry = await publicUserDb.posts.get(key)
     if (!postEntry) {
       throw new Error('Post not found')
     }
-    postEntry.url = constructEntryUrl(userDb.url, 'ctzn.network/post', postEntry.key)
+    postEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', postEntry.key)
     postEntry.author = await fetchAuthor(userId)
     postEntry.votes = await fetchVotes(postEntry)
     postEntry.commentCount = await fetchCommentCount(postEntry)
@@ -106,40 +106,40 @@ export function setup (wsServer) {
 
   wsServer.register('posts.create', async ([post], client) => {
     if (!client?.auth) throw new Error('Must be logged in')
-    const userDb = userDbs.get(client.auth.userId)
-    if (!userDb) throw new Error('User database not found')
+    const publicUserDb = publicUserDbs.get(client.auth.userId)
+    if (!publicUserDb) throw new Error('User database not found')
 
     const key = ''+Date.now()
     post.createdAt = (new Date()).toISOString()
-    await userDb.posts.put(key, post)
+    await publicUserDb.posts.put(key, post)
     
-    const url = constructEntryUrl(userDb.url, 'ctzn.network/post', key)
+    const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', key)
     return {key, url}
   })
 
   wsServer.register('posts.edit', async ([key, post], client) => {
     if (!client?.auth) throw new Error('Must be logged in')
-    const userDb = userDbs.get(client.auth.userId)
-    if (!userDb) throw new Error('User database not found')
+    const publicUserDb = publicUserDbs.get(client.auth.userId)
+    if (!publicUserDb) throw new Error('User database not found')
 
-    const postEntry = await userDb.posts.get(key)
+    const postEntry = await publicUserDb.posts.get(key)
     if (!postEntry) {
       throw new Error('Post not found')
     }
 
     postEntry.value.text = post?.text
-    await userDb.posts.put(key, postEntry.value)
+    await publicUserDb.posts.put(key, postEntry.value)
 
-    const url = constructEntryUrl(userDb.url, 'ctzn.network/post', postEntry.key)
+    const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', postEntry.key)
     return {key, url}
   })
 
   wsServer.register('posts.del', async ([key], client) => {
     if (!client?.auth) throw new Error('Must be logged in')
-    const userDb = userDbs.get(client.auth.userId)
-    if (!userDb) throw new Error('User database not found')
+    const publicUserDb = publicUserDbs.get(client.auth.userId)
+    if (!publicUserDb) throw new Error('User database not found')
 
-    await userDb.posts.del(key)
+    await publicUserDb.posts.del(key)
   })
 }
 
@@ -147,9 +147,9 @@ async function fetchAuthor (authorId, cache = undefined) {
   if (cache && cache[authorId]) {
     return cache[authorId]
   } else {
-    let userDb = userDbs.get(authorId)
+    let publicUserDb = publicUserDbs.get(authorId)
     let profileEntry
-    if (userDb) profileEntry = await userDb.profile.get('self')
+    if (publicUserDb) profileEntry = await publicUserDb.profile.get('self')
     let author = {
       url: constructUserUrl(authorId),
       userId: authorId,

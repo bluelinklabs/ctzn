@@ -1,4 +1,4 @@
-import { publicServerDb, userDbs } from '../db/index.js'
+import { publicServerDb, publicUserDbs } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl, constructUserUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 
@@ -24,29 +24,29 @@ export function setup (wsServer) {
       key = parsed.key
     }
 
-    const userDb = userDbs.get(userId)
-    if (!userDb) throw new Error('User database not found')
+    const publicUserDb = publicUserDbs.get(userId)
+    if (!publicUserDb) throw new Error('User database not found')
 
-    const commentEntry = await userDb.comments.get(key)
+    const commentEntry = await publicUserDb.comments.get(key)
     if (!commentEntry) {
       throw new Error('Comment not found')
     }
-    commentEntry.url = constructEntryUrl(userDb.url, 'ctzn.network/comment', commentEntry.key)
+    commentEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', commentEntry.key)
 
     return commentEntry
   })
 
   wsServer.register('comments.create', async ([comment], client) => {
     if (!client?.auth) throw new Error('Must be logged in')
-    const userDb = userDbs.get(client.auth.userId)
-    if (!userDb) throw new Error('User database not found')
+    const publicUserDb = publicUserDbs.get(client.auth.userId)
+    if (!publicUserDb) throw new Error('User database not found')
 
     const key = ''+Date.now()
     comment.createdAt = (new Date()).toISOString()
-    await userDb.comments.put(key, comment)
+    await publicUserDb.comments.put(key, comment)
 
-    const url = constructEntryUrl(userDb.url, 'ctzn.network/comment', key)
-    const commentEntry = await userDb.comments.get(key)
+    const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
+    const commentEntry = await publicUserDb.comments.get(key)
     commentEntry.url = url
 
     await publicServerDb.updateCommentsIndex({
@@ -61,18 +61,18 @@ export function setup (wsServer) {
 
   wsServer.register('comments.edit', async ([key, comment], client) => {
     if (!client?.auth) throw new Error('Must be logged in')
-    const userDb = userDbs.get(client.auth.userId)
-    if (!userDb) throw new Error('User database not found')
+    const publicUserDb = publicUserDbs.get(client.auth.userId)
+    if (!publicUserDb) throw new Error('User database not found')
 
-    const commentEntry = await userDb.comments.get(key)
+    const commentEntry = await publicUserDb.comments.get(key)
     if (!commentEntry) {
       throw new Error('Comment not found')
     }
 
     if (comment?.text) commentEntry.value.text = comment.text
-    await userDb.comments.put(key, commentEntry.value)
+    await publicUserDb.comments.put(key, commentEntry.value)
 
-    const url = constructEntryUrl(userDb.url, 'ctzn.network/comment', key)
+    const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
 
     await publicServerDb.updateCommentsIndex({
       type: 'put',
@@ -86,13 +86,13 @@ export function setup (wsServer) {
 
   wsServer.register('comments.del', async ([key], client) => {
     if (!client?.auth) throw new Error('Must be logged in')
-    const userDb = userDbs.get(client.auth.userId)
-    if (!userDb) throw new Error('User database not found')
+    const publicUserDb = publicUserDbs.get(client.auth.userId)
+    if (!publicUserDb) throw new Error('User database not found')
 
-    const url = constructEntryUrl(userDb.url, 'ctzn.network/comment', key)
-    const commentEntry = await userDb.comments.get(key)
+    const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
+    const commentEntry = await publicUserDb.comments.get(key)
 
-    await userDb.comments.del(key)
+    await publicUserDb.comments.del(key)
 
     await publicServerDb.updateCommentsIndex({
       type: 'del',
@@ -110,11 +110,11 @@ async function fetchIndexedComments (commentsIdxEntry) {
       const {origin, key} = parseEntryUrl(commentUrl)
 
       const userId = await fetchUserId(origin)
-      const userDb = userDbs.get(userId)
-      if (!userDb) return undefined
+      const publicUserDb = publicUserDbs.get(userId)
+      if (!publicUserDb) return undefined
 
-      const commentEntry = await userDb.comments.get(key)
-      commentEntry.url = constructEntryUrl(userDb.url, 'ctzn.network/comment', key)
+      const commentEntry = await publicUserDb.comments.get(key)
+      commentEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
       commentEntry.author = await fetchAuthor(userId, authorsCache)
       commentEntry.votes = await fetchVotes(commentEntry)
       return commentEntry
@@ -156,9 +156,9 @@ async function fetchAuthor (authorId, cache = undefined) {
   if (cache && cache[authorId]) {
     return cache[authorId]
   } else {
-    let userDb = userDbs.get(authorId)
+    let publicUserDb = publicUserDbs.get(authorId)
     let profileEntry
-    if (userDb) profileEntry = await userDb.profile.get('self')
+    if (publicUserDb) profileEntry = await publicUserDb.profile.get('self')
     let author = {
       url: constructUserUrl(authorId),
       userId: authorId,

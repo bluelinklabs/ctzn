@@ -2,7 +2,7 @@ import { promises as fsp } from 'fs'
 import * as path from 'path'
 import * as hyperspace from './hyperspace.js'
 import { PublicServerDB, PrivateServerDB } from './server.js'
-import { UserDB } from './user.js'
+import { PublicUserDB, PrivateUserDB } from './user.js'
 import * as schemas from '../lib/schemas.js'
 import { HYPER_KEY, hyperUrlToKey, constructUserId } from '../lib/strings.js'
 import lock from '../lib/lock.js'
@@ -12,7 +12,8 @@ export let configPath = undefined
 export let config = undefined
 export let publicServerDb = undefined
 export let privateServerDb = undefined
-export let userDbs = new Map()
+export let publicUserDbs = new Map()
+export let privateUserDbs = new Map()
 
 export async function setup ({configDir, simulateHyperspace}) {
   await hyperspace.setup({simulateHyperspace})
@@ -37,7 +38,10 @@ export async function setup ({configDir, simulateHyperspace}) {
 export async function createUser ({username, email, profile}) {
   let release = await lock('db')
   try {
-    const account = {email}
+    const account = {
+      email,
+      privateDbUrl: `hyper://${'0'.repeat(64)}/`
+    }
     const user = {
       username,
       dbUrl: `hyper://${'0'.repeat(64)}/`,
@@ -48,11 +52,15 @@ export async function createUser ({username, email, profile}) {
     schemas.get('ctzn.network/account').assertValid(account)
     schemas.get('ctzn.network/user').assertValid(user)
 
-    const userDb = new UserDB(null)
-    await userDb.setup()
-    user.dbUrl = userDb.url
+    const publicUserDb = new PublicUserDB(null)
+    await publicUserDb.setup()
+    user.dbUrl = publicUserDb.url
 
-    await userDb.profile.put('self', profile)
+    const privateUserDb = new PrivateUserDB(null)
+    await privateUserDb.setup()
+    account.privateDbUrl = privateUserDb.url
+
+    await publicUserDb.profile.put('self', profile)
     await publicServerDb.users.put(username, user)
     await privateServerDb.accounts.put(username, account)
     await privateServerDb.updateUserDbIndex({
@@ -63,8 +71,9 @@ export async function createUser ({username, email, profile}) {
       }
     })
     
-    userDbs.set(constructUserId(username), userDb)
-    return userDb
+    publicUserDbs.set(constructUserId(username), publicUserDb)
+    privateUserDbs.set(constructUserId(username), privateUserDb)
+    return {privateUserDb, publicUserDb}
   } finally {
     release()
   }
@@ -115,8 +124,13 @@ async function loadUserDbs () {
   let users = await publicServerDb.users.list()
   console.log('Loading', users.length, 'user databases')
   for (let user of users) {
-    let userDb = new UserDB(hyperUrlToKey(user.value.dbUrl))
-    await userDb.setup()
-    userDbs.set(constructUserId(user.key), userDb)
+    let publicUserDb = new PublicUserDB(hyperUrlToKey(user.value.dbUrl))
+    await publicUserDb.setup()
+    publicUserDbs.set(constructUserId(user.key), publicUserDb)
+
+    let accountEntry = await privateServerDb.accounts.get(user.value.username)
+    let privateUserDb = new PrivateUserDB(hyperUrlToKey(accountEntry.value.privateDbUrl))
+    await privateUserDb.setup()
+    privateUserDbs.set(constructUserId(user.key), privateUserDb)
   }
 }
