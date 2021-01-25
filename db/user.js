@@ -13,7 +13,21 @@ export class PublicUserDB extends BaseHyperbeeDB {
 }
 
 export class PrivateUserDB extends BaseHyperbeeDB {
+  constructor (key, publicUserDb) {
+    super(key)
+    this.publicUserDb = publicUserDb
+  }
+
   async setup () {
     await super.setup()
+    this.indexState = this.getTable('ctzn.network/index-state')
+    this.commentIdx = this.getTable('ctzn.network/comment-idx')
+    this.followIdx = this.getTable('ctzn.network/follow-idx')
+    this.notificationIdx = this.getTable('ctzn.network/notification-idx')
+    this.voteIdx = this.getTable('ctzn.network/vote-idx')
+  }
+
+  async getSubscribedDbUrls () {
+    return (await this.publicUserDb.follows.list()).map(entry => entry.value.subject.dbUrl)
   }
 }

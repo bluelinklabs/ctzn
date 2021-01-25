@@ -1,4 +1,4 @@
-import { publicServerDb, publicUserDbs } from '../db/index.js'
+import { publicServerDb, publicUserDbs, onDatabaseChange } from '../db/index.js'
 import { isHyperUrl, constructEntryUrl } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
 import { fetchUserId, fetchUserInfo } from '../lib/network.js'
@@ -81,15 +81,9 @@ export function setup (wsServer) {
       createdAt: (new Date()).toISOString()
     }
     await publicUserDb.follows.put(key, value)
+    await onDatabaseChange(publicUserDb)
+    
     const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/follow', key)
-
-    await publicServerDb.updateFollowsIndex({
-      type: 'put',
-      url,
-      key,
-      value
-    }, client.auth.userId)
-
     return {key, url}
   })
 
@@ -102,13 +96,6 @@ export function setup (wsServer) {
     const key = subjectInfo.userId
     if (!key) throw new Error('Must provide subject userId or URL')
     await publicUserDb.follows.del(key)
-    const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/follow',  key)
-
-    await publicServerDb.updateFollowsIndex({
-      type: 'del',
-      url,
-      key,
-      value: {subject: subjectInfo}
-    }, client.auth.userId)
+    await onDatabaseChange(publicUserDb)
   })
 }

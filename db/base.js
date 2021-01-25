@@ -37,6 +37,7 @@ export class BaseHyperbeeDB {
     this.key = key || null
     this.bee = null
     this.blobs = new Blobs(this)
+    this.indexers = []
   }
 
   get url () {
@@ -77,9 +78,64 @@ export class BaseHyperbeeDB {
   async onDatabaseCreated () {
   }
 
+  watch (cb) {
+    this.bee.feed.on('append', () => cb(this))
+    cb(this) // trigger immediately to update indexes from any previously synced changes that the indexer hasnt hit
+  }
+
   getTable (schemaId) {
     let schema = schemas.get(schemaId)
     return new Table(this, schema)
+  }
+
+  async getSubscribedDbUrls () {
+    // override in subclasses to
+    // give a list of URLs for databases currently watched by this database for changes
+    return []
+  }
+
+  createIndexer (schemaId, targetSchemaIds, indexFn) {
+    this.indexers.push(new Indexer(schemaId, targetSchemaIds, indexFn))
+  }
+
+  async updateIndexes (changedDb) {
+    for (let indexer of this.indexers) {
+      let indexState = await this.indexState.get(`${indexer.schemaId}:${changedDb.url}`)
+      let start = indexState?.value?.subject?.lastIndexedSeq || 0
+      let changes = await new Promise((resolve, reject) => {
+        pump(
+          changedDb.bee.createHistoryStream({gt: start}),
+          concat(resolve),
+          err => {
+            if (err) reject(err)
+          }
+        )
+      })
+      for (let change of changes) {
+        let keyParts = change.key.split('\x00')
+        change.keyParsed = {
+          schemaId: keyParts.slice(0, 2).join('/'),
+          key: keyParts[2]
+        }
+        if (indexer.isInterestedIn(change.keyParsed.schemaId)) {
+          try {
+            await indexer.index(changedDb, change)
+            await this.indexState.put(`${indexer.schemaId}:${changedDb.url}`, {
+              schemaId: indexer.schemaId,
+              subject: {dbUrl: changedDb.url, lastIndexedSeq: change.seq},
+              updatedAt: (new Date()).toISOString()
+            })
+          } catch (e) {
+            console.error('Failed to index change')
+            console.error(e)
+            console.error('Changed DB:', changedDb.url)
+            console.error('Change:', change)
+            console.error('Indexer:', indexer.schemaId)
+            return
+          }
+        }
+      }
+    }
   }
 }
 
@@ -165,9 +221,23 @@ class Table {
       pump(
         this.createReadStream(opts),
         concat(resolve),
-        reject
+        err => {
+          if (err) reject(err)
+        }
       )
     })
+  }
+}
+
+class Indexer {
+  constructor (schemaId, targetSchemaIds, indexFn) {
+    this.schemaId = schemaId
+    this.targetSchemaIds = targetSchemaIds
+    this.index = indexFn
+  }
+
+  isInterestedIn (schemaId) {
+    return this.targetSchemaIds.includes(schemaId)
   }
 }
 

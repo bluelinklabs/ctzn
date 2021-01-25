@@ -1,0 +1,26 @@
+{
+  "id": "ctzn.network/notification-idx",
+  "title": "Notifications Index",
+  "description": "An index of activity relevant to a given user",
+  "type": "json",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["subjectId", "itemUrl", "createdAt"],
+    "additionalProperties": false,
+    "properties": {
+      "subjectId": {
+        "type": "string",
+        "pattern": ".+@.+"
+      },
+      "itemUrl": {
+        "type": "string",
+        "pattern": "^hyper://([a-f0-9]{64})/$"
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+}

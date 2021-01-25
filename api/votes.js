@@ -1,4 +1,4 @@
-import { publicServerDb, publicUserDbs } from '../db/index.js'
+import { publicServerDb, publicUserDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 
@@ -24,14 +24,9 @@ export function setup (wsServer) {
     if (!key) throw new Error('Subject URL is required')
     vote.createdAt = (new Date()).toISOString()
     await publicUserDb.votes.put(key, vote)
+    await onDatabaseChange(publicUserDb)
     
     const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/vote', key)
-    await publicServerDb.updateVotesIndex({
-      type: 'put',
-      url,
-      key,
-      value: vote
-    })
     return {key, url}
   })
 
@@ -40,14 +35,7 @@ export function setup (wsServer) {
     const publicUserDb = publicUserDbs.get(client.auth.userId)
     if (!publicUserDb) throw new Error('User database not found')
 
-    const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/vote', key)
-    const votesEntry = await publicUserDb.votes.get(key)
     await publicUserDb.votes.del(key)
-    await publicServerDb.updateVotesIndex({
-      type: 'del',
-      url,
-      key,
-      value: votesEntry.value
-    })
+    await onDatabaseChange(publicUserDb)
   })
 }

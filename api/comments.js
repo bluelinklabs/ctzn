@@ -1,4 +1,4 @@
-import { publicServerDb, publicUserDbs } from '../db/index.js'
+import { publicServerDb, publicUserDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl, constructUserUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 
@@ -44,18 +44,9 @@ export function setup (wsServer) {
     const key = ''+Date.now()
     comment.createdAt = (new Date()).toISOString()
     await publicUserDb.comments.put(key, comment)
-
+    await onDatabaseChange(publicUserDb)
+    
     const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
-    const commentEntry = await publicUserDb.comments.get(key)
-    commentEntry.url = url
-
-    await publicServerDb.updateCommentsIndex({
-      type: 'put',
-      url,
-      key: commentEntry.key,
-      value: commentEntry.value
-    })
-
     return {key, url}
   })
 
@@ -71,16 +62,9 @@ export function setup (wsServer) {
 
     if (comment?.text) commentEntry.value.text = comment.text
     await publicUserDb.comments.put(key, commentEntry.value)
+    await onDatabaseChange(publicUserDb)
 
     const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
-
-    await publicServerDb.updateCommentsIndex({
-      type: 'put',
-      url,
-      key: commentEntry.key,
-      value: commentEntry.value
-    })
-
     return {key, url}
   })
 
@@ -89,17 +73,8 @@ export function setup (wsServer) {
     const publicUserDb = publicUserDbs.get(client.auth.userId)
     if (!publicUserDb) throw new Error('User database not found')
 
-    const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
-    const commentEntry = await publicUserDb.comments.get(key)
-
     await publicUserDb.comments.del(key)
-
-    await publicServerDb.updateCommentsIndex({
-      type: 'del',
-      url,
-      key: commentEntry.key,
-      value: commentEntry.value
-    })
+    await onDatabaseChange(publicUserDb)
   })
 }
 

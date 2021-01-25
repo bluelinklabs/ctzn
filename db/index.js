@@ -25,7 +25,8 @@ export async function setup ({configDir, simulateHyperspace}) {
 
   publicServerDb = new PublicServerDB(config.publicServer)
   await publicServerDb.setup()
-  privateServerDb = new PrivateServerDB(config.privateServer)
+  publicServerDb.watch(onDatabaseChange)
+  privateServerDb = new PrivateServerDB(config.privateServer, publicServerDb)
   await privateServerDb.setup()
 
   config.publicServer = publicServerDb.key.toString('hex')
@@ -54,22 +55,17 @@ export async function createUser ({username, email, profile}) {
 
     const publicUserDb = new PublicUserDB(null)
     await publicUserDb.setup()
+    publicUserDb.watch(onDatabaseChange)
     user.dbUrl = publicUserDb.url
 
-    const privateUserDb = new PrivateUserDB(null)
+    const privateUserDb = new PrivateUserDB(null, publicUserDb)
     await privateUserDb.setup()
     account.privateDbUrl = privateUserDb.url
 
     await publicUserDb.profile.put('self', profile)
     await publicServerDb.users.put(username, user)
     await privateServerDb.accounts.put(username, account)
-    await privateServerDb.updateUserDbIndex({
-      type: 'put',
-      value: {
-        userId: constructUserId(username),
-        dbUrl: user.dbUrl
-      }
-    })
+    await onDatabaseChange(publicServerDb)
     
     publicUserDbs.set(constructUserId(username), publicUserDb)
     privateUserDbs.set(constructUserId(username), privateUserDb)
@@ -127,10 +123,28 @@ async function loadUserDbs () {
     let publicUserDb = new PublicUserDB(hyperUrlToKey(user.value.dbUrl))
     await publicUserDb.setup()
     publicUserDbs.set(constructUserId(user.key), publicUserDb)
+    publicUserDb.watch(onDatabaseChange)
 
     let accountEntry = await privateServerDb.accounts.get(user.value.username)
-    let privateUserDb = new PrivateUserDB(hyperUrlToKey(accountEntry.value.privateDbUrl))
+    let privateUserDb = new PrivateUserDB(hyperUrlToKey(accountEntry.value.privateDbUrl), publicUserDb)
     await privateUserDb.setup()
     privateUserDbs.set(constructUserId(user.key), privateUserDb)
+  }
+}
+
+export function* getAllIndexingDbs () {
+  yield publicServerDb
+  yield privateServerDb
+  for (let db of privateUserDbs) {
+    yield db[1]
+  }
+}
+
+export async function onDatabaseChange (db) {
+  for (let indexingDb of getAllIndexingDbs()) {
+    let subscribedUrls = await indexingDb.getSubscribedDbUrls()
+    if (subscribedUrls.includes(db.url)) {
+      await indexingDb.updateIndexes(db)
+    }
   }
 }
