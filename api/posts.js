@@ -1,6 +1,6 @@
 import { createValidator } from '../lib/schemas.js'
 import { publicServerDb, publicUserDbs } from '../db/index.js'
-import { constructEntryUrl, parseEntryUrl, constructUserUrl, extractUserUrl, parseUserUrl } from '../lib/strings.js'
+import { constructEntryUrl, parseEntryUrl, constructUserUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 
 const listParam = createValidator({

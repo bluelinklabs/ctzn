@@ -6,16 +6,12 @@
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["subjectId", "itemUrl", "createdAt"],
+    "required": ["itemUrl", "createdAt"],
     "additionalProperties": false,
     "properties": {
-      "subjectId": {
-        "type": "string",
-        "pattern": ".+@.+"
-      },
       "itemUrl": {
         "type": "string",
-        "pattern": "^hyper://([a-f0-9]{64})/$"
+        "format": "uri"
       },
       "createdAt": {
         "type": "string",

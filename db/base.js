@@ -5,6 +5,7 @@ import pump from 'pump'
 import concat from 'concat-stream'
 import through2 from 'through2'
 import bytes from 'bytes'
+import lock from '../lib/lock.js'
 
 const BLOB_CHUNK_SIZE = bytes('64kb')
 
@@ -51,6 +52,11 @@ export class BaseHyperbeeDB {
     })
     await this.bee.ready()
 
+    if (!this.key) {
+      this.key = this.bee.feed.key
+      this.onDatabaseCreated()
+    }
+
     const desc = await this.bee.get('_db')
     if (desc) {
       dbDescription.assert(desc.value)
@@ -59,11 +65,6 @@ export class BaseHyperbeeDB {
       this.desc = {
         blobsFeedKey: null
       }
-    }
-
-    if (!this.key) {
-      this.key = this.bee.feed.key
-      this.onDatabaseCreated()
     }
   }
 
@@ -99,42 +100,48 @@ export class BaseHyperbeeDB {
   }
 
   async updateIndexes (changedDb) {
-    for (let indexer of this.indexers) {
-      let indexState = await this.indexState.get(`${indexer.schemaId}:${changedDb.url}`)
-      let start = indexState?.value?.subject?.lastIndexedSeq || 0
-      let changes = await new Promise((resolve, reject) => {
-        pump(
-          changedDb.bee.createHistoryStream({gt: start}),
-          concat(resolve),
-          err => {
-            if (err) reject(err)
+    if (!this.key) return
+    const release = await lock(`${this.url}-update-indexes`)
+    try {
+      for (let indexer of this.indexers) {
+        let indexState = await this.indexState.get(`${indexer.schemaId}:${changedDb.url}`)
+        let start = indexState?.value?.subject?.lastIndexedSeq || 0
+        let changes = await new Promise((resolve, reject) => {
+          pump(
+            changedDb.bee.createHistoryStream({gt: start}),
+            concat(resolve),
+            err => {
+              if (err) reject(err)
+            }
+          )
+        })
+        for (let change of changes) {
+          let keyParts = change.key.split('\x00')
+          change.keyParsed = {
+            schemaId: keyParts.slice(0, 2).join('/'),
+            key: keyParts[2]
           }
-        )
-      })
-      for (let change of changes) {
-        let keyParts = change.key.split('\x00')
-        change.keyParsed = {
-          schemaId: keyParts.slice(0, 2).join('/'),
-          key: keyParts[2]
-        }
-        if (indexer.isInterestedIn(change.keyParsed.schemaId)) {
-          try {
-            await indexer.index(changedDb, change)
-            await this.indexState.put(`${indexer.schemaId}:${changedDb.url}`, {
-              schemaId: indexer.schemaId,
-              subject: {dbUrl: changedDb.url, lastIndexedSeq: change.seq},
-              updatedAt: (new Date()).toISOString()
-            })
-          } catch (e) {
-            console.error('Failed to index change')
-            console.error(e)
-            console.error('Changed DB:', changedDb.url)
-            console.error('Change:', change)
-            console.error('Indexer:', indexer.schemaId)
-            return
+          if (indexer.isInterestedIn(change.keyParsed.schemaId)) {
+            try {
+              await indexer.index(changedDb, change)
+              await this.indexState.put(`${indexer.schemaId}:${changedDb.url}`, {
+                schemaId: indexer.schemaId,
+                subject: {dbUrl: changedDb.url, lastIndexedSeq: change.seq},
+                updatedAt: (new Date()).toISOString()
+              })
+            } catch (e) {
+              console.error('Failed to index change')
+              console.error(e)
+              console.error('Changed DB:', changedDb.url)
+              console.error('Change:', change)
+              console.error('Indexer:', indexer.schemaId)
+              return
+            }
           }
         }
       }
+    } finally {
+      release()
     }
   }
 }

@@ -1,4 +1,6 @@
 import { BaseHyperbeeDB } from './base.js'
+import { constructEntryUrl } from '../lib/strings.js'
+import lock from '../lib/lock.js'
 
 export class PublicUserDB extends BaseHyperbeeDB {
   async setup () {
@@ -13,8 +15,9 @@ export class PublicUserDB extends BaseHyperbeeDB {
 }
 
 export class PrivateUserDB extends BaseHyperbeeDB {
-  constructor (key, publicUserDb) {
+  constructor (key, publicServerDb, publicUserDb) {
     super(key)
+    this.publicServerDb = publicServerDb
     this.publicUserDb = publicUserDb
   }
 
@@ -25,9 +28,58 @@ export class PrivateUserDB extends BaseHyperbeeDB {
     this.followIdx = this.getTable('ctzn.network/follow-idx')
     this.notificationIdx = this.getTable('ctzn.network/notification-idx')
     this.voteIdx = this.getTable('ctzn.network/vote-idx')
+
+    const NOTIFICATIONS_SCHEMAS = [
+      'ctzn.network/follow',
+      'ctzn.network/comment',
+      'ctzn.network/vote'
+    ]
+    this.createIndexer('ctzn.network/notification-idx', NOTIFICATIONS_SCHEMAS, async (db, change) => {
+      const myUrl = this.publicUserDb.url
+      if (!change.value) return // ignore deletes
+      if (db.url === myUrl) return // ignore self
+
+      const release = await lock(`${this.url}-notifications-idx`)
+      try {
+        switch (change.keyParsed.schemaId) {
+          case 'ctzn.network/follow':
+            // following me?
+            if (change.value.dbUrl !== myUrl) {
+              return false
+            }
+            break
+          case 'ctzn.network/comment': {
+            // comment on my content?
+            let {subjectUrl, parentCommentUrl} = change.value
+            if (!subjectUrl.startsWith(myUrl) && !parentCommentUrl?.startsWith(myUrl)) {
+              return false
+            }
+            break
+          }
+          case 'ctzn.network/vote':
+            // vote on my content?
+            if (!change.value.subjectUrl.startsWith(myUrl)) {
+              return false
+            }
+            break
+        }
+        
+        const d = new Date()
+        const idxValue = {
+          itemUrl: constructEntryUrl(db.url, change.keyParsed.schemaId, change.keyParsed.key),
+          createdAt: d.toISOString()
+        }
+        await this.notificationIdx.put(+d, idxValue)
+      } finally {
+        release()
+      }
+    })
   }
 
   async getSubscribedDbUrls () {
-    return (await this.publicUserDb.follows.list()).map(entry => entry.value.subject.dbUrl)
+    return (
+      (await this.publicUserDb.follows.list()).map(entry => entry.value.subject.dbUrl)
+      .concat((await this.publicServerDb.users.list()).map(entry => entry.value.dbUrl))
+    )
   }
 }

@@ -58,7 +58,7 @@ export async function createUser ({username, email, profile}) {
     publicUserDb.watch(onDatabaseChange)
     user.dbUrl = publicUserDb.url
 
-    const privateUserDb = new PrivateUserDB(null, publicUserDb)
+    const privateUserDb = new PrivateUserDB(null, publicServerDb, publicUserDb)
     await privateUserDb.setup()
     account.privateDbUrl = privateUserDb.url
 
@@ -126,7 +126,7 @@ async function loadUserDbs () {
     publicUserDb.watch(onDatabaseChange)
 
     let accountEntry = await privateServerDb.accounts.get(user.value.username)
-    let privateUserDb = new PrivateUserDB(hyperUrlToKey(accountEntry.value.privateDbUrl), publicUserDb)
+    let privateUserDb = new PrivateUserDB(hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicUserDb)
     await privateUserDb.setup()
     privateUserDbs.set(constructUserId(user.key), privateUserDb)
   }
