@@ -1,7 +1,8 @@
-import { publicUserDbs, privateUserDbs } from '../db/index.js'
+import { publicUserDbs, privateUserDbs, privateServerDb } from '../db/index.js'
 import { createValidator } from '../lib/schemas.js'
 import { parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
+import lock from '../lib/lock.js'
 
 const listParam = createValidator({
   type: 'object',
@@ -39,6 +40,30 @@ export function setup (wsServer) {
 
     const notificationEntries = await privateUserDb.notificationIdx.list(opts)
     return notificationEntries.length
+  })
+
+  wsServer.register('notifications.getNotificationsClearedAt', async ([opts], client) => {
+    if (!client?.auth) throw new Error('Must be logged in')
+
+    const accountRecord = await privateServerDb.accounts.get(client.auth.username)
+    if (!accountRecord) throw new Error('User account record not found')
+    
+    return accountRecord.value.notificationsClearedAt
+  })
+
+  wsServer.register('notifications.updateNotificationsClearedAt', async ([opts], client) => {
+    if (!client?.auth) throw new Error('Must be logged in')
+
+    const release = await lock('accounts-db')
+    try {
+      const accountRecord = await privateServerDb.accounts.get(client.auth.username)
+      if (!accountRecord) throw new Error('User account record not found')
+      accountRecord.value.notificationsClearedAt = (new Date()).toISOString()
+      await privateServerDb.accounts.put(client.auth.username, accountRecord.value)
+      return accountRecord.value.notificationsClearedAt
+    } finally {
+      release()
+    }
   })
 }
 

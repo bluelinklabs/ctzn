@@ -18,6 +18,15 @@ ${tooltipCSS}
   background: var(--bg-color--light);
 }
 
+.wrapper.unread {
+  background: var(--bg-color--unread);
+  border-top: 1px solid var(--border-color--unread);
+}
+
+.wrapper.unread:hover {
+  background: var(--bg-color--unread-hover);
+}
+
 a {
   text-decoration: none;
   cursor: initial;
@@ -71,7 +80,7 @@ a:hover {
 }
 
 .subject ctzn-post {
-  --text-color--post-content: var(--text-color--pretty-light);
+  --text-color--post-content: var(--text-color--light);
 }
 
 .comment {

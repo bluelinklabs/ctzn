@@ -16,6 +16,10 @@
       "privateDbUrl": {
         "type": "string",
         "pattern": "^hyper://([a-f0-9]{64})/$"
+      },
+      "notificationsClearedAt": {
+        "type": "string",
+        "format": "date-time"
       }
     }
   }

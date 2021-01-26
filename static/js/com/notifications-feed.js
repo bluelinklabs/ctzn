@@ -11,6 +11,7 @@ export class NotificationsFeed extends LitElement {
       profile: {type: Object},
       showDateTitles: {type: Boolean, attribute: 'show-date-titles'},
       dateTitleRange: {type: String, attribute: 'date-title-range'},
+      clearedAt: {type: Number, attribute: 'cleared-at'},
       title: {type: String},
       sort: {type: String},
       limit: {type: Number},
@@ -28,6 +29,7 @@ export class NotificationsFeed extends LitElement {
     this.profile = undefined
     this.showDateTitles = false
     this.dateTitleRange = undefined
+    this.clearedAt = undefined
     this.title = undefined
     this.sort = 'ctime'
     this.limit = undefined
@@ -135,7 +137,7 @@ export class NotificationsFeed extends LitElement {
         .api=${this.api}
         .notification=${notification}
         .profile=${this.profile}
-        ?is-unread=${notification.ctime > this.notifications?.unreadSince}
+        ?is-unread=${Number(new Date(notification.createdAt)) > this.clearedAt}
       ></ctzn-notification>
     `
   }

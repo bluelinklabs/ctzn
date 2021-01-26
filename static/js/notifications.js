@@ -25,7 +25,7 @@ class CtznNotifications extends LitElement {
   constructor () {
     super()
     this.profile = undefined
-    this.searchQuery = ''
+    this.notificationsClearedAt = undefined
     this.isEmpty = false
     this.numNewItems = 0
     this.loadTime = Date.now()
@@ -41,11 +41,13 @@ class CtznNotifications extends LitElement {
     if (!this.profile) {
       return this.requestUpdate()
     }
+    this.notificationsClearedAt = Number(new Date(await this.api.notifications.getNotificationsClearedAt()))
     if (this.shadowRoot.querySelector('ctzn-notifications-feed')) {
       this.loadTime = Date.now()
       this.numNewItems = 0
       this.shadowRoot.querySelector('ctzn-notifications-feed').load({clearCurrent})
     }
+    await this.api.notifications.updateNotificationsClearedAt()
   }
 
   async checkNewItems () {
@@ -112,6 +114,7 @@ class CtznNotifications extends LitElement {
           <ctzn-notifications-feed
             .api=${this.api}
             .profile=${this.profile}
+            cleared-at=${this.notificationsClearedAt}
             limit="50"
             @load-state-updated=${this.onFeedLoadStateUpdated}
             @view-thread=${this.onViewThread}

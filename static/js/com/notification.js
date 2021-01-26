@@ -106,7 +106,7 @@ export class Notification extends LitElement {
 
     return html`
       <link rel="stylesheet" href=${(new URL('../../css/fontawesome.css', import.meta.url)).toString()}>
-      <div class="wrapper" @click=${this.onClickWrapper}>
+      <div class="wrapper ${this.isUnread ? 'unread' : ''}" @click=${this.onClickWrapper}>
         ${schemaId === 'ctzn.network/comment' ? html`
           <div class="comment">
             ${asyncReplace(this.renderComment(this.api, this.profile, note.itemUrl, html`<span class="fas fa-reply"></span> ${action} ${target}`))}

@@ -98,6 +98,7 @@ export class Post extends LitElement {
         <span class="arrow"></span>
         <div
           class="container"
+          @click=${e => { e.preventDefault(); e.stopPropagation() }}
           @mousedown=${this.onMousedownCard}
           @mouseup=${this.onMouseupCard}
           @mousemove=${this.onMousemoveCard}

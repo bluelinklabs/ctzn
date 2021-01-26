@@ -33,7 +33,9 @@ export class Header extends LitElement {
 
   async checkNotifications () {
     if (!this.api) return
-    this.unreadNotificationsCount = await this.api.notifications.count()
+    const clearedAt = await this.api.notifications.getNotificationsClearedAt()
+    const gt = String(Number(new Date(clearedAt)))
+    this.unreadNotificationsCount = await this.api.notifications.count({gt})
   }
 
   getNavClass (str) {
