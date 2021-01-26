@@ -44,7 +44,7 @@ export class PrivateUserDB extends BaseHyperbeeDB {
         switch (change.keyParsed.schemaId) {
           case 'ctzn.network/follow':
             // following me?
-            if (change.value.dbUrl !== myUrl) {
+            if (change.value.subject.dbUrl !== myUrl) {
               return false
             }
             break
