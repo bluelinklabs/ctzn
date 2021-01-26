@@ -32,6 +32,9 @@ export function setup (wsServer) {
       throw new Error('Comment not found')
     }
     commentEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', commentEntry.key)
+    commentEntry.author = await fetchAuthor(userId)
+    commentEntry.votes = await fetchVotes(commentEntry)
+    commentEntry.commentCount = await fetchCommentCount(commentEntry)
 
     return commentEntry
   })
@@ -153,4 +156,12 @@ async function fetchVotes (comment) {
     upvoterIds: await Promise.all((votesIdxEntry?.value?.upvoteUrls || []).map(fetchUserId)),
     downvoterIds: await Promise.all((votesIdxEntry?.value?.downvoteUrls || []).map(fetchUserId))
   }
+}
+
+async function fetchCommentCount (comment) {
+  let commentsIdxEntry
+  try {
+    commentsIdxEntry = await publicServerDb.commentsIdx.get(comment.url)
+  } catch (e) {}
+  return commentsIdxEntry?.value.commentUrls.length || 0
 }

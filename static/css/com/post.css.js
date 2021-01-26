@@ -12,6 +12,8 @@ ${tooltipCSS}
   display: block;
   content-visibility: auto;
   contain-intrinsic-size: 610px 115px;
+
+  --text-color--post-content: var(--text-color--default);
 }
 
 a {
@@ -229,23 +231,15 @@ a:hover {
   color: var(--text-color--result-link);
 }
 
-.card-context {
-  position: relative;
-  display: block;
-  opacity: 0.8;
-  background: var(--bg-color--secondary);
-  box-sizing: border-box;
-  border: 1px solid var(--border-color--very-light);
-  border-bottom: 0;
-  margin: 0 0 0 45px;
-  border-top-left-radius: 3px;
-  border-top-right-radius: 3px;
+.post.card .context {
+  padding: 0px 12px 5px;
+  color: var(--text-color--pretty-light);
 }
 
 .post.card .content {
   white-space: initial;
   word-break: break-word;
-  color: var(--text-color--default);
+  color: var(--text-color--post-content);
   line-height: 1.3125;
   font-size: 15px;
   letter-spacing: 0.1px;

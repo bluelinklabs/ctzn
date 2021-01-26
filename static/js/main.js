@@ -16,7 +16,6 @@ class CtznApp extends LitElement {
   static get properties () {
     return {
       profile: {type: Object},
-      unreadNotificationCount: {type: Number},
       isComposingPost: {type: Boolean},
       searchQuery: {type: String},
       isEmpty: {type: Boolean},
@@ -31,19 +30,15 @@ class CtznApp extends LitElement {
   constructor () {
     super()
     this.profile = undefined
-    this.unreadNotificationCount = 0
     this.isComposingPost = false
     this.searchQuery = ''
     this.isEmpty = false
     this.numNewItems = 0
     this.loadTime = Date.now()
-    this.notificationsClearTime = +localStorage.getItem('notificationsClearTime') || 1
-    this.cachedNotificationsClearTime = this.notificationsClearTime
 
     this.load()
 
     setInterval(this.checkNewItems.bind(this), 5e3)
-    setInterval(this.checkNotifications.bind(this), 5e3)
 
     window.addEventListener('popstate', (event) => {
       this.configFromQP()
@@ -56,16 +51,10 @@ class CtznApp extends LitElement {
     if (!this.profile) {
       return this.requestUpdate()
     }
-    this.checkNotifications()
     if (this.shadowRoot.querySelector('ctzn-feed')) {
       this.loadTime = Date.now()
       this.numNewItems = 0
       this.shadowRoot.querySelector('ctzn-feed').load({clearCurrent})
-    }
-    if (location.pathname === '/notifications') {
-      this.notificationsClearTime = Date.now()
-      localStorage.setItem('notificationsClearTime', '' + this.notificationsClearTime)
-      setTimeout(() => {this.unreadNotificationCount = 0}, 2e3)
     }
     
     if ((new URL(window.location)).searchParams.has('composer')) {
@@ -75,10 +64,6 @@ class CtznApp extends LitElement {
   }
 
   async checkNewItems () {
-    if (location.pathname === '/notifications') {
-      this.numNewItems = this.unreadNotificationCount
-      return
-    }
     if (location.pathname === '/search') return
     // TODO check for new items
     // var query = PATH_QUERIES[location.pathname.slice(1) || 'all']
@@ -92,28 +77,6 @@ class CtznApp extends LitElement {
     //   }
     // `, {paths: query, loadTime: this.loadTime})
     // this.numNewItems = count
-  }
-
-  async checkNotifications () {
-    if (!this.profile) return
-    // TODO check for notifications
-    // var {count} = await beaker.index.gql(`
-    //   query Notifications ($profileUrl: String!, $clearTime: Long!) {
-    //     count: recordCount(
-    //       paths: ["/microblog/*.md", "/comments/*.md", "/subscriptions/*.goto", "/tags/*.goto", "/votes/*.goto"]
-    //       links: {origin: $profileUrl}
-    //       excludeOrigins: [$profileUrl]
-    //       indexes: ["local", "network"],
-    //       after: {key: "crtime", value: $clearTime}
-    //     )
-    //   }
-    // `, {profileUrl: this.profile.url, clearTime: this.notificationsClearTime})
-    // this.unreadNotificationCount = count
-    if (this.unreadNotificationCount > 0) {
-      document.title = `${TITLE} (${this.unreadNotificationCount})`
-    } else {
-      document.title = TITLE
-    }
   }
 
   get isLoading () {
@@ -201,7 +164,6 @@ class CtznApp extends LitElement {
             <ctzn-feed
               .api=${this.api}
               .profile=${this.profile}
-              .notifications=${location.pathname === '/notifications' ? {unreadSince: this.cachedNotificationsClearTime} : undefined}
               limit="50"
               @load-state-updated=${this.onFeedLoadStateUpdated}
               @view-thread=${this.onViewThread}
@@ -220,14 +182,6 @@ class CtznApp extends LitElement {
         <div class="empty">
             <div class="fas fa-search"></div>
           <div>No results found for "${this.searchQuery}"</div>
-        </div>
-      `
-    }
-    if (location.pathname.startsWith('/notifications')) {
-      return html`
-        <div class="empty">
-          <div class="fas fa-bell"></div>
-          <div>No notifications</div>
         </div>
       `
     }

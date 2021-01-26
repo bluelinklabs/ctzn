@@ -2,10 +2,14 @@ import {LitElement, html} from '../../vendor/lit-element/lit-element.js'
 import * as contextMenu from './context-menu.js'
 import css from '../../css/com/header.css.js'
 
+const CHECK_NOTIFICATIONS_INTERVAL = 5e3
+
 export class Header extends LitElement {
   static get properties () {
     return {
-      profile: {type: Object}
+      api: {type: Object},
+      profile: {type: Object},
+      unreadNotificationsCount: {type: Number}
     }
   }
 
@@ -17,6 +21,19 @@ export class Header extends LitElement {
     super()
     this.api = undefined
     this.profile = undefined
+    this.unreadNotificationsCount = 0
+    setInterval(this.checkNotifications.bind(this), CHECK_NOTIFICATIONS_INTERVAL)
+  }
+
+  updated (changedProperties) {
+    if (changedProperties.has('api')) {
+      this.checkNotifications()
+    }
+  }
+
+  async checkNotifications () {
+    if (!this.api) return
+    this.unreadNotificationsCount = await this.api.notifications.count()
   }
 
   getNavClass (str) {
@@ -33,7 +50,7 @@ export class Header extends LitElement {
         </a>
         <a href="/notifications" class=${this.getNavClass('/notifications')}>
           <span class="far navicon fa-bell"></span>
-          Notifications
+          Notifications ${this.unreadNotificationsCount > 0 ? `(${this.unreadNotificationsCount})` : ''}
         </a>
         <span class="spacer"></span>
         ${this.renderSessionCtrls()}

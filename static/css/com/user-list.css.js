@@ -12,7 +12,6 @@ ${spinnerCSS}
 
 :host {
   display: block;
-  background: var(--bg-color--default);
 }
 
 a {
@@ -32,6 +31,7 @@ a:hover {
 
 .profile {
   border: 1px solid var(--border-color--light);
+  background: var(--bg-color--default);
   border-radius: 4px;
   padding: 10px;
 }

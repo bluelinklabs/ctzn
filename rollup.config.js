@@ -26,5 +26,12 @@ export default [
       file: 'static/js/user.build.js',
       format: 'iife'
     }
+  },
+  {
+    input: 'static/js/notifications.js',
+    output: {
+      file: 'static/js/notifications.build.js',
+      format: 'iife'
+    }
   }
 ]

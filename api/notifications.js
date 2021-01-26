@@ -28,6 +28,18 @@ export function setup (wsServer) {
     const notificationEntries = await privateUserDb.notificationIdx.list(opts)
     return await Promise.all(notificationEntries.map(fetchNotification))
   })
+
+  wsServer.register('notifications.count', async ([opts], client) => {
+    if (!client?.auth) throw new Error('Must be logged in')
+    const privateUserDb = privateUserDbs.get(client.auth.userId)
+    if (!privateUserDb) throw new Error('User database not found')
+
+    opts = opts || {}
+    listParam.assert(opts)
+
+    const notificationEntries = await privateUserDb.notificationIdx.list(opts)
+    return notificationEntries.length
+  })
 }
 
 async function fetchNotification (notificationEntry) {

@@ -80,6 +80,17 @@ export function makeSafe (str = '') {
   return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
+export function extractSchemaId (str = '') {
+  try {
+    const urlp = new URL(str)
+    const pathParts = urlp.pathname.split('/')
+    if (pathParts.length === 2) return undefined
+    return pathParts.slice(3, 5).join('/')
+  } catch (e) {
+    return undefined
+  }
+}
+
 // search results are returned from beaker's search APIs with nonces wrapping the highlighted sections
 // e.g. a search for "test" might return "the {500}test{/500} result"
 // this enables us to safely escape the HTML, then replace the nonces with <strong> tags
@@ -153,23 +164,6 @@ export function changeURLScheme (url = '', scheme = '') {
     return urlp.toString()
   } catch (e) {
     return url
-  }
-}
-
-export function toNiceDriveType (type = '') {
-  if (!type) return 'files drive'
-  if (type === 'webterm.sh/cmd-pkg') return 'webterm command'
-  return type
-}
-
-export function getDriveTypeIcon (type = '') {
-  switch (type) {
-    case 'user': return 'fas fa-user'
-    case 'group': return 'fas fa-users'
-    case 'webterm.sh/cmd-pkg': return 'fas fa-terminal'
-    case 'module': return 'fas fa-cube'
-    case 'website': return 'fas fa-desktop'
-    default: return 'far fa-folder-open'
   }
 }
 
