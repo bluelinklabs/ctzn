@@ -5,7 +5,7 @@ import * as api from './api/index.js'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
 import * as os from 'os'
-import { setOrigin } from './lib/strings.js'
+import { setOrigin, getDomain, parseAcctUrl } from './lib/strings.js'
 
 const DEFAULT_USER_THUMB_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'static', 'img', 'default-user-thumb.jpg')
 
@@ -51,6 +51,22 @@ export async function start ({port, configDir, simulateHyperspace, domain, debug
 
   app.get('/search', (req, res) => {
     res.render('search')
+  })
+
+  app.get('/.well-known/webfinger', async (req, res) => {
+    try {
+      if (!req.query.resource) throw new Error('?resource is required')
+      const {username, domain} = parseAcctUrl(req.query.resource)
+      if (domain !== getDomain()) throw 'Not found'
+      const profile = await db.publicServerDb.users.get(username)
+      if (!profile || !profile.value.dbUrl) throw 'Not found'
+      res.status(200).json({
+        subject: `acct:${username}@${domain}`,
+        links: [{rel: 'self', href: profile.value.dbUrl}]
+      })
+    } catch (e) {
+      res.status(404).json({error: e.toString()})
+    }
   })
 
   app.get('/:username([^\/]{3,})/avatar', async (req, res) => {

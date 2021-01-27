@@ -1,42 +1,49 @@
 import test from 'ava'
 import { createServer } from './_util.js'
+import fetch from 'node-fetch'
 
-let close
-let api
+let inst
 
 test.before(async () => {
-  let inst = await createServer()
-  close = inst.close
-  api = inst.api
+  inst = await createServer()
 
-  await api.accounts.createDebugUser({
+  await inst.api.accounts.createDebugUser({
     username: 'bobo',
     email: 'bobo@roberts.com',
     profile: {
       displayName: 'Bobo Roberts'
     }
   })
-  await api.accounts.login({username: 'bobo', password: 'password'})
+  await inst.api.accounts.login({username: 'bobo', password: 'password'})
 })
 
 test.after.always(async t => {
-	await close()
+	await inst.close()
 })
 
 test('basic CRUD', async t => {
-  await api.profiles.put({
+  await inst.api.profiles.put({
     displayName: 'Bobo Roberts',
     description: 'Some person',
     homepageUrl: 'http://example.com'
   })
 
-  let profile1 = await api.profiles.get('bobo@localhost')
-  t.is(profile1.userId, 'bobo@localhost')
+  let profile1 = await inst.api.profiles.get(`bobo@${inst.domain}`)
+  t.is(profile1.userId, `bobo@${inst.domain}`)
   t.truthy(/^hyper:\/\/([0-9a-f]{64})\/$/.test(profile1.dbUrl))
   t.is(profile1.value.displayName, 'Bobo Roberts')
   t.is(profile1.value.description, 'Some person')
   t.is(profile1.value.homepageUrl, 'http://example.com')
 
-  await t.throwsAsync(() => api.profiles.put({}))
-  await t.throwsAsync(() => api.profiles.put({description: 'hi'}))
+  await t.throwsAsync(() => inst.api.profiles.put({}))
+  await t.throwsAsync(() => inst.api.profiles.put({description: 'hi'}))
+})
+
+test('webfinger', async t => {
+  const profile = await inst.api.profiles.get(`bobo@${inst.domain}`)
+  const jrd = await (await fetch(`${inst.url}.well-known/webfinger?resource=acct:bobo@${inst.domain}`)).json()
+  t.deepEqual(jrd, {
+    subject: `acct:bobo@${inst.domain}`,
+    links: [{rel: 'self', href: profile.dbUrl}]
+  })
 })

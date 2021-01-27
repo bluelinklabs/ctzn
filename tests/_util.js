@@ -24,6 +24,7 @@ export async function createServer () {
   const api = await createRpcApi(client)
 
   return {
+    url: `http://localhost:${port}/`,
     domain,
     client,
     api,

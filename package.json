@@ -45,6 +45,7 @@
     "ws": "^7.4.2"
   },
   "devDependencies": {
+    "node-fetch": "^2.6.1",
     "npm-watch": "^0.7.0",
     "random-port": "^0.1.0",
     "rollup": "^2.36.1"
