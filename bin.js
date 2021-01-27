@@ -14,6 +14,21 @@ const match = subcommand({
       }
     },
     {
+      name: 'start-test',
+      command: args => {
+        if (!args.port) throw new Error('--port required')
+        if (!args.configDir) throw new Error('--configDir required')
+        if (!args.domain) throw new Error('--domain required')
+        start({
+          debugMode: true,
+          simulateHyperspace: true,
+          port: args.port,
+          configDir: args.configDir,
+          domain: args.domain
+        })
+      }
+    },
+    {
       name: 'create-user',
       command: async args => {
         // TODO- this needs to work without starting the server

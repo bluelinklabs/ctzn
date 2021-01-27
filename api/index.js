@@ -7,7 +7,7 @@ import * as notifications from './notifications.js'
 import * as users from './users.js'
 import * as votes from './votes.js'
 
-export function setup (wsServer) {
+export function setup (wsServer, opts) {
   const origRegister = wsServer.register
   wsServer.register = function (methodName, methodHandler) {
     origRegister.call(this, methodName, async (params, socket_id) => {
@@ -17,7 +17,7 @@ export function setup (wsServer) {
     })
   }
 
-  accounts.setup(wsServer)
+  accounts.setup(wsServer, opts)
   comments.setup(wsServer)
   follows.setup(wsServer)
   posts.setup(wsServer)

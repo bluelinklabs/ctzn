@@ -9,7 +9,7 @@ test.before(async () => {
   close = inst.close
   api = inst.api
 
-  await inst.db.createUser({
+  await api.accounts.createDebugUser({
     username: 'bobo',
     email: 'bobo@roberts.com',
     profile: {

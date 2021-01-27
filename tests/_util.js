@@ -1,29 +1,40 @@
-import { start } from '../index.js'
 import randomPort from 'random-port'
 import { Client as WsClient } from 'rpc-websockets'
 import tmp from 'tmp-promise'
 import { parseEntryUrl } from '../lib/strings.js'
+import { spawn } from 'child_process'
+import * as path from 'path'
+import { fileURLToPath } from 'url'
 
+let nServer = 1
 export async function createServer () {
   const tmpdir = await tmp.dir({unsafeCleanup: true})
   const port = await new Promise(r => randomPort(r))
-  const inst = await start({
-    debugMode: true,
-    port,
-    configDir: tmpdir.path,
-    simulateHyperspace: true
-  })
+  const domain = `dev${nServer++}.localhost`
   console.log('Storing config in', tmpdir.path)
+
+  const binPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'bin.js')
+  const serverProcess = spawn(
+    'node',
+    [binPath, 'start-test', '--port', port, '--configDir', tmpdir.path, '--domain', domain],
+    {stdio: [process.stdin, process.stdout, process.stderr]}
+  )
 
   const client = new WsClient(`ws://localhost:${port}/`)
   const api = await createRpcApi(client)
 
   return {
-    db: inst.db,
+    domain,
     client,
     api,
+    process: serverProcess,
     close: async () => {
-      await inst.close()
+      const p = new Promise(r => {
+        if (serverProcess.exitCode !== null) r()
+        serverProcess.on('exit', r)
+      })
+      serverProcess.kill()
+      await p
       await tmpdir.cleanup()
     }
   }
@@ -31,7 +42,7 @@ export async function createServer () {
 
 async function createRpcApi (ws) {
   await new Promise(resolve => ws.on('open', resolve))
-  return new Proxy({}, {
+  return new Proxy({url: ws.address}, {
     get (target, prop) {
       // generate rpc calls as needed
       if (!(prop in target)) {
@@ -158,6 +169,9 @@ export class TestFramework {
   
   async getRandomParentFor (inst, post) {
     if (randRange(0, 1) === 0) return undefined // 1/2 chance of no parent
+    if (Array.isArray(inst)) {
+      inst = inst[randRange(0, inst.length - 1)]
+    }
     let comments = flattenThread(await inst.api.comments.getThread(post.url))
     return comments[randRange(0, comments.length - 1)]
   }
@@ -183,8 +197,10 @@ export class TestFramework {
     return ids
   }
 
-  getThread (post) {
-    const comments = this.allComments.filter(c => c.value.subjectUrl === post.url)
+  getThread (post, filterFn) {
+    const comments = this.allComments.filter(c => {
+      return (c.value.subjectUrl === post.url && (!filterFn || filterFn(c)))
+    })
     return commentEntriesToThread(comments) || []
   }
 
@@ -233,7 +249,7 @@ class TestUser {
   }
 
   async setup () {
-    const {userId} = await this.inst.db.createUser({
+    const {userId} = await this.inst.api.accounts.createDebugUser({
       username: this.username,
       email: `${this.username}@email.com`,
       profile: {

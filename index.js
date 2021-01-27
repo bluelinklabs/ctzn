@@ -11,9 +11,9 @@ const DEFAULT_USER_THUMB_PATH = path.join(path.dirname(fileURLToPath(import.meta
 
 let app
 
-export async function start ({port, configDir, simulateHyperspace}) {
+export async function start ({port, configDir, simulateHyperspace, domain, debugMode}) {
   configDir = configDir || path.join(os.homedir(), '.ctzn')
-  setOrigin(`http://localhost:${port}`)
+  setOrigin(`http://${domain || 'localhost'}:${port}`)
 
   app = express()
   app.set('view engine', 'ejs')
@@ -90,7 +90,7 @@ export async function start ({port, configDir, simulateHyperspace}) {
   })
 
   const wsServer = new WebSocketServer({server})
-  api.setup(wsServer)
+  api.setup(wsServer, {debugMode})
 
   // process.on('SIGINT', close)
   // process.on('SIGTERM', close)

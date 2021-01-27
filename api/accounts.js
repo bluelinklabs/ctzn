@@ -1,6 +1,6 @@
 import { createValidator } from '../lib/schemas.js'
 import { v4 as uuidv4 } from 'uuid'
-import { publicServerDb, privateServerDb } from '../db/index.js'
+import { publicServerDb, privateServerDb, createUser } from '../db/index.js'
 import { constructUserUrl, constructUserId } from '../lib/strings.js'
 
 const registerParam = createValidator({
@@ -12,7 +12,14 @@ const registerParam = createValidator({
   }
 })
 
-export function setup (wsServer) {
+export function setup (wsServer, {debugMode} = {}) {
+  if (debugMode) {
+    wsServer.register('accounts.createDebugUser', async (params) => {
+      const {userId} = await createUser(params[0])
+      return {userId}
+    })
+  }
+
   wsServer.register('accounts.whoami', async (params, client) => {
     if (client.auth) {
       return {
