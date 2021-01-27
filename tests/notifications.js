@@ -27,37 +27,37 @@ test.before(async () => {
   await carla.createPost({text: '3'})
 
   await alice.createComment({
-    subjectUrl: bob.posts[0].url,
+    subject: bob.posts[0],
     text: 'Comment 1'
   })
   await carla.createComment({
-    subjectUrl: bob.posts[0].url,
-    parentCommentUrl: alice.comments[0].url,
+    subject: bob.posts[0],
+    parent: alice.comments[0],
     text: 'Reply 1'
   })
   await bob.createComment({
-    subjectUrl: bob.posts[0].url,
-    parentCommentUrl: alice.comments[0].url,
+    subject: bob.posts[0],
+    parent: alice.comments[0],
     text: 'Reply 2'
   })
   await carla.createComment({
-    subjectUrl: bob.posts[0].url,
+    subject: bob.posts[0],
     text: 'Comment 2'
   })
 
-  await bob.vote({subjectUrl: bob.posts[0].url, vote: 1})
-  await bob.vote({subjectUrl: bob.posts[1].url, vote: -1})
+  await bob.vote({subject: bob.posts[0], vote: 1})
+  await bob.vote({subject: bob.posts[1], vote: -1})
   for (let post of bob.posts) {
-    await alice.vote({subjectUrl: post.url, vote: 1})
+    await alice.vote({subject: post, vote: 1})
   }
   for (let comment of bob.comments) {
-    await alice.vote({subjectUrl: comment.url, vote: 1})
+    await alice.vote({subject: comment, vote: 1})
   }
   for (let post of bob.posts) {
-    await carla.vote({subjectUrl: post.url, vote: -1})
+    await carla.vote({subject: post, vote: -1})
   }
   for (let comment of bob.comments) {
-    await carla.vote({subjectUrl: comment.url, vote: -1})
+    await carla.vote({subject: comment, vote: -1})
   }
 })
 

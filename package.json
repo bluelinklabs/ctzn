@@ -7,7 +7,7 @@
   "scripts": {
     "build": "rollup -c",
     "watch": "npm-watch build",
-    "test": "ava -s"
+    "test": "ava -s --timeout=2m"
   },
   "watch": {
     "build": {

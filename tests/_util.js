@@ -76,14 +76,14 @@ export class TestFramework {
   }
 
   testPost (t, entry, desc) {
-    const user = this.users[desc[0]]
+    const user = desc[0]
     t.truthy(entry.url.startsWith(user.profile.dbUrl))
     t.is(entry.author.userId, user.userId)
     t.is(entry.value.text, desc[1])
   }
 
   testComment (t, entry, desc, {subject, parent}) {
-    const user = this.users[desc[0]]
+    const user = desc[0]
     t.truthy(entry.url.startsWith(user.profile.dbUrl))
     t.is(entry.author.userId, user.userId)
     t.is(entry.value.text, desc[1])
@@ -100,7 +100,7 @@ export class TestFramework {
   }
 
   testThreadItem (t, entry, desc) {
-    const user = this.users[desc[0]]
+    const user = desc[0]
     t.truthy(entry.url.startsWith(user.profile.dbUrl))
     t.is(entry.author.userId, user.userId)
     t.is(entry.value.text, desc[1])
@@ -132,6 +132,60 @@ export class TestFramework {
       }
     }
     return followers
+  }
+
+  get allPosts () {
+    return Object.values(this.users).map(user => user.posts).flat()
+  }
+
+  get allComments () {
+    return Object.values(this.users).map(user => user.comments).flat()
+  }
+
+  get allSubjects () {
+    return [this.allPosts, this.allComments].flat()
+  }
+
+  getRandomSubject () {
+    const subjects = this.allSubjects
+    return subjects[randRange(0, subjects.length - 1)]
+  }
+
+  getRandomPost () {
+    const posts = this.allPosts
+    return posts[randRange(0, posts.length - 1)]
+  }
+  
+  async getRandomParentFor (inst, post) {
+    if (randRange(0, 1) === 0) return undefined // 1/2 chance of no parent
+    let comments = flattenThread(await inst.api.comments.getThread(post.url))
+    return comments[randRange(0, comments.length - 1)]
+  }
+  
+  getExpectedHomeFeedUrls (user) {
+    let users = [user].concat(Object.values(user.following))
+    let posts = users.map(user => user.posts).flat()
+    posts.sort((a, b) => (new Date(b.value.createdAt)) - (new Date(a.value.createdAt)))
+    return posts.map(p => p.url)
+  }
+  
+  getExpectedUserFeedUrls (user) {
+    return user.posts.slice().map(p => p.url)
+  }
+
+  getExpectedVoterIds (subject, vote) {
+    var ids = []
+    for (let username in this.users) {
+      if (this.users[username].votes[subject.url] === vote) {
+        ids.push(this.users[username].userId)
+      }
+    }
+    return ids
+  }
+
+  getThread (post) {
+    const comments = this.allComments.filter(c => c.value.subjectUrl === post.url)
+    return commentEntriesToThread(comments) || []
   }
 
   testNotifications (t, entries, descs) {
@@ -196,12 +250,14 @@ class TestUser {
 
   async createPost ({text}) {
     await this.login()
-    this.posts.push(await this.inst.api.posts.create({text}))
+    const {url} = await this.inst.api.posts.create({text})
+    this.posts.push(await this.inst.api.posts.get(url))
   }
 
-  async createComment ({text, subjectUrl, parentCommentUrl}) {
+  async createComment ({text, subject, parent}) {
     await this.login()
-    this.comments.push(await this.inst.api.comments.create({text, subjectUrl, parentCommentUrl}))
+    const {url} = await this.inst.api.comments.create({text, subjectUrl: subject.url, parentCommentUrl: parent?.url})
+    this.comments.push(await this.inst.api.comments.get(url))
   }
 
   async follow (testUser) {
@@ -216,14 +272,14 @@ class TestUser {
     delete this.following[testUser.userId]
   }
 
-  async vote ({subjectUrl, vote}) {
+  async vote ({subject, vote}) {
     await this.login()
     if (vote !== 0) {
-      await this.inst.api.votes.put({subjectUrl, vote})
-      this.votes[subjectUrl] = vote
+      await this.inst.api.votes.put({subjectUrl: subject.url, vote})
+      this.votes[subject.url] = vote
     } else {
-      await this.inst.api.votes.del(subjectUrl)
-      delete this.votes[subjectUrl]
+      await this.inst.api.votes.del(subject.url)
+      delete this.votes[subject.url]
     }
   }
 
@@ -233,4 +289,46 @@ class TestUser {
     let followers = await this.inst.api.follows.listFollowers(this.userId)
     sim.testFollowers(t, followers, sim.listFollowers(this))
   }
+}
+
+export function randRange (min, max) {
+  min = Math.ceil(min)
+  max = Math.floor(max)
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
+function flattenThread (thread, comments = []) {
+  for (let comment of thread) {
+    comments.push(comment)
+    if (comment.replies?.length) {
+      flattenThread(comment.replies, comments)
+    }
+  }
+  return comments
+}
+
+function commentEntriesToThread (commentEntries) {
+  const commentEntriesByUrl = {}
+  commentEntries.forEach(commentEntry => { commentEntriesByUrl[commentEntry.url] = commentEntry })
+
+  const rootCommentEntries = []
+  commentEntries.forEach(commentEntry => {
+    if (commentEntry.value.parentCommentUrl) {
+      let parent = commentEntriesByUrl[commentEntry.value.parentCommentUrl]
+      if (!parent) {
+        commentEntry.isMissingParent = true
+        rootCommentEntries.push(commentEntry)
+        return
+      }
+      if (!parent.replies) {
+        parent.replies = []
+        parent.replyCount = 0
+      }
+      parent.replies.push(commentEntry)
+      parent.replyCount++
+    } else {
+      rootCommentEntries.push(commentEntry)
+    }
+  })
+  return rootCommentEntries
 }

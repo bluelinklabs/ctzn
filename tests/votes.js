@@ -24,10 +24,10 @@ test.after.always(async t => {
 test('basic CRUD', async t => {
   const {alice, bob} = sim.users
 
-  await bob.vote({subjectUrl: bob.posts[0].url, vote: 1})
-  await bob.vote({subjectUrl: bob.posts[1].url, vote: -1})
-  await alice.vote({subjectUrl: bob.posts[0].url, vote: 1})
-  await alice.vote({subjectUrl: bob.posts[1].url, vote: 1})
+  await bob.vote({subject: bob.posts[0], vote: 1})
+  await bob.vote({subject: bob.posts[1], vote: -1})
+  await alice.vote({subject: bob.posts[0], vote: 1})
+  await alice.vote({subject: bob.posts[1], vote: 1})
 
   let votes1 = await api.votes.getVotesForSubject(bob.posts[0].url)
   t.is(votes1.subjectUrl, bob.posts[0].url)
@@ -39,21 +39,21 @@ test('basic CRUD', async t => {
   t.is(votes2.upvoterIds.length, 1)
   t.is(votes2.downvoterIds.length, 1)
 
-  await bob.vote({subjectUrl: bob.posts[0].url, vote: -1})
+  await bob.vote({subject: bob.posts[0], vote: -1})
 
   let votes3 = await api.votes.getVotesForSubject(bob.posts[0].url)
   t.is(votes3.subjectUrl, bob.posts[0].url)
   t.is(votes3.upvoterIds.length, 1)
   t.is(votes3.downvoterIds.length, 1)
 
-  await bob.vote({subjectUrl: bob.posts[0].url, vote: 0})
+  await bob.vote({subject: bob.posts[0], vote: 0})
 
   let votes4 = await api.votes.getVotesForSubject(bob.posts[0].url)
   t.is(votes4.subjectUrl, bob.posts[0].url)
   t.is(votes4.upvoterIds.length, 1)
   t.is(votes4.downvoterIds.length, 0)
 
-  await alice.vote({subjectUrl: bob.posts[0].url, vote: 0})
+  await alice.vote({subject: bob.posts[0], vote: 0})
 
   let votes5 = await api.votes.getVotesForSubject(bob.posts[0].url)
   t.is(votes5.subjectUrl, bob.posts[0].url)
