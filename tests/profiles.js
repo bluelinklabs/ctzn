@@ -3,7 +3,6 @@ import { createServer } from './_util.js'
 
 let close
 let api
-let posts = []
 
 test.before(async () => {
   let inst = await createServer()

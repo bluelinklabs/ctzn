@@ -1,100 +1,63 @@
 import test from 'ava'
-import { createServer } from './_util.js'
+import { createServer, TestFramework } from './_util.js'
 
 let close
 let api
-let profiles = {}
-let posts
-let comments
+let sim = new TestFramework()
 
 test.before(async () => {
   let inst = await createServer()
   close = inst.close
   api = inst.api
 
-  await inst.db.createUser({
-    username: 'bobo',
-    email: 'bobo@roberts.com',
-    profile: {
-      displayName: 'Bobo Roberts'
-    }
-  })
-  await inst.db.createUser({
-    username: 'alicia',
-    email: 'alicia@allison.com',
-    profile: {
-      displayName: 'Alicia Allison'
-    }
-  })
-  await inst.db.createUser({
-    username: 'carla',
-    email: 'carla@carlson.com',
-    profile: {
-      displayName: 'Carla Carlson'
-    }
-  })
+  await sim.createUser(inst, 'alice')
+  await sim.createUser(inst, 'bob')
+  await sim.createUser(inst, 'carla')
+  const {alice, bob, carla} = sim.users
 
-  profiles.alicia = await api.profiles.get('alicia@localhost')
-  profiles.bobo = await api.profiles.get('bobo@localhost')
-  profiles.carla = await api.profiles.get('carla@localhost')
+  await alice.follow(bob)
+  await alice.follow(carla)
+  await bob.follow(alice)
+  await bob.follow(carla)
+  await carla.follow(bob)
+  await carla.follow(alice)
 
-  await api.accounts.login({username: 'bobo', password: 'password'})
-  await api.follows.follow(profiles.alicia.userId)
-  await api.follows.follow(profiles.carla.userId)
-  await api.accounts.login({username: 'alicia', password: 'password'})
-  await api.follows.follow(profiles.bobo.dbUrl)
-  await api.follows.follow(profiles.carla.dbUrl)
-  await api.accounts.login({username: 'carla', password: 'password'})
-  await api.follows.follow(profiles.bobo.userId)
-  await api.follows.follow(profiles.alicia.dbUrl)
+  await bob.createPost({text: '1'})
+  await bob.createPost({text: '2'})
+  await carla.createPost({text: '3'})
 
-  posts = []
-  await api.accounts.login({username: 'bobo', password: 'password'})
-  posts.push(await api.posts.create({text: '1'}))
-  posts.push(await api.posts.create({text: '2'}))
-  await api.accounts.login({username: 'carla', password: 'password'})
-  posts.push(await api.posts.create({text: '3'}))
-
-  comments = []
-  await api.accounts.login({username: 'alicia', password: 'password'})
-  comments.push(await api.comments.create({
-    subjectUrl: posts[0].url,
+  await alice.createComment({
+    subjectUrl: bob.posts[0].url,
     text: 'Comment 1'
-  }))
-  await api.accounts.login({username: 'carla', password: 'password'})
-  comments.push(await api.comments.create({
-    subjectUrl: posts[0].url,
-    parentCommentUrl: comments[0].url,
+  })
+  await carla.createComment({
+    subjectUrl: bob.posts[0].url,
+    parentCommentUrl: alice.comments[0].url,
     text: 'Reply 1'
-  }))
-  await api.accounts.login({username: 'bobo', password: 'password'})
-  comments.push(await api.comments.create({
-    subjectUrl: posts[0].url,
-    parentCommentUrl: comments[0].url,
+  })
+  await bob.createComment({
+    subjectUrl: bob.posts[0].url,
+    parentCommentUrl: alice.comments[0].url,
     text: 'Reply 2'
-  }))
-  await api.accounts.login({username: 'carla', password: 'password'})
-  comments.push(await api.comments.create({
-    subjectUrl: posts[0].url,
+  })
+  await carla.createComment({
+    subjectUrl: bob.posts[0].url,
     text: 'Comment 2'
-  }))
+  })
 
-  await api.accounts.login({username: 'bobo', password: 'password'})
-  await api.votes.put({subjectUrl: posts[0].url, vote: 1})
-  await api.votes.put({subjectUrl: posts[1].url, vote: -1})
-  await api.accounts.login({username: 'alicia', password: 'password'})
-  for (let post of posts) {
-    await api.votes.put({subjectUrl: post.url, vote: 1})
+  await bob.vote({subjectUrl: bob.posts[0].url, vote: 1})
+  await bob.vote({subjectUrl: bob.posts[1].url, vote: -1})
+  for (let post of bob.posts) {
+    await alice.vote({subjectUrl: post.url, vote: 1})
   }
-  for (let comment of comments) {
-    await api.votes.put({subjectUrl: comment.url, vote: 1})
+  for (let comment of bob.comments) {
+    await alice.vote({subjectUrl: comment.url, vote: 1})
   }
-  await api.accounts.login({username: 'carla', password: 'password'})
-  for (let post of posts) {
-    await api.votes.put({subjectUrl: post.url, vote: -1})
+  for (let post of bob.posts) {
+    await carla.vote({subjectUrl: post.url, vote: -1})
   }
-  for (let comment of comments) {
-    await api.votes.put({subjectUrl: comment.url, vote: -1})
+  for (let comment of bob.comments) {
+    await carla.vote({subjectUrl: comment.url, vote: -1})
   }
 })
 
@@ -103,41 +66,21 @@ test.after.always(async t => {
 })
 
 test('basic CRUD', async t => {
-  await api.accounts.login({username: 'bobo', password: 'password'})
+  const {alice, bob, carla} = sim.users
+
+  await bob.login()
   let notifications1 = await api.notifications.list({reverse: true})
-  t.is(notifications1.length, 11)
-  t.is(notifications1[0].item.subjectUrl, comments[2].url)
-  t.is(notifications1[0].item.vote, -1)
-  t.is(notifications1[0].author.userId, 'carla@localhost')
-  t.is(notifications1[1].item.subjectUrl, posts[1].url)
-  t.is(notifications1[1].item.vote, -1)
-  t.is(notifications1[1].author.userId, 'carla@localhost')
-  t.is(notifications1[2].item.subjectUrl, posts[0].url)
-  t.is(notifications1[2].item.vote, -1)
-  t.is(notifications1[2].author.userId, 'carla@localhost')
-  t.is(notifications1[3].item.subjectUrl, comments[2].url)
-  t.is(notifications1[3].item.vote, 1)
-  t.is(notifications1[3].author.userId, 'alicia@localhost')
-  t.is(notifications1[4].item.subjectUrl, posts[1].url)
-  t.is(notifications1[4].item.vote, 1)
-  t.is(notifications1[4].author.userId, 'alicia@localhost')
-  t.is(notifications1[5].item.subjectUrl, posts[0].url)
-  t.is(notifications1[5].item.vote, 1)
-  t.is(notifications1[5].author.userId, 'alicia@localhost')
-  t.is(notifications1[6].item.subjectUrl, posts[0].url)
-  t.is(notifications1[6].item.text, 'Comment 2')
-  t.is(notifications1[6].author.userId, 'carla@localhost')
-  t.is(notifications1[7].item.subjectUrl, posts[0].url)
-  t.is(notifications1[7].item.parentCommentUrl, comments[0].url)
-  t.is(notifications1[7].item.text, 'Reply 1')
-  t.is(notifications1[7].author.userId, 'carla@localhost')
-  t.is(notifications1[8].item.subjectUrl, posts[0].url)
-  t.is(notifications1[8].item.text, 'Comment 1')
-  t.is(notifications1[8].author.userId, 'alicia@localhost')
-  t.is(notifications1[9].item.subject.dbUrl, profiles.bobo.dbUrl)
-  t.is(notifications1[9].item.subject.userId, 'bobo@localhost')
-  t.is(notifications1[9].author.userId, 'carla@localhost')
-  t.is(notifications1[10].item.subject.dbUrl, profiles.bobo.dbUrl)
-  t.is(notifications1[10].item.subject.userId, 'bobo@localhost')
-  t.is(notifications1[10].author.userId, 'alicia@localhost')
+  sim.testNotifications(t, notifications1, [
+    [carla, 'downvote', bob.comments[0]],
+    [carla, 'downvote', bob.posts[1]],
+    [carla, 'downvote', bob.posts[0]],
+    [alice, 'upvote', bob.comments[0]],
+    [alice, 'upvote', bob.posts[1]],
+    [alice, 'upvote', bob.posts[0]],
+    [carla, 'comment', {text: 'Comment 2', subject: bob.posts[0]}],
+    [carla, 'comment', {text: 'Reply 1', subject: bob.posts[0], parent: alice.comments[0]}],
+    [alice, 'comment', {text: 'Comment 1', subject: bob.posts[0]}],
+    [carla, 'follow', bob],
+    [alice, 'follow', bob],
+  ])
 })

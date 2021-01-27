@@ -1,23 +1,16 @@
 import test from 'ava'
-import { createServer } from './_util.js'
+import { createServer, TestFramework } from './_util.js'
 
 let close
 let api
-let posts = []
+let sim = new TestFramework()
 
 test.before(async () => {
   let inst = await createServer()
   close = inst.close
   api = inst.api
 
-  await inst.db.createUser({
-    username: 'bobo',
-    email: 'bobo@roberts.com',
-    profile: {
-      displayName: 'Bobo Roberts'
-    }
-  })
-  await api.accounts.login({username: 'bobo', password: 'password'})
+  await sim.createUser(inst, 'bob')
 })
 
 test.after.always(async t => {
@@ -25,39 +18,40 @@ test.after.always(async t => {
 })
 
 test('basic CRUD', async t => {
-  posts.push(await api.posts.create({text: '1'}))
-  posts.push(await api.posts.create({text: '2'}))
-  posts.push(await api.posts.create({text: '3'}))
-  t.is(posts.length, 3)
-  for (let post of posts) {
-    t.truthy(typeof post.key === 'string')
-    t.truthy(typeof post.url === 'string')
-  }
+  const bob = sim.users.bob
+  await bob.createPost({text: '1'})
+  await bob.createPost({text: '2'})
+  await bob.createPost({text: '3'})
 
-  let postEntries = await api.posts.listUserFeed('bobo@localhost')
-  t.is(postEntries.length, 3)
-  t.is(postEntries[0].key, posts[0].key)
-  t.is(postEntries[0].value.text, '1')
-  t.is(postEntries[1].value.text, '2')
-  t.is(postEntries[2].value.text, '3')
+  let postEntries = await api.posts.listUserFeed(bob.userId)
+  sim.testFeed(t, postEntries, [
+    ['bob', '1'],
+    ['bob', '2'],
+    ['bob', '3']
+  ])
 
-  postEntries = await api.posts.listUserFeed('bobo@localhost', {reverse: true})
-  t.is(postEntries.length, 3)
-  t.is(postEntries[0].value.text, '3')
-  t.is(postEntries[1].value.text, '2')
-  t.is(postEntries[2].value.text, '1')
+  postEntries = await api.posts.listUserFeed(bob.userId, {reverse: true})
+  sim.testFeed(t, postEntries, [
+    ['bob', '3'],
+    ['bob', '2'],
+    ['bob', '1']
+  ])
 
-  postEntries = await api.posts.listUserFeed('bobo@localhost', {limit: 2})
-  t.is(postEntries.length, 2)
+  postEntries = await api.posts.listUserFeed(bob.userId, {limit: 2})
+  sim.testFeed(t, postEntries, [
+    ['bob', '1'],
+    ['bob', '2']
+  ])
 
-  await api.posts.edit(posts[0].key, {text: '1234'})
-  let editedPost = await api.posts.get('bobo@localhost', posts[0].key)
-  t.is(editedPost.value.text, '1234')
+  await api.posts.edit(bob.posts[0].key, {text: '1234'})
+  let editedPost = await api.posts.get(bob.userId, bob.posts[0].key)
+  sim.testPost(t, editedPost, ['bob', '1234'])
 
-  await api.posts.del(posts[0].key)
-  await t.throwsAsync(() => api.posts.get('bobo@localhost', posts[0].key))
-  postEntries = await api.posts.listUserFeed('bobo@localhost', {limit: 2})
-  t.is(postEntries.length, 2)
-  t.is(postEntries[0].value.text, '2')
-  t.is(postEntries[1].value.text, '3')
+  await api.posts.del(bob.posts[0].key)
+  await t.throwsAsync(() => api.posts.get(bob.userId, bob.posts[0].key))
+  postEntries = await api.posts.listUserFeed(bob.userId, {limit: 2})
+  sim.testFeed(t, postEntries, [
+    ['bob', '2'],
+    ['bob', '3']
+  ])
 })

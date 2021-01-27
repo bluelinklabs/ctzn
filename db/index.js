@@ -67,9 +67,10 @@ export async function createUser ({username, email, profile}) {
     await privateServerDb.accounts.put(username, account)
     await onDatabaseChange(publicServerDb)
     
-    publicUserDbs.set(constructUserId(username), publicUserDb)
-    privateUserDbs.set(constructUserId(username), privateUserDb)
-    return {privateUserDb, publicUserDb}
+    const userId = constructUserId(username)
+    publicUserDbs.set(userId, publicUserDb)
+    privateUserDbs.set(userId, privateUserDb)
+    return {privateUserDb, publicUserDb, userId}
   } finally {
     release()
   }

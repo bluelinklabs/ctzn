@@ -1,40 +1,18 @@
 import test from 'ava'
-import { createServer } from './_util.js'
+import { createServer, TestFramework } from './_util.js'
 
 let close
 let api
-let profiles = {}
+let sim = new TestFramework()
 
 test.before(async () => {
   let inst = await createServer()
   close = inst.close
   api = inst.api
 
-  await inst.db.createUser({
-    username: 'bobo',
-    email: 'bobo@roberts.com',
-    profile: {
-      displayName: 'Bobo Roberts'
-    }
-  })
-  await inst.db.createUser({
-    username: 'alicia',
-    email: 'alicia@allison.com',
-    profile: {
-      displayName: 'Alicia Allison'
-    }
-  })
-  await inst.db.createUser({
-    username: 'carla',
-    email: 'carla@carlson.com',
-    profile: {
-      displayName: 'Carla Carlson'
-    }
-  })
-
-  profiles.alicia = await api.profiles.get('alicia@localhost')
-  profiles.bobo = await api.profiles.get('bobo@localhost')
-  profiles.carla = await api.profiles.get('carla@localhost')
+  await sim.createUser(inst, 'alice')
+  await sim.createUser(inst, 'bob')
+  await sim.createUser(inst, 'carla')
 })
 
 test.after.always(async t => {
@@ -42,63 +20,56 @@ test.after.always(async t => {
 })
 
 test('basic CRUD', async t => {
-  await api.accounts.login({username: 'bobo', password: 'password'})
-  await api.follows.follow(profiles.alicia.userId)
-  await api.follows.follow(profiles.carla.userId)
-  await api.accounts.login({username: 'alicia', password: 'password'})
-  await api.follows.follow(profiles.bobo.dbUrl)
-  await api.follows.follow(profiles.carla.dbUrl)
-  await api.accounts.login({username: 'carla', password: 'password'})
-  await api.follows.follow(profiles.bobo.userId)
-  await api.follows.follow(profiles.alicia.dbUrl)
+  const {alice, bob, carla} = sim.users
+  await bob.follow(alice)
+  await bob.follow(carla)
+  await alice.follow(bob)
+  await alice.follow(carla)
+  await carla.follow(alice)
+  await carla.follow(bob)
 
-  let follow1 = await api.follows.get('bobo@localhost', profiles.alicia.dbUrl)
-  t.is(follow1.value.subject.dbUrl, profiles.alicia.dbUrl)
-  t.is(follow1.value.subject.userId, profiles.alicia.userId)
+  await alice.testSocialGraph(t, sim)
+  await bob.testSocialGraph(t, sim)
+  await carla.testSocialGraph(t, sim)
 
-  let follow2 = await api.follows.get('bobo@localhost', profiles.carla.userId)
-  t.is(follow2.value.subject.dbUrl, profiles.carla.dbUrl)
-  t.is(follow2.value.subject.userId, profiles.carla.userId)
+  let follow1 = await api.follows.get('bob@localhost', alice.userId)
+  t.is(follow1.value.subject.dbUrl, alice.profile.dbUrl)
+  t.is(follow1.value.subject.userId, alice.userId)
 
-  let follows1 = await api.follows.listFollows('bobo@localhost')
-  t.is(follows1.length, 2)
-  t.is(follows1.find(f => f.value.subject.userId === 'alicia@localhost').value.subject.dbUrl, profiles.alicia.dbUrl)
-  t.is(follows1.find(f => f.value.subject.userId === 'carla@localhost').value.subject.dbUrl, profiles.carla.dbUrl)
+  let follow2 = await api.follows.get('bob@localhost', carla.userId)
+  t.is(follow2.value.subject.dbUrl, carla.profile.dbUrl)
+  t.is(follow2.value.subject.userId, carla.userId)
 
-  let follows2 = await api.follows.listFollows('alicia@localhost')
-  t.is(follows2.length, 2)
-  t.is(follows2.find(f => f.value.subject.userId === 'bobo@localhost').value.subject.dbUrl, profiles.bobo.dbUrl)
-  t.is(follows2.find(f => f.value.subject.userId === 'carla@localhost').value.subject.dbUrl, profiles.carla.dbUrl)
+  let follows1 = await api.follows.listFollows('bob@localhost')
+  sim.testFollows(t, follows1, [alice, carla])
+
+  let follows2 = await api.follows.listFollows('alice@localhost')
+  sim.testFollows(t, follows2, [bob, carla])
 
   let follows3 = await api.follows.listFollows('carla@localhost')
-  t.is(follows3.length, 2)
-  t.is(follows3.find(f => f.value.subject.userId === 'alicia@localhost').value.subject.dbUrl, profiles.alicia.dbUrl)
-  t.is(follows3.find(f => f.value.subject.userId === 'bobo@localhost').value.subject.dbUrl, profiles.bobo.dbUrl)
+  sim.testFollows(t, follows3, [alice, bob])
 
-  let follows4 = await api.follows.listFollows('bobo@localhost', {limit: 1})
+  let follows4 = await api.follows.listFollows('bob@localhost', {limit: 1})
   t.is(follows4.length, 1)
 
-  let followers1 = await api.follows.listFollowers('bobo@localhost')
-  t.is(followers1.followerIds.length, 2)
-  t.truthy(followers1.followerIds.includes('alicia@localhost'))
-  t.truthy(followers1.followerIds.includes('carla@localhost'))
+  let followers1 = await api.follows.listFollowers('bob@localhost')
+  sim.testFollowers(t, followers1, [alice, carla])
 
-  let followers2 = await api.follows.listFollowers('alicia@localhost')
-  t.is(followers2.followerIds.length, 2)
-  t.truthy(followers2.followerIds.includes('bobo@localhost'))
-  t.truthy(followers2.followerIds.includes('carla@localhost'))
+  let followers2 = await api.follows.listFollowers('alice@localhost')
+  sim.testFollowers(t, followers2, [bob, carla])
 
   let followers3 = await api.follows.listFollowers('carla@localhost')
-  t.is(followers3.followerIds.length, 2)
-  t.truthy(followers3.followerIds.includes('bobo@localhost'))
-  t.truthy(followers3.followerIds.includes('alicia@localhost'))
+  sim.testFollowers(t, followers3, [alice, bob])
 
-  await api.accounts.login({username: 'bobo', password: 'password'})
-  await api.follows.unfollow(profiles.alicia.userId)
+  await bob.unfollow(alice)
 
-  let follows5 = await api.follows.listFollows('bobo@localhost')
-  t.is(follows5.length, 1)
+  await alice.testSocialGraph(t, sim)
+  await bob.testSocialGraph(t, sim)
+  await carla.testSocialGraph(t, sim)
 
-  let followers4 = await api.follows.listFollowers('alicia@localhost')
-  t.is(followers4.followerIds.length, 1)
+  let follows5 = await api.follows.listFollows('bob@localhost')
+  sim.testFollows(t, follows5, [carla])
+
+  let followers4 = await api.follows.listFollowers('alice@localhost')
+  sim.testFollowers(t, followers4, [carla])
 })
