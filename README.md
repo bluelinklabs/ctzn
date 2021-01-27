@@ -20,7 +20,7 @@ The mesh is extremely cache-friendly. All information is signed and can be redis
 
 The mesh uses "pull-based" transmission. Software identifies which databases to sync and then will watch the databases for updates to their records. As a result, aggregated indexes act as the basis of communication.
 
-To give a trivial example, 3 user databases which post "tweets" could be aggregated into a "feed database" which represents their 3-person community's tweets; the 3 users would reference the feed db to see their community activity. The production of shared indexes therefore determines participation in a shared space.
+To give a trivial example, 3 user databases which post shortform blogs could be aggregated into a "feed database" which represents their 3-person community's posts; the 3 users would reference the feed db to see their community activity. The production of shared indexes therefore determines participation in a shared space.
 
 ### Identity and re-homing
 
@@ -89,15 +89,15 @@ These primitives are used to create PX spaces. Consider the following example:
 |Element|Impact|
 |-|-|
 |`example.com` maps to the `example` database's pubkey|Establishes the example.com community's database.|
-|`example` declares the usage of `bluesky.org` schemas|Establishes the example.com community's core application.|
+|`example` declares the usage of `ctzn.network` schemas|Establishes the example.com community's core application.|
 |`example` declares 3 user records -- `alice@example.com`, `bob@example.com`, and `carla@example.com` -- and their database pubkeys.|Establishes the example.com community's membership.|
-|`alice`, `bob`, and `carla` databases declare profile and tweet records.|Establishes the content of the example.com network.|
-|`example` database declares a secondary index of the latest tweets.|Establishes the timeline of the example.com community activity.|
+|`alice`, `bob`, and `carla` databases declare profile and post records.|Establishes the content of the example.com network.|
+|`example` database declares a secondary index of the latest posts.|Establishes the timeline of the example.com community activity.|
 
 We can infer a few things from this example:
 
 - There is a hierarchy of identity, from DNS -> server database -> user databases
-- User databases maintain their own profile/tweet records and can be accessed independently of the `example.com` community.
+- User databases maintain their own profile/post records and can be accessed independently of the `example.com` community.
 - The `example.com` database maintains community information only, including secondary indexes which represent a current "view" of the activity.
 - As records are linked by their pubkey-URL, there is no hard binding to the example server.
 
