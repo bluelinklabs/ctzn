@@ -16,7 +16,6 @@ const match = subcommand({
     {
       name: 'start-test',
       command: args => {
-        if (!args.port) throw new Error('--port required')
         if (!args.configDir) throw new Error('--configDir required')
         if (!args.domain) throw new Error('--domain required')
         start({

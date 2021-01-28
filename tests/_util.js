@@ -1,7 +1,7 @@
 import randomPort from 'random-port'
 import { Client as WsClient } from 'rpc-websockets'
 import tmp from 'tmp-promise'
-import { parseEntryUrl } from '../lib/strings.js'
+import { parseEntryUrl, DEBUG_MODE_PORTS_MAP } from '../lib/strings.js'
 import { spawn } from 'child_process'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
@@ -9,14 +9,14 @@ import { fileURLToPath } from 'url'
 let nServer = 1
 export async function createServer () {
   const tmpdir = await tmp.dir({unsafeCleanup: true})
-  const port = await new Promise(r => randomPort(r))
   const domain = `dev${nServer++}.localhost`
+  const port = DEBUG_MODE_PORTS_MAP[domain]//await new Promise(r => randomPort(r))
   console.log('Storing config in', tmpdir.path)
 
   const binPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'bin.js')
   const serverProcess = spawn(
     'node',
-    [binPath, 'start-test', '--port', port, '--configDir', tmpdir.path, '--domain', domain],
+    [binPath, 'start-test', '--configDir', tmpdir.path, '--domain', domain],
     {stdio: [process.stdin, process.stdout, process.stderr]}
   )
 

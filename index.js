@@ -5,7 +5,7 @@ import * as api from './api/index.js'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
 import * as os from 'os'
-import { setOrigin, getDomain, parseAcctUrl } from './lib/strings.js'
+import { setOrigin, getDomain, parseAcctUrl, DEBUG_MODE_PORTS_MAP } from './lib/strings.js'
 
 const DEFAULT_USER_THUMB_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'static', 'img', 'default-user-thumb.jpg')
 
@@ -13,6 +13,9 @@ let app
 
 export async function start ({port, configDir, simulateHyperspace, domain, debugMode}) {
   configDir = configDir || path.join(os.homedir(), '.ctzn')
+  if (debugMode && DEBUG_MODE_PORTS_MAP[domain]) {
+    port = DEBUG_MODE_PORTS_MAP[domain]
+  }
   setOrigin(`http://${domain || 'localhost'}:${port}`)
 
   app = express()

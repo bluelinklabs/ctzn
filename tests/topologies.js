@@ -94,8 +94,6 @@ test.skip('2 servers, all users follow all other users', async t => {
    * this will cause all user data to be available in both servers.
    */
 
-  // TODO
-
   const NUM_USERS = 5
   const NUM_POSTS = 5
   const NUM_COMMENTS = 20
