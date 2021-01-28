@@ -65,7 +65,7 @@ test.after.always(async t => {
 	await close()
 })
 
-test('basic CRUD', async t => {
+test('server notifications index', async t => {
   const {alice, bob, carla} = sim.users
 
   await bob.login()

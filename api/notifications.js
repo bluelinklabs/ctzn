@@ -1,6 +1,6 @@
-import { publicUserDbs, privateUserDbs, privateServerDb } from '../db/index.js'
+import { publicUserDbs, privateUserDbs, publicServerDb, privateServerDb } from '../db/index.js'
 import { createValidator } from '../lib/schemas.js'
-import { parseEntryUrl } from '../lib/strings.js'
+import { parseEntryUrl, hyperUrlToKey } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 import lock from '../lib/lock.js'
 
@@ -20,13 +20,25 @@ const listParam = createValidator({
 export function setup (wsServer) {
   wsServer.register('notifications.list', async ([opts], client) => {
     if (!client?.auth) throw new Error('Must be logged in')
-    const privateUserDb = privateUserDbs.get(client.auth.userId)
-    if (!privateUserDb) throw new Error('User database not found')
 
     opts = opts || {}
     listParam.assert(opts)
 
-    const notificationEntries = await privateUserDb.notificationIdx.list(opts)
+    const dbKey = hyperUrlToKey(client.auth.dbUrl)
+    if (opts.lt || opts.lte) {
+      if (opts.lt) opts.lt = `${dbKey}:${opts.lt}`
+      if (opts.lte) opts.lte = `${dbKey}:${opts.lte}`
+    } else {
+      opts.lte = `${dbKey}:\xff`
+    }
+    if (opts.gt || opts.gte) {
+      if (opts.gt) opts.gt = `${dbKey}:${opts.gt}`
+      if (opts.gte) opts.gte = `${dbKey}:${opts.gte}`
+    } else {
+      opts.gte = `${dbKey}:\x00`
+    }
+
+    const notificationEntries = await publicServerDb.notificationIdx.list(opts)
     return await Promise.all(notificationEntries.map(fetchNotification))
   })
 
@@ -38,7 +50,21 @@ export function setup (wsServer) {
     opts = opts || {}
     listParam.assert(opts)
 
-    const notificationEntries = await privateUserDb.notificationIdx.list(opts)
+    const dbKey = hyperUrlToKey(client.auth.dbUrl)
+    if (opts.lt || opts.lte) {
+      if (opts.lt) opts.lt = `${dbKey}:${opts.lt}`
+      if (opts.lte) opts.lte = `${dbKey}:${opts.lte}`
+    } else {
+      opts.lte = `${dbKey}:\xff`
+    }
+    if (opts.gt || opts.gte) {
+      if (opts.gt) opts.gt = `${dbKey}:${opts.gt}`
+      if (opts.gte) opts.gte = `${dbKey}:${opts.gte}`
+    } else {
+      opts.gte = `${dbKey}:\x00`
+    }
+
+    const notificationEntries = await publicServerDb.notificationIdx.list(opts)
     return notificationEntries.length
   })
 

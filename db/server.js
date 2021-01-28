@@ -1,7 +1,10 @@
+import createMlts from 'monotonic-lexicographic-timestamp'
 import { BaseHyperbeeDB } from './base.js'
-import { constructUserId, constructEntryUrl, getDomain } from '../lib/strings.js'
+import { hyperUrlToKey, constructUserId, constructEntryUrl, getDomain } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 import lock from '../lib/lock.js'
+
+const mlts = createMlts()
 
 export class PublicServerDB extends BaseHyperbeeDB {
   async setup () {
@@ -11,7 +14,49 @@ export class PublicServerDB extends BaseHyperbeeDB {
     this.featuredPostsIdx = this.getTable('ctzn.network/featured-post-idx')
     this.followsIdx = this.getTable('ctzn.network/follow-idx')
     this.commentsIdx = this.getTable('ctzn.network/comment-idx')
+    this.notificationIdx = this.getTable('ctzn.network/notification-idx')
     this.votesIdx = this.getTable('ctzn.network/vote-idx')
+    
+    const NOTIFICATIONS_SCHEMAS = [
+      'ctzn.network/follow',
+      'ctzn.network/comment',
+      'ctzn.network/vote'
+    ]
+    this.createIndexer('ctzn.network/notification-idx', NOTIFICATIONS_SCHEMAS, async (db, change) => {
+      if (!change.value) return // ignore deletes
+
+      const release = await lock(`notifications-idx`)
+      const createKey = url => `${hyperUrlToKey(url)}:${mlts()}`
+      const notification = {
+        itemUrl: constructEntryUrl(db.url, change.keyParsed.schemaId, change.keyParsed.key),
+        createdAt: (new Date()).toISOString()
+      }
+      try {
+        switch (change.keyParsed.schemaId) {
+          case 'ctzn.network/follow':
+            if (change.value.subject.dbUrl !== db.url) {
+              await this.notificationIdx.put(createKey(change.value.subject.dbUrl), notification)
+            }
+            break
+          case 'ctzn.network/comment': {
+            if (!change.value.subjectUrl.startsWith(db.url)) {
+              await this.notificationIdx.put(createKey(change.value.subjectUrl), notification)
+            }
+            if (change.value.parentCommentUrl && !change.value.parentCommentUrl.startsWith(db.url)) {
+              await this.notificationIdx.put(createKey(change.value.parentCommentUrl), notification)
+            }
+            break
+          }
+          case 'ctzn.network/vote':
+            if (!change.value.subjectUrl.startsWith(db.url)) {
+              await this.notificationIdx.put(createKey(change.value.subjectUrl), notification)
+            }
+            break
+        }
+      } finally {
+        release()
+      }
+    })
 
     this.createIndexer('ctzn.network/follow-idx', ['ctzn.network/follow'], async (db, change) => {
       let subject

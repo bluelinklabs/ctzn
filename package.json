@@ -36,6 +36,7 @@
     "express": "^4.17.1",
     "hyperbee": "^1.3.0",
     "hyperspace": "^3.18.1",
+    "monotonic-lexicographic-timestamp": "^1.0.0",
     "node-fetch": "^2.6.1",
     "pump": "^3.0.0",
     "rpc-websockets": "^7.4.8",
