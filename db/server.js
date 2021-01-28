@@ -1,5 +1,5 @@
 import { BaseHyperbeeDB } from './base.js'
-import { constructUserId, constructEntryUrl } from '../lib/strings.js'
+import { constructUserId, constructEntryUrl, getDomain } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 import lock from '../lib/lock.js'
 
@@ -14,9 +14,10 @@ export class PublicServerDB extends BaseHyperbeeDB {
     this.votesIdx = this.getTable('ctzn.network/vote-idx')
 
     this.createIndexer('ctzn.network/follow-idx', ['ctzn.network/follow'], async (db, change) => {
+      let subject
       const release = await lock('follows-idx')
       try {
-        let subject = change.value?.subject
+        subject = change.value?.subject
         if (!subject) {
           const oldEntry = await db.bee.checkout(change.seq).get(change.key)
           subject = oldEntry.value.subject
@@ -47,6 +48,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
       } finally {
         release()
       }
+      this.emit('followed-users-changed', {userId: subject.userId})
     })
 
     this.createIndexer('ctzn.network/comment-idx', ['ctzn.network/comment'], async (db, change) => {
@@ -124,6 +126,14 @@ export class PublicServerDB extends BaseHyperbeeDB {
         release()
       }
     })
+  }
+
+  async getAllExternalFollowedIds () {
+    const followRecords = (await this.followsIdx.list())
+    const ourFollowRecords = followRecords.filter(entry => {
+      return entry.value?.followerIds?.filter(id => id.endsWith(getDomain()))?.length
+    })
+    return ourFollowRecords.map(entry => entry.key).filter(id => !id.endsWith(getDomain()))
   }
 
   async getSubscribedDbUrls () {

@@ -1,3 +1,4 @@
+import EventEmitter from 'events'
 import { client } from './hyperspace.js'
 import * as schemas from '../lib/schemas.js'
 import Hyperbee from 'hyperbee'
@@ -29,8 +30,9 @@ const blobPointer = schemas.createValidator({
   }
 })
 
-export class BaseHyperbeeDB {
+export class BaseHyperbeeDB extends EventEmitter {
   constructor (key) {
+    super()
     if (typeof key === 'string') {
       key = Buffer.from(key, 'hex')
     }
@@ -51,6 +53,7 @@ export class BaseHyperbeeDB {
       valueEncoding: 'json'
     })
     await this.bee.ready()
+    client.replicate(this.bee.feed)
 
     if (!this.key) {
       this.key = this.bee.feed.key
@@ -66,6 +69,12 @@ export class BaseHyperbeeDB {
         blobsFeedKey: null
       }
     }
+  }
+
+  async teardown () {
+    if (this.blobs) await this.blobs.teardown()
+    client.network.configure(this.bee.feed, {announce: false, lookup: false})
+    await this.bee.feed.close()
   }
 
   async updateDesc (updates) {
@@ -166,8 +175,14 @@ class Blobs {
       this.feed = client.corestore().get(Buffer.from(this.db.desc.blobsFeedKey, 'hex'))
       await this.feed.ready()
     }
+    client.replicate(this.feed)
 
     // TODO track which ranges in the feed are actively pointed to and cache/decache accordingly
+  }
+
+  async teardown () {
+    client.network.configure(this.feed, {announce: false, lookup: false})
+    await this.feed.close()
   }
 
   async createReadStream (key) {

@@ -4,7 +4,8 @@ import * as hyperspace from './hyperspace.js'
 import { PublicServerDB, PrivateServerDB } from './server.js'
 import { PublicUserDB, PrivateUserDB } from './user.js'
 import * as schemas from '../lib/schemas.js'
-import { HYPER_KEY, hyperUrlToKey, constructUserId } from '../lib/strings.js'
+import { HYPER_KEY, hyperUrlToKey, constructUserId, getDomain } from '../lib/strings.js'
+import { fetchDbUrl } from '../lib/network.js'
 import lock from '../lib/lock.js'
 
 let _configDir = undefined
@@ -33,7 +34,9 @@ export async function setup ({configDir, simulateHyperspace}) {
   config.privateServer = privateServerDb.key.toString('hex')
   await saveDbConfig()
 
-  await loadUserDbs()
+  await loadMemberUserDbs()
+  await loadOrUnloadExternalUserDbs()
+  publicServerDb.on('followed-users-changed', loadOrUnloadExternalUserDbs)
 }
 
 export async function createUser ({username, email, profile}) {
@@ -117,9 +120,8 @@ async function saveDbConfig () {
   await fsp.writeFile(configPath, JSON.stringify(config, null, 2))
 }
 
-async function loadUserDbs () {
+async function loadMemberUserDbs () {
   let users = await publicServerDb.users.list()
-  console.log('Loading', users.length, 'user databases')
   for (let user of users) {
     let publicUserDb = new PublicUserDB(hyperUrlToKey(user.value.dbUrl))
     await publicUserDb.setup()
@@ -131,6 +133,7 @@ async function loadUserDbs () {
     await privateUserDb.setup()
     privateUserDbs.set(constructUserId(user.key), privateUserDb)
   }
+  console.log('Loaded', users.length, 'member user databases')
 }
 
 export function* getAllIndexingDbs () {
@@ -147,5 +150,42 @@ export async function onDatabaseChange (db) {
     if (subscribedUrls.includes(db.url)) {
       await indexingDb.updateIndexes(db)
     }
+  }
+}
+
+async function loadOrUnloadExternalUserDbs () {
+  // load any new follows
+  let numLoaded = 0
+  const followedUserIds = await publicServerDb.getAllExternalFollowedIds()
+  for (let userId of followedUserIds) {
+    if (!publicUserDbs.has(userId)) {
+      try {
+        const dbUrl = await fetchDbUrl(userId)
+        let publicUserDb = new PublicUserDB(hyperUrlToKey(dbUrl))
+        await publicUserDb.setup()
+        publicUserDbs.set(userId, publicUserDb)
+        publicUserDb.watch(onDatabaseChange)
+        numLoaded++
+      } catch (e) {
+        console.error('Failed to load external user', userId)
+        console.error(e)
+      }
+    }
+  }
+  if (numLoaded) {
+    console.log('Loaded', numLoaded, 'external user databases')
+  }
+  // unload any unfollowed
+  let numUnloaded = 0
+  for (let userId of publicUserDbs.keys()) {
+    if (userId.endsWith(getDomain()) || followedUserIds.includes(userId)) {
+      continue
+    }
+    publicUserDbs.get(userId).teardown()
+    publicUserDbs.delete(userId)
+    numUnloaded++
+  }
+  if (numUnloaded) {
+    console.log('Unloaded', numUnloaded, 'external user databases')
   }
 }
