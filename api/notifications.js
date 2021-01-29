@@ -80,7 +80,7 @@ export function setup (wsServer) {
   wsServer.register('notifications.updateNotificationsClearedAt', async ([opts], client) => {
     if (!client?.auth) throw new Error('Must be logged in')
 
-    const release = await lock('accounts-db')
+    const release = await privateServerDb.lock('accounts')
     try {
       const accountRecord = await privateServerDb.accounts.get(client.auth.username)
       if (!accountRecord) throw new Error('User account record not found')

@@ -2,7 +2,6 @@ import createMlts from 'monotonic-lexicographic-timestamp'
 import { BaseHyperbeeDB } from './base.js'
 import { hyperUrlToKey, constructUserId, constructEntryUrl, getDomain } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
-import lock from '../lib/lock.js'
 
 const mlts = createMlts()
 
@@ -25,7 +24,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
     this.createIndexer('ctzn.network/notification-idx', NOTIFICATIONS_SCHEMAS, async (db, change) => {
       if (!change.value) return // ignore deletes
 
-      const release = await lock(`notifications-idx`)
+      const release = await this.lock(`notifications-idx`)
       const createKey = url => `${hyperUrlToKey(url)}:${mlts()}`
       const notification = {
         itemUrl: constructEntryUrl(db.url, change.keyParsed.schemaId, change.keyParsed.key),
@@ -60,7 +59,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
 
     this.createIndexer('ctzn.network/follow-idx', ['ctzn.network/follow'], async (db, change) => {
       let subject
-      const release = await lock('follows-idx')
+      const release = await this.lock('follows-idx')
       try {
         subject = change.value?.subject
         if (!subject) {
@@ -97,7 +96,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
     })
 
     this.createIndexer('ctzn.network/comment-idx', ['ctzn.network/comment'], async (db, change) => {
-      const release = await lock('comments-idx')
+      const release = await this.lock('comments-idx')
       try {
         const commentUrl = constructEntryUrl(db.url, 'ctzn.network/comment', change.keyParsed.key)
         let subjectUrl = change.value?.subjectUrl
@@ -133,7 +132,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
     })
 
     this.createIndexer('ctzn.network/vote-idx', ['ctzn.network/vote'], async (db, change) => {
-      const release = await lock('votes-idx')
+      const release = await this.lock('votes-idx')
       try {
         const voteUrl = constructEntryUrl(db.url, 'ctzn.network/vote', change.keyParsed.key)
         let subjectUrl = change.value?.subjectUrl
@@ -204,7 +203,7 @@ export class PrivateServerDB extends BaseHyperbeeDB {
     this.userDbIdx = this.getTable('ctzn.network/user-db-idx')
 
     this.createIndexer('ctzn.network/user-db-idx', ['ctzn.network/user'], async (db, change) => {
-      const release = await lock('user-db-idx')
+      const release = await this.lock('user-db-idx')
       try {
         let oldEntry = await db.bee.checkout(change.seq).get(change.key)
         if (oldEntry?.value?.dbUrl) {

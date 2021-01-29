@@ -40,7 +40,7 @@ export async function setup ({configDir, simulateHyperspace}) {
 }
 
 export async function createUser ({username, email, profile}) {
-  let release = await lock('db')
+  let release = await lock(`create-user:${username}`)
   try {
     const account = {
       email,

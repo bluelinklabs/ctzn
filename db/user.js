@@ -39,7 +39,7 @@ export class PrivateUserDB extends BaseHyperbeeDB {
       if (!change.value) return // ignore deletes
       if (db.url === myUrl) return // ignore self
 
-      const release = await lock(`${this.url}-notifications-idx`)
+      const release = await this.lock(`notifications-idx`)
       try {
         switch (change.keyParsed.schemaId) {
           case 'ctzn.network/follow':

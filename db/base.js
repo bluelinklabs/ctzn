@@ -41,6 +41,7 @@ export class BaseHyperbeeDB extends EventEmitter {
     this.bee = null
     this.blobs = new Blobs(this)
     this.indexers = []
+    this.lock = (id) => lock(`${this.key.toString('hex')}:${id}`)
   }
 
   get url () {
@@ -110,7 +111,7 @@ export class BaseHyperbeeDB extends EventEmitter {
 
   async updateIndexes (changedDb) {
     if (!this.key) return
-    const release = await lock(`${this.url}-update-indexes`)
+    const release = await this.lock(`update-indexes`)
     try {
       for (let indexer of this.indexers) {
         let indexState = await this.indexState.get(`${indexer.schemaId}:${changedDb.url}`)
