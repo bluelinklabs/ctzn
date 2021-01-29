@@ -69,7 +69,7 @@ test('server notifications index', async t => {
   const {alice, bob, carla} = sim.users
 
   await bob.login()
-  let notifications1 = await api.notifications.list({reverse: true})
+  let notifications1 = await api.notifications.list()
   sim.testNotifications(t, notifications1, [
     [carla, 'downvote', bob.comments[0]],
     [carla, 'downvote', bob.posts[1]],

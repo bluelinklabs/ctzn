@@ -7,7 +7,7 @@ let inst
 test.before(async () => {
   inst = await createServer()
 
-  await inst.api.accounts.createDebugUser({
+  await inst.api.debug.createUser({
     username: 'bobo',
     email: 'bobo@roberts.com',
     profile: {

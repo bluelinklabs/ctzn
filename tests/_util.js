@@ -104,18 +104,18 @@ export class TestFramework {
     else t.falsy(entry.value.parentCommentUrl)
   }
 
-  testThread (t, entries, desc) {
-    t.is(entries.length, desc.length)
-    for (let i = 0; i < desc.length; i++) {
-      this.testThreadItem(t, entries[i], desc[i])
+  testThread (t, entries, descs) {
+    t.is(entries.length, descs.length, `expected ${descs.length} entries\n${threadDescToString(descs)}`)
+    for (let i = 0; i < descs.length; i++) {
+      this.testThreadItem(t, entries[i], descs[i])
     }
   }
 
   testThreadItem (t, entry, desc) {
     const user = desc[0]
-    t.truthy(entry.url.startsWith(user.profile.dbUrl))
-    t.is(entry.author.userId, user.userId)
-    t.is(entry.value.text, desc[1])
+    t.truthy(entry.url.startsWith(user.profile.dbUrl), `expected comment to be authored by ${user.userId}\n${commentDescToString(desc)}`)
+    t.is(entry.author.userId, user.userId, `expected author userId to be ${user.userId}\n${commentDescToString(desc)}`)
+    t.is(entry.value.text, desc[1], `expected comment text to be ${desc[1]}\n${commentDescToString(desc)}`)
 
     if (desc[2] && desc[2].length) {
       this.testThread(t, entry.replies, desc[2])
@@ -123,16 +123,20 @@ export class TestFramework {
   }
 
   testFollows (t, entries, users) {
-    t.is(entries.length, users.length)
+    t.is(entries.length, users.length, `expected ${users.length} follows ${users.map(u=>u.userId).join(', ')} got ${entries.map(e=>e.value.subject.userId).join(', ')}`)
     for (let user of users) {
-      t.is(entries.find(f => f.value.subject.userId === user.userId).value.subject.dbUrl, user.profile.dbUrl)
+      t.is(
+        entries.find(f => f.value.subject.userId === user.userId).value.subject.dbUrl,
+        user.profile.dbUrl,
+        `expected to be following ${user.userId}`
+      )
     }
   }
 
   testFollowers (t, followers, users) {
-    t.is(followers.followerIds.length, users.length)
+    t.is(followers.followerIds.length, users.length, `expected ${users.length} followers ${users.map(u=>u.userId).join(', ')} got ${followers.followerIds.join(', ')}`)
     for (let user of users) {
-      t.truthy(followers.followerIds.includes(user.userId))
+      t.truthy(followers.followerIds.includes(user.userId), `expected ${user.userId} in followers`)
     }
   }
 
@@ -250,7 +254,7 @@ class TestUser {
   }
 
   async setup () {
-    const {userId} = await this.inst.api.accounts.createDebugUser({
+    const {userId} = await this.inst.api.debug.createUser({
       username: this.username,
       email: `${this.username}@email.com`,
       profile: {
@@ -300,10 +304,11 @@ class TestUser {
     }
   }
 
-  async testSocialGraph (t, sim) {
-    let follows = await this.inst.api.follows.listFollows(this.userId)
+  async testSocialGraph (t, sim, inst = undefined) {
+    inst = inst || this.inst
+    let follows = await inst.api.follows.listFollows(this.userId)
     sim.testFollows(t, follows, Object.values(this.following))
-    let followers = await this.inst.api.follows.listFollowers(this.userId)
+    let followers = await inst.api.follows.listFollowers(this.userId)
     sim.testFollowers(t, followers, sim.listFollowers(this))
   }
 }
@@ -325,6 +330,8 @@ function flattenThread (thread, comments = []) {
 }
 
 function commentEntriesToThread (commentEntries) {
+  commentEntries = JSON.parse(JSON.stringify(commentEntries)) // deep clone
+
   const commentEntriesByUrl = {}
   commentEntries.forEach(commentEntry => { commentEntriesByUrl[commentEntry.url] = commentEntry })
 
@@ -348,4 +355,20 @@ function commentEntriesToThread (commentEntries) {
     }
   })
   return rootCommentEntries
+}
+
+function threadDescToString (descs, prefix = '') {
+  let items = []
+  for (let desc of descs) {
+    items.push(`${prefix}${desc[0].userId} ${desc[1]}`)
+    if (desc[2]) items = items.concat(threadDescToString(desc[2], `  ${prefix}`))
+  }
+  return items.join('\n')
+}
+
+function commentDescToString (desc, prefix = '') {
+  let items = []
+  items.push(`${prefix}${desc[0].userId} ${desc[1]}`)
+  if (desc[2]) items = items.concat(threadDescToString(desc[2], `  ${prefix}`))
+  return items.join('\n')
 }

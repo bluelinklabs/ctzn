@@ -27,8 +27,10 @@ export async function setup ({configDir, simulateHyperspace}) {
   publicServerDb = new PublicServerDB(config.publicServer)
   await publicServerDb.setup()
   publicServerDb.watch(onDatabaseChange)
+  await catchupIndexes(publicServerDb)
   privateServerDb = new PrivateServerDB(config.privateServer, publicServerDb)
   await privateServerDb.setup()
+  await catchupIndexes(privateServerDb)
 
   config.publicServer = publicServerDb.key.toString('hex')
   config.privateServer = privateServerDb.key.toString('hex')
@@ -59,10 +61,12 @@ export async function createUser ({username, email, profile}) {
     const publicUserDb = new PublicUserDB(null)
     await publicUserDb.setup()
     publicUserDb.watch(onDatabaseChange)
+    await catchupIndexes(publicUserDb)
     user.dbUrl = publicUserDb.url
 
     const privateUserDb = new PrivateUserDB(null, publicServerDb, publicUserDb)
     await privateUserDb.setup()
+    await catchupIndexes(privateUserDb)
     account.privateDbUrl = privateUserDb.url
 
     await publicUserDb.profile.put('self', profile)
@@ -127,26 +131,66 @@ async function loadMemberUserDbs () {
     await publicUserDb.setup()
     publicUserDbs.set(constructUserId(user.key), publicUserDb)
     publicUserDb.watch(onDatabaseChange)
+    await catchupIndexes(publicUserDb)
 
     let accountEntry = await privateServerDb.accounts.get(user.value.username)
     let privateUserDb = new PrivateUserDB(hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicUserDb)
     await privateUserDb.setup()
     privateUserDbs.set(constructUserId(user.key), privateUserDb)
+    await catchupIndexes(privateUserDb)
   }
   console.log('Loaded', users.length, 'member user databases')
 }
 
-export function* getAllIndexingDbs () {
-  yield publicServerDb
-  yield privateServerDb
+export function* getAllDbs () {
+  if (publicServerDb) yield publicServerDb
+  if (privateServerDb) yield privateServerDb
+  for (let db of publicUserDbs) {
+    yield db[1]
+  }
   for (let db of privateUserDbs) {
     yield db[1]
   }
 }
 
+export function* getAllIndexingDbs () {
+  if (publicServerDb) yield publicServerDb
+  if (privateServerDb) yield privateServerDb
+  for (let db of privateUserDbs) {
+    yield db[1]
+  }
+}
+
+var _onDatabaseChangesProcessing = 0
 export async function onDatabaseChange (db) {
-  for (let indexingDb of getAllIndexingDbs()) {
-    let subscribedUrls = await indexingDb.getSubscribedDbUrls()
+  _onDatabaseChangesProcessing++
+  try {
+    for (let indexingDb of getAllIndexingDbs()) {
+      let subscribedUrls = await indexingDb.getSubscribedDbUrls()
+      if (subscribedUrls.includes(db.url)) {
+        await indexingDb.updateIndexes(db)
+      }
+    }
+  } finally {
+    _onDatabaseChangesProcessing--
+  }
+}
+
+export async function whenAllSynced () {
+  for (let db of getAllDbs()) {
+    await db.whenSynced()
+  }
+  while (_onDatabaseChangesProcessing > 0) {
+    await new Promise(r => setTimeout(r, 100))
+  }
+}
+
+export async function catchupIndexes (indexingDb) {
+  if (!Array.from(getAllIndexingDbs()).includes(indexingDb)) {
+    return
+  }
+  let subscribedUrls = await indexingDb.getSubscribedDbUrls()
+  for (let db of getAllDbs()) {
     if (subscribedUrls.includes(db.url)) {
       await indexingDb.updateIndexes(db)
     }
@@ -165,6 +209,10 @@ async function loadOrUnloadExternalUserDbs () {
         await publicUserDb.setup()
         publicUserDbs.set(userId, publicUserDb)
         publicUserDb.watch(onDatabaseChange)
+
+        // update our local db index of url -> userid
+        await privateServerDb.userDbIdx.put(dbUrl, {dbUrl, userId})
+
         numLoaded++
       } catch (e) {
         console.error('Failed to load external user', userId)

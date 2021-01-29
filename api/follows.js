@@ -1,7 +1,8 @@
-import { publicServerDb, publicUserDbs, onDatabaseChange } from '../db/index.js'
+import { publicUserDbs, privateUserDbs, onDatabaseChange, catchupIndexes } from '../db/index.js'
 import { isHyperUrl, constructEntryUrl } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
 import { fetchUserId, fetchUserInfo } from '../lib/network.js'
+import { fetchFollowerIds } from '../db/util.js'
 
 const listParam = createValidator({
   type: 'object',
@@ -17,15 +18,11 @@ const listParam = createValidator({
 })
 
 export function setup (wsServer) {
-  wsServer.register('follows.listFollowers', async ([userId]) => {
+  wsServer.register('follows.listFollowers', async ([userId], client) => {
     const userInfo = await fetchUserInfo(userId)
-    let followsIdxEntry
-    try {
-      followsIdxEntry = await publicServerDb.followsIdx.get(userInfo.userId)
-    } catch (e) {}
     return {
       subject: userInfo,
-      followerIds: followsIdxEntry?.value?.followerIds || []
+      followerIds: await fetchFollowerIds(userId, client?.auth?.userId)
     }
   })
 
@@ -82,6 +79,7 @@ export function setup (wsServer) {
     }
     await publicUserDb.follows.put(key, value)
     await onDatabaseChange(publicUserDb)
+    await catchupIndexes(privateUserDbs.get(client.auth.userId))
     
     const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/follow', key)
     return {key, url}

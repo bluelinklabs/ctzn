@@ -1,7 +1,11 @@
+import createMlts from 'monotonic-lexicographic-timestamp'
 import { createValidator } from '../lib/schemas.js'
-import { publicServerDb, publicUserDbs } from '../db/index.js'
-import { constructEntryUrl, parseEntryUrl, constructUserUrl, getOrigin } from '../lib/strings.js'
+import { publicUserDbs } from '../db/index.js'
+import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
+import { fetchAuthor, fetchVotes, fetchCommentCount } from '../db/util.js'
+
+const mlts = createMlts()
 
 const listParam = createValidator({
   type: 'object',
@@ -21,7 +25,7 @@ export function setup (wsServer) {
     return 'todo'
   })
 
-  wsServer.register('posts.listUserFeed', async ([userId, opts]) => {
+  wsServer.register('posts.listUserFeed', async ([userId, opts], client) => {
     if (opts) {
       listParam.assert(opts)
     }
@@ -38,8 +42,8 @@ export function setup (wsServer) {
     for (let entry of entries) {
       entry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', entry.key)
       entry.author = await fetchAuthor(userId, authorsCache)
-      entry.votes = await fetchVotes(entry)
-      entry.commentCount = await fetchCommentCount(entry)
+      entry.votes = await fetchVotes(entry, client?.auth?.userId)
+      entry.commentCount = await fetchCommentCount(entry, client?.auth?.userId)
     }
     return entries
   })
@@ -72,14 +76,14 @@ export function setup (wsServer) {
     const authorsCache = {}
     for (let entry of postEntries) {
       entry.author = await fetchAuthor(entry.author.userId, authorsCache)
-      entry.votes = await fetchVotes(entry)
-      entry.commentCount = await fetchCommentCount(entry)
+      entry.votes = await fetchVotes(entry, client?.auth?.userId)
+      entry.commentCount = await fetchCommentCount(entry, client?.auth?.userId)
     }
 
     return postEntries
   })
 
-  wsServer.register('posts.get', async ([userId, key]) => {
+  wsServer.register('posts.get', async ([userId, key], client) => {
     if (!key && userId) {
       let parsed = parseEntryUrl(userId)
       if (parsed.schemaId !== 'ctzn.network/post') {
@@ -98,8 +102,8 @@ export function setup (wsServer) {
     }
     postEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', postEntry.key)
     postEntry.author = await fetchAuthor(userId)
-    postEntry.votes = await fetchVotes(postEntry)
-    postEntry.commentCount = await fetchCommentCount(postEntry)
+    postEntry.votes = await fetchVotes(postEntry, client?.auth?.userId)
+    postEntry.commentCount = await fetchCommentCount(postEntry, client?.auth?.userId)
 
     return postEntry
   })
@@ -109,7 +113,7 @@ export function setup (wsServer) {
     const publicUserDb = publicUserDbs.get(client.auth.userId)
     if (!publicUserDb) throw new Error('User database not found')
 
-    const key = ''+Date.now()
+    const key = mlts()
     post.createdAt = (new Date()).toISOString()
     await publicUserDb.posts.put(key, post)
     
@@ -141,40 +145,4 @@ export function setup (wsServer) {
 
     await publicUserDb.posts.del(key)
   })
-}
-
-async function fetchAuthor (authorId, cache = undefined) {
-  if (cache && cache[authorId]) {
-    return cache[authorId]
-  } else {
-    let publicUserDb = publicUserDbs.get(authorId)
-    let profileEntry
-    if (publicUserDb) profileEntry = await publicUserDb.profile.get('self')
-    let author = {
-      url: constructUserUrl(authorId),
-      userId: authorId,
-      displayName: profileEntry?.value?.displayName || authorId
-    }
-    if (cache) cache[authorId] = author
-    return author
-  }
-}
-
-async function fetchVotes (post) {
-  let votesIdxEntry
-  try {
-    votesIdxEntry = await publicServerDb.votesIdx.get(post.url)
-  } catch (e) {}
-  return {
-    upvoterIds: await Promise.all((votesIdxEntry?.value?.upvoteUrls || []).map(fetchUserId)),
-    downvoterIds: await Promise.all((votesIdxEntry?.value?.downvoteUrls || []).map(fetchUserId))
-  }
-}
-
-async function fetchCommentCount (post) {
-  let commentsIdxEntry
-  try {
-    commentsIdxEntry = await publicServerDb.commentsIdx.get(post.url)
-  } catch (e) {}
-  return commentsIdxEntry?.value.commentUrls.length || 0
 }

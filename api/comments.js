@@ -1,20 +1,19 @@
-import { publicServerDb, publicUserDbs, onDatabaseChange } from '../db/index.js'
-import { constructEntryUrl, parseEntryUrl, constructUserUrl } from '../lib/strings.js'
+import createMlts from 'monotonic-lexicographic-timestamp'
+import { publicUserDbs, onDatabaseChange } from '../db/index.js'
+import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
+import { fetchAuthor, fetchVotes, fetchComments, fetchCommentCount } from '../db/util.js'
+
+const mlts = createMlts()
 
 export function setup (wsServer) {
-  wsServer.register('comments.getThread', async ([subjectUrl]) => {
-    let commentsIdxEntry
-    try {
-      commentsIdxEntry = await publicServerDb.commentsIdx.get(subjectUrl)
-    } catch (e) {}
-    if (!commentsIdxEntry) return []
-
-    const commentEntries = await fetchIndexedComments(commentsIdxEntry)
+  wsServer.register('comments.getThread', async ([subjectUrl], client) => {
+    const commentUrls = await fetchComments({url: subjectUrl}, client?.auth?.userId)
+    const commentEntries = await fetchIndexedComments(commentUrls, client?.auth?.userId)
     return commentEntriesToThread(commentEntries)
   })
 
-  wsServer.register('comments.get', async ([userId, key]) => {
+  wsServer.register('comments.get', async ([userId, key], client) => {
     if (!key && userId) {
       let parsed = parseEntryUrl(userId)
       if (parsed.schemaId !== 'ctzn.network/comment') {
@@ -33,8 +32,8 @@ export function setup (wsServer) {
     }
     commentEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', commentEntry.key)
     commentEntry.author = await fetchAuthor(userId)
-    commentEntry.votes = await fetchVotes(commentEntry)
-    commentEntry.commentCount = await fetchCommentCount(commentEntry)
+    commentEntry.votes = await fetchVotes(commentEntry, client?.auth?.userId)
+    commentEntry.commentCount = await fetchCommentCount(commentEntry, client?.auth?.userId)
 
     return commentEntry
   })
@@ -44,7 +43,7 @@ export function setup (wsServer) {
     const publicUserDb = publicUserDbs.get(client.auth.userId)
     if (!publicUserDb) throw new Error('User database not found')
 
-    const key = ''+Date.now()
+    const key = mlts()
     comment.createdAt = (new Date()).toISOString()
     await publicUserDb.comments.put(key, comment)
     await onDatabaseChange(publicUserDb)
@@ -81,9 +80,9 @@ export function setup (wsServer) {
   })
 }
 
-async function fetchIndexedComments (commentsIdxEntry) {
+async function fetchIndexedComments (commentUrls, userIdxId = undefined) {
   const authorsCache = {}
-  const commentEntries = await Promise.all(commentsIdxEntry.value.commentUrls.map(async (commentUrl) => {
+  const commentEntries = await Promise.all(commentUrls.map(async (commentUrl) => {
     try {
       const {origin, key} = parseEntryUrl(commentUrl)
 
@@ -94,7 +93,7 @@ async function fetchIndexedComments (commentsIdxEntry) {
       const commentEntry = await publicUserDb.comments.get(key)
       commentEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
       commentEntry.author = await fetchAuthor(userId, authorsCache)
-      commentEntry.votes = await fetchVotes(commentEntry)
+      commentEntry.votes = await fetchVotes(commentEntry, userIdxId)
       return commentEntry
     } catch (e) {
       console.log(e)
@@ -128,40 +127,4 @@ function commentEntriesToThread (commentEntries) {
     }
   })
   return rootCommentEntries
-}
-
-async function fetchAuthor (authorId, cache = undefined) {
-  if (cache && cache[authorId]) {
-    return cache[authorId]
-  } else {
-    let publicUserDb = publicUserDbs.get(authorId)
-    let profileEntry
-    if (publicUserDb) profileEntry = await publicUserDb.profile.get('self')
-    let author = {
-      url: constructUserUrl(authorId),
-      userId: authorId,
-      displayName: profileEntry?.value?.displayName || authorId
-    }
-    if (cache) cache[authorId] = author
-    return author
-  }
-}
-
-async function fetchVotes (comment) {
-  let votesIdxEntry
-  try {
-    votesIdxEntry = await publicServerDb.votesIdx.get(comment.url)
-  } catch (e) {}
-  return {
-    upvoterIds: await Promise.all((votesIdxEntry?.value?.upvoteUrls || []).map(fetchUserId)),
-    downvoterIds: await Promise.all((votesIdxEntry?.value?.downvoteUrls || []).map(fetchUserId))
-  }
-}
-
-async function fetchCommentCount (comment) {
-  let commentsIdxEntry
-  try {
-    commentsIdxEntry = await publicServerDb.commentsIdx.get(comment.url)
-  } catch (e) {}
-  return commentsIdxEntry?.value.commentUrls.length || 0
 }

@@ -1,5 +1,6 @@
 import * as accounts from './accounts.js'
 import * as comments from './comments.js'
+import * as debug from './debug.js'
 import * as follows from './follows.js'
 import * as posts from './posts.js'
 import * as profiles from './profiles.js'
@@ -17,8 +18,9 @@ export function setup (wsServer, opts) {
     })
   }
 
-  accounts.setup(wsServer, opts)
+  accounts.setup(wsServer)
   comments.setup(wsServer)
+  if (opts.debugMode) debug.setup(wsServer)
   follows.setup(wsServer)
   posts.setup(wsServer)
   profiles.setup(wsServer)

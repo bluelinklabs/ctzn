@@ -32,33 +32,33 @@ test('basic CRUD', async t => {
   await bob.testSocialGraph(t, sim)
   await carla.testSocialGraph(t, sim)
 
-  let follow1 = await api.follows.get('bob@localhost', alice.userId)
+  let follow1 = await api.follows.get(sim.users.bob.userId, alice.userId)
   t.is(follow1.value.subject.dbUrl, alice.profile.dbUrl)
   t.is(follow1.value.subject.userId, alice.userId)
 
-  let follow2 = await api.follows.get('bob@localhost', carla.userId)
+  let follow2 = await api.follows.get(sim.users.bob.userId, carla.userId)
   t.is(follow2.value.subject.dbUrl, carla.profile.dbUrl)
   t.is(follow2.value.subject.userId, carla.userId)
 
-  let follows1 = await api.follows.listFollows('bob@localhost')
+  let follows1 = await api.follows.listFollows(sim.users.bob.userId)
   sim.testFollows(t, follows1, [alice, carla])
 
-  let follows2 = await api.follows.listFollows('alice@localhost')
+  let follows2 = await api.follows.listFollows(sim.users.alice.userId)
   sim.testFollows(t, follows2, [bob, carla])
 
-  let follows3 = await api.follows.listFollows('carla@localhost')
+  let follows3 = await api.follows.listFollows(sim.users.carla.userId)
   sim.testFollows(t, follows3, [alice, bob])
 
-  let follows4 = await api.follows.listFollows('bob@localhost', {limit: 1})
+  let follows4 = await api.follows.listFollows(sim.users.bob.userId, {limit: 1})
   t.is(follows4.length, 1)
 
-  let followers1 = await api.follows.listFollowers('bob@localhost')
+  let followers1 = await api.follows.listFollowers(sim.users.bob.userId)
   sim.testFollowers(t, followers1, [alice, carla])
 
-  let followers2 = await api.follows.listFollowers('alice@localhost')
+  let followers2 = await api.follows.listFollowers(sim.users.alice.userId)
   sim.testFollowers(t, followers2, [bob, carla])
 
-  let followers3 = await api.follows.listFollowers('carla@localhost')
+  let followers3 = await api.follows.listFollowers(sim.users.carla.userId)
   sim.testFollowers(t, followers3, [alice, bob])
 
   await bob.unfollow(alice)
@@ -67,9 +67,9 @@ test('basic CRUD', async t => {
   await bob.testSocialGraph(t, sim)
   await carla.testSocialGraph(t, sim)
 
-  let follows5 = await api.follows.listFollows('bob@localhost')
+  let follows5 = await api.follows.listFollows(sim.users.bob.userId)
   sim.testFollows(t, follows5, [carla])
 
-  let followers4 = await api.follows.listFollowers('alice@localhost')
+  let followers4 = await api.follows.listFollowers(sim.users.alice.userId)
   sim.testFollowers(t, followers4, [carla])
 })

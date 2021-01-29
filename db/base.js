@@ -8,6 +8,8 @@ import through2 from 'through2'
 import bytes from 'bytes'
 import lock from '../lib/lock.js'
 
+import { fetchUserId } from '../lib/network.js'
+
 const BLOB_CHUNK_SIZE = bytes('64kb')
 
 const dbDescription = schemas.createValidator({
@@ -56,6 +58,10 @@ export class BaseHyperbeeDB extends EventEmitter {
     await this.bee.ready()
     client.replicate(this.bee.feed)
 
+    if (!this.bee.feed.writable) {
+      this._eagerUpdate()
+    }
+
     if (!this.key) {
       this.key = this.bee.feed.key
       this.onDatabaseCreated()
@@ -74,8 +80,10 @@ export class BaseHyperbeeDB extends EventEmitter {
 
   async teardown () {
     if (this.blobs) await this.blobs.teardown()
+    this.blobs = undefined
     client.network.configure(this.bee.feed, {announce: false, lookup: false})
     await this.bee.feed.close()
+    this.bee = undefined
   }
 
   async updateDesc (updates) {
@@ -89,9 +97,21 @@ export class BaseHyperbeeDB extends EventEmitter {
   async onDatabaseCreated () {
   }
 
+  async whenSynced () {
+    if (!this.bee.feed.writable) {
+      await this.bee.feed.update({ifAvailable: true}).catch(e => undefined)
+    }
+  }
+
   watch (cb) {
     this.bee.feed.on('append', () => cb(this))
     cb(this) // trigger immediately to update indexes from any previously synced changes that the indexer hasnt hit
+  }
+
+  async _eagerUpdate () {
+    if (!this.bee) return
+    await this.bee.feed.update({ifAvailable: false}).catch(e => undefined)
+    this._eagerUpdate()
   }
 
   getTable (schemaId) {

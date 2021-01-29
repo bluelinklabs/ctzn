@@ -87,7 +87,7 @@ test('1 server', async t => {
   t.truthy(true)
 })
 
-test.skip('2 servers, all users follow all other users', async t => {
+test('2 servers, all users follow all other users', async t => {
   /**
    * In this topology, there are 2 servers, and all users follow all other users.
    * Because servers sync the data of users their own members follow,
@@ -124,26 +124,37 @@ test.skip('2 servers, all users follow all other users', async t => {
       await user(i).follow(user(j))
     }
   }
+  for (let inst of instances) {
+    await inst.api.debug.whenAllSynced()
+  }
+
   for (let i = 0; i < NUM_USERS; i++) {
-    await user(i).testSocialGraph(t, sim)
+    for (let j = 0; j < NUM_USERS; j++) {
+      await user(j).login()
+      await user(i).testSocialGraph(t, sim, user(j).inst)
+    }
   }
   
   // create post, comment, and vote activity
+  var x = 0
   for (let i = 0; i < NUM_USERS; i++) {
     console.log(`Generating test activity for ${username(i)}...`)
     for (let j = 0; j < NUM_POSTS; j++) {
-      await user(i).createPost({text: `Post ${j}`})
+      await user(i).createPost({text: `Post ${x++}`})
     }
     for (let j = 0; j < NUM_COMMENTS; j++) {
       const commentSubject = sim.getRandomPost()
       const commentParent = await sim.getRandomParentFor([inst1, inst2], commentSubject)
-      await user(i).createComment({text: `Comment ${j}`, subject: commentSubject, parent: commentParent})
+      await user(i).createComment({text: `Comment ${x++}`, subject: commentSubject, parent: commentParent})
     }
     for (let j = 0; j < NUM_VOTES; j++) {
       let vote = randRange(0, 1)
       if (vote === 0) vote = -1
       await user(i).vote({subject: sim.getRandomSubject(), vote})
     }
+  }
+  for (let inst of instances) {
+    await inst.api.debug.whenAllSynced()
   }
 
   // test home feeds
@@ -222,6 +233,9 @@ test('2 servers, users only follow users on their own server', async t => {
       await user(i).follow(user(j))
     }
   }
+  for (let inst of instances) {
+    await inst.api.debug.whenAllSynced()
+  }
   for (let i = 0; i < NUM_USERS; i++) {
     await user(i).testSocialGraph(t, sim)
   }
@@ -242,6 +256,9 @@ test('2 servers, users only follow users on their own server', async t => {
       if (vote === 0) vote = -1
       await user(i).vote({subject: sim.getRandomSubject(), vote})
     }
+  }
+  for (let inst of instances) {
+    await inst.api.debug.whenAllSynced()
   }
 
   // test home feeds
@@ -287,14 +304,14 @@ test('2 servers, users only follow users on their own server', async t => {
 })
 
 function threadToDesc (sim, thread) {
-  const desc = []
+  const descs = []
   for (let entry of thread) {
     let replies = undefined
     if (entry.replies) {
       replies = threadToDesc(sim, entry.replies)
     }
     const user = sim.users[entry.author.userId.split('@')[0]]
-    desc.push([user, entry.value.text, replies])
+    descs.push([user, entry.value.text, replies])
   }
-  return desc
+  return descs
 }

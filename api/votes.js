@@ -1,18 +1,11 @@
-import { publicServerDb, publicUserDbs, onDatabaseChange } from '../db/index.js'
+import { publicUserDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl } from '../lib/strings.js'
-import { fetchUserId } from '../lib/network.js'
+import { fetchVotes } from '../db/util.js'
 
 export function setup (wsServer) {
-  wsServer.register('votes.getVotesForSubject', async ([subjectUrl]) => {
-    let votesIdxEntry
-    try {
-      votesIdxEntry = await publicServerDb.votesIdx.get(subjectUrl)
-    } catch (e) {}
-    return {
-      subjectUrl,
-      upvoterIds: await Promise.all((votesIdxEntry?.value?.upvoteUrls || []).map(fetchUserId)),
-      downvoterIds: await Promise.all((votesIdxEntry?.value?.downvoteUrls || []).map(fetchUserId))
-    }
+  wsServer.register('votes.getVotesForSubject', async ([subjectUrl], client) => {
+    const {upvoterIds, downvoterIds} = await fetchVotes({url: subjectUrl}, client?.auth?.userId)
+    return {subjectUrl, upvoterIds, downvoterIds}
   })
 
   wsServer.register('votes.put', async ([vote], client) => {

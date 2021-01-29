@@ -12,14 +12,7 @@ const registerParam = createValidator({
   }
 })
 
-export function setup (wsServer, {debugMode} = {}) {
-  if (debugMode) {
-    wsServer.register('accounts.createDebugUser', async (params) => {
-      const {userId} = await createUser(params[0])
-      return {userId}
-    })
-  }
-
+export function setup (wsServer) {
   wsServer.register('accounts.whoami', async (params, client) => {
     if (client.auth) {
       return {

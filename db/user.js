@@ -1,6 +1,10 @@
+import createMlts from 'monotonic-lexicographic-timestamp'
 import { BaseHyperbeeDB } from './base.js'
 import { constructEntryUrl } from '../lib/strings.js'
-import lock from '../lib/lock.js'
+import { catchupIndexes } from './index.js'
+import { fetchUserId } from '../lib/network.js'
+
+const mlts = createMlts()
 
 export class PublicUserDB extends BaseHyperbeeDB {
   async setup () {
@@ -24,10 +28,10 @@ export class PrivateUserDB extends BaseHyperbeeDB {
   async setup () {
     await super.setup()
     this.indexState = this.getTable('ctzn.network/index-state')
-    this.commentIdx = this.getTable('ctzn.network/comment-idx')
-    this.followIdx = this.getTable('ctzn.network/follow-idx')
-    this.notificationIdx = this.getTable('ctzn.network/notification-idx')
-    this.voteIdx = this.getTable('ctzn.network/vote-idx')
+    this.commentsIdx = this.getTable('ctzn.network/comment-idx')
+    this.followsIdx = this.getTable('ctzn.network/follow-idx')
+    this.notificationsIdx = this.getTable('ctzn.network/notification-idx')
+    this.votesIdx = this.getTable('ctzn.network/vote-idx')
 
     const NOTIFICATIONS_SCHEMAS = [
       'ctzn.network/follow',
@@ -64,12 +68,123 @@ export class PrivateUserDB extends BaseHyperbeeDB {
             break
         }
         
-        const d = new Date()
-        const idxValue = {
+        await this.notificationsIdx.put(mlts(), {
           itemUrl: constructEntryUrl(db.url, change.keyParsed.schemaId, change.keyParsed.key),
-          createdAt: d.toISOString()
+          createdAt: (new Date()).toISOString()
+        })
+      } finally {
+        release()
+      }
+    })
+
+    this.createIndexer('ctzn.network/follow-idx', ['ctzn.network/follow'], async (db, change) => {
+      let subject
+      const release = await this.lock('follows-idx')
+      try {
+        subject = change.value?.subject
+        if (!subject) {
+          const oldEntry = await db.bee.checkout(change.seq).get(change.key)
+          subject = oldEntry.value.subject
         }
-        await this.notificationIdx.put(+d, idxValue)
+
+        let followsIdxEntry = await this.followsIdx.get(subject.userId).catch(e => undefined)
+        if (!followsIdxEntry) {
+          followsIdxEntry = {
+            key: subject.userId,
+            value: {
+              subjectId: subject.userId,
+              followerIds: []
+            }
+          }
+        }
+        const followerId = await fetchUserId(db.url)
+        const followerIdIndex = followsIdxEntry.value.followerIds.indexOf(followerId)
+        if (change.value) {
+          if (followerIdIndex === -1) {
+            followsIdxEntry.value.followerIds.push(followerId)
+          }
+        } else {
+          if (followerIdIndex !== -1) {
+            followsIdxEntry.value.followerIds.splice(followerIdIndex, 1)
+          }
+        }
+        await this.followsIdx.put(followsIdxEntry.key, followsIdxEntry.value)
+      } finally {
+        release()
+      }
+    })
+
+    this.createIndexer('ctzn.network/comment-idx', ['ctzn.network/comment'], async (db, change) => {
+      const release = await this.lock('comments-idx')
+      try {
+        const commentUrl = constructEntryUrl(db.url, 'ctzn.network/comment', change.keyParsed.key)
+        let subjectUrl = change.value?.subjectUrl
+        if (!subjectUrl) {
+          const oldEntry = await db.bee.checkout(change.seq).get(change.key)
+          subjectUrl = oldEntry.value.subjectUrl
+        }
+
+        let commentsIdxEntry = await this.commentsIdx.get(subjectUrl).catch(e => undefined)
+        if (!commentsIdxEntry) {
+          commentsIdxEntry = {
+            key: subjectUrl,
+            value: {
+              subjectUrl,
+              commentUrls: []
+            }
+          }
+        }
+        let commentUrlIndex = commentsIdxEntry.value.commentUrls.indexOf(commentUrl)
+        if (change.value) {
+          if (commentUrlIndex === -1) {
+            commentsIdxEntry.value.commentUrls.push(commentUrl)
+          }
+        } else {
+          if (commentUrlIndex !== -1) {
+            commentsIdxEntry.value.commentUrls.splice(commentUrlIndex, 1)
+          }
+        }
+        await this.commentsIdx.put(commentsIdxEntry.key, commentsIdxEntry.value)
+      } finally {
+        release()
+      }
+    })
+
+    this.createIndexer('ctzn.network/vote-idx', ['ctzn.network/vote'], async (db, change) => {
+      const release = await this.lock('votes-idx')
+      try {
+        const voteUrl = constructEntryUrl(db.url, 'ctzn.network/vote', change.keyParsed.key)
+        let subjectUrl = change.value?.subjectUrl
+        if (!subjectUrl) {
+          const oldEntry = await db.bee.checkout(change.seq).get(change.key)
+          subjectUrl = oldEntry.value.subjectUrl
+        }
+
+        let votesIdxEntry = await this.votesIdx.get(subjectUrl).catch(e => undefined)
+        if (!votesIdxEntry) {
+          votesIdxEntry = {
+            key: change.keyParsed.key,
+            value: {
+              subjectUrl: subjectUrl,
+              upvoteUrls: [],
+              downvoteUrls: []
+            }
+          }
+        }
+        let upvoteUrlIndex = votesIdxEntry.value.upvoteUrls.indexOf(voteUrl)
+        if (upvoteUrlIndex !== -1) votesIdxEntry.value.upvoteUrls.splice(upvoteUrlIndex, 1)
+        let downvoteUrlIndex = votesIdxEntry.value.downvoteUrls.indexOf(voteUrl)
+        if (downvoteUrlIndex !== -1) votesIdxEntry.value.downvoteUrls.splice(downvoteUrlIndex, 1)
+  
+        if (change.value) {
+          if (change.value.vote === 1) {
+            votesIdxEntry.value.upvoteUrls.push(voteUrl)
+          } else if (change.value.vote === -1) {
+            votesIdxEntry.value.downvoteUrls.push(voteUrl)
+          }
+        }
+  
+        await this.votesIdx.put(votesIdxEntry.key, votesIdxEntry.value)
       } finally {
         release()
       }
@@ -77,9 +192,6 @@ export class PrivateUserDB extends BaseHyperbeeDB {
   }
 
   async getSubscribedDbUrls () {
-    return (
-      (await this.publicUserDb.follows.list()).map(entry => entry.value.subject.dbUrl)
-      .concat((await this.publicServerDb.users.list()).map(entry => entry.value.dbUrl))
-    )
+    return [this.publicUserDb.url].concat((await this.publicUserDb.follows.list()).map(entry => entry.value.subject.dbUrl))
   }
 }
