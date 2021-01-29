@@ -27,6 +27,10 @@ test('external user databases are loaded and unloaded as needed', async t => {
 
   // follow
   await user(1).follow(user(0))
+  
+  for (let inst of instances) {
+    await inst.api.debug.whenAllSynced()
+  }
 
   // test that inst2 now does have inst1's user loaded
   t.truthy(await inst2.api.posts.listUserFeed(user(0).userId))

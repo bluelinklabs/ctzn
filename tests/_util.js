@@ -1,10 +1,11 @@
-import randomPort from 'random-port'
 import { Client as WsClient } from 'rpc-websockets'
 import tmp from 'tmp-promise'
 import { parseEntryUrl, DEBUG_MODE_PORTS_MAP } from '../lib/strings.js'
 import { spawn } from 'child_process'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
+
+const INSPECTOR_ENABLED = false
 
 let nServer = 1
 export async function createServer () {
@@ -17,7 +18,10 @@ export async function createServer () {
   const serverProcess = spawn(
     'node',
     [binPath, 'start-test', '--configDir', tmpdir.path, '--domain', domain],
-    {stdio: [process.stdin, process.stdout, process.stderr]}
+    {
+      stdio: [process.stdin, process.stdout, process.stderr],
+      env: INSPECTOR_ENABLED ? Object.assign({}, process.env, {NODE_OPTIONS: `--inspect=localhost:${5555+nServer}`}) : undefined
+    }
   )
 
   const client = new WsClient(`ws://localhost:${port}/`)

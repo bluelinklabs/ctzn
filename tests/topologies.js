@@ -35,6 +35,7 @@ test('1 server', async t => {
     }
   }
   for (let i = 0; i < NUM_USERS; i++) {
+    await user(i).login()
     await user(i).testSocialGraph(t, sim)
   }
   
@@ -237,6 +238,7 @@ test('2 servers, users only follow users on their own server', async t => {
     await inst.api.debug.whenAllSynced()
   }
   for (let i = 0; i < NUM_USERS; i++) {
+    await user(i).login()
     await user(i).testSocialGraph(t, sim)
   }
   

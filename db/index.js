@@ -1,11 +1,13 @@
 import { promises as fsp } from 'fs'
 import * as path from 'path'
+import pump from 'pump'
+import concat from 'concat-stream'
 import * as hyperspace from './hyperspace.js'
 import { PublicServerDB, PrivateServerDB } from './server.js'
 import { PublicUserDB, PrivateUserDB } from './user.js'
 import * as schemas from '../lib/schemas.js'
 import { HYPER_KEY, hyperUrlToKey, constructUserId, getDomain } from '../lib/strings.js'
-import { fetchDbUrl } from '../lib/network.js'
+import { fetchDbUrl, fetchUserId } from '../lib/network.js'
 import lock from '../lib/lock.js'
 
 let _configDir = undefined
@@ -161,39 +163,106 @@ export function* getAllIndexingDbs () {
   }
 }
 
-var _onDatabaseChangesProcessing = 0
-export async function onDatabaseChange (db) {
-  _onDatabaseChangesProcessing++
-  try {
-    for (let indexingDb of getAllIndexingDbs()) {
-      let subscribedUrls = await indexingDb.getSubscribedDbUrls()
-      if (subscribedUrls.includes(db.url)) {
-        await indexingDb.updateIndexes(db)
-      }
+var _didIndexRecently = false // NOTE used only for tests, see whenAllSynced
+export async function onDatabaseChange (changedDb) {
+  _didIndexRecently = true
+  let lowestStart = undefined
+  const dbIndexStates = {}
+  for (let indexingDb of getAllIndexingDbs()) {
+    let subscribedUrls = await indexingDb.getSubscribedDbUrls()
+    if (subscribedUrls.includes(changedDb.url)) {
+      const indexStates = await Promise.all(
+        indexingDb.indexers.map(indexer => indexer.getState(changedDb.url))
+      )
+      dbIndexStates[indexingDb.url] = indexStates
+      
+      let indexLowestStart = indexStates.reduce((acc, state) => {
+        let start = state?.value?.subject?.lastIndexedSeq || 0
+        if (acc === undefined) return start
+        return Math.min(acc, start)
+      }, undefined)
+      lowestStart = lowestStart === undefined ? indexLowestStart : Math.min(lowestStart, indexLowestStart)
     }
-  } finally {
-    _onDatabaseChangesProcessing--
   }
-}
 
-export async function whenAllSynced () {
-  for (let db of getAllDbs()) {
-    await db.whenSynced()
+  let changes = await new Promise((resolve, reject) => {
+    pump(
+      changedDb.bee.createHistoryStream({gt: lowestStart}),
+      concat(resolve),
+      err => {
+        if (err) reject(err)
+      }
+    )
+  })
+  if (changes.length === 0) {
+    return
   }
-  while (_onDatabaseChangesProcessing > 0) {
-    await new Promise(r => setTimeout(r, 100))
+
+  for (let indexingDb of getAllIndexingDbs()) {
+    if (dbIndexStates[indexingDb.url]) {
+      await indexingDb.updateIndexes({
+        changedDb,
+        indexStates: dbIndexStates[indexingDb.url],
+        changes,
+        lowestStart
+      })
+    }
   }
 }
 
 export async function catchupIndexes (indexingDb) {
+  _didIndexRecently = true
   if (!Array.from(getAllIndexingDbs()).includes(indexingDb)) {
     return
   }
   let subscribedUrls = await indexingDb.getSubscribedDbUrls()
-  for (let db of getAllDbs()) {
-    if (subscribedUrls.includes(db.url)) {
-      await indexingDb.updateIndexes(db)
+  for (let changedDb of getAllDbs()) {
+    if (!subscribedUrls.includes(changedDb.url)) {
+      continue
     }
+
+    const indexStates = await Promise.all(
+      indexingDb.indexers.map(indexer => indexer.getState(changedDb.url))
+    )
+        
+    const lowestStart = indexStates.reduce((acc, state) => {
+      let start = state?.value?.subject?.lastIndexedSeq || 0
+      if (acc === undefined) return start
+      return Math.min(acc, start)
+    }, undefined) || 0
+
+    await changedDb.whenSynced()
+    let changes = await new Promise((resolve, reject) => {
+      pump(
+        changedDb.bee.createHistoryStream({gt: lowestStart}),
+        concat(resolve),
+        err => {
+          if (err) reject(err)
+        }
+      )
+    })
+    if (changes.length === 0) {
+      continue
+    }
+
+    await indexingDb.updateIndexes({
+      changedDb,
+      indexStates,
+      changes,
+      lowestStart
+    })
+  }
+}
+
+// NOTE
+// this method should only be used for tests
+export async function whenAllSynced () {
+  for (let db of getAllDbs()) {
+    await db.whenSynced()
+  }
+  while (_didIndexRecently) {
+    _didIndexRecently = false
+    await new Promise(r => setTimeout(r, 100))
   }
 }
 

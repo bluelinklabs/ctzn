@@ -24,7 +24,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
     this.createIndexer('ctzn.network/notification-idx', NOTIFICATIONS_SCHEMAS, async (db, change) => {
       if (!change.value) return // ignore deletes
 
-      const release = await this.lock(`notifications-idx`)
+      const release = await this.lock(`notifications-idx:${change.url}`)
       const createKey = url => `${hyperUrlToKey(url)}:${mlts()}`
       const notification = {
         itemUrl: constructEntryUrl(db.url, change.keyParsed.schemaId, change.keyParsed.key),
@@ -58,15 +58,13 @@ export class PublicServerDB extends BaseHyperbeeDB {
     })
 
     this.createIndexer('ctzn.network/follow-idx', ['ctzn.network/follow'], async (db, change) => {
-      let subject
-      const release = await this.lock('follows-idx')
+      let subject = change.value?.subject
+      if (!subject) {
+        const oldEntry = await db.bee.checkout(change.seq).get(change.key)
+        subject = oldEntry.value.subject
+      }
+      const release = await this.lock(`follows-idx:${subject.userId}`)
       try {
-        subject = change.value?.subject
-        if (!subject) {
-          const oldEntry = await db.bee.checkout(change.seq).get(change.key)
-          subject = oldEntry.value.subject
-        }
-
         let followsIdxEntry = await this.followsIdx.get(subject.userId).catch(e => undefined)
         if (!followsIdxEntry) {
           followsIdxEntry = {
@@ -96,15 +94,15 @@ export class PublicServerDB extends BaseHyperbeeDB {
     })
 
     this.createIndexer('ctzn.network/comment-idx', ['ctzn.network/comment'], async (db, change) => {
-      const release = await this.lock('comments-idx')
-      try {
-        const commentUrl = constructEntryUrl(db.url, 'ctzn.network/comment', change.keyParsed.key)
-        let subjectUrl = change.value?.subjectUrl
-        if (!subjectUrl) {
-          const oldEntry = await db.bee.checkout(change.seq).get(change.key)
-          subjectUrl = oldEntry.value.subjectUrl
-        }
+      const commentUrl = constructEntryUrl(db.url, 'ctzn.network/comment', change.keyParsed.key)
+      let subjectUrl = change.value?.subjectUrl
+      if (!subjectUrl) {
+        const oldEntry = await db.bee.checkout(change.seq).get(change.key)
+        subjectUrl = oldEntry.value.subjectUrl
+      }
 
+      const release = await this.lock(`comments-idx:${subjectUrl}`)
+      try {
         let commentsIdxEntry = await this.commentsIdx.get(subjectUrl).catch(e => undefined)
         if (!commentsIdxEntry) {
           commentsIdxEntry = {
@@ -132,7 +130,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
     })
 
     this.createIndexer('ctzn.network/vote-idx', ['ctzn.network/vote'], async (db, change) => {
-      const release = await this.lock('votes-idx')
+      const release = await this.lock(`votes-idx`)
       try {
         const voteUrl = constructEntryUrl(db.url, 'ctzn.network/vote', change.keyParsed.key)
         let subjectUrl = change.value?.subjectUrl

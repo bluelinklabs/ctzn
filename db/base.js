@@ -1,4 +1,5 @@
 import EventEmitter from 'events'
+import _debounce from 'lodash.debounce'
 import { client } from './hyperspace.js'
 import * as schemas from '../lib/schemas.js'
 import Hyperbee from 'hyperbee'
@@ -7,8 +8,6 @@ import concat from 'concat-stream'
 import through2 from 'through2'
 import bytes from 'bytes'
 import lock from '../lib/lock.js'
-
-import { fetchUserId } from '../lib/network.js'
 
 const BLOB_CHUNK_SIZE = bytes('64kb')
 
@@ -104,6 +103,7 @@ export class BaseHyperbeeDB extends EventEmitter {
   }
 
   watch (cb) {
+    cb = _debounce(cb, 100)
     this.bee.feed.on('append', () => cb(this))
     cb(this) // trigger immediately to update indexes from any previously synced changes that the indexer hasnt hit
   }
@@ -126,26 +126,23 @@ export class BaseHyperbeeDB extends EventEmitter {
   }
 
   createIndexer (schemaId, targetSchemaIds, indexFn) {
-    this.indexers.push(new Indexer(schemaId, targetSchemaIds, indexFn))
+    this.indexers.push(new Indexer(this, schemaId, targetSchemaIds, indexFn))
   }
 
-  async updateIndexes (changedDb) {
+  async updateIndexes ({changedDb, indexStates, changes, lowestStart}) {
     if (!this.key) return
     const release = await this.lock(`update-indexes`)
     try {
-      for (let indexer of this.indexers) {
-        let indexState = await this.indexState.get(`${indexer.schemaId}:${changedDb.url}`)
+      for (let i = 0; i < this.indexers.length; i++) {
+        const indexer = this.indexers[i]
+        const indexState = indexStates[i]
+        
         let start = indexState?.value?.subject?.lastIndexedSeq || 0
-        let changes = await new Promise((resolve, reject) => {
-          pump(
-            changedDb.bee.createHistoryStream({gt: start}),
-            concat(resolve),
-            err => {
-              if (err) reject(err)
-            }
-          )
-        })
-        for (let change of changes) {
+        if (start === changedDb.bee.version - 1) continue
+        
+        let lastChange
+        for (let change of changes.slice(start - lowestStart)) {
+          lastChange = change
           let keyParts = change.key.split('\x00')
           change.keyParsed = {
             schemaId: keyParts.slice(0, 2).join('/'),
@@ -154,21 +151,17 @@ export class BaseHyperbeeDB extends EventEmitter {
           if (indexer.isInterestedIn(change.keyParsed.schemaId)) {
             try {
               await indexer.index(changedDb, change)
-              await this.indexState.put(`${indexer.schemaId}:${changedDb.url}`, {
-                schemaId: indexer.schemaId,
-                subject: {dbUrl: changedDb.url, lastIndexedSeq: change.seq},
-                updatedAt: (new Date()).toISOString()
-              })
             } catch (e) {
               console.error('Failed to index change')
               console.error(e)
               console.error('Changed DB:', changedDb.url)
               console.error('Change:', change)
               console.error('Indexer:', indexer.schemaId)
-              return
+              break
             }
           }
         }
+        indexer.updateState(changedDb.url, lastChange.seq)
       }
     } finally {
       release()
@@ -273,10 +266,39 @@ class Table {
 }
 
 class Indexer {
-  constructor (schemaId, targetSchemaIds, indexFn) {
+  constructor (db, schemaId, targetSchemaIds, indexFn) {
+    this.db = db
     this.schemaId = schemaId
     this.targetSchemaIds = targetSchemaIds
     this.index = indexFn
+    this.indexStatesCache = {}
+  }
+
+  async getState (url) {
+    if (!this.indexStatesCache[url]) {
+      this.indexStatesCache[url] = await this.db.indexState.get(`${this.schemaId}:${url}`)
+    }
+    return this.indexStatesCache[url]
+  }
+
+  updateState (url, seq) {
+    this.indexStatesCache[url] = {
+      value: {
+        schemaId: this.schemaId,
+        subject: {dbUrl: url, lastIndexedSeq: seq},
+        updatedAt: (new Date()).toISOString()
+      }
+    }
+    const put = getDebouncedFn(
+      `${this.db.url}:${this.schemaId}:${url}`,
+      (k, v) => this.db.indexState.put(k, v).catch(e => {
+        console.error('Failed to update index state')
+        console.error(this.schemaId, url)
+        console.error(e)
+      }),
+      100
+    )
+    put(`${this.schemaId}:${url}`, this.indexStatesCache[url].value)
   }
 
   isInterestedIn (schemaId) {
@@ -291,4 +313,12 @@ function chunkify (buf, chunkSize) {
     buf = buf.slice(chunkSize)
   }
   return chunks
+}
+
+const _debouncers = {}
+function getDebouncedFn (key, fn, wait) {
+  if (!_debouncers[key]) {
+    _debouncers[key] = _debounce(fn, wait)
+  }
+  return _debouncers[key]
 }
