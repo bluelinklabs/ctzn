@@ -1,5 +1,5 @@
 import createMlts from 'monotonic-lexicographic-timestamp'
-import { publicUserDbs, onDatabaseChange } from '../db/index.js'
+import { publicServerDb, publicUserDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 import { fetchAuthor, fetchVotes, fetchComments, fetchCommentCount } from '../db/util.js'
@@ -46,7 +46,7 @@ export function setup (wsServer) {
     const key = mlts()
     comment.createdAt = (new Date()).toISOString()
     await publicUserDb.comments.put(key, comment)
-    await onDatabaseChange(publicUserDb)
+    await onDatabaseChange(publicUserDb, [publicServerDb])
     
     const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
     return {key, url}
@@ -64,7 +64,7 @@ export function setup (wsServer) {
 
     if (comment?.text) commentEntry.value.text = comment.text
     await publicUserDb.comments.put(key, commentEntry.value)
-    await onDatabaseChange(publicUserDb)
+    await onDatabaseChange(publicUserDb, [publicServerDb])
 
     const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
     return {key, url}

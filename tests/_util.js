@@ -11,7 +11,7 @@ let nServer = 1
 export async function createServer () {
   const tmpdir = await tmp.dir({unsafeCleanup: true})
   const domain = `dev${nServer++}.localhost`
-  const port = DEBUG_MODE_PORTS_MAP[domain]//await new Promise(r => randomPort(r))
+  const port = DEBUG_MODE_PORTS_MAP[domain]
   console.log('Storing config in', tmpdir.path)
 
   const binPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'bin.js')

@@ -9,6 +9,7 @@ import through2 from 'through2'
 import bytes from 'bytes'
 import lock from '../lib/lock.js'
 
+const BACKGROUND_INDEXING_DELAY = 5e3 // how much time is allowed to pass before globally indexing an update
 const BLOB_CHUNK_SIZE = bytes('64kb')
 
 const dbDescription = schemas.createValidator({
@@ -102,10 +103,10 @@ export class BaseHyperbeeDB extends EventEmitter {
     }
   }
 
-  watch (cb) {
-    cb = _debounce(cb, 100)
-    this.bee.feed.on('append', () => cb(this))
-    cb(this) // trigger immediately to update indexes from any previously synced changes that the indexer hasnt hit
+  watch (_cb) {
+    const cb = _debounce(() => _cb(this), BACKGROUND_INDEXING_DELAY, {trailing: true})
+    this.bee.feed.on('append', () => cb())
+    cb() // trigger immediately to update indexes from any previously synced changes that the indexer hasnt hit
   }
 
   async _eagerUpdate () {
@@ -161,7 +162,9 @@ export class BaseHyperbeeDB extends EventEmitter {
             }
           }
         }
-        indexer.updateState(changedDb.url, lastChange.seq)
+        if (lastChange) {
+          indexer.updateState(changedDb.url, lastChange.seq)
+        }
       }
     } finally {
       release()
@@ -275,7 +278,7 @@ class Indexer {
   }
 
   async getState (url) {
-    if (!this.indexStatesCache[url]) {
+    if (!this.indexStatesCache[url] && !this.schemaId.startsWith('memory:')) {
       this.indexStatesCache[url] = await this.db.indexState.get(`${this.schemaId}:${url}`)
     }
     return this.indexStatesCache[url]
@@ -289,6 +292,7 @@ class Indexer {
         updatedAt: (new Date()).toISOString()
       }
     }
+    if (this.schemaId.startsWith('memory:')) return
     const put = getDebouncedFn(
       `${this.db.url}:${this.schemaId}:${url}`,
       (k, v) => this.db.indexState.put(k, v).catch(e => {

@@ -1,4 +1,4 @@
-import { publicUserDbs, onDatabaseChange } from '../db/index.js'
+import { publicUserDbs, publicServerDb, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import { fetchVotes } from '../db/util.js'
 
@@ -17,7 +17,7 @@ export function setup (wsServer) {
     if (!key) throw new Error('Subject URL is required')
     vote.createdAt = (new Date()).toISOString()
     await publicUserDb.votes.put(key, vote)
-    await onDatabaseChange(publicUserDb)
+    await onDatabaseChange(publicUserDb, [publicServerDb])
     
     const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/vote', key)
     return {key, url}

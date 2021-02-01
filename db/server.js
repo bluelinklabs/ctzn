@@ -130,7 +130,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
     })
 
     this.createIndexer('ctzn.network/vote-idx', ['ctzn.network/vote'], async (db, change) => {
-      const release = await this.lock(`votes-idx`)
+      const release = await this.lock(`votes-idx:${change.keyParsed.key}`)
       try {
         const voteUrl = constructEntryUrl(db.url, 'ctzn.network/vote', change.keyParsed.key)
         let subjectUrl = change.value?.subjectUrl
@@ -179,7 +179,10 @@ export class PublicServerDB extends BaseHyperbeeDB {
   }
 
   async getSubscribedDbUrls () {
-    return (await this.users.list()).map(entry => entry.value.dbUrl)
+    if (!_subscribedDbUrlsCached) {
+      await _loadSubscribedDbUrls(this)
+    }
+    return _subscribedDbUrlsCached
   }
 
   async onDatabaseCreated () {
@@ -217,6 +220,10 @@ export class PrivateServerDB extends BaseHyperbeeDB {
         release()
       }
     })
+
+    this.createIndexer('memory:subscribed-urls', ['ctzn.network/user'], async (db, change) => {
+      await _loadSubscribedDbUrls(this.publicServerDb)
+    })
   }
 
   async getSubscribedDbUrls () {
@@ -226,4 +233,9 @@ export class PrivateServerDB extends BaseHyperbeeDB {
   async onDatabaseCreated () {
     console.log('New private server database created, key:', this.key.toString('hex'))
   }
+}
+
+let _subscribedDbUrlsCached
+async function _loadSubscribedDbUrls (publicServerDb) {
+  _subscribedDbUrlsCached = (await publicServerDb.users.list()).map(entry => entry.value.dbUrl)
 }

@@ -150,7 +150,7 @@ export class PrivateUserDB extends BaseHyperbeeDB {
     })
 
     this.createIndexer('ctzn.network/vote-idx', ['ctzn.network/vote'], async (db, change) => {
-      const release = await this.lock(`votes-idx`)
+      const release = await this.lock(`votes-idx:${change.keyParsed.key}`)
       try {
         const voteUrl = constructEntryUrl(db.url, 'ctzn.network/vote', change.keyParsed.key)
         let subjectUrl = change.value?.subjectUrl

@@ -74,7 +74,7 @@ export async function createUser ({username, email, profile}) {
     await publicUserDb.profile.put('self', profile)
     await publicServerDb.users.put(username, user)
     await privateServerDb.accounts.put(username, account)
-    await onDatabaseChange(publicServerDb)
+    await onDatabaseChange(publicServerDb, [publicServerDb, privateServerDb])
     
     const userId = constructUserId(username)
     publicUserDbs.set(userId, publicUserDb)
@@ -164,11 +164,11 @@ export function* getAllIndexingDbs () {
 }
 
 var _didIndexRecently = false // NOTE used only for tests, see whenAllSynced
-export async function onDatabaseChange (changedDb) {
+export async function onDatabaseChange (changedDb, indexingDbsToUpdated = undefined) {
   _didIndexRecently = true
   let lowestStart = undefined
   const dbIndexStates = {}
-  for (let indexingDb of getAllIndexingDbs()) {
+  for (let indexingDb of (indexingDbsToUpdated || getAllIndexingDbs())) {
     let subscribedUrls = await indexingDb.getSubscribedDbUrls()
     if (subscribedUrls.includes(changedDb.url)) {
       const indexStates = await Promise.all(
@@ -184,6 +184,9 @@ export async function onDatabaseChange (changedDb) {
       lowestStart = lowestStart === undefined ? indexLowestStart : Math.min(lowestStart, indexLowestStart)
     }
   }
+  if (lowestStart === undefined) {
+    return
+  }
 
   let changes = await new Promise((resolve, reject) => {
     pump(
@@ -198,7 +201,7 @@ export async function onDatabaseChange (changedDb) {
     return
   }
 
-  for (let indexingDb of getAllIndexingDbs()) {
+  for (let indexingDb of (indexingDbsToUpdated || getAllIndexingDbs())) {
     if (dbIndexStates[indexingDb.url]) {
       await indexingDb.updateIndexes({
         changedDb,

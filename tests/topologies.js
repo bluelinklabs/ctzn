@@ -125,6 +125,7 @@ test('2 servers, all users follow all other users', async t => {
       await user(i).follow(user(j))
     }
   }
+  await new Promise(r => setTimeout(r, 5e3)) // TODO update whenAllSynced to handle buffered bg syncs
   for (let inst of instances) {
     await inst.api.debug.whenAllSynced()
   }
@@ -154,6 +155,7 @@ test('2 servers, all users follow all other users', async t => {
       await user(i).vote({subject: sim.getRandomSubject(), vote})
     }
   }
+  await new Promise(r => setTimeout(r, 5e3)) // TODO update whenAllSynced to handle buffered bg syncs
   for (let inst of instances) {
     await inst.api.debug.whenAllSynced()
   }
@@ -234,6 +236,7 @@ test('2 servers, users only follow users on their own server', async t => {
       await user(i).follow(user(j))
     }
   }
+  await new Promise(r => setTimeout(r, 5e3)) // TODO update whenAllSynced to handle buffered bg syncs
   for (let inst of instances) {
     await inst.api.debug.whenAllSynced()
   }
@@ -259,6 +262,7 @@ test('2 servers, users only follow users on their own server', async t => {
       await user(i).vote({subject: sim.getRandomSubject(), vote})
     }
   }
+  await new Promise(r => setTimeout(r, 5e3)) // TODO update whenAllSynced to handle buffered bg syncs
   for (let inst of instances) {
     await inst.api.debug.whenAllSynced()
   }

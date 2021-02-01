@@ -1,4 +1,4 @@
-import { publicUserDbs, privateUserDbs, onDatabaseChange, catchupIndexes } from '../db/index.js'
+import { publicUserDbs, privateUserDbs, publicServerDb, onDatabaseChange, catchupIndexes } from '../db/index.js'
 import { isHyperUrl, constructEntryUrl } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
 import { fetchUserId, fetchUserInfo } from '../lib/network.js'
@@ -78,8 +78,8 @@ export function setup (wsServer) {
       createdAt: (new Date()).toISOString()
     }
     await publicUserDb.follows.put(key, value)
-    await onDatabaseChange(publicUserDb)
-    await catchupIndexes(privateUserDbs.get(client.auth.userId))
+    await onDatabaseChange(publicUserDb, [publicServerDb])
+    /* dont await */ catchupIndexes(privateUserDbs.get(client.auth.userId))
     
     const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/follow', key)
     return {key, url}
