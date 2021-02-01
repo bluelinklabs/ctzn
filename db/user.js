@@ -2,6 +2,7 @@ import createMlts from 'monotonic-lexicographic-timestamp'
 import { BaseHyperbeeDB } from './base.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
+import * as perf from '../lib/perf.js'
 
 const mlts = createMlts()
 
@@ -41,6 +42,7 @@ export class PrivateUserDB extends BaseHyperbeeDB {
       const myUrl = this.publicUserDb.url
       if (!change.value) return // ignore deletes
       if (db.url === myUrl) return // ignore self
+      const pend = perf.measure(`privateUserDb:notifications-indexer`)
 
       const release = await this.lock(`notifications-idx:${change.url}`)
       try {
@@ -73,10 +75,12 @@ export class PrivateUserDB extends BaseHyperbeeDB {
         })
       } finally {
         release()
+        pend()
       }
     })
 
     this.createIndexer('ctzn.network/follow-idx', ['ctzn.network/follow'], async (db, change) => {
+      const pend = perf.measure(`privateUserDb:follows-indexer`)
       let subject = change.value?.subject
       if (!subject) {
         const oldEntry = await db.bee.checkout(change.seq).get(change.key)
@@ -109,10 +113,12 @@ export class PrivateUserDB extends BaseHyperbeeDB {
         await this.followsIdx.put(followsIdxEntry.key, followsIdxEntry.value)
       } finally {
         release()
+        pend()
       }
     })
 
     this.createIndexer('ctzn.network/comment-idx', ['ctzn.network/comment'], async (db, change) => {
+      const pend = perf.measure(`privateUserDb:comments-indexer`)
       let subjectUrl = change.value?.subjectUrl
       if (!subjectUrl) {
         const oldEntry = await db.bee.checkout(change.seq).get(change.key)
@@ -146,10 +152,12 @@ export class PrivateUserDB extends BaseHyperbeeDB {
         await this.commentsIdx.put(commentsIdxEntry.key, commentsIdxEntry.value)
       } finally {
         release()
+        pend()
       }
     })
 
     this.createIndexer('ctzn.network/vote-idx', ['ctzn.network/vote'], async (db, change) => {
+      const pend = perf.measure(`privateUserDb:votes-indexer`)
       const release = await this.lock(`votes-idx:${change.keyParsed.key}`)
       try {
         const voteUrl = constructEntryUrl(db.url, 'ctzn.network/vote', change.keyParsed.key)
@@ -186,6 +194,7 @@ export class PrivateUserDB extends BaseHyperbeeDB {
         await this.votesIdx.put(votesIdxEntry.key, votesIdxEntry.value)
       } finally {
         release()
+        pend()
       }
     })
   }

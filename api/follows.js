@@ -3,6 +3,7 @@ import { isHyperUrl, constructEntryUrl } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
 import { fetchUserId, fetchUserInfo } from '../lib/network.js'
 import { fetchFollowerIds } from '../db/util.js'
+import * as perf from '../lib/perf.js'
 
 const listParam = createValidator({
   type: 'object',

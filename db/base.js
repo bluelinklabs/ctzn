@@ -8,6 +8,7 @@ import concat from 'concat-stream'
 import through2 from 'through2'
 import bytes from 'bytes'
 import lock from '../lib/lock.js'
+import * as perf from '../lib/perf.js'
 
 const BACKGROUND_INDEXING_DELAY = 5e3 // how much time is allowed to pass before globally indexing an update
 const BLOB_CHUNK_SIZE = bytes('64kb')
@@ -99,7 +100,9 @@ export class BaseHyperbeeDB extends EventEmitter {
 
   async whenSynced () {
     if (!this.bee.feed.writable) {
+      const pend = perf.measure('whenSynced')
       await this.bee.feed.update({ifAvailable: true}).catch(e => undefined)
+      pend()
     }
   }
 
@@ -230,20 +233,28 @@ class Table {
   }
 
   async get (key) {
+    const pend = perf.measure('table.get')
     let entry = await this.bee.get(String(key))
     if (entry) {
       this.schema.assertValid(entry.value)
     }
+    pend()
     return entry
   }
 
   async put (key, value) {
+    const pend = perf.measure('table.put')
     this.schema.assertValid(value)
-    return this.bee.put(String(key), value)
+    const res = await this.bee.put(String(key), value)
+    pend()
+    return res
   }
 
   async del (key) {
-    return this.bee.del(String(key))
+    const pend = perf.measure('table.del')
+    const res = await this.bee.del(String(key))
+    pend()
+    return res
   }
 
   createReadStream (opts) {
@@ -256,11 +267,13 @@ class Table {
   }
 
   async list (opts) {
+    const pend = perf.measure('table.list')
     return new Promise((resolve, reject) => {
       pump(
         this.createReadStream(opts),
         concat(resolve),
         err => {
+          pend()
           if (err) reject(err)
         }
       )

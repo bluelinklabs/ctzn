@@ -47,6 +47,7 @@ export async function createServer () {
 
 async function createRpcApi (ws) {
   await new Promise(resolve => ws.on('open', resolve))
+
   return new Proxy({url: ws.address}, {
     get (target, prop) {
       // generate rpc calls as needed

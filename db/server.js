@@ -2,6 +2,7 @@ import createMlts from 'monotonic-lexicographic-timestamp'
 import { BaseHyperbeeDB } from './base.js'
 import { hyperUrlToKey, constructUserId, constructEntryUrl, getDomain } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
+import * as perf from '../lib/perf.js'
 
 const mlts = createMlts()
 
@@ -23,6 +24,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
     ]
     this.createIndexer('ctzn.network/notification-idx', NOTIFICATIONS_SCHEMAS, async (db, change) => {
       if (!change.value) return // ignore deletes
+      const pend = perf.measure(`publicServerDb:notifications-indexer`)
 
       const release = await this.lock(`notifications-idx:${change.url}`)
       const createKey = url => `${hyperUrlToKey(url)}:${mlts()}`
@@ -54,10 +56,12 @@ export class PublicServerDB extends BaseHyperbeeDB {
         }
       } finally {
         release()
+        pend()
       }
     })
 
     this.createIndexer('ctzn.network/follow-idx', ['ctzn.network/follow'], async (db, change) => {
+      const pend = perf.measure(`publicServerDb:follows-indexer`)
       let subject = change.value?.subject
       if (!subject) {
         const oldEntry = await db.bee.checkout(change.seq).get(change.key)
@@ -89,11 +93,13 @@ export class PublicServerDB extends BaseHyperbeeDB {
         await this.followsIdx.put(followsIdxEntry.key, followsIdxEntry.value)
       } finally {
         release()
+        pend()
       }
       this.emit('followed-users-changed', {userId: subject.userId})
     })
 
     this.createIndexer('ctzn.network/comment-idx', ['ctzn.network/comment'], async (db, change) => {
+      const pend = perf.measure(`publicServerDb:comments-indexer`)
       const commentUrl = constructEntryUrl(db.url, 'ctzn.network/comment', change.keyParsed.key)
       let subjectUrl = change.value?.subjectUrl
       if (!subjectUrl) {
@@ -126,10 +132,12 @@ export class PublicServerDB extends BaseHyperbeeDB {
         await this.commentsIdx.put(commentsIdxEntry.key, commentsIdxEntry.value)
       } finally {
         release()
+        pend()
       }
     })
 
     this.createIndexer('ctzn.network/vote-idx', ['ctzn.network/vote'], async (db, change) => {
+      const pend = perf.measure(`publicServerDb:votes-indexer`)
       const release = await this.lock(`votes-idx:${change.keyParsed.key}`)
       try {
         const voteUrl = constructEntryUrl(db.url, 'ctzn.network/vote', change.keyParsed.key)
@@ -166,6 +174,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
         await this.votesIdx.put(votesIdxEntry.key, votesIdxEntry.value)
       } finally {
         release()
+        const pend = perf.measure(`publicServerDb:votes-indexer`)
       }
     })
   }
@@ -204,6 +213,7 @@ export class PrivateServerDB extends BaseHyperbeeDB {
     this.userDbIdx = this.getTable('ctzn.network/user-db-idx')
 
     this.createIndexer('ctzn.network/user-db-idx', ['ctzn.network/user'], async (db, change) => {
+      const pend = perf.measure(`privateServerDb:user-db-indexer`)
       const release = await this.lock('user-db-idx')
       try {
         let oldEntry = await db.bee.checkout(change.seq).get(change.key)
@@ -218,6 +228,7 @@ export class PrivateServerDB extends BaseHyperbeeDB {
         }
       } finally {
         release()
+        pend()
       }
     })
 

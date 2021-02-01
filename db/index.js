@@ -7,7 +7,8 @@ import { PublicServerDB, PrivateServerDB } from './server.js'
 import { PublicUserDB, PrivateUserDB } from './user.js'
 import * as schemas from '../lib/schemas.js'
 import { HYPER_KEY, hyperUrlToKey, constructUserId, getDomain } from '../lib/strings.js'
-import { fetchDbUrl, fetchUserId } from '../lib/network.js'
+import { fetchDbUrl } from '../lib/network.js'
+import * as perf from '../lib/perf.js'
 import lock from '../lib/lock.js'
 
 let _configDir = undefined
@@ -164,11 +165,12 @@ export function* getAllIndexingDbs () {
 }
 
 var _didIndexRecently = false // NOTE used only for tests, see whenAllSynced
-export async function onDatabaseChange (changedDb, indexingDbsToUpdated = undefined) {
+export async function onDatabaseChange (changedDb, indexingDbsToUpdate = undefined) {
+  const pend = perf.measure('onDatabaseChange')
   _didIndexRecently = true
   let lowestStart = undefined
   const dbIndexStates = {}
-  for (let indexingDb of (indexingDbsToUpdated || getAllIndexingDbs())) {
+  for (let indexingDb of (indexingDbsToUpdate || getAllIndexingDbs())) {
     let subscribedUrls = await indexingDb.getSubscribedDbUrls()
     if (subscribedUrls.includes(changedDb.url)) {
       const indexStates = await Promise.all(
@@ -185,9 +187,11 @@ export async function onDatabaseChange (changedDb, indexingDbsToUpdated = undefi
     }
   }
   if (lowestStart === undefined) {
+    pend()
     return
   }
 
+  const pend2 = perf.measure('createHistoryStream')
   let changes = await new Promise((resolve, reject) => {
     pump(
       changedDb.bee.createHistoryStream({gt: lowestStart}),
@@ -197,11 +201,13 @@ export async function onDatabaseChange (changedDb, indexingDbsToUpdated = undefi
       }
     )
   })
+  pend2()
   if (changes.length === 0) {
+    pend()
     return
   }
 
-  for (let indexingDb of (indexingDbsToUpdated || getAllIndexingDbs())) {
+  for (let indexingDb of (indexingDbsToUpdate || getAllIndexingDbs())) {
     if (dbIndexStates[indexingDb.url]) {
       await indexingDb.updateIndexes({
         changedDb,
@@ -211,15 +217,18 @@ export async function onDatabaseChange (changedDb, indexingDbsToUpdated = undefi
       })
     }
   }
+  pend()
 }
 
-export async function catchupIndexes (indexingDb) {
+export async function catchupIndexes (indexingDb, dbsToCatchup = undefined) {
+  const pend = perf.measure('catchupIndexes')
   _didIndexRecently = true
   if (!Array.from(getAllIndexingDbs()).includes(indexingDb)) {
+    pend()
     return
   }
-  let subscribedUrls = await indexingDb.getSubscribedDbUrls()
-  for (let changedDb of getAllDbs()) {
+  let subscribedUrls = dbsToCatchup ? dbsToCatchup.map(db => db.url) : await indexingDb.getSubscribedDbUrls()
+  for (let changedDb of (dbsToCatchup || getAllDbs())) {
     if (!subscribedUrls.includes(changedDb.url)) {
       continue
     }
@@ -235,6 +244,7 @@ export async function catchupIndexes (indexingDb) {
     }, undefined) || 0
 
     await changedDb.whenSynced()
+    const pend2 = perf.measure('createHistoryStream')
     let changes = await new Promise((resolve, reject) => {
       pump(
         changedDb.bee.createHistoryStream({gt: lowestStart}),
@@ -244,6 +254,7 @@ export async function catchupIndexes (indexingDb) {
         }
       )
     })
+    pend2()
     if (changes.length === 0) {
       continue
     }
@@ -255,6 +266,7 @@ export async function catchupIndexes (indexingDb) {
       lowestStart
     })
   }
+  pend()
 }
 
 // NOTE

@@ -2,6 +2,7 @@ import express from 'express'
 import { Server as WebSocketServer } from 'rpc-websockets'
 import * as db from './db/index.js'
 import * as api from './api/index.js'
+import * as perf from './lib/perf.js'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
 import * as os from 'os'
@@ -11,8 +12,11 @@ const DEFAULT_USER_THUMB_PATH = path.join(path.dirname(fileURLToPath(import.meta
 
 let app
 
-export async function start ({port, configDir, simulateHyperspace, domain, debugMode}) {
+export async function start ({port, configDir, simulateHyperspace, domain, debugMode, benchmarkMode}) {
   configDir = configDir || path.join(os.homedir(), '.ctzn')
+  if (benchmarkMode) {
+    perf.enable()
+  }
   if (debugMode && DEBUG_MODE_PORTS_MAP[domain]) {
     port = DEBUG_MODE_PORTS_MAP[domain]
   }
