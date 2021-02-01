@@ -1,6 +1,6 @@
 import createMlts from 'monotonic-lexicographic-timestamp'
 import { publicServerDb, publicUserDbs, privateUserDbs } from '../db/index.js'
-import { constructUserUrl, parseEntryUrl, hyperUrlToKey } from '../lib/strings.js'
+import { constructUserUrl, parseEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 
 const mlts = createMlts()
@@ -72,7 +72,7 @@ export async function fetchNotications (userInfo, {after} = {}) {
   let notificationServerIdxEntries
   let notificationUserIdxEntries
 
-  const dbKey = hyperUrlToKey(userInfo.dbUrl)
+  const dbKey = hyperUrlToKeyStr(userInfo.dbUrl)
   notificationServerIdxEntries = await publicServerDb.notificationIdx.list({
     lte: after ? `${dbKey}:${mlts(new Date(after))}` : `${dbKey}:\xff`,
     gte: `${dbKey}:\x00`,
