@@ -47,6 +47,7 @@ export async function setup ({configDir, simulateHyperspace}) {
 export async function createUser ({username, email, profile}) {
   let release = await lock(`create-user:${username}`)
   try {
+    const userId = constructUserId(username)
     const account = {
       email,
       privateDbUrl: `hyper://${'0'.repeat(64)}/`
@@ -61,13 +62,13 @@ export async function createUser ({username, email, profile}) {
     schemas.get('ctzn.network/account').assertValid(account)
     schemas.get('ctzn.network/user').assertValid(user)
 
-    const publicUserDb = new PublicUserDB(null)
+    const publicUserDb = new PublicUserDB(userId, null)
     await publicUserDb.setup()
     publicUserDb.watch(onDatabaseChange)
     await catchupIndexes(publicUserDb)
     user.dbUrl = publicUserDb.url
 
-    const privateUserDb = new PrivateUserDB(null, publicServerDb, publicUserDb)
+    const privateUserDb = new PrivateUserDB(userId, null, publicServerDb, publicUserDb)
     await privateUserDb.setup()
     await catchupIndexes(privateUserDb)
     account.privateDbUrl = privateUserDb.url
@@ -77,7 +78,6 @@ export async function createUser ({username, email, profile}) {
     await privateServerDb.accounts.put(username, account)
     await onDatabaseChange(publicServerDb, [publicServerDb, privateServerDb])
     
-    const userId = constructUserId(username)
     publicUserDbs.set(userId, publicUserDb)
     privateUserDbs.set(userId, privateUserDb)
     return {privateUserDb, publicUserDb, userId}
@@ -130,14 +130,14 @@ async function saveDbConfig () {
 async function loadMemberUserDbs () {
   let users = await publicServerDb.users.list()
   for (let user of users) {
-    let publicUserDb = new PublicUserDB(hyperUrlToKey(user.value.dbUrl))
+    let publicUserDb = new PublicUserDB(user.value.userId, hyperUrlToKey(user.value.dbUrl))
     await publicUserDb.setup()
     publicUserDbs.set(constructUserId(user.key), publicUserDb)
     publicUserDb.watch(onDatabaseChange)
     await catchupIndexes(publicUserDb)
 
     let accountEntry = await privateServerDb.accounts.get(user.value.username)
-    let privateUserDb = new PrivateUserDB(hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicUserDb)
+    let privateUserDb = new PrivateUserDB(user.value.userId, hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicUserDb)
     await privateUserDb.setup()
     privateUserDbs.set(constructUserId(user.key), privateUserDb)
     await catchupIndexes(privateUserDb)
@@ -289,7 +289,7 @@ async function loadOrUnloadExternalUserDbs () {
     if (!publicUserDbs.has(userId)) {
       try {
         const dbUrl = await fetchDbUrl(userId)
-        let publicUserDb = new PublicUserDB(hyperUrlToKey(dbUrl))
+        let publicUserDb = new PublicUserDB(userId, hyperUrlToKey(dbUrl))
         await publicUserDb.setup()
         publicUserDbs.set(userId, publicUserDb)
         publicUserDb.watch(onDatabaseChange)

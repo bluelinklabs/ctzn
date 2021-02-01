@@ -34,11 +34,12 @@ const blobPointer = schemas.createValidator({
 })
 
 export class BaseHyperbeeDB extends EventEmitter {
-  constructor (key) {
+  constructor (_ident, key) {
     super()
     if (typeof key === 'string') {
       key = Buffer.from(key, 'hex')
     }
+    this._ident = _ident
     this.desc = undefined
     this.key = key || null
     this.bee = null

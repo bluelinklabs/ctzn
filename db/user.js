@@ -7,6 +7,10 @@ import * as perf from '../lib/perf.js'
 const mlts = createMlts()
 
 export class PublicUserDB extends BaseHyperbeeDB {
+  constructor (userId, key) {
+    super(`public:${userId}`, key)
+  }
+
   async setup () {
     await super.setup()
     await this.blobs.setup()
@@ -19,8 +23,8 @@ export class PublicUserDB extends BaseHyperbeeDB {
 }
 
 export class PrivateUserDB extends BaseHyperbeeDB {
-  constructor (key, publicServerDb, publicUserDb) {
-    super(key)
+  constructor (userId, key, publicServerDb, publicUserDb) {
+    super(`private:${userId}`, key)
     this.publicServerDb = publicServerDb
     this.publicUserDb = publicUserDb
   }

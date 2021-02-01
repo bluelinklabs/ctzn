@@ -7,6 +7,10 @@ import * as perf from '../lib/perf.js'
 const mlts = createMlts()
 
 export class PublicServerDB extends BaseHyperbeeDB {
+  constructor (key) {
+    super('public:server', key)
+  }
+
   async setup () {
     await super.setup()
     this.indexState = this.getTable('ctzn.network/index-state')
@@ -174,7 +178,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
         await this.votesIdx.put(votesIdxEntry.key, votesIdxEntry.value)
       } finally {
         release()
-        const pend = perf.measure(`publicServerDb:votes-indexer`)
+        pend()
       }
     })
   }
@@ -201,7 +205,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
 
 export class PrivateServerDB extends BaseHyperbeeDB {
   constructor (key, publicServerDb) {
-    super(key)
+    super('private:server', key)
     this.publicServerDb = publicServerDb
   }
 
