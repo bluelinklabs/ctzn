@@ -1,6 +1,6 @@
 import createMlts from 'monotonic-lexicographic-timestamp'
 import { BaseHyperbeeDB } from './base.js'
-import { hyperUrlToKey, constructUserId, constructEntryUrl, getDomain } from '../lib/strings.js'
+import { hyperUrlToKeyStr, constructUserId, constructEntryUrl, getDomain } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 import * as perf from '../lib/perf.js'
 
@@ -27,7 +27,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
       const pend = perf.measure(`publicServerDb:notifications-indexer`)
 
       const release = await this.lock(`notifications-idx:${change.url}`)
-      const createKey = url => `${hyperUrlToKey(url)}:${mlts()}`
+      const createKey = url => `${hyperUrlToKeyStr(url)}:${mlts()}`
       const notification = {
         itemUrl: constructEntryUrl(db.url, change.keyParsed.schemaId, change.keyParsed.key),
         createdAt: (new Date()).toISOString()
