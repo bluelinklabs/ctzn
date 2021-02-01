@@ -2,6 +2,7 @@ import EventEmitter from 'events'
 import _debounce from 'lodash.debounce'
 import { client } from './hyperspace.js'
 import * as schemas from '../lib/schemas.js'
+import hypercore from 'hypercore'
 import Hyperbee from 'hyperbee'
 import pump from 'pump'
 import concat from 'concat-stream'
@@ -33,6 +34,8 @@ const blobPointer = schemas.createValidator({
   }
 })
 
+const cores = new Map()
+
 export class BaseHyperbeeDB extends EventEmitter {
   constructor (_ident, key) {
     super()
@@ -53,7 +56,10 @@ export class BaseHyperbeeDB extends EventEmitter {
   }
 
   async setup () {
-    this.bee = new Hyperbee(client.corestore().get(this.key), {
+    const id = this.key ? this.key.toString('hex') : '' + Math.floor(Math.random() * 1000)
+    if (!cores.get(id)) cores.set(id, hypercore('tmp-storage' + '/' + id))
+    console.log('opening core with key:', this.key, 'id:', id)
+    this.bee = new Hyperbee(cores.get(id), {
       keyEncoding: 'utf8',
       valueEncoding: 'json'
     })
