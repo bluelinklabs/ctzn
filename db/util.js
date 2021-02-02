@@ -68,21 +68,23 @@ export async function fetchCommentCount (subject, userIdxId = undefined) {
   return commentUrls.length
 }
 
-export async function fetchNotications (userInfo, {after} = {}) {
+export async function fetchNotications (userInfo, {after, before} = {}) {
   let notificationServerIdxEntries
   let notificationUserIdxEntries
 
-  const ltKey = after ? lexintEncoder.encode(Number(new Date(after))) : undefined
+  const ltKey = before ? lexintEncoder.encode(Number(new Date(before))) : undefined
+  const gtKey = after ? lexintEncoder.encode(Number(new Date(after))) : undefined
   const dbKey = hyperUrlToKeyStr(userInfo.dbUrl)
   notificationServerIdxEntries = await publicServerDb.notificationIdx.list({
-    lt: after ? `${dbKey}:${ltKey}` : `${dbKey}:\xff`,
-    gte: `${dbKey}:\x00`,
+    lt: ltKey ? `${dbKey}:${ltKey}` : `${dbKey}:\xff`,
+    gt: gtKey ? `${dbKey}:${gtKey}` : `${dbKey}:\x00`,
     limit: 20,
     reverse: true
   })
   if (privateUserDbs.has(userInfo.userId)) {
     notificationUserIdxEntries = await privateUserDbs.get(userInfo.userId).notificationsIdx.list({
-      lt: after ? ltKey : undefined,
+      lt: ltKey ? ltKey : undefined,
+      gt: gtKey ? gtKey : undefined,
       limit: 20,
       reverse: true
     })
@@ -93,6 +95,35 @@ export async function fetchNotications (userInfo, {after} = {}) {
     return notificationEntries.findIndex(entry2 => entry2.value.itemUrl === entry.value.itemUrl) === index
   })
   return await Promise.all(notificationEntries.map(fetchNotification))
+}
+
+export async function countNotications (userInfo, {after, before} = {}) {
+  let notificationServerIdxEntries
+  let notificationUserIdxEntries
+
+  const ltKey = before ? lexintEncoder.encode(Number(new Date(before))) : undefined
+  const gtKey = after ? lexintEncoder.encode(Number(new Date(after))) : undefined
+  const dbKey = hyperUrlToKeyStr(userInfo.dbUrl)
+  notificationServerIdxEntries = await publicServerDb.notificationIdx.list({
+    lt: ltKey ? `${dbKey}:${ltKey}` : `${dbKey}:\xff`,
+    gt: gtKey ? `${dbKey}:${gtKey}` : `${dbKey}:\x00`,
+    limit: 20,
+    reverse: true
+  })
+  if (privateUserDbs.has(userInfo.userId)) {
+    notificationUserIdxEntries = await privateUserDbs.get(userInfo.userId).notificationsIdx.list({
+      lt: ltKey ? ltKey : undefined,
+      gt: gtKey ? gtKey : undefined,
+      limit: 20,
+      reverse: true
+    })
+  }
+
+  let notificationEntries = concat(notificationServerIdxEntries, notificationUserIdxEntries)
+  notificationEntries = notificationEntries.filter((entry, index) => {
+    return notificationEntries.findIndex(entry2 => entry2.value.itemUrl === entry.value.itemUrl) === index
+  })
+  return notificationEntries.length
 }
 
 async function fetchNotification (notificationEntry) {
