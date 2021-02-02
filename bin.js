@@ -10,7 +10,7 @@ const match = subcommand({
     {
       name: 'start',
       command: args => {
-        start({debugMode: true, port: 3000})
+        start({debugMode: true, port: args.port || 3000, domain: args.domain})
       }
     },
     {
@@ -65,7 +65,7 @@ const match = subcommand({
   ],
   root: {
     command: args => {
-      start({debugMode: true, port: 3000})
+      start({debugMode: true, port: args.port || 3000, domain: args.domain})
     }
   }
 })
