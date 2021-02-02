@@ -1,9 +1,9 @@
-import createMlts from 'monotonic-lexicographic-timestamp'
+import lexint from 'lexicographic-integer-encoding'
 import { publicServerDb, publicUserDbs, privateUserDbs } from '../db/index.js'
 import { constructUserUrl, parseEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 
-const mlts = createMlts()
+const lexintEncoder = lexint('hex')
 
 export async function fetchAuthor (authorId, cache = undefined) {
   if (cache && cache[authorId]) {
@@ -72,16 +72,17 @@ export async function fetchNotications (userInfo, {after} = {}) {
   let notificationServerIdxEntries
   let notificationUserIdxEntries
 
+  const ltKey = after ? lexintEncoder.encode(Number(new Date(after))) : undefined
   const dbKey = hyperUrlToKeyStr(userInfo.dbUrl)
   notificationServerIdxEntries = await publicServerDb.notificationIdx.list({
-    lt: after ? `${dbKey}:${mlts(new Date(after))}` : `${dbKey}:\xff`,
+    lt: after ? `${dbKey}:${ltKey}` : `${dbKey}:\xff`,
     gte: `${dbKey}:\x00`,
     limit: 20,
     reverse: true
   })
   if (privateUserDbs.has(userInfo.userId)) {
     notificationUserIdxEntries = await privateUserDbs.get(userInfo.userId).notificationsIdx.list({
-      lt: after ? mlts(new Date(after)) : undefined,
+      lt: after ? ltKey : undefined,
       limit: 20,
       reverse: true
     })
