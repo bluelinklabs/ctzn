@@ -74,14 +74,14 @@ export async function fetchNotications (userInfo, {after} = {}) {
 
   const dbKey = hyperUrlToKeyStr(userInfo.dbUrl)
   notificationServerIdxEntries = await publicServerDb.notificationIdx.list({
-    lte: after ? `${dbKey}:${mlts(new Date(after))}` : `${dbKey}:\xff`,
+    lt: after ? `${dbKey}:${mlts(new Date(after))}` : `${dbKey}:\xff`,
     gte: `${dbKey}:\x00`,
     limit: 20,
     reverse: true
   })
   if (privateUserDbs.has(userInfo.userId)) {
     notificationUserIdxEntries = await privateUserDbs.get(userInfo.userId).notificationsIdx.list({
-      lte: after ? mlts(new Date(after)) : undefined,
+      lt: after ? mlts(new Date(after)) : undefined,
       limit: 20,
       reverse: true
     })
