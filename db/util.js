@@ -107,7 +107,8 @@ async function fetchNotification (notificationEntry) {
     itemUrl: notificationEntry.value.itemUrl,
     createdAt: notificationEntry.value.createdAt,
     author: {
-      userId
+      userId,
+      url: constructUserUrl(userId)
     },
     item: item?.value
   }
