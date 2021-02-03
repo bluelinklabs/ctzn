@@ -34,16 +34,17 @@ const blobPointer = schemas.createValidator({
 })
 
 export class BaseHyperbeeDB extends EventEmitter {
-  constructor (_ident, key) {
+  constructor (_ident, key, {isPrivate} = {isPrivate: false}) {
     super()
     if (typeof key === 'string') {
       key = Buffer.from(key, 'hex')
     }
     this._ident = _ident
+    this.isPrivate = isPrivate
     this.desc = undefined
     this.key = key || null
     this.bee = null
-    this.blobs = new Blobs(this)
+    this.blobs = new Blobs(this, {isPrivate})
     this.tables = {}
     this.indexers = []
     this.lock = (id) => lock(`${this.key.toString('hex')}:${id}`)
@@ -59,7 +60,9 @@ export class BaseHyperbeeDB extends EventEmitter {
       valueEncoding: 'json'
     })
     await this.bee.ready()
-    client.replicate(this.bee.feed)
+    if (!this.isPrivate) {
+      client.replicate(this.bee.feed)
+    }
 
     if (!this.bee.feed.writable) {
       this._eagerUpdate()
@@ -84,7 +87,9 @@ export class BaseHyperbeeDB extends EventEmitter {
   async teardown () {
     if (this.blobs) await this.blobs.teardown()
     this.blobs = undefined
-    client.network.configure(this.bee.feed, {announce: false, lookup: false})
+    if (!this.isPrivate) {
+      client.network.configure(this.bee.feed, {announce: false, lookup: false})
+    }
     await this.bee.feed.close()
     this.bee = undefined
   }
@@ -180,10 +185,11 @@ export class BaseHyperbeeDB extends EventEmitter {
 }
 
 class Blobs {
-  constructor (db) {
+  constructor (db, {isPrivate}) {
     this.db = db
     this.kv = undefined
     this.feed = undefined
+    this.isPrivate = isPrivate
   }
 
   async setup () {
@@ -199,13 +205,17 @@ class Blobs {
       this.feed = client.corestore().get(Buffer.from(this.db.desc.blobsFeedKey, 'hex'))
       await this.feed.ready()
     }
-    client.replicate(this.feed)
+    if (!this.isPrivate) {
+      client.replicate(this.feed)
+    }
 
     // TODO track which ranges in the feed are actively pointed to and cache/decache accordingly
   }
 
   async teardown () {
-    client.network.configure(this.feed, {announce: false, lookup: false})
+    if (!this.isPrivate) {
+      client.network.configure(this.feed, {announce: false, lookup: false})
+    }
     await this.feed.close()
   }
 

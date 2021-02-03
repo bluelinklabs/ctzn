@@ -207,7 +207,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
 
 export class PrivateServerDB extends BaseHyperbeeDB {
   constructor (key, publicServerDb) {
-    super('private:server', key)
+    super('private:server', key, {isPrivate: true})
     this.publicServerDb = publicServerDb
   }
 
