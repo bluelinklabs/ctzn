@@ -125,6 +125,15 @@ export async function start ({port, configDir, simulateHyperspace, domain, debug
     }
   })
 
+  app.get('/ctzn/comment/:username([^\/]{3,})/:key', async (req, res) => {
+    try {
+      const db = getDb(req.params.username)
+      res.status(200).json(await dbGetters.getComment(db, req.params.key, usernameToUserId(req.params.username)))
+    } catch (e) {
+      json404(res, e)
+    }
+  })
+
   app.get('/ctzn/thread/:url', async (req, res) => {
     try {
       res.status(200).json(await dbGetters.getThread(req.params.url))

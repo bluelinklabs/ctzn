@@ -2,8 +2,7 @@ import createMlts from 'monotonic-lexicographic-timestamp'
 import { publicServerDb, publicUserDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
-import { getThread } from '../db/getters.js'
-import { fetchAuthor, fetchVotes, fetchCommentCount } from '../db/util.js'
+import { getComment, getThread } from '../db/getters.js'
 
 const mlts = createMlts()
 
@@ -24,17 +23,6 @@ export function setup (wsServer) {
 
     const publicUserDb = publicUserDbs.get(userId)
     if (!publicUserDb) throw new Error('User database not found')
-
-    const commentEntry = await publicUserDb.comments.get(key)
-    if (!commentEntry) {
-      throw new Error('Comment not found')
-    }
-    commentEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', commentEntry.key)
-    commentEntry.author = await fetchAuthor(userId)
-    commentEntry.votes = await fetchVotes(commentEntry.url, client?.auth?.userId)
-    commentEntry.commentCount = await fetchCommentCount(commentEntry, client?.auth?.userId)
-
-    return commentEntry
   })
 
   wsServer.register('comments.create', async ([comment], client) => {

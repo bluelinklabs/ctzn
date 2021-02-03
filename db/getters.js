@@ -27,6 +27,18 @@ export async function listPosts (db, opts, authorId, auth = undefined) {
   return entries
 }
 
+export async function getComment (db, key, authorId, auth = undefined) {
+  const commentEntry = await db.comments.get(key)
+  if (!commentEntry) {
+    throw new Error('Comment not found')
+  }
+  commentEntry.url = constructEntryUrl(db.url, 'ctzn.network/comment', commentEntry.key)
+  commentEntry.author = await fetchAuthor(authorId)
+  commentEntry.votes = await fetchVotes(commentEntry.url, auth?.userId)
+  commentEntry.commentCount = await fetchCommentCount(commentEntry, auth?.userId)
+  return commentEntry
+}
+
 export async function getThread (subjectUrl, auth = undefined) {
   const comments = await fetchComments({url: subjectUrl}, auth?.userId)
   const commentEntries = await fetchIndexedComments(comments, auth?.userId)
