@@ -23,6 +23,7 @@ export function setup (wsServer) {
 
     const publicUserDb = publicUserDbs.get(userId)
     if (!publicUserDb) throw new Error('User database not found')
+    return getComment(publicUserDb, key, userId, client.auth)
   })
 
   wsServer.register('comments.create', async ([comment], client) => {

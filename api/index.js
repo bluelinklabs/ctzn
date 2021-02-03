@@ -14,7 +14,7 @@ export function setup (wsServer, opts) {
     origRegister.call(this, methodName, async (params, socket_id) => {
       const client = wsServer.namespaces['/'].clients.get(socket_id)
       const res = await methodHandler(params, client)
-      return typeof res === 'undefined' ? true : res
+      return typeof res === 'undefined' ? null : res
     })
   }
 
