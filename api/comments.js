@@ -2,15 +2,14 @@ import createMlts from 'monotonic-lexicographic-timestamp'
 import { publicServerDb, publicUserDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
-import { fetchAuthor, fetchVotes, fetchComments, fetchCommentCount } from '../db/util.js'
+import { getThread } from '../db/getters.js'
+import { fetchAuthor, fetchVotes, fetchCommentCount } from '../db/util.js'
 
 const mlts = createMlts()
 
 export function setup (wsServer) {
   wsServer.register('comments.getThread', async ([subjectUrl], client) => {
-    const commentUrls = await fetchComments({url: subjectUrl}, client?.auth?.userId)
-    const commentEntries = await fetchIndexedComments(commentUrls, client?.auth?.userId)
-    return commentEntriesToThread(commentEntries)
+    return getThread(subjectUrl, client.auth)
   })
 
   wsServer.register('comments.get', async ([userId, key], client) => {
@@ -78,53 +77,4 @@ export function setup (wsServer) {
     await publicUserDb.comments.del(key)
     await onDatabaseChange(publicUserDb)
   })
-}
-
-async function fetchIndexedComments (commentUrls, userIdxId = undefined) {
-  const authorsCache = {}
-  const commentEntries = await Promise.all(commentUrls.map(async (commentUrl) => {
-    try {
-      const {origin, key} = parseEntryUrl(commentUrl)
-
-      const userId = await fetchUserId(origin)
-      const publicUserDb = publicUserDbs.get(userId)
-      if (!publicUserDb) return undefined
-
-      const commentEntry = await publicUserDb.comments.get(key)
-      commentEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
-      commentEntry.author = await fetchAuthor(userId, authorsCache)
-      commentEntry.votes = await fetchVotes(commentEntry, userIdxId)
-      return commentEntry
-    } catch (e) {
-      console.log(e)
-      return undefined
-    }
-  }))
-  return commentEntries.filter(Boolean)
-}
-
-function commentEntriesToThread (commentEntries) {
-  const commentEntriesByUrl = {}
-  commentEntries.forEach(commentEntry => { commentEntriesByUrl[commentEntry.url] = commentEntry })
-
-  const rootCommentEntries = []
-  commentEntries.forEach(commentEntry => {
-    if (commentEntry.value.parentCommentUrl) {
-      let parent = commentEntriesByUrl[commentEntry.value.parentCommentUrl]
-      if (!parent) {
-        commentEntry.isMissingParent = true
-        rootCommentEntries.push(commentEntry)
-        return
-      }
-      if (!parent.replies) {
-        parent.replies = []
-        parent.replyCount = 0
-      }
-      parent.replies.push(commentEntry)
-      parent.replyCount++
-    } else {
-      rootCommentEntries.push(commentEntry)
-    }
-  })
-  return rootCommentEntries
 }

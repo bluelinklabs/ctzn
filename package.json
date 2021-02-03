@@ -22,6 +22,7 @@
     "bytes": "^3.1.0",
     "concat-stream": "^2.0.0",
     "config": "^3.3.3",
+    "cors": "^2.8.5",
     "ejs": "^3.1.5",
     "express": "^4.17.1",
     "hyperbee": "1.5.0",
@@ -37,6 +38,5 @@
     "uuid": "^8.3.2",
     "ws": "^7.4.2"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }

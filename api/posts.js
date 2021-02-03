@@ -4,6 +4,7 @@ import { publicUserDbs } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 import { fetchAuthor, fetchVotes, fetchCommentCount } from '../db/util.js'
+import { getPost, listPosts } from '../db/getters.js'
 
 const mlts = createMlts()
 
@@ -37,15 +38,7 @@ export function setup (wsServer) {
     const publicUserDb = publicUserDbs.get(userId)
     if (!publicUserDb) throw new Error('User database not found')
 
-    const entries = await publicUserDb.posts.list(opts)
-    const authorsCache = {}
-    for (let entry of entries) {
-      entry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', entry.key)
-      entry.author = await fetchAuthor(userId, authorsCache)
-      entry.votes = await fetchVotes(entry, client?.auth?.userId)
-      entry.commentCount = await fetchCommentCount(entry, client?.auth?.userId)
-    }
-    return entries
+    return listPosts(publicUserDb, opts, userId, client.auth)
   })
 
   wsServer.register('posts.listHomeFeed', async ([opts], client) => {
@@ -96,16 +89,7 @@ export function setup (wsServer) {
     const publicUserDb = publicUserDbs.get(userId)
     if (!publicUserDb) throw new Error('User database not found')
 
-    const postEntry = await publicUserDb.posts.get(key)
-    if (!postEntry) {
-      throw new Error('Post not found')
-    }
-    postEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', postEntry.key)
-    postEntry.author = await fetchAuthor(userId)
-    postEntry.votes = await fetchVotes(postEntry, client?.auth?.userId)
-    postEntry.commentCount = await fetchCommentCount(postEntry, client?.auth?.userId)
-
-    return postEntry
+    return getPost(publicUserDb, key, userId, client.auth)
   })
 
   wsServer.register('posts.create', async ([post], client) => {

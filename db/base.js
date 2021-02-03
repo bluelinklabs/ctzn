@@ -44,6 +44,7 @@ export class BaseHyperbeeDB extends EventEmitter {
     this.key = key || null
     this.bee = null
     this.blobs = new Blobs(this)
+    this.tables = {}
     this.indexers = []
     this.lock = (id) => lock(`${this.key.toString('hex')}:${id}`)
   }
@@ -120,8 +121,10 @@ export class BaseHyperbeeDB extends EventEmitter {
   }
 
   getTable (schemaId) {
+    if (this.tables[schemaId]) return this.tables[schemaId]
     let schema = schemas.get(schemaId)
-    return new Table(this, schema)
+    this.tables[schemaId] = new Table(this, schema)
+    return this.tables[schemaId]
   }
 
   async getSubscribedDbUrls () {

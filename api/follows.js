@@ -2,8 +2,7 @@ import { publicUserDbs, privateUserDbs, publicServerDb, onDatabaseChange, catchu
 import { isHyperUrl, constructEntryUrl } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
 import { fetchUserId, fetchUserInfo } from '../lib/network.js'
-import { fetchFollowerIds } from '../db/util.js'
-import * as perf from '../lib/perf.js'
+import { listFollowers, listFollows } from '../db/getters.js'
 
 const listParam = createValidator({
   type: 'object',
@@ -20,11 +19,7 @@ const listParam = createValidator({
 
 export function setup (wsServer) {
   wsServer.register('follows.listFollowers', async ([userId], client) => {
-    const userInfo = await fetchUserInfo(userId)
-    return {
-      subject: userInfo,
-      followerIds: await fetchFollowerIds(userId, client?.auth?.userId)
-    }
+    return listFollowers(userId, client.auth)
   })
 
   wsServer.register('follows.listFollows', async ([userId, opts]) => {
@@ -40,12 +35,7 @@ export function setup (wsServer) {
 
     const publicUserDb = publicUserDbs.get(userId)
     if (!publicUserDb) throw new Error('User database not found')
-
-    const entries = await publicUserDb.follows.list(opts)
-    for (let entry of entries) {
-      entry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/follow', entry.key)
-    }
-    return entries
+    return listFollows(publicUserDb)
   })
 
   wsServer.register('follows.get', async ([userId, subjectId]) => {
