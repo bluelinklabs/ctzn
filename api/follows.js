@@ -35,7 +35,7 @@ export function setup (wsServer) {
 
     const publicUserDb = publicUserDbs.get(userId)
     if (!publicUserDb) throw new Error('User database not found')
-    return listFollows(publicUserDb)
+    return listFollows(publicUserDb, opts)
   })
 
   wsServer.register('follows.get', async ([userId, subjectId]) => {

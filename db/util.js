@@ -34,17 +34,18 @@ export async function fetchFollowerIds (subjectUserId, userIdxId = undefined) {
   return concatUniq(followsServerIdxEntry?.value?.followerIds, followsUserIdxEntry?.value?.followerIds)
 }
 
-export async function fetchVotes (subject, userIdxId = undefined) {
+export async function fetchVotes (subjectUrl, userIdxId = undefined) {
   let votesServerIdxEntry
   let votesUserIdxEntry
-  votesServerIdxEntry = await publicServerDb.votesIdx.get(subject.url)
+  votesServerIdxEntry = await publicServerDb.votesIdx.get(subjectUrl)
   if (userIdxId && privateUserDbs.has(userIdxId)) {
-    votesUserIdxEntry = await privateUserDbs.get(userIdxId).votesIdx.get(subject.url)
+    votesUserIdxEntry = await privateUserDbs.get(userIdxId).votesIdx.get(subjectUrl)
   }
 
   const upvoteUrls = concatUniq(votesServerIdxEntry?.value?.upvoteUrls, votesUserIdxEntry?.value?.upvoteUrls)
   const downvoteUrls = concatUniq(votesServerIdxEntry?.value?.downvoteUrls, votesUserIdxEntry?.value?.downvoteUrls)
   return {
+    subject: votesServerIdxEntry?.subject || votesUserIdxEntry?.subject || {dbUrl: subjectUrl},
     upvoterIds: await Promise.all(upvoteUrls.map(fetchUserId)),
     downvoterIds: await Promise.all(downvoteUrls.map(fetchUserId))
   }
@@ -59,13 +60,16 @@ export async function fetchComments (subject, userIdxId = undefined) {
     commentsUserIdxEntry = await privateUserDbs.get(userIdxId).commentsIdx.get(subject.url)
   }
 
-  const commentUrls = concatUniq(commentsServerIdxEntry?.value.commentUrls, commentsUserIdxEntry?.value.commentUrls)
-  return commentUrls
+  let comments = concat(commentsServerIdxEntry?.value.comments, commentsUserIdxEntry?.value.comments)
+  comments = comments.filter((comment, index) => {
+    return comments.findIndex(comment2 => comment2.dbUrl === comment.dbUrl) === index
+  })
+  return comments
 }
 
 export async function fetchCommentCount (subject, userIdxId = undefined) {
-  const commentUrls = await fetchComments(subject, userIdxId)
-  return commentUrls.length
+  const comments = await fetchComments(subject, userIdxId)
+  return comments.length
 }
 
 export async function fetchNotications (userInfo, {after, before} = {}) {

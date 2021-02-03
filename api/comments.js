@@ -31,7 +31,7 @@ export function setup (wsServer) {
     }
     commentEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', commentEntry.key)
     commentEntry.author = await fetchAuthor(userId)
-    commentEntry.votes = await fetchVotes(commentEntry, client?.auth?.userId)
+    commentEntry.votes = await fetchVotes(commentEntry.url, client?.auth?.userId)
     commentEntry.commentCount = await fetchCommentCount(commentEntry, client?.auth?.userId)
 
     return commentEntry

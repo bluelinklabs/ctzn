@@ -6,18 +6,38 @@
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["subjectUrl", "commentUrls"],
+    "required": ["subject", "comments"],
     "additionalProperties": false,
     "properties": {
-      "subjectUrl": {
-        "type": "string",
-        "format": "uri"
+      "subject": {
+        "type": "object",
+        "required": ["dbUrl", "authorId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "authorId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
       },
-      "commentUrls": {
+      "comments": {
         "type": "array",
         "items": {
-          "type": "string",
-          "format": "uri"
+          "type": "object",
+          "required": ["dbUrl", "authorId"],
+          "properties": {
+            "dbUrl": {
+              "type": "string",
+              "format": "uri"
+            },
+            "authorId": {
+              "type": "string",
+              "pattern": ".+@.+"
+            }
+          }
         }
       }
     }

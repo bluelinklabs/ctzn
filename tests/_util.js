@@ -104,9 +104,9 @@ export class TestFramework {
     t.truthy(entry.url.startsWith(user.profile.dbUrl))
     t.is(entry.author.userId, user.userId)
     t.is(entry.value.text, desc[1])
-    t.is(entry.value.subjectUrl, subject.url)
-    if (parent) t.is(entry.value.parentCommentUrl, parent.url)
-    else t.falsy(entry.value.parentCommentUrl)
+    t.is(entry.value.subject.dbUrl, subject.url)
+    if (parent) t.is(entry.value.parentComment.dbUrl, parent.url)
+    else t.falsy(entry.value.parentComment)
   }
 
   testThread (t, entries, descs) {
@@ -209,7 +209,7 @@ export class TestFramework {
 
   getThread (post, filterFn) {
     const comments = this.allComments.filter(c => {
-      return (c.value.subjectUrl === post.url && (!filterFn || filterFn(c)))
+      return (c.value.subject.dbUrl === post.url && (!filterFn || filterFn(c)))
     })
     return commentEntriesToThread(comments) || []
   }
@@ -232,15 +232,15 @@ export class TestFramework {
         case 'comment':
           t.is(schemaId, 'ctzn.network/comment', itemDesc)
           t.is(entry.item.text, desc[2].text, itemDesc)
-          t.is(entry.item.subjectUrl, desc[2].subject.url, itemDesc)
-          if (desc[2].parent) t.is(entry.item.parentCommentUrl, desc[2].parent.url, itemDesc)
-          else t.falsy(entry.item.parentCommentUrl,itemDesc)
+          t.is(entry.item.subject.dbUrl, desc[2].subject.url, itemDesc)
+          if (desc[2].parent) t.is(entry.item.parentComment.dbUrl, desc[2].parent.url, itemDesc)
+          else t.falsy(entry.item.parentComment, itemDesc)
           break
         case 'upvote':
         case 'downvote':
           t.is(schemaId, 'ctzn.network/vote', itemDesc)
           t.is(entry.item.vote, desc[1] === 'upvote' ? 1 : -1, itemDesc)
-          t.is(entry.item.subjectUrl, desc[2].url, itemDesc)
+          t.is(entry.item.subject.dbUrl, desc[2].url, itemDesc)
           break
       }
     }
@@ -282,7 +282,11 @@ class TestUser {
 
   async createComment ({text, subject, parent}) {
     await this.login()
-    const {url} = await this.inst.api.comments.create({text, subjectUrl: subject.url, parentCommentUrl: parent?.url})
+    const {url} = await this.inst.api.comments.create({
+      text,
+      subject: {dbUrl: subject.url, authorId: subject.author.userId},
+      parentComment: parent ? {dbUrl: parent.url, authorId: parent.author.userId} : undefined
+    })
     this.comments.push(await this.inst.api.comments.get(url))
   }
 
@@ -301,7 +305,7 @@ class TestUser {
   async vote ({subject, vote}) {
     await this.login()
     if (vote !== 0) {
-      await this.inst.api.votes.put({subjectUrl: subject.url, vote})
+      await this.inst.api.votes.put({subject: {dbUrl: subject.url, authorId: subject.author.userId}, vote})
       this.votes[subject.url] = vote
     } else {
       await this.inst.api.votes.del(subject.url)
@@ -342,8 +346,8 @@ function commentEntriesToThread (commentEntries) {
 
   const rootCommentEntries = []
   commentEntries.forEach(commentEntry => {
-    if (commentEntry.value.parentCommentUrl) {
-      let parent = commentEntriesByUrl[commentEntry.value.parentCommentUrl]
+    if (commentEntry.value.parentComment) {
+      let parent = commentEntriesByUrl[commentEntry.value.parentComment.dbUrl]
       if (!parent) {
         commentEntry.isMissingParent = true
         rootCommentEntries.push(commentEntry)

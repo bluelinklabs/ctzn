@@ -6,12 +6,22 @@
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["subjectUrl", "upvoteUrls", "downvoteUrls"],
+    "required": ["subject", "upvoteUrls", "downvoteUrls"],
     "additionalProperties": false,
     "properties": {
-      "subjectUrl": {
-        "type": "string",
-        "format": "uri"
+      "subject": {
+        "type": "object",
+        "required": ["dbUrl", "authorId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "authorId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
       },
       "upvoteUrls": {
         "type": "array",

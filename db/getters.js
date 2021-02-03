@@ -10,7 +10,7 @@ export async function getPost (db, key, authorId, auth = undefined) {
   }
   postEntry.url = constructEntryUrl(db.url, 'ctzn.network/post', postEntry.key)
   postEntry.author = await fetchAuthor(authorId)
-  postEntry.votes = await fetchVotes(postEntry, auth?.userId)
+  postEntry.votes = await fetchVotes(postEntry.url, auth?.userId)
   postEntry.commentCount = await fetchCommentCount(postEntry, auth?.userId)
   return postEntry
 }
@@ -21,15 +21,15 @@ export async function listPosts (db, opts, authorId, auth = undefined) {
   for (let entry of entries) {
     entry.url = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
     entry.author = await fetchAuthor(authorId, authorsCache)
-    entry.votes = await fetchVotes(entry, auth?.userId)
+    entry.votes = await fetchVotes(entry.url, auth?.userId)
     entry.commentCount = await fetchCommentCount(entry, auth?.userId)
   }
   return entries
 }
 
 export async function getThread (subjectUrl, auth = undefined) {
-  const commentUrls = await fetchComments({url: subjectUrl}, auth?.userId)
-  const commentEntries = await fetchIndexedComments(commentUrls, auth?.userId)
+  const comments = await fetchComments({url: subjectUrl}, auth?.userId)
+  const commentEntries = await fetchIndexedComments(comments, auth?.userId)
   return commentEntriesToThread(commentEntries)
 }
 
@@ -49,11 +49,11 @@ export async function listFollows (db, opts) {
   return entries
 }
 
-async function fetchIndexedComments (commentUrls, userIdxId = undefined) {
+async function fetchIndexedComments (comments, userIdxId = undefined) {
   const authorsCache = {}
-  const commentEntries = await Promise.all(commentUrls.map(async (commentUrl) => {
+  const commentEntries = await Promise.all(comments.map(async (comment) => {
     try {
-      const {origin, key} = parseEntryUrl(commentUrl)
+      const {origin, key} = parseEntryUrl(comment.dbUrl)
 
       const userId = await fetchUserId(origin)
       const publicUserDb = publicUserDbs.get(userId)
@@ -62,7 +62,7 @@ async function fetchIndexedComments (commentUrls, userIdxId = undefined) {
       const commentEntry = await publicUserDb.comments.get(key)
       commentEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
       commentEntry.author = await fetchAuthor(userId, authorsCache)
-      commentEntry.votes = await fetchVotes(commentEntry, userIdxId)
+      commentEntry.votes = await fetchVotes(commentEntry.url, userIdxId)
       return commentEntry
     } catch (e) {
       console.log(e)
@@ -79,8 +79,8 @@ function commentEntriesToThread (commentEntries) {
 
   const rootCommentEntries = []
   commentEntries.forEach(commentEntry => {
-    if (commentEntry.value.parentCommentUrl) {
-      let parent = commentEntriesByUrl[commentEntry.value.parentCommentUrl]
+    if (commentEntry.value.parentComment) {
+      let parent = commentEntriesByUrl[commentEntry.value.parentComment.dbUrl]
       if (!parent) {
         commentEntry.isMissingParent = true
         rootCommentEntries.push(commentEntry)

@@ -44,17 +44,17 @@ export class PublicServerDB extends BaseHyperbeeDB {
             }
             break
           case 'ctzn.network/comment': {
-            if (!change.value.subjectUrl.startsWith(db.url)) {
-              await this.notificationIdx.put(createKey(change.value.subjectUrl), notification)
+            if (!change.value.subject.dbUrl.startsWith(db.url)) {
+              await this.notificationIdx.put(createKey(change.value.subject.dbUrl), notification)
             }
-            if (change.value.parentCommentUrl && !change.value.parentCommentUrl.startsWith(db.url)) {
-              await this.notificationIdx.put(createKey(change.value.parentCommentUrl), notification)
+            if (change.value.parentComment && !change.value.parentComment.dbUrl.startsWith(db.url)) {
+              await this.notificationIdx.put(createKey(change.value.parentComment.dbUrl), notification)
             }
             break
           }
           case 'ctzn.network/vote':
-            if (!change.value.subjectUrl.startsWith(db.url)) {
-              await this.notificationIdx.put(createKey(change.value.subjectUrl), notification)
+            if (!change.value.subject.dbUrl.startsWith(db.url)) {
+              await this.notificationIdx.put(createKey(change.value.subject.dbUrl), notification)
             }
             break
         }
@@ -105,35 +105,37 @@ export class PublicServerDB extends BaseHyperbeeDB {
     this.createIndexer('ctzn.network/comment-idx', ['ctzn.network/comment'], async (db, change) => {
       const pend = perf.measure(`publicServerDb:comments-indexer`)
       const commentUrl = constructEntryUrl(db.url, 'ctzn.network/comment', change.keyParsed.key)
-      let subjectUrl = change.value?.subjectUrl
-      if (!subjectUrl) {
+      let subject = change.value?.subject
+      if (!subject) {
         const oldEntry = await db.bee.checkout(change.seq).get(change.key)
-        subjectUrl = oldEntry.value.subjectUrl
+        subject = oldEntry.value.subject
       }
 
-      const release = await this.lock(`comments-idx:${subjectUrl}`)
+      const release = await this.lock(`comments-idx:${subject.dbUrl}`)
       try {
-        let commentsIdxEntry = await this.commentsIdx.get(subjectUrl).catch(e => undefined)
+        let commentsIdxEntry = await this.commentsIdx.get(subject.dbUrl).catch(e => undefined)
         if (!commentsIdxEntry) {
           commentsIdxEntry = {
-            key: subjectUrl,
+            key: subject.dbUrl,
             value: {
-              subjectUrl,
-              commentUrls: []
+              subject,
+              comments: []
             }
           }
         }
-        let commentUrlIndex = commentsIdxEntry.value.commentUrls.indexOf(commentUrl)
+        let commentUrlIndex = commentsIdxEntry.value.comments.findIndex(c => c.dbUrl === commentUrl)
         if (change.value) {
           if (commentUrlIndex === -1) {
-            commentsIdxEntry.value.commentUrls.push(commentUrl)
+            const authorId = await fetchUserId(db.url)
+            commentsIdxEntry.value.comments.push({dbUrl: commentUrl, authorId})
+            await this.commentsIdx.put(commentsIdxEntry.key, commentsIdxEntry.value)
           }
         } else {
           if (commentUrlIndex !== -1) {
-            commentsIdxEntry.value.commentUrls.splice(commentUrlIndex, 1)
+            commentsIdxEntry.value.comments.splice(commentUrlIndex, 1)
+            await this.commentsIdx.put(commentsIdxEntry.key, commentsIdxEntry.value)
           }
         }
-        await this.commentsIdx.put(commentsIdxEntry.key, commentsIdxEntry.value)
       } finally {
         release()
         pend()
@@ -145,18 +147,18 @@ export class PublicServerDB extends BaseHyperbeeDB {
       const release = await this.lock(`votes-idx:${change.keyParsed.key}`)
       try {
         const voteUrl = constructEntryUrl(db.url, 'ctzn.network/vote', change.keyParsed.key)
-        let subjectUrl = change.value?.subjectUrl
-        if (!subjectUrl) {
+        let subject = change.value?.subject
+        if (!subject) {
           const oldEntry = await db.bee.checkout(change.seq).get(change.key)
-          subjectUrl = oldEntry.value.subjectUrl
+          subject = oldEntry.value.subject
         }
 
-        let votesIdxEntry = await this.votesIdx.get(subjectUrl).catch(e => undefined)
+        let votesIdxEntry = await this.votesIdx.get(subject.dbUrl).catch(e => undefined)
         if (!votesIdxEntry) {
           votesIdxEntry = {
             key: change.keyParsed.key,
             value: {
-              subjectUrl: subjectUrl,
+              subject: subject,
               upvoteUrls: [],
               downvoteUrls: []
             }

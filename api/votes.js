@@ -4,8 +4,8 @@ import { fetchVotes } from '../db/util.js'
 
 export function setup (wsServer) {
   wsServer.register('votes.getVotesForSubject', async ([subjectUrl], client) => {
-    const {upvoterIds, downvoterIds} = await fetchVotes({url: subjectUrl}, client?.auth?.userId)
-    return {subjectUrl, upvoterIds, downvoterIds}
+    const {subject, upvoterIds, downvoterIds} = await fetchVotes(subjectUrl, client?.auth?.userId)
+    return {subject, upvoterIds, downvoterIds}
   })
 
   wsServer.register('votes.put', async ([vote], client) => {
@@ -13,8 +13,8 @@ export function setup (wsServer) {
     const publicUserDb = publicUserDbs.get(client.auth.userId)
     if (!publicUserDb) throw new Error('User database not found')
 
-    const key = vote.subjectUrl
-    if (!key) throw new Error('Subject URL is required')
+    const key = vote?.subject?.dbUrl
+    if (!key) throw new Error('Subject dbUrl is required')
     vote.createdAt = (new Date()).toISOString()
     await publicUserDb.votes.put(key, vote)
     await onDatabaseChange(publicUserDb, [publicServerDb])

@@ -51,9 +51,9 @@ test('basic CRUD', async t => {
   sim.testComment(t, comment1Edited, [bob, 'The First Comment'], {subject: bob.posts[0]})
 
   // ensure that edits cant modify the subject
-  await api.comments.edit(bob.comments[0].key, {subjectUrl: 'http://example.com'})
+  await api.comments.edit(bob.comments[0].key, {subject: {dbUrl: 'http://example.com'}})
   let comment1Edited2 = await api.comments.get(bob.userId, bob.comments[0].key)
-  t.is(comment1Edited2.value.subjectUrl, bob.posts[0].url)
+  t.is(comment1Edited2.value.subject.dbUrl, bob.posts[0].url)
 
   let thread1 = await api.comments.getThread(bob.posts[0].url)
   sim.testThread(t, thread1, [

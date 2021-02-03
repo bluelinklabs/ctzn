@@ -69,7 +69,7 @@ export function setup (wsServer) {
     const authorsCache = {}
     for (let entry of postEntries) {
       entry.author = await fetchAuthor(entry.author.userId, authorsCache)
-      entry.votes = await fetchVotes(entry, client?.auth?.userId)
+      entry.votes = await fetchVotes(entry.dbUrl, client?.auth?.userId)
       entry.commentCount = await fetchCommentCount(entry, client?.auth?.userId)
     }
 

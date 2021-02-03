@@ -6,16 +6,36 @@
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["subjectUrl", "text", "createdAt"],
+    "required": ["subject", "text", "createdAt"],
     "additionalProperties": false,
     "properties": {
-      "subjectUrl": {
-        "type": "string",
-        "format": "uri"
+      "subject": {
+        "type": "object",
+        "required": ["dbUrl", "authorId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "authorId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
       },
-      "parentCommentUrl": {
-        "type": "string",
-        "format": "uri"
+      "parentComment": {
+        "type": "object",
+        "required": ["dbUrl", "authorId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "authorId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
       },
       "text": {
         "type": "string",
