@@ -36,30 +36,6 @@ export async function start ({port, configDir, simulateHyperspace, domain, debug
   app.use('/webfonts', express.static('static/webfonts'))
   app.use('/_schemas', express.static('schemas'))
 
-  app.get('/login', (req, res) => {
-    res.render('login')
-  })
-
-  app.get('/signup', (req, res) => {
-    res.render('signup')
-  })
-
-  app.get('/forgot-password', (req, res) => {
-    res.render('forgot-password')
-  })
-
-  app.get('/notifications', (req, res) => {
-    res.render('notifications')
-  })
-
-  app.get('/profile', (req, res) => {
-    res.render('user')
-  })
-
-  app.get('/search', (req, res) => {
-    res.render('search')
-  })
-
   app.get('/.well-known/webfinger', async (req, res) => {
     try {
       if (!req.query.resource) throw new Error('?resource is required')
@@ -92,7 +68,7 @@ export async function start ({port, configDir, simulateHyperspace, domain, debug
   })
 
   app.get('/:username([^\/]{3,})', (req, res) => {
-    res.render('user')
+    res.status(200).json({todo: true})
   })
 
   app.use((req, res) => {
