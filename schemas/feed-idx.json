@@ -1,0 +1,32 @@
+{
+  "id": "ctzn.network/feed-idx",
+  "title": "Feed Index",
+  "description": "Aggregated content feed",
+  "type": "json",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["item", "createdAt"],
+    "additionalProperties": false,
+    "properties": {
+      "item": {
+        "type": "object",
+        "required": ["dbUrl", "authorId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "authorId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+}

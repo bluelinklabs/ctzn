@@ -17,6 +17,9 @@ const dbDescription = schemas.createValidator({
   type: 'object',
   additionalProperties: false,
   properties: {
+    dbType: {
+      type: 'string'
+    },
     blobsFeedKey: {
       type: 'string',
       pattern: "^[a-f0-9]{64}$"
@@ -50,6 +53,14 @@ export class BaseHyperbeeDB extends EventEmitter {
     this.lock = (id) => lock(`${this.key.toString('hex')}:${id}`)
   }
 
+  get dbType () {
+    throw new Error('Must be overridden')
+  }
+
+  get writable () {
+    return this.bee?.feed?.writable
+  }
+
   get url () {
     return `hyper://${this.key.toString('hex')}/`
   }
@@ -70,6 +81,7 @@ export class BaseHyperbeeDB extends EventEmitter {
 
     if (!this.key) {
       this.key = this.bee.feed.key
+      await this.updateDesc()
       this.onDatabaseCreated()
     }
 
@@ -95,9 +107,13 @@ export class BaseHyperbeeDB extends EventEmitter {
   }
 
   async updateDesc (updates) {
-    for (let k in updates) {
-      this.desc[k] = updates[k]
+    this.desc = this.desc || {}
+    if (updates) {
+      for (let k in updates) {
+        this.desc[k] = updates[k]
+      }
     }
+    this.desc.dbType = this.dbType
     dbDescription.assert(this.desc)
     await this.bee.put('_db', this.desc)
   }
@@ -244,6 +260,8 @@ class Table {
     this.db = db
     this.bee = this.db.bee.sub(domain).sub(name)
     this.schema = schema
+    this._onPutCbs = undefined
+    this._onDelCbs = undefined
   }
 
   async get (key) {
@@ -261,6 +279,9 @@ class Table {
     this.schema.assertValid(value)
     const res = await this.bee.put(String(key), value)
     pend()
+    if (this._onPutCbs) {
+      this._onPutCbs.forEach(cb => cb(key, value))
+    }
     return res
   }
 
@@ -268,6 +289,9 @@ class Table {
     const pend = perf.measure('table.del')
     const res = await this.bee.del(String(key))
     pend()
+    if (this._onDelCbs) {
+      this._onDelCbs.forEach(cb => cb(key))
+    }
     return res
   }
 
@@ -292,6 +316,16 @@ class Table {
         }
       )
     })
+  }
+
+  onPut (cb) {
+    this._onPutCbs = this._onPutCbs || []
+    this._onPutCbs.push(cb)
+  }
+
+  onDel (cb) {
+    this._onDelCbs = this._onDelCbs || []
+    this._onDelCbs.push(cb)
   }
 }
 

@@ -9,7 +9,7 @@ test.after.always(async t => {
   }
 })
 
-test('1 server', async t => {
+test.skip('1 server', async t => {
   const NUM_USERS = 5
   const NUM_POSTS = 5
   const NUM_COMMENTS = 20
@@ -88,7 +88,7 @@ test('1 server', async t => {
   t.truthy(true)
 })
 
-test('2 servers, all users follow all other users', async t => {
+test.skip('2 servers, all users follow all other users', async t => {
   /**
    * In this topology, there are 2 servers, and all users follow all other users.
    * Because servers sync the data of users their own members follow,
@@ -198,7 +198,7 @@ test('2 servers, all users follow all other users', async t => {
   t.truthy(true)
 })
 
-test('2 servers, users only follow users on their own server', async t => {
+test.skip('2 servers, users only follow users on their own server', async t => {
   /**
    * In this topology, there are 2 servers, and users only follow members of their own server.
    * Because servers *only* sync the data of users their own members follow,

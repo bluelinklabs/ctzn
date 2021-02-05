@@ -2,17 +2,23 @@ import test from 'ava'
 import { createServer, TestFramework } from './_util.js'
 
 let close
-let api
-let sim = new TestFramework()
 
-test.before(async () => {
+test.after.always(async t => {
+	if (close) await close()
+})
+
+test('user notifications index', async t => {
+  // everybody follows everybody
+  // =
+
+  let sim = new TestFramework()
   let inst = await createServer()
+  let api = inst.api
   close = inst.close
-  api = inst.api
 
-  await sim.createUser(inst, 'alice')
-  await sim.createUser(inst, 'bob')
-  await sim.createUser(inst, 'carla')
+  await sim.createCitizen(inst, 'alice')
+  await sim.createCitizen(inst, 'bob')
+  await sim.createCitizen(inst, 'carla')
   const {alice, bob, carla} = sim.users
 
   await alice.follow(bob)
@@ -26,22 +32,20 @@ test.before(async () => {
   await bob.createPost({text: '2'})
   await carla.createPost({text: '3'})
 
-  await alice.createComment({
-    subject: bob.posts[0],
+  await alice.createPost({
+    reply: {root: bob.posts[0]},
     text: 'Comment 1'
   })
-  await carla.createComment({
-    subject: bob.posts[0],
-    parent: alice.comments[0],
+  await carla.createPost({
+    reply: {root: bob.posts[0], parent: alice.replies[0]},
     text: 'Reply 1'
   })
-  await bob.createComment({
-    subject: bob.posts[0],
-    parent: alice.comments[0],
+  await bob.createPost({
+    reply: {root: bob.posts[0], parent: alice.replies[0]},
     text: 'Reply 2'
   })
-  await carla.createComment({
-    subject: bob.posts[0],
+  await carla.createPost({
+    reply: {root: bob.posts[0]},
     text: 'Comment 2'
   })
 
@@ -50,37 +54,114 @@ test.before(async () => {
   for (let post of bob.posts) {
     await alice.vote({subject: post, vote: 1})
   }
-  for (let comment of bob.comments) {
-    await alice.vote({subject: comment, vote: 1})
+  for (let post of bob.posts) {
+    await carla.vote({subject: post, vote: -1})
+  }
+
+  await new Promise(r => setTimeout(r, 5e3))
+  await api.debug.whenAllSynced()
+
+  await bob.login()
+  var notifications = await api.notifications.list()
+  notifications.sort((a, b) => new Date(b.item.createdAt) - new Date(a.item.createdAt))
+  sim.testNotifications(t, notifications, [
+    [carla, 'downvote', bob.replies[0]],
+    [carla, 'downvote', bob.posts[1]],
+    [carla, 'downvote', bob.posts[0]],
+    [alice, 'upvote', bob.replies[0]],
+    [alice, 'upvote', bob.posts[1]],
+    [alice, 'upvote', bob.posts[0]],
+    [carla, 'post', {text: 'Comment 2', reply: {root: bob.posts[0]}}],
+    [carla, 'post', {text: 'Reply 1', reply: {root: bob.posts[0], parent: alice.replies[0]}}],
+    [alice, 'post', {text: 'Comment 1', reply: {root: bob.posts[0]}}],
+    [carla, 'follow', bob],
+    [alice, 'follow', bob],
+  ])
+
+  await close()
+  close = undefined
+})
+
+test('user & community notifications index', async t => {
+  // bob only follows alice but is in a community with carla
+  // =
+
+  let sim = new TestFramework()
+  let inst = await createServer()
+  let api = inst.api
+  close = inst.close
+
+  await sim.createCitizen(inst, 'alice')
+  await sim.createCitizen(inst, 'bob')
+  await sim.createCitizen(inst, 'carla')
+  await sim.createCommunity(inst, 'folks')
+  const {alice, bob, carla, folks} = sim.users
+
+  await bob.login()
+  await api.communities.join(folks.userId)
+  await carla.login()
+  await api.communities.join(folks.userId)
+
+  await alice.follow(bob)
+  await alice.follow(carla)
+  await bob.follow(alice)
+  // bob does NOT follow carla
+  await carla.follow(bob)
+  await carla.follow(alice)
+
+  await bob.createPost({text: '1'})
+  await bob.createPost({text: '2', community: {userId: folks.userId, dbUrl: folks.profile.dbUrl}})
+  await carla.createPost({text: '3', community: {userId: folks.userId, dbUrl: folks.profile.dbUrl}})
+
+  await alice.createPost({
+    reply: {root: bob.posts[0]},
+    text: 'Comment 1'
+  })
+  await carla.createPost({
+    community: {userId: folks.userId, dbUrl: folks.profile.dbUrl},
+    reply: {root: bob.posts[1]},
+    text: 'Reply 1'
+  })
+  await bob.createPost({
+    community: {userId: folks.userId, dbUrl: folks.profile.dbUrl},
+    reply: {root: bob.posts[1], parent: carla.replies[0]},
+    text: 'Reply 2'
+  })
+  await carla.createPost({
+    community: {userId: folks.userId, dbUrl: folks.profile.dbUrl},
+    reply: {root: bob.posts[1]},
+    text: 'Comment 2'
+  })
+
+  await bob.vote({subject: bob.posts[0], vote: 1})
+  await bob.vote({subject: bob.posts[1], vote: -1})
+  for (let post of bob.posts) {
+    await alice.vote({subject: post, vote: 1})
   }
   for (let post of bob.posts) {
     await carla.vote({subject: post, vote: -1})
   }
-  for (let comment of bob.comments) {
-    await carla.vote({subject: comment, vote: -1})
-  }
-})
 
-test.after.always(async t => {
-	await close()
-})
-
-test('server notifications index', async t => {
-  const {alice, bob, carla} = sim.users
+  await new Promise(r => setTimeout(r, 5e3))
+  await api.debug.whenAllSynced()
 
   await bob.login()
-  let notifications1 = await api.notifications.list()
-  sim.testNotifications(t, notifications1, [
-    [carla, 'downvote', bob.comments[0]],
+  var notifications = await api.notifications.list()
+  notifications.sort((a, b) => new Date(b.item.createdAt) - new Date(a.item.createdAt))
+  sim.testNotifications(t, notifications, [
+    [carla, 'downvote', bob.replies[0]],
     [carla, 'downvote', bob.posts[1]],
     [carla, 'downvote', bob.posts[0]],
-    [alice, 'upvote', bob.comments[0]],
+    [alice, 'upvote', bob.replies[0]],
     [alice, 'upvote', bob.posts[1]],
     [alice, 'upvote', bob.posts[0]],
-    [carla, 'comment', {text: 'Comment 2', subject: bob.posts[0]}],
-    [carla, 'comment', {text: 'Reply 1', subject: bob.posts[0], parent: alice.comments[0]}],
-    [alice, 'comment', {text: 'Comment 1', subject: bob.posts[0]}],
+    [carla, 'post', {text: 'Comment 2', reply: {root: bob.posts[1]}}],
+    [carla, 'post', {text: 'Reply 1', reply: {root: bob.posts[1]}}],
+    [alice, 'post', {text: 'Comment 1', reply: {root: bob.posts[0]}}],
     [carla, 'follow', bob],
     [alice, 'follow', bob],
   ])
+
+  await close()
+  close = undefined
 })

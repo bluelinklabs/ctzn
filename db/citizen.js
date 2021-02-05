@@ -6,9 +6,14 @@ import * as perf from '../lib/perf.js'
 
 const mlts = createMlts()
 
-export class PublicUserDB extends BaseHyperbeeDB {
+export class PublicCitizenDB extends BaseHyperbeeDB {
   constructor (userId, key) {
     super(`public:${userId}`, key)
+    this.userId = userId
+  }
+
+  get dbType () {
+    return 'ctzn.network/public-citizen-db'
   }
 
   async setup () {
@@ -17,29 +22,41 @@ export class PublicUserDB extends BaseHyperbeeDB {
     this.profile = this.getTable('ctzn.network/profile')
     this.posts = this.getTable('ctzn.network/post')
     this.votes = this.getTable('ctzn.network/vote')
-    this.comments = this.getTable('ctzn.network/comment')
     this.follows = this.getTable('ctzn.network/follow')
+    this.memberships = this.getTable('ctzn.network/community-membership')
+
+    this.memberships.onPut(() => {
+      this.emit('subscriptions-changed')
+    })
+    this.memberships.onDel(() => {
+      this.emit('subscriptions-changed')
+    })
   }
 }
 
-export class PrivateUserDB extends BaseHyperbeeDB {
+export class PrivateCitizenDB extends BaseHyperbeeDB {
   constructor (userId, key, publicServerDb, publicUserDb) {
     super(`private:${userId}`, key, {isPrivate: true})
+    this.userId = userId
     this.publicServerDb = publicServerDb
     this.publicUserDb = publicUserDb
+  }
+
+  get dbType () {
+    return 'ctzn.network/private-citizen-db'
   }
 
   async setup () {
     await super.setup()
     this.indexState = this.getTable('ctzn.network/index-state')
-    this.commentsIdx = this.getTable('ctzn.network/comment-idx')
+    this.threadIdx = this.getTable('ctzn.network/thread-idx')
     this.followsIdx = this.getTable('ctzn.network/follow-idx')
     this.notificationsIdx = this.getTable('ctzn.network/notification-idx')
     this.votesIdx = this.getTable('ctzn.network/vote-idx')
 
     const NOTIFICATIONS_SCHEMAS = [
       'ctzn.network/follow',
-      'ctzn.network/comment',
+      'ctzn.network/post',
       'ctzn.network/vote'
     ]
     this.createIndexer('ctzn.network/notification-idx', NOTIFICATIONS_SCHEMAS, async (db, change) => {
@@ -57,12 +74,15 @@ export class PrivateUserDB extends BaseHyperbeeDB {
               return false
             }
             break
-          case 'ctzn.network/comment': {
-            // comment on my content?
-            let {subject, parentComment} = change.value
-            if (!subject.dbUrl.startsWith(myUrl) && !parentComment?.dbUrl.startsWith(myUrl)) {
-              return false
-            }
+          case 'ctzn.network/post': {
+            // self-post reply on my content?
+            if (change.value.community) return false
+            if (!change.value.reply) return false
+            const onMyPost = (
+              change.value.reply.root.dbUrl.startsWith(myUrl)
+              || change.value.reply.parent?.dbUrl.startsWith(myUrl)
+            )
+            if (!onMyPost) return
             break
           }
           case 'ctzn.network/vote':
@@ -119,40 +139,51 @@ export class PrivateUserDB extends BaseHyperbeeDB {
         release()
         pend()
       }
+      if (db.url === this.publicUserDb.url) {
+        this.emit('subscriptions-changed', {userId: subject.userId})
+      }
     })
 
-    this.createIndexer('ctzn.network/comment-idx', ['ctzn.network/comment'], async (db, change) => {
-      const pend = perf.measure(`privateUserDb:comments-indexer`)
-      const commentUrl = constructEntryUrl(db.url, 'ctzn.network/comment', change.keyParsed.key)
-      let subject = change.value?.subject
-      if (!subject) {
+    this.createIndexer('ctzn.network/thread-idx', ['ctzn.network/post'], async (db, change) => {
+      const pend = perf.measure(`privateUserDb:thread-indexer`)
+      const postUrl = constructEntryUrl(db.url, 'ctzn.network/post', change.keyParsed.key)
+      let replyRoot = change.value?.reply?.root
+      let community = change.value?.community
+      if (!change.value) {
         const oldEntry = await db.bee.checkout(change.seq).get(change.key)
-        subject = oldEntry.value.subject
+        replyRoot = oldEntry.value.reply?.root
+        community = oldEntry.value?.community
+      }
+      if (!replyRoot) {
+        return // not a reply, ignore
+      }
+      if (!!community && db.url !== this.publicUserDb.url) {
+        return // not a self post or by me, ignore
       }
 
-      const release = await this.lock(`comments-idx:${subject.dbUrl}`)
+      const release = await this.lock(`thread-idx:${replyRoot.dbUrl}`)
       try {
-        let commentsIdxEntry = await this.commentsIdx.get(subject.dbUrl).catch(e => undefined)
-        if (!commentsIdxEntry) {
-          commentsIdxEntry = {
-            key: subject.dbUrl,
+        let threadIdxEntry = await this.threadIdx.get(replyRoot.dbUrl).catch(e => undefined)
+        if (!threadIdxEntry) {
+          threadIdxEntry = {
+            key: replyRoot.dbUrl,
             value: {
-              subject,
-              comments: []
+              subject: replyRoot,
+              items: []
             }
           }
         }
-        let commentUrlIndex = commentsIdxEntry.value.comments.findIndex(c => c.dbUrl === commentUrl)
+        let itemUrlIndex = threadIdxEntry.value.items.findIndex(c => c.dbUrl === postUrl)
         if (change.value) {
-          if (commentUrlIndex === -1) {
-            const authorId = await fetchUserId(db.url)
-            commentsIdxEntry.value.comments.push({dbUrl: commentUrl, authorId})
-            await this.commentsIdx.put(commentsIdxEntry.key, commentsIdxEntry.value)
+          if (itemUrlIndex === -1) {
+            const authorId = db.userId
+            threadIdxEntry.value.items.push({dbUrl: postUrl, authorId})
+            await this.threadIdx.put(threadIdxEntry.key, threadIdxEntry.value)
           }
         } else {
-          if (commentUrlIndex !== -1) {
-            commentsIdxEntry.value.comments.splice(commentUrlIndex, 1)
-            await this.commentsIdx.put(commentsIdxEntry.key, commentsIdxEntry.value)
+          if (itemUrlIndex !== -1) {
+            threadIdxEntry.value.items.splice(itemUrlIndex, 1)
+            await this.threadIdx.put(threadIdxEntry.key, threadIdxEntry.value)
           }
         }
       } finally {

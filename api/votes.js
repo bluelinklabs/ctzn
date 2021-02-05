@@ -1,11 +1,16 @@
-import { publicUserDbs, publicServerDb, onDatabaseChange } from '../db/index.js'
+import { publicUserDbs, privateUserDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl } from '../lib/strings.js'
-import { fetchVotes } from '../db/util.js'
+import { dbGet, fetchVotes } from '../db/util.js'
 
 export function setup (wsServer) {
   wsServer.register('votes.getVotesForSubject', async ([subjectUrl], client) => {
-    const {subject, upvoterIds, downvoterIds} = await fetchVotes(subjectUrl, client?.auth?.userId)
-    return {subject, upvoterIds, downvoterIds}
+    const subject = await dbGet(subjectUrl).catch(e => undefined)
+    const subjectEntry = subject ? subject.entry : {}
+    if (subject) subjectEntry.author = {userId: subject.db.userId, dbUrl: subject.db.url}
+    subjectEntry.url = subjectUrl
+
+    const res = await fetchVotes(subjectEntry, client?.auth?.userId)
+    return {subject: res.subject, upvoterIds: res.upvoterIds, downvoterIds: res.downvoterIds}
   })
 
   wsServer.register('votes.put', async ([vote], client) => {
@@ -17,7 +22,7 @@ export function setup (wsServer) {
     if (!key) throw new Error('Subject dbUrl is required')
     vote.createdAt = (new Date()).toISOString()
     await publicUserDb.votes.put(key, vote)
-    await onDatabaseChange(publicUserDb, [publicServerDb])
+    await onDatabaseChange(publicUserDb, [privateUserDbs.get(client.auth.userId)])
     
     const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/vote', key)
     return {key, url}

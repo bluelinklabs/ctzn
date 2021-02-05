@@ -103,6 +103,7 @@ async function inProcessBench ({numUsers, numPosts, numComments}) {
   performance.mark('gen-users-start')
   for (let i = 0; i < numUsers; i++) {
     const user = await inst.db.createUser({
+      type: 'citizen',
       username: `user${i}`,
       email: `user${i}@email.com`,
       profile: {
@@ -227,6 +228,7 @@ async function bench ({numServers, numUsers, numPosts, numComments, numVotes}) {
   for (let i = 0; i < numUsers; i++) {
     const inst = instances[Math.floor(i / numUsers * numServers)]
     const user = await inst.api.debug.createUser({
+      type: 'citizen',
       username: `user${i}`,
       email: `user${i}@email.com`,
       profile: {

@@ -22,7 +22,7 @@ test('cross-server user lookup', async t => {
 
   // create users
   for (let i = 0; i < instances.length; i++) {
-    await sim.createUser(instances[i], username(i))
+    await sim.createCitizen(instances[i], username(i))
   }
 
   // lookup users via all 3 instances

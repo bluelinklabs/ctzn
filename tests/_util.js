@@ -78,8 +78,15 @@ export class TestFramework {
     this.users = {}
   }
 
-  async createUser (inst, username) {
-    const user = new TestUser(inst, username)
+  async createCitizen (inst, username) {
+    const user = new TestCitizen(inst, username)
+    await user.setup()
+    this.users[username] = user
+    return user
+  }
+
+  async createCommunity (inst, username) {
+    const user = new TestCommunity(inst, username)
     await user.setup()
     this.users[username] = user
     return user
@@ -92,21 +99,15 @@ export class TestFramework {
     }
   }
 
-  testPost (t, entry, desc) {
+  testPost (t, entry, desc, reply = undefined) {
     const user = desc[0]
     t.truthy(entry.url.startsWith(user.profile.dbUrl))
     t.is(entry.author.userId, user.userId)
     t.is(entry.value.text, desc[1])
-  }
-
-  testComment (t, entry, desc, {subject, parent}) {
-    const user = desc[0]
-    t.truthy(entry.url.startsWith(user.profile.dbUrl))
-    t.is(entry.author.userId, user.userId)
-    t.is(entry.value.text, desc[1])
-    t.is(entry.value.subject.dbUrl, subject.url)
-    if (parent) t.is(entry.value.parentComment.dbUrl, parent.url)
-    else t.falsy(entry.value.parentComment)
+    if (reply) {
+      t.is(entry.value.reply.root.dbUrl, reply.root.url)
+      if (reply.parent) t.is(entry.value.reply.parent.dbUrl, reply.parent.url)
+    }
   }
 
   testThread (t, entries, descs) {
@@ -135,13 +136,6 @@ export class TestFramework {
         user.profile.dbUrl,
         `expected to be following ${user.userId}`
       )
-    }
-  }
-
-  testFollowers (t, followers, users) {
-    t.is(followers.followerIds.length, users.length, `expected ${users.length} followers ${users.map(u=>u.userId).join(', ')} got ${followers.followerIds.join(', ')}`)
-    for (let user of users) {
-      t.truthy(followers.followerIds.includes(user.userId), `expected ${user.userId} in followers`)
     }
   }
 
@@ -229,12 +223,12 @@ export class TestFramework {
           t.is(entry.item.subject.dbUrl, desc[2].profile.dbUrl, itemDesc)
           t.is(entry.item.subject.userId, desc[2].userId, itemDesc)
           break
-        case 'comment':
-          t.is(schemaId, 'ctzn.network/comment', itemDesc)
+        case 'post':
+          t.is(schemaId, 'ctzn.network/post', itemDesc)
           t.is(entry.item.text, desc[2].text, itemDesc)
-          t.is(entry.item.subject.dbUrl, desc[2].subject.url, itemDesc)
-          if (desc[2].parent) t.is(entry.item.parentComment.dbUrl, desc[2].parent.url, itemDesc)
-          else t.falsy(entry.item.parentComment, itemDesc)
+          t.is(entry.item.reply.root.dbUrl, desc[2].reply.root.url, itemDesc)
+          if (desc[2].reply.parent) t.is(entry.item.reply.parent.dbUrl, desc[2].reply.parent.url, itemDesc)
+          else t.falsy(entry.item.reply.parent, itemDesc)
           break
         case 'upvote':
         case 'downvote':
@@ -247,19 +241,23 @@ export class TestFramework {
   }
 }
 
-class TestUser {
+class TestCitizen {
   constructor (inst, username) {
     this.inst = inst
     this.username = username
     this.userId = undefined
     this.posts = []
-    this.comments = []
     this.following = {}
     this.votes = {}
   }
 
+  get replies () {
+    return this.posts.filter(p => !!p.value.reply)
+  }
+
   async setup () {
     const {userId} = await this.inst.api.debug.createUser({
+      type: 'citizen',
       username: this.username,
       email: `${this.username}@email.com`,
       profile: {
@@ -274,32 +272,28 @@ class TestUser {
     await this.inst.api.accounts.login({username: this.username, password: 'password'})
   }
 
-  async createPost ({text}) {
+  async createPost ({text, community, reply}) {
     await this.login()
-    const {url} = await this.inst.api.posts.create({text})
+    if (reply) {
+      reply.root = {dbUrl: reply.root.url, authorId: reply.root.author.userId}
+      if (reply.parent) {
+        reply.parent = {dbUrl: reply.parent.url, authorId: reply.parent.author.userId}
+      }
+    }
+    const {url} = await this.inst.api.posts.create({text, community, reply})
     this.posts.push(await this.inst.api.posts.get(url))
   }
 
-  async createComment ({text, subject, parent}) {
+  async follow (TestCitizen) {
     await this.login()
-    const {url} = await this.inst.api.comments.create({
-      text,
-      subject: {dbUrl: subject.url, authorId: subject.author.userId},
-      parentComment: parent ? {dbUrl: parent.url, authorId: parent.author.userId} : undefined
-    })
-    this.comments.push(await this.inst.api.comments.get(url))
+    await this.inst.api.follows.follow(TestCitizen.userId)
+    this.following[TestCitizen.userId] = TestCitizen
   }
 
-  async follow (testUser) {
+  async unfollow (TestCitizen) {
     await this.login()
-    await this.inst.api.follows.follow(testUser.userId)
-    this.following[testUser.userId] = testUser
-  }
-
-  async unfollow (testUser) {
-    await this.login()
-    await this.inst.api.follows.unfollow(testUser.userId)
-    delete this.following[testUser.userId]
+    await this.inst.api.follows.unfollow(TestCitizen.userId)
+    delete this.following[TestCitizen.userId]
   }
 
   async vote ({subject, vote}) {
@@ -312,13 +306,27 @@ class TestUser {
       delete this.votes[subject.url]
     }
   }
+}
 
-  async testSocialGraph (t, sim, inst = undefined) {
-    inst = inst || this.inst
-    let follows = await inst.api.follows.listFollows(this.userId)
-    sim.testFollows(t, follows, Object.values(this.following))
-    let followers = await inst.api.follows.listFollowers(this.userId)
-    sim.testFollowers(t, followers, sim.listFollowers(this))
+class TestCommunity {
+  constructor (inst, username) {
+    this.inst = inst
+    this.username = username
+    this.userId = undefined
+    this.members = {}
+  }
+
+  async setup () {
+    const {userId} = await this.inst.api.debug.createUser({
+      type: 'community',
+      username: this.username,
+      email: `${this.username}@email.com`,
+      profile: {
+        displayName: this.username.slice(0, 1).toUpperCase() + this.username.slice(1)
+      }
+    })
+    this.userId = userId
+    this.profile = await this.inst.api.profiles.get(userId)
   }
 }
 
@@ -346,8 +354,8 @@ function commentEntriesToThread (commentEntries) {
 
   const rootCommentEntries = []
   commentEntries.forEach(commentEntry => {
-    if (commentEntry.value.parentComment) {
-      let parent = commentEntriesByUrl[commentEntry.value.parentComment.dbUrl]
+    if (commentEntry.value.reply?.parent) {
+      let parent = commentEntriesByUrl[commentEntry.value.reply.parent.dbUrl]
       if (!parent) {
         commentEntry.isMissingParent = true
         rootCommentEntries.push(commentEntry)

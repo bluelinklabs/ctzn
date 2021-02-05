@@ -10,7 +10,7 @@ const match = subcommand({
     {
       name: 'start',
       command: args => {
-        start({debugMode: true, port: args.port || 3000, domain: args.domain})
+        start({debugMode: true, port: args.port || 3000, domain: args.domain, configDir: args.configDir})
       }
     },
     {
@@ -31,8 +31,9 @@ const match = subcommand({
       name: 'create-user',
       command: async args => {
         // TODO- this needs to work without starting the server
-        await start({debugMode: true, port: 3000})
+        await start({debugMode: true, port: 3000, domain: args.domain, configDir: args.configDir})
         await db.createUser({
+          type: 'citizen',
           username: args.username,
           email: args.email,
           profile: {
@@ -48,9 +49,10 @@ const match = subcommand({
       name: 'create-test-users',
       command: async args => {
         // TODO- this needs to work without starting the server
-        await start({debugMode: true, port: 3000})
+        await start({debugMode: true, port: 3000, domain: args.domain, configDir: args.configDir})
         for (let username of ['alice', 'bob', 'carla', 'dan', 'erica', 'finn']) {
           await db.createUser({
+            type: 'citizen',
             username: username,
             email: `${username}@email.com`,
             profile: {
@@ -61,11 +63,28 @@ const match = subcommand({
         }
         process.exit(0)
       }
+    },
+    {
+      name: 'create-community',
+      command: async args => {
+        // TODO- this needs to work without starting the server
+        await start({debugMode: true, port: 3000, domain: args.domain, configDir: args.configDir})
+        await db.createUser({
+          type: 'community',
+          username: args.username,
+          profile: {
+            displayName: args.displayName,
+            description: args.description
+          }
+        })
+        console.log(args.username, 'created')
+        process.exit(0)
+      }
     }
   ],
   root: {
     command: args => {
-      start({debugMode: true, port: args.port || 3000, domain: args.domain})
+      start({debugMode: true, port: args.port || 3000, domain: args.domain, configDir: args.configDir})
     }
   }
 })

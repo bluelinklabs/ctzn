@@ -1,10 +1,10 @@
 import createMlts from 'monotonic-lexicographic-timestamp'
 import { createValidator } from '../lib/schemas.js'
-import { publicUserDbs } from '../db/index.js'
+import { publicUserDbs, privateUserDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
-import { fetchAuthor, fetchVotes, fetchCommentCount } from '../db/util.js'
-import { getPost, listPosts } from '../db/getters.js'
+import { fetchAuthor, fetchVotes, fetchReplyCount } from '../db/util.js'
+import { getPost, getThread, listPosts } from '../db/getters.js'
 
 const mlts = createMlts()
 
@@ -22,10 +22,6 @@ const listParam = createValidator({
 })
 
 export function setup (wsServer) {
-  wsServer.register('posts.listFeaturedFeed', async params => {
-    return 'todo'
-  })
-
   wsServer.register('posts.listUserFeed', async ([userId, opts], client) => {
     if (opts) {
       listParam.assert(opts)
@@ -69,8 +65,8 @@ export function setup (wsServer) {
     const authorsCache = {}
     for (let entry of postEntries) {
       entry.author = await fetchAuthor(entry.author.userId, authorsCache)
-      entry.votes = await fetchVotes(entry.dbUrl, client?.auth?.userId)
-      entry.commentCount = await fetchCommentCount(entry, client?.auth?.userId)
+      entry.votes = await fetchVotes(entry, client?.auth?.userId)
+      entry.replyCount = await fetchReplyCount(entry, client?.auth?.userId)
     }
 
     return postEntries
@@ -92,6 +88,10 @@ export function setup (wsServer) {
     return getPost(publicUserDb, key, userId, client.auth)
   })
 
+  wsServer.register('posts.getThread', async ([subjectUrl], client) => {
+    return getThread(subjectUrl, client.auth)
+  })
+
   wsServer.register('posts.create', async ([post], client) => {
     if (!client?.auth) throw new Error('Must be logged in')
     const publicUserDb = publicUserDbs.get(client.auth.userId)
@@ -100,6 +100,12 @@ export function setup (wsServer) {
     const key = mlts()
     post.createdAt = (new Date()).toISOString()
     await publicUserDb.posts.put(key, post)
+
+    const indexingDbs = [privateUserDbs.get(client.auth.userId)]
+    if (post.community && publicUserDbs.has(post.community.userId)) {
+      indexingDbs.push(publicUserDbs.get(post.community.userId))
+    }
+    await onDatabaseChange(publicUserDb, indexingDbs)
     
     const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', key)
     return {key, url}
@@ -117,6 +123,7 @@ export function setup (wsServer) {
 
     postEntry.value.text = post?.text
     await publicUserDb.posts.put(key, postEntry.value)
+    await onDatabaseChange(publicUserDb, [privateUserDbs.get(client.auth.userId)])
 
     const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', postEntry.key)
     return {key, url}
@@ -126,7 +133,8 @@ export function setup (wsServer) {
     if (!client?.auth) throw new Error('Must be logged in')
     const publicUserDb = publicUserDbs.get(client.auth.userId)
     if (!publicUserDb) throw new Error('User database not found')
-
+    
     await publicUserDb.posts.del(key)
+    await onDatabaseChange(publicUserDb, [privateUserDbs.get(client.auth.userId)])
   })
 }

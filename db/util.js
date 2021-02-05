@@ -1,9 +1,25 @@
 import lexint from 'lexicographic-integer-encoding'
-import { publicServerDb, publicUserDbs, privateUserDbs } from '../db/index.js'
+import { publicUserDbs, privateUserDbs } from '../db/index.js'
 import { constructUserUrl, parseEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 
 const lexintEncoder = lexint('hex')
+
+export async function dbGet (dbUrl) {
+  const urlp = new URL(dbUrl)
+  const userId = await fetchUserId(`hyper://${urlp.hostname}/`)
+  const db = publicUserDbs.get(userId)
+  if (!db) throw new Error('User database not found')
+  const pathParts = urlp.pathname.split('/').filter(Boolean)
+  let bee = db.bee
+  for (let i = 0; i < pathParts.length - 1; i++) {
+    bee = bee.sub(decodeURIComponent(pathParts[i]))
+  }
+  return {
+    db,
+    entry: await bee.get(decodeURIComponent(pathParts[pathParts.length - 1]))
+  }
+}
 
 export async function fetchAuthor (authorId, cache = undefined) {
   if (cache && cache[authorId]) {
@@ -22,111 +38,150 @@ export async function fetchAuthor (authorId, cache = undefined) {
   }
 }
 
-export async function fetchFollowerIds (subjectUserId, userIdxId = undefined) {
-  let followsServerIdxEntry
-  let followsUserIdxEntry
-  try {
-    followsServerIdxEntry = await publicServerDb.followsIdx.get(subjectUserId)
-    if (userIdxId && privateUserDbs.has(userIdxId)) {
-      followsUserIdxEntry = await privateUserDbs.get(userIdxId).followsIdx.get(subjectUserId)
-    }
-  } catch (e) {}
-  return concatUniq(followsServerIdxEntry?.value?.followerIds, followsUserIdxEntry?.value?.followerIds)
+export async function fetchSelfIndexFollowerIds (subjectUserId, selfIdxUserId) {
+  let followsIdxEntry
+  if (selfIdxUserId && privateUserDbs.has(selfIdxUserId)) {
+    followsIdxEntry = await privateUserDbs.get(selfIdxUserId).followsIdx.get(subjectUserId)
+  }
+  return followsIdxEntry?.value?.followerIds || []
 }
 
-export async function fetchVotes (subjectUrl, userIdxId = undefined) {
-  let votesServerIdxEntry
-  let votesUserIdxEntry
-  votesServerIdxEntry = await publicServerDb.votesIdx.get(subjectUrl)
-  if (userIdxId && privateUserDbs.has(userIdxId)) {
-    votesUserIdxEntry = await privateUserDbs.get(userIdxId).votesIdx.get(subjectUrl)
+export async function fetchCommunityIndexesFollowerIds (subjectUserId, communityMemberUserId) {
+  if (!publicUserDbs.has(communityMemberUserId)) {
+    return []
+  }
+  let followerIds = []
+  const memberships = await publicUserDbs.get(communityMemberUserId).memberships.list()
+  for (let membership of memberships) {
+    if (!publicUserDbs.has(membership.value.community.userId)) {
+      continue
+    }
+    followerIds.push(
+      await publicUserDbs.get(membership.value.community.userId).followsIdx.get(subjectUserId).then(entry => entry?.value?.followerIds)
+    )
+  }
+  return concatUniq(...followerIds)
+}
+
+export async function fetchVotes (subject, userIdxId = undefined) {
+  let subjectInfo
+  let upvoteUrls
+  let downvoteUrls
+
+  if (subject?.value?.community?.userId) {
+    // fetch votes in post's community index
+    let votesCommunityIdxEntry
+    if (publicUserDbs.has(subject.value.community.userId)) {
+      votesCommunityIdxEntry = await publicUserDbs.get(subject.value.community.userId).votesIdx.get(subject.url)
+    }
+    subjectInfo = votesCommunityIdxEntry?.value?.subject
+    upvoteUrls = votesCommunityIdxEntry?.value?.upvoteUrls || []
+    downvoteUrls = votesCommunityIdxEntry?.value?.downvoteUrls || []
+  } else {
+    // fetch votes in author and authed-user indexes
+    let votesAuthorIdxEntry
+    let votesUserIdxEntry
+    if (subject.author && privateUserDbs.has(subject.author.userId)) {
+      votesAuthorIdxEntry = await privateUserDbs.get(subject.author.userId).votesIdx.get(subject.url)
+    }
+    if (userIdxId && userIdxId !== subject.author?.userId && privateUserDbs.has(userIdxId)) {
+      votesUserIdxEntry = await privateUserDbs.get(userIdxId).votesIdx.get(subject.url)
+    }
+    subjectInfo = votesAuthorIdxEntry?.value?.subject || votesUserIdxEntry?.value?.subject
+    upvoteUrls = concatUniq(votesAuthorIdxEntry?.value?.upvoteUrls, votesUserIdxEntry?.value?.upvoteUrls)
+    downvoteUrls = concatUniq(votesAuthorIdxEntry?.value?.downvoteUrls, votesUserIdxEntry?.value?.downvoteUrls)
   }
 
-  const upvoteUrls = concatUniq(votesServerIdxEntry?.value?.upvoteUrls, votesUserIdxEntry?.value?.upvoteUrls)
-  const downvoteUrls = concatUniq(votesServerIdxEntry?.value?.downvoteUrls, votesUserIdxEntry?.value?.downvoteUrls)
   return {
-    subject: votesServerIdxEntry?.subject || votesUserIdxEntry?.subject || {dbUrl: subjectUrl},
+    subject: subjectInfo || {dbUrl: subject.url},
     upvoterIds: await Promise.all(upvoteUrls.map(fetchUserId)),
     downvoterIds: await Promise.all(downvoteUrls.map(fetchUserId))
   }
 }
 
-export async function fetchComments (subject, userIdxId = undefined) {
-  let commentsServerIdxEntry
-  let commentsUserIdxEntry
-  
-  commentsServerIdxEntry = await publicServerDb.commentsIdx.get(subject.url)
-  if (userIdxId && privateUserDbs.has(userIdxId)) {
-    commentsUserIdxEntry = await privateUserDbs.get(userIdxId).commentsIdx.get(subject.url)
+export async function fetchReplies (subject, userIdxId = undefined) {
+  if (subject?.value?.community?.userId) {
+    // fetch replies in post's community index
+    let threadCommunityIdxEntry
+    if (publicUserDbs.has(subject.value.community.userId)) {
+      threadCommunityIdxEntry = await publicUserDbs.get(subject.value.community.userId).threadIdx.get(subject.url)
+    }
+    return threadCommunityIdxEntry?.value.items || []
+  } else {
+    // fetch replies in author and authed-user indexes
+    let threadAuthorIdxEntry
+    let threadUserIdxEntry
+    if (privateUserDbs.has(subject.author.userId)) {
+      threadAuthorIdxEntry = await privateUserDbs.get(subject.author.userId).threadIdx.get(subject.url)
+    }
+    if (userIdxId && userIdxId !== subject.author.userId && privateUserDbs.has(userIdxId)) {
+      threadUserIdxEntry = await privateUserDbs.get(userIdxId).threadIdx.get(subject.url)
+    }
+
+    // dedup
+    let thread = concat(threadAuthorIdxEntry?.value.items, threadUserIdxEntry?.value.items)
+    if (threadAuthorIdxEntry && threadUserIdxEntry) {
+      thread = thread.filter((post, index) => {
+        return thread.findIndex(post2 => post2.dbUrl === post.dbUrl) === index
+      })
+    }
+    return thread
   }
-
-  let comments = concat(commentsServerIdxEntry?.value.comments, commentsUserIdxEntry?.value.comments)
-  comments = comments.filter((comment, index) => {
-    return comments.findIndex(comment2 => comment2.dbUrl === comment.dbUrl) === index
-  })
-  return comments
 }
 
-export async function fetchCommentCount (subject, userIdxId = undefined) {
-  const comments = await fetchComments(subject, userIdxId)
-  return comments.length
+export async function fetchReplyCount (subject, userIdxId = undefined) {
+  const posts = await fetchReplies(subject, userIdxId)
+  return posts.length
 }
 
-export async function fetchNotications (userInfo, {after, before} = {}) {
-  let notificationServerIdxEntries
-  let notificationUserIdxEntries
+async function fetchNotificationsInner (userInfo, {after, before} = {}) {
+  let notificationEntries = []
 
   const ltKey = before ? lexintEncoder.encode(Number(new Date(before))) : undefined
   const gtKey = after ? lexintEncoder.encode(Number(new Date(after))) : undefined
   const dbKey = hyperUrlToKeyStr(userInfo.dbUrl)
-  notificationServerIdxEntries = await publicServerDb.notificationIdx.list({
-    lt: ltKey ? `${dbKey}:${ltKey}` : `${dbKey}:\xff`,
-    gt: gtKey ? `${dbKey}:${gtKey}` : `${dbKey}:\x00`,
-    limit: 20,
-    reverse: true
-  })
+
   if (privateUserDbs.has(userInfo.userId)) {
-    notificationUserIdxEntries = await privateUserDbs.get(userInfo.userId).notificationsIdx.list({
-      lt: ltKey ? ltKey : undefined,
-      gt: gtKey ? gtKey : undefined,
-      limit: 20,
-      reverse: true
-    })
+    notificationEntries = notificationEntries.concat(
+      await privateUserDbs.get(userInfo.userId).notificationsIdx.list({
+        lt: ltKey ? ltKey : undefined,
+        gt: gtKey ? gtKey : undefined,
+        limit: 20,
+        reverse: true
+      })
+    )
   }
 
-  let notificationEntries = concat(notificationServerIdxEntries, notificationUserIdxEntries)
+  if (publicUserDbs.has(userInfo.userId)) {
+    const memberships = await publicUserDbs.get(userInfo.userId).memberships.list()
+    for (let membership of memberships) {
+      if (!publicUserDbs.has(membership.value.community.userId)) {
+        continue
+      }
+      notificationEntries = notificationEntries.concat(
+        await publicUserDbs.get(membership.value.community.userId).notificationsIdx.list({
+          lt: ltKey ? `${dbKey}:${ltKey}` : `${dbKey}:\xff`,
+          gt: gtKey ? `${dbKey}:${gtKey}` : `${dbKey}:\x00`,
+          limit: 20,
+          reverse: true
+        })
+      )
+    }
+  }
+
   notificationEntries = notificationEntries.filter((entry, index) => {
     return notificationEntries.findIndex(entry2 => entry2.value.itemUrl === entry.value.itemUrl) === index
   })
+  return notificationEntries
+}
+
+export async function fetchNotications (userInfo, opts) {
+  const notificationEntries = await fetchNotificationsInner(userInfo, opts)
   return await Promise.all(notificationEntries.map(fetchNotification))
 }
 
-export async function countNotications (userInfo, {after, before} = {}) {
-  let notificationServerIdxEntries
-  let notificationUserIdxEntries
-
-  const ltKey = before ? lexintEncoder.encode(Number(new Date(before))) : undefined
-  const gtKey = after ? lexintEncoder.encode(Number(new Date(after))) : undefined
-  const dbKey = hyperUrlToKeyStr(userInfo.dbUrl)
-  notificationServerIdxEntries = await publicServerDb.notificationIdx.list({
-    lt: ltKey ? `${dbKey}:${ltKey}` : `${dbKey}:\xff`,
-    gt: gtKey ? `${dbKey}:${gtKey}` : `${dbKey}:\x00`,
-    limit: 20,
-    reverse: true
-  })
-  if (privateUserDbs.has(userInfo.userId)) {
-    notificationUserIdxEntries = await privateUserDbs.get(userInfo.userId).notificationsIdx.list({
-      lt: ltKey ? ltKey : undefined,
-      gt: gtKey ? gtKey : undefined,
-      limit: 20,
-      reverse: true
-    })
-  }
-
-  let notificationEntries = concat(notificationServerIdxEntries, notificationUserIdxEntries)
-  notificationEntries = notificationEntries.filter((entry, index) => {
-    return notificationEntries.findIndex(entry2 => entry2.value.itemUrl === entry.value.itemUrl) === index
-  })
+export async function countNotications (userInfo, opts) {
+  const notificationEntries = await fetchNotificationsInner(userInfo, opts)
   return notificationEntries.length
 }
 

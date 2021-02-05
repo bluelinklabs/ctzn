@@ -1,0 +1,33 @@
+{
+  "id": "ctzn.network/community-member",
+  "title": "Community member",
+  "description": "Record of a user membership in a community.",
+  "type": "json",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["user", "joinDate"],
+    "additionalProperties": false,
+    "properties": {
+      "user": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "additionalProperties": false,
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "joinDate": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import * as accounts from './accounts.js'
-import * as comments from './comments.js'
+import * as communities from './communities.js'
 import * as debug from './debug.js'
 import * as follows from './follows.js'
 import * as posts from './posts.js'
@@ -13,13 +13,13 @@ export function setup (wsServer, opts) {
   wsServer.register = function (methodName, methodHandler) {
     origRegister.call(this, methodName, async (params, socket_id) => {
       const client = wsServer.namespaces['/'].clients.get(socket_id)
-      const res = await methodHandler(params, client)
+      const res = await methodHandler(params, client)//.catch(e => {throw new Error(e.stack)}) // uncomment this to get a stack in rpc errors
       return typeof res === 'undefined' ? null : res
     })
   }
 
   accounts.setup(wsServer)
-  comments.setup(wsServer)
+  communities.setup(wsServer)
   if (opts.debugMode) debug.setup(wsServer)
   follows.setup(wsServer)
   posts.setup(wsServer)

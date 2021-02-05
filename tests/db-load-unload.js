@@ -9,7 +9,7 @@ test.after.always(async t => {
   }
 })
 
-test('external user databases are loaded and unloaded as needed', async t => {
+test('external citizen databases are loaded and unloaded by follows', async t => {
   let inst1 = await createServer()
   instances.push(inst1)
   let inst2 = await createServer()
@@ -19,8 +19,8 @@ test('external user databases are loaded and unloaded as needed', async t => {
   const user = i => sim.users[username(i)]
 
   // create users
-  await sim.createUser(inst1, username(0))
-  await sim.createUser(inst2, username(1))
+  await sim.createCitizen(inst1, username(0))
+  await sim.createCitizen(inst2, username(1))
 
   // test that inst2 doesnt have inst1's user loaded
   await t.throwsAsync(() => inst2.api.posts.listUserFeed(user(0).userId))
@@ -39,5 +39,14 @@ test('external user databases are loaded and unloaded as needed', async t => {
   await user(1).unfollow(user(0))
 
   // test that inst2 again doesnt have inst1's user loaded
+  await new Promise(r => setTimeout(r, 500))
   await t.throwsAsync(() => inst2.api.posts.listUserFeed(user(0).userId))
+})
+
+test.skip('external community databases are loaded and unloaded by community joins', async t => {
+  // TODO run this test when remote community joins are supported
+})
+
+test.skip('external citizen databases are loaded and unloaded by community joins', async t => {
+  // TODO run this test when remote community joins are supported
 })

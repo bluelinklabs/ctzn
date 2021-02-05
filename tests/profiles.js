@@ -8,6 +8,7 @@ test.before(async () => {
   inst = await createServer()
 
   await inst.api.debug.createUser({
+    type: 'citizen',
     username: 'bobo',
     email: 'bobo@roberts.com',
     profile: {
@@ -24,7 +25,7 @@ test.after.always(async t => {
 test('basic CRUD', async t => {
   await inst.api.profiles.put({
     displayName: 'Bobo Roberts',
-    description: 'Some person',
+    description: 'Some citizen',
     homepageUrl: 'http://example.com'
   })
 
@@ -32,7 +33,7 @@ test('basic CRUD', async t => {
   t.is(profile1.userId, `bobo@${inst.domain}`)
   t.truthy(/^hyper:\/\/([0-9a-f]{64})\/$/.test(profile1.dbUrl))
   t.is(profile1.value.displayName, 'Bobo Roberts')
-  t.is(profile1.value.description, 'Some person')
+  t.is(profile1.value.description, 'Some citizen')
   t.is(profile1.value.homepageUrl, 'http://example.com')
 
   await t.throwsAsync(() => inst.api.profiles.put({}))

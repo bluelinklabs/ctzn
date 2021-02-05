@@ -1,12 +1,12 @@
 {
-  "id": "ctzn.network/comment-idx",
-  "title": "Comments Index",
-  "description": "Aggregated comments on a piece of content",
+  "id": "ctzn.network/thread-idx",
+  "title": "Thread Index",
+  "description": "Threaded replies to a piece of content",
   "type": "json",
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["subject", "comments"],
+    "required": ["subject", "items"],
     "additionalProperties": false,
     "properties": {
       "subject": {
@@ -23,7 +23,7 @@
           }
         }
       },
-      "comments": {
+      "items": {
         "type": "array",
         "items": {
           "type": "object",
