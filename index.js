@@ -108,6 +108,24 @@ export async function start ({port, configDir, simulateHyperspace, domain, debug
     }
   })
 
+  app.get('/ctzn/members/:username', async (req, res) => {
+    try {
+      const db = getDb(req.params.username)
+      res.status(200).json(await dbGetters.listCommunityMembers(db, getListOpts(req)))
+    } catch (e) {
+      json404(res, e)
+    }
+  })
+
+  app.get('/ctzn/memberships/:username', async (req, res) => {
+    try {
+      const db = getDb(req.params.username)
+      res.status(200).json(await dbGetters.listCommunityMemberships(db, getListOpts(req)))
+    } catch (e) {
+      json404(res, e)
+    }
+  })
+
   app.get('/ctzn/post/:username([^\/]{3,})/:key', async (req, res) => {
     try {
       const db = getDb(req.params.username)
