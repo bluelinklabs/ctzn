@@ -59,6 +59,15 @@ export function setup (wsServer) {
       return entries
     }))).flat()
 
+    const membershipEntries = await publicUserDb.memberships.list()
+    postEntries = postEntries.concat((await Promise.all(membershipEntries.map(async membershipEntry => {
+      const communityDb = publicUserDbs.get(membershipEntry.value.community.userId)
+      if (!communityDb) return []
+      
+      const entries = await listPosts(communityDb, {limit: 10, reverse: true}, communityDb.userId, client.auth)
+      return entries
+    }))).flat())
+
     postEntries.sort((a, b) => Number(new Date(b.value.createdAt)) - Number(new Date(a.value.createdAt)))
     postEntries = postEntries.slice(0, 100)
 
