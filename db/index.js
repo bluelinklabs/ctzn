@@ -153,7 +153,7 @@ async function loadMemberUserDbs () {
   let users = await publicServerDb.users.list()
   for (let user of users) {
     if (user.value.type === 'citizen') {
-      let publicUserDb = new PublicCitizenDB(user.value.userId, hyperUrlToKey(user.value.dbUrl))
+      let publicUserDb = new PublicCitizenDB(constructUserId(user.key), hyperUrlToKey(user.value.dbUrl))
       await publicUserDb.setup()
       publicUserDbs.set(constructUserId(user.key), publicUserDb)
       publicUserDb.watch(onDatabaseChange)
@@ -161,7 +161,7 @@ async function loadMemberUserDbs () {
       await catchupIndexes(publicUserDb)
 
       let accountEntry = await privateServerDb.accounts.get(user.value.username)
-      let privateUserDb = new PrivateCitizenDB(user.value.userId, hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicUserDb)
+      let privateUserDb = new PrivateCitizenDB(constructUserId(user.key), hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicUserDb)
       await privateUserDb.setup()
       privateUserDbs.set(constructUserId(user.key), privateUserDb)
       privateUserDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
@@ -169,7 +169,7 @@ async function loadMemberUserDbs () {
 
       numLoaded++
     } else if (user.value.type === 'community') {
-      let publicUserDb = new PublicCommunityDB(user.value.userId, hyperUrlToKey(user.value.dbUrl))
+      let publicUserDb = new PublicCommunityDB(constructUserId(user.key), hyperUrlToKey(user.value.dbUrl))
       await publicUserDb.setup()
       publicUserDbs.set(constructUserId(user.key), publicUserDb)
       publicUserDb.watch(onDatabaseChange)
