@@ -15,6 +15,7 @@ export function setup (wsServer) {
     profileEntry.url = constructUserUrl(userId)
     profileEntry.userId = userId
     profileEntry.dbUrl = publicUserDb.url
+    profileEntry.dbType = publicUserDb.dbType
     return profileEntry
   })
 
