@@ -149,12 +149,7 @@ export async function start ({port, configDir, simulateHyperspace, domain, debug
       const db = getDb(req.params.username)
       const table = db.tables[`${req.params.schemaNs}/${req.params.schemaName}`]
       if (!table) throw new Error('User table not found')
-      
-      if (table.schema.id === 'ctzn.network/post') {
-        res.status(200).json(await dbGetters.getPost(db, req.params.key, usernameToUserId(req.params.username)))
-      } else {
-        res.status(200).json(await table.get(req.params.key))
-      }
+      res.status(200).json(await table.get(req.params.key))
     } catch (e) {
       json404(res, e)
     }
