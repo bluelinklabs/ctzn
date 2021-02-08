@@ -69,6 +69,10 @@ export async function createUser ({type, username, email, profile}) {
     if (type === 'citizen') schemas.get('ctzn.network/account').assertValid(account)
     schemas.get('ctzn.network/user').assertValid(user)
 
+    if (publicUserDbs.has(userId)) {
+      throw new Error('Username already in use.')
+    }
+
     let publicUserDb
     let privateUserDb
     if (type === 'citizen') {

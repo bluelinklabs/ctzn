@@ -1,8 +1,19 @@
-import { publicUserDbs, privateUserDbs, publicServerDb, onDatabaseChange, catchupIndexes } from '../db/index.js'
+import { publicUserDbs, createUser, catchupIndexes } from '../db/index.js'
 import { isHyperUrl, constructEntryUrl } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
 import { fetchUserId, fetchUserInfo } from '../lib/network.js'
 import { listCommunityMembers, listCommunityMemberships } from '../db/getters.js'
+
+const createParam = createValidator({
+  type: 'object',
+  required: ['username', 'displayName'],
+  additionalProperties: false,
+  properties: {
+    username: {type: 'string', pattern: "^([a-zA-Z][a-zA-Z0-9]{2,63})$"},
+    displayName: {type: 'string', minLength: 1, maxLength: 64},
+    description: {type: 'string', maxLength: 256}
+  }
+})
 
 const listParam = createValidator({
   type: 'object',
@@ -18,8 +29,38 @@ const listParam = createValidator({
 })
 
 export function setup (wsServer) {
-  wsServer.register('communities.create', async ([userId], client) => {
-    // TODO
+  wsServer.register('communities.create', async ([info], client) => {
+    if (!client?.auth) throw new Error('Must be logged in')
+
+    const publicCitizenDb = publicUserDbs.get(client.auth.userId)
+    if (!publicCitizenDb) throw new Error('User database not found')
+    
+    info = info || {}
+    createParam.assert(info)
+    
+    // create the community user
+    const communityUser = await createUser({
+      type: 'community',
+      username: info.username,
+      profile: {
+        displayName: info.displayName,
+        description: info.description
+      }
+    })
+    const communityInfo = {
+      userId: communityUser.userId,
+      dbUrl: communityUser.publicUserDb.url
+    }
+
+    // add membership records for the creator of the community
+    const joinDate = (new Date()).toISOString()
+    const membershipValue = {community: communityInfo, joinDate}
+    const memberValue = {user: {userId: client.auth.userId, dbUrl: publicCitizenDb.url}, joinDate}
+    await publicCitizenDb.memberships.put(communityInfo.userId, membershipValue)
+    await communityUser.publicUserDb.members.put(client.auth.userId, memberValue)
+    /* dont await */ catchupIndexes(communityUser.publicUserDb)
+
+    return communityInfo
   })
 
   wsServer.register('communities.listMembers', async ([communityUserId, opts], client) => {
