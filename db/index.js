@@ -149,9 +149,10 @@ async function saveDbConfig () {
 }
 
 async function loadMemberUserDbs () {
+  let numLoaded = 0
   let users = await publicServerDb.users.list()
   for (let user of users) {
-    if (user.type === 'citizen') {
+    if (user.value.type === 'citizen') {
       let publicUserDb = new PublicCitizenDB(user.value.userId, hyperUrlToKey(user.value.dbUrl))
       await publicUserDb.setup()
       publicUserDbs.set(constructUserId(user.key), publicUserDb)
@@ -165,16 +166,22 @@ async function loadMemberUserDbs () {
       privateUserDbs.set(constructUserId(user.key), privateUserDb)
       privateUserDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
       await catchupIndexes(privateUserDb)
-    } else if (user.type === 'community') {
+
+      numLoaded++
+    } else if (user.value.type === 'community') {
       let publicUserDb = new PublicCommunityDB(user.value.userId, hyperUrlToKey(user.value.dbUrl))
       await publicUserDb.setup()
       publicUserDbs.set(constructUserId(user.key), publicUserDb)
       publicUserDb.watch(onDatabaseChange)
       publicUserDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
       await catchupIndexes(publicUserDb)
+      numLoaded++
+    } else {
+      console.error('Unknown user type record:', user.type)
+      console.error(user)
     }
   }
-  console.log('Loaded', users.length, 'member user databases')
+  console.log('Loaded', numLoaded, 'user DBs (from', users.length, 'member records)')
 }
 
 export function* getAllDbs () {
