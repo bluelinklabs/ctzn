@@ -133,7 +133,7 @@ export async function start ({port, configDir, simulateHyperspace, domain, debug
     }
   })
 
-  app.get('/ctzn/db/:username([^\/]{3,})/:schemaNs/:schemaName', async (req, res) => {
+  app.get('/hyper/:username([^\/]{3,})/:schemaNs/:schemaName', async (req, res) => {
     try {
       const db = getDb(req.params.username)
       const table = db.tables[`${req.params.schemaNs}/${req.params.schemaName}`]
@@ -144,7 +144,7 @@ export async function start ({port, configDir, simulateHyperspace, domain, debug
     }
   })
 
-  app.get('/ctzn/db/:username([^\/]{3,})/:schemaNs/:schemaName/:key', async (req, res) => {
+  app.get('/hyper/:username([^\/]{3,})/:schemaNs/:schemaName/:key', async (req, res) => {
     try {
       const db = getDb(req.params.username)
       const table = db.tables[`${req.params.schemaNs}/${req.params.schemaName}`]
