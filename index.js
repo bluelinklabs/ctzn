@@ -26,6 +26,7 @@ export async function start ({port, configDir, hyperspaceHost, hyperspaceStorage
   setOrigin(`http://${domain || 'localhost'}:${port}`)
 
   app = express()
+  app.set('views', path.join(path.dirname(fileURLToPath(import.meta.url)), 'views'))
   app.set('view engine', 'ejs')
   app.use(cors())
 
