@@ -10,7 +10,8 @@ import * as os from 'os'
 import { setOrigin, getDomain, parseAcctUrl, usernameToUserId, constructUserUrl, DEBUG_MODE_PORTS_MAP } from './lib/strings.js'
 import * as dbGetters from './db/getters.js'
 
-const DEFAULT_USER_THUMB_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'static', 'img', 'default-user-thumb.jpg')
+const DEFAULT_USER_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'static', 'img', 'default-user-avatar.jpg')
+const DEFAULT_COMMUNITY_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'static', 'img', 'default-community-avatar.jpg')
 
 let app
 
@@ -76,18 +77,23 @@ export async function start ({port, configDir, simulateHyperspace, domain, debug
   })
 
   app.get('/ctzn/avatar/:username([^\/]{3,})', async (req, res) => {
+    let userDb
     try {
       const userId = usernameToUserId(req.params.username)
-      const userDb = db.publicUserDbs.get(userId)
+      userDb = db.publicUserDbs.get(userId)
       if (!userDb) {
-        res.sendFile(DEFAULT_USER_THUMB_PATH)
+        res.sendFile(DEFAULT_USER_AVATAR_PATH)
         return
       }
 
       const s = await userDb.blobs.createReadStream('avatar')
       s.pipe(res)
     } catch (e) {
-      res.sendFile(DEFAULT_USER_THUMB_PATH)
+      if (userDb && userDb.dbType === 'ctzn.network/public-community-db') {
+        res.sendFile(DEFAULT_COMMUNITY_AVATAR_PATH)
+      } else {
+        res.sendFile(DEFAULT_USER_AVATAR_PATH)
+      }
     }
   })
 
