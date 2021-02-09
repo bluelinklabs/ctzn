@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import subcommand from 'subcommand'
 import * as db from './db/index.js'
 import * as path from 'path'
