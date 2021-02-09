@@ -68,7 +68,7 @@ export async function start ({port, configDir, simulateHyperspace, domain, debug
         url: constructUserUrl(userId),
         userId: userId,
         dbUrl: db.url,
-        dbType: publicUserDb.dbType,
+        dbType: db.dbType,
         value: profileEntry.value
       })
     } catch (e) {
