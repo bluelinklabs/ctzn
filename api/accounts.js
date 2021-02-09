@@ -2,7 +2,7 @@ import { createValidator } from '../lib/schemas.js'
 import { v4 as uuidv4 } from 'uuid'
 import { publicServerDb, privateServerDb, createUser } from '../db/index.js'
 import { constructUserUrl, constructUserId } from '../lib/strings.js'
-
+import { verifyPassword } from '../lib/crypto.js'
 
 const registerParam = createValidator({
   type: 'object',
@@ -68,8 +68,8 @@ export function setup (wsServer) {
     loginParam.assert(params[0])
     let {username, password} = params[0]
 
-    // TODO validate credentials
-    if (password !== 'password') {
+    const accountRecord = await privateServerDb.accounts.get(username)
+    if (!accountRecord || !(await verifyPassword(password, accountRecord.value.hashedPassword))) {
       throw new Error('Invalid username or password')
     }
 

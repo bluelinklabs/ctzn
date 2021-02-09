@@ -6,12 +6,15 @@
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["email", "privateDbUrl"],
+    "required": ["email", "hashedPassword", "privateDbUrl"],
     "additionalProperties": false,
     "properties": {
       "email": {
         "type": "string",
         "format": "email"
+      },
+      "hashedPassword": {
+        "type": "string"
       },
       "privateDbUrl": {
         "type": "string",

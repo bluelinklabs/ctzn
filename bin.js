@@ -50,6 +50,7 @@ const match = subcommand({
           type: 'citizen',
           username: args.username,
           email: args.email,
+          password: args.password,
           profile: {
             displayName: args.displayName,
             description: args.description
@@ -76,6 +77,7 @@ const match = subcommand({
             type: 'citizen',
             username: username,
             email: `${username}@email.com`,
+            password: 'password',
             profile: {
               displayName: username.slice(0, 1).toUpperCase() + username.slice(1)
             }

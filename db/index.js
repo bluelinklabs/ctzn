@@ -11,6 +11,7 @@ import { PublicCommunityDB } from './community.js'
 import * as schemas from '../lib/schemas.js'
 import { HYPER_KEY, hyperUrlToKey, constructUserId, getDomain } from '../lib/strings.js'
 import { fetchDbUrl } from '../lib/network.js'
+import { hashPassword } from '../lib/crypto.js'
 import * as perf from '../lib/perf.js'
 import lock from '../lib/lock.js'
 
@@ -46,7 +47,7 @@ export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simu
   await loadOrUnloadExternalUserDbs()
 }
 
-export async function createUser ({type, username, email, profile}) {
+export async function createUser ({type, username, email, password, profile}) {
   if (type !== 'citizen' && type !== 'community') {
     throw new Error(`Invalid type "${type}": must be 'citizen' or 'community'`)
   }
@@ -56,6 +57,7 @@ export async function createUser ({type, username, email, profile}) {
     const userId = constructUserId(username)
     const account = {
       email,
+      hashedPassword: password ? (await hashPassword(password)) : undefined,
       privateDbUrl: `hyper://${'0'.repeat(64)}/`
     }
     const user = {
