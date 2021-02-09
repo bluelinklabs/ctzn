@@ -10,7 +10,14 @@ const match = subcommand({
     {
       name: 'start',
       command: args => {
-        start({debugMode: true, port: args.port || 3000, domain: args.domain, configDir: args.configDir})
+        start({
+          debugMode: true,
+          port: args.port || 3000,
+          domain: args.domain,
+          configDir: args.configDir,
+          hyperspaceHost: args.hyperspaceHost,
+          hyperspaceStorage: args.hyperspaceStorage
+        })
       }
     },
     {
@@ -31,7 +38,14 @@ const match = subcommand({
       name: 'create-user',
       command: async args => {
         // TODO- this needs to work without starting the server
-        await start({debugMode: true, port: 3000, domain: args.domain, configDir: args.configDir})
+        await start({
+          debugMode: true,
+          port: 3000,
+          domain: args.domain,
+          configDir: args.configDir,
+          hyperspaceHost: args.hyperspaceHost,
+          hyperspaceStorage: args.hyperspaceStorage
+        })
         await db.createUser({
           type: 'citizen',
           username: args.username,
@@ -49,7 +63,14 @@ const match = subcommand({
       name: 'create-test-users',
       command: async args => {
         // TODO- this needs to work without starting the server
-        await start({debugMode: true, port: 3000, domain: args.domain, configDir: args.configDir})
+        await start({
+          debugMode: true,
+          port: 3000,
+          domain: args.domain,
+          configDir: args.configDir,
+          hyperspaceHost: args.hyperspaceHost,
+          hyperspaceStorage: args.hyperspaceStorage
+        })
         for (let username of ['alice', 'bob', 'carla', 'dan', 'erica', 'finn']) {
           await db.createUser({
             type: 'citizen',
@@ -68,7 +89,14 @@ const match = subcommand({
       name: 'create-community',
       command: async args => {
         // TODO- this needs to work without starting the server
-        await start({debugMode: true, port: 3000, domain: args.domain, configDir: args.configDir})
+        await start({
+          debugMode: true,
+          port: 3000,
+          domain: args.domain,
+          configDir: args.configDir,
+          hyperspaceHost: args.hyperspaceHost,
+          hyperspaceStorage: args.hyperspaceStorage
+        })
         await db.createUser({
           type: 'community',
           username: args.username,
@@ -81,11 +109,6 @@ const match = subcommand({
         process.exit(0)
       }
     }
-  ],
-  root: {
-    command: args => {
-      start({debugMode: true, port: args.port || 3000, domain: args.domain, configDir: args.configDir})
-    }
-  }
+  ]
 })
 const cmd = match(process.argv.slice(2))

@@ -9,7 +9,7 @@ export let server = undefined
 export let client = undefined
 let _cleanup = undefined
 
-export async function setup ({simulateHyperspace}) {
+export async function setup ({hyperspaceHost, hyperspaceStorage, simulateHyperspace}) {
   if (simulateHyperspace) {
     const bootstrapper = dht({
       bootstrap: false
@@ -44,13 +44,13 @@ export async function setup ({simulateHyperspace}) {
   }
 
   try {
-    client = new HyperspaceClient()
+    client = new HyperspaceClient({host: hyperspaceHost})
     await client.ready()
   } catch (e) {
     // no daemon, start it in-process
-    server = new HyperspaceServer()
+    server = new HyperspaceServer({host: hyperspaceHost, storage: hyperspaceStorage})
     await server.ready()
-    client = new HyperspaceClient()
+    client = new HyperspaceClient({host: hyperspaceHost})
     await client.ready()
   }
 

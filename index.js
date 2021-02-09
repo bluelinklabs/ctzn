@@ -15,7 +15,7 @@ const DEFAULT_COMMUNITY_AVATAR_PATH = path.join(path.dirname(fileURLToPath(impor
 
 let app
 
-export async function start ({port, configDir, simulateHyperspace, domain, debugMode, benchmarkMode}) {
+export async function start ({port, configDir, hyperspaceHost, hyperspaceStorage, simulateHyperspace, domain, debugMode, benchmarkMode}) {
   configDir = configDir || path.join(os.homedir(), '.ctzn')
   if (benchmarkMode) {
     perf.enable()
@@ -189,7 +189,7 @@ export async function start ({port, configDir, simulateHyperspace, domain, debug
       console.log(`CTZN server listening at http://localhost:${port}`)
 
       try {
-        await db.setup({configDir, simulateHyperspace})
+        await db.setup({configDir, hyperspaceHost, hyperspaceStorage, simulateHyperspace})
         resolve(s)
       } catch (e) {
         reject(e)

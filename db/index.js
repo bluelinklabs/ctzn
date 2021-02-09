@@ -22,8 +22,8 @@ export let privateServerDb = undefined
 export let publicUserDbs = new Map()
 export let privateUserDbs = new Map()
 
-export async function setup ({configDir, simulateHyperspace}) {
-  await hyperspace.setup({simulateHyperspace})
+export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simulateHyperspace}) {
+  await hyperspace.setup({hyperspaceHost, hyperspaceStorage, simulateHyperspace})
   await schemas.setup()
   
   _configDir = configDir
