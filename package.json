@@ -4,6 +4,7 @@
   "description": "A hybrid p2p/federated social network mad science experiment",
   "main": "index.js",
   "type": "module",
+  "bin": "bin.js",
   "scripts": {
     "test": "ava -s --timeout=2m"
   },

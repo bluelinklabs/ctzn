@@ -1,7 +1,10 @@
 import subcommand from 'subcommand'
-import path from 'path'
-import os from 'os'
 import * as db from './db/index.js'
+import * as path from 'path'
+import { fileURLToPath } from 'url'
+import * as fs from 'fs'
+
+const PACKAGE_JSON_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'package.json')
 
 import { start } from './index.js'
 
@@ -111,6 +114,13 @@ const match = subcommand({
         process.exit(0)
       }
     }
-  ]
+  ],
+  root: {
+    command: () => {
+      const packageJson = fs.readFileSync(PACKAGE_JSON_PATH, 'utf8')
+      const pkg = JSON.parse(packageJson)
+      console.log('CTZN', pkg.version)
+    }
+  }
 })
 const cmd = match(process.argv.slice(2))
