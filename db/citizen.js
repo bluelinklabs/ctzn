@@ -148,10 +148,12 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
       const pend = perf.measure(`privateUserDb:thread-indexer`)
       const postUrl = constructEntryUrl(db.url, 'ctzn.network/post', change.keyParsed.key)
       let replyRoot = change.value?.reply?.root
+      let replyParent = change.value?.reply?.parent
       let community = change.value?.community
       if (!change.value) {
         const oldEntry = await db.bee.checkout(change.seq).get(change.key)
         replyRoot = oldEntry.value.reply?.root
+        replyParent = oldEntry.value.reply?.parent
         community = oldEntry.value?.community
       }
       if (!replyRoot) {
@@ -161,34 +163,41 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
         return // not a self post or by me, ignore
       }
 
-      const release = await this.lock(`thread-idx:${replyRoot.dbUrl}`)
-      try {
-        let threadIdxEntry = await this.threadIdx.get(replyRoot.dbUrl).catch(e => undefined)
-        if (!threadIdxEntry) {
-          threadIdxEntry = {
-            key: replyRoot.dbUrl,
-            value: {
-              subject: replyRoot,
-              items: []
+      if (replyParent && replyParent.dbUrl === replyRoot.dbUrl) {
+        replyParent = undefined
+      }
+      let targets = [replyRoot, replyParent].filter(Boolean)
+
+      for (let target of targets) {
+        const release = await this.lock(`thread-idx:${target.dbUrl}`)
+        try {
+          let threadIdxEntry = await this.threadIdx.get(target.dbUrl).catch(e => undefined)
+          if (!threadIdxEntry) {
+            threadIdxEntry = {
+              key: target.dbUrl,
+              value: {
+                subject: target,
+                items: []
+              }
             }
           }
-        }
-        let itemUrlIndex = threadIdxEntry.value.items.findIndex(c => c.dbUrl === postUrl)
-        if (change.value) {
-          if (itemUrlIndex === -1) {
-            const authorId = db.userId
-            threadIdxEntry.value.items.push({dbUrl: postUrl, authorId})
-            await this.threadIdx.put(threadIdxEntry.key, threadIdxEntry.value)
+          let itemUrlIndex = threadIdxEntry.value.items.findIndex(c => c.dbUrl === postUrl)
+          if (change.value) {
+            if (itemUrlIndex === -1) {
+              const authorId = db.userId
+              threadIdxEntry.value.items.push({dbUrl: postUrl, authorId})
+              await this.threadIdx.put(threadIdxEntry.key, threadIdxEntry.value)
+            }
+          } else {
+            if (itemUrlIndex !== -1) {
+              threadIdxEntry.value.items.splice(itemUrlIndex, 1)
+              await this.threadIdx.put(threadIdxEntry.key, threadIdxEntry.value)
+            }
           }
-        } else {
-          if (itemUrlIndex !== -1) {
-            threadIdxEntry.value.items.splice(itemUrlIndex, 1)
-            await this.threadIdx.put(threadIdxEntry.key, threadIdxEntry.value)
-          }
+        } finally {
+          release()
+          pend()
         }
-      } finally {
-        release()
-        pend()
       }
     })
 
