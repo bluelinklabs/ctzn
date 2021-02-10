@@ -45,6 +45,9 @@ export function setup (wsServer) {
     const publicUserDb = publicUserDbs.get(client.auth.userId)
     if (!publicUserDb) throw new Error('User database not found')
 
+    const membershipEntries = await publicUserDb.memberships.list()
+    const commmunityIds = new Set(membershipEntries.map(entry => entry.value.community.userId))
+
     const followEntries = await publicUserDb.follows.list()
     followEntries.unshift({value: {subject: client.auth}})
     let postEntries = (await Promise.all(followEntries.map(async followEntry => {
@@ -52,14 +55,16 @@ export function setup (wsServer) {
       if (!followedUserDb) return []
       
       const entries = await followedUserDb.posts.list({limit: 10, reverse: true})
-      for (let entry of entries) {
+      return entries.filter(entry => {
+        if (commmunityIds.has(entry.value.community?.userId)) {
+          return false // filter out posts that will appear in the community feeds
+        }
         entry.author = followEntry.value.subject
         entry.url = constructEntryUrl(followEntry.value.subject.dbUrl, 'ctzn.network/post', entry.key)
-      }
-      return entries
+        return true
+      })
     }))).flat()
 
-    const membershipEntries = await publicUserDb.memberships.list()
     postEntries = postEntries.concat((await Promise.all(membershipEntries.map(async membershipEntry => {
       const communityDb = publicUserDbs.get(membershipEntry.value.community.userId)
       if (!communityDb) return []
@@ -68,10 +73,6 @@ export function setup (wsServer) {
       return entries
     }))).flat())
 
-    // dedup
-    postEntries = postEntries.filter((post, index) => {
-      return postEntries.findIndex(post2 => post2.url === post.url) === index
-    })
     postEntries.sort((a, b) => Number(new Date(b.value.createdAt)) - Number(new Date(a.value.createdAt)))
     postEntries = postEntries.slice(0, 100)
 
