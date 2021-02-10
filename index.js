@@ -1,3 +1,4 @@
+import * as http from 'http'
 import express from 'express'
 import { Server as WebSocketServer } from 'rpc-websockets'
 import cors from 'cors'
@@ -185,21 +186,20 @@ export async function start ({port, configDir, hyperspaceHost, hyperspaceStorage
     res.status(404).send('404 Page not found')
   })
 
-  const server = await new Promise((resolve, reject) => {
-    let s = app.listen(port, async () => {
-      console.log(`CTZN server listening at http://localhost:${port}`)
+  const wsServer = new WebSocketServer({noServer: true})
+  api.setup(wsServer, {debugMode})
 
-      try {
-        await db.setup({configDir, hyperspaceHost, hyperspaceStorage, simulateHyperspace})
-        resolve(s)
-      } catch (e) {
-        reject(e)
-      }
+  const server = new http.Server(app)
+  server.on('upgrade', (request, socket, head) => {
+    wsServer.wss.handleUpgrade(request, socket, head, socket => {
+      wsServer.wss.emit('connection', socket, request)
     })
   })
+  server.listen(port, () => {
+    console.log(`CTZN server listening at http://localhost:${port}`)
+  })
 
-  const wsServer = new WebSocketServer({server})
-  api.setup(wsServer, {debugMode})
+  await db.setup({configDir, hyperspaceHost, hyperspaceStorage, simulateHyperspace})
 
   // process.on('SIGINT', close)
   // process.on('SIGTERM', close)
