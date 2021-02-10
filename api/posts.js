@@ -68,6 +68,10 @@ export function setup (wsServer) {
       return entries
     }))).flat())
 
+    // dedup
+    postEntries = postEntries.filter((post, index) => {
+      return postEntries.findIndex(post2 => post2.url === post.url) === index
+    })
     postEntries.sort((a, b) => Number(new Date(b.value.createdAt)) - Number(new Date(a.value.createdAt)))
     postEntries = postEntries.slice(0, 100)
 
