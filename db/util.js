@@ -71,12 +71,16 @@ export async function fetchVotes (subject, userIdxId = undefined) {
   if (subject?.value?.community?.userId) {
     // fetch votes in post's community index
     let votesCommunityIdxEntry
+    let votesUserIdxEntry
     if (publicUserDbs.has(subject.value.community.userId)) {
       votesCommunityIdxEntry = await publicUserDbs.get(subject.value.community.userId).votesIdx.get(subject.url)
     }
-    subjectInfo = votesCommunityIdxEntry?.value?.subject
-    upvoteUrls = votesCommunityIdxEntry?.value?.upvoteUrls || []
-    downvoteUrls = votesCommunityIdxEntry?.value?.downvoteUrls || []
+    if (userIdxId && privateUserDbs.has(userIdxId)) {
+      votesUserIdxEntry = await privateUserDbs.get(userIdxId).votesIdx.get(subject.url)
+    }
+    subjectInfo = votesCommunityIdxEntry?.value?.subject || votesUserIdxEntry?.value?.subject
+    upvoteUrls = concatUniq(votesCommunityIdxEntry?.value?.upvoteUrls, votesUserIdxEntry?.value?.upvoteUrls)
+    downvoteUrls = concatUniq(votesCommunityIdxEntry?.value?.downvoteUrls, votesUserIdxEntry?.value?.downvoteUrls)
   } else {
     // fetch votes in author and authed-user indexes
     let votesAuthorIdxEntry
