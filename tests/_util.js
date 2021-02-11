@@ -260,6 +260,7 @@ class TestCitizen {
       type: 'citizen',
       username: this.username,
       email: `${this.username}@email.com`,
+      password: 'password',
       profile: {
         displayName: this.username.slice(0, 1).toUpperCase() + this.username.slice(1)
       }
