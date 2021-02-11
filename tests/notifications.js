@@ -151,7 +151,7 @@ test('user & community notifications index', async t => {
   sim.testNotifications(t, notifications, [
     [carla, 'downvote', bob.replies[0]],
     [carla, 'downvote', bob.posts[1]],
-    [carla, 'downvote', bob.posts[0]],
+    // bob does not follow carla so he does not receive [carla, 'downvote', bob.posts[0]],
     [alice, 'upvote', bob.replies[0]],
     [alice, 'upvote', bob.posts[1]],
     [alice, 'upvote', bob.posts[0]],

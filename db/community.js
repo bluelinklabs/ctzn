@@ -1,6 +1,7 @@
 import createMlts from 'monotonic-lexicographic-timestamp'
 import { BaseHyperbeeDB } from './base.js'
-import { hyperUrlToKeyStr, constructEntryUrl } from '../lib/strings.js'
+import { hyperUrlToKeyStr, constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
+import { dbGet } from './util.js'
 import * as perf from '../lib/perf.js'
 
 const mlts = createMlts()
@@ -69,9 +70,20 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
             break
           }
           case 'ctzn.network/vote':
-            if (!change.value.subject.dbUrl.startsWith(db.url)) {
-              await this.notificationsIdx.put(createKey(change.value.subject.dbUrl), notification)
+            if (change.value.subject.dbUrl.startsWith(db.url)) {
+              return // vote on their own content
             }
+            if (parseEntryUrl(change.value.subject.dbUrl).schemaId !== 'ctzn.network/post') {
+              return // not a vote on a post
+            }
+            let subject = await dbGet(change.value.subject.dbUrl).catch(e => undefined)
+            if (!subject) {
+              return // subject not accessible, ignore
+            }
+            if (subject.entry?.value?.community?.userId !== this.userId) {
+              return // subject is not in our community
+            }
+            await this.notificationsIdx.put(createKey(change.value.subject.dbUrl), notification)
             break
         }
       } finally {
