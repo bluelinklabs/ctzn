@@ -11,6 +11,7 @@ test.before(async () => {
     type: 'citizen',
     username: 'bobo',
     email: 'bobo@roberts.com',
+    password: 'password',
     profile: {
       displayName: 'Bobo Roberts'
     }
