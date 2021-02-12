@@ -389,22 +389,23 @@ async function loadOrUnloadExternalUserDbs () {
   const externalUserIds = await getAllExternalDbIds()
   for (let userId of externalUserIds) {
     if (!publicUserDbs.has(userId)) {
-      try {
-        const dbUrl = await fetchDbUrl(userId)
-        let publicUserDb = await loadDbByType(userId, dbUrl)
-        await publicUserDb.setup()
-        publicUserDbs.set(userId, publicUserDb)
-        publicUserDb.watch(onDatabaseChange)
+      ;(async () => {
+        try {
+          const dbUrl = await fetchDbUrl(userId)
+          let publicUserDb = await loadDbByType(userId, dbUrl)
+          await publicUserDb.setup()
+          publicUserDbs.set(userId, publicUserDb)
+          publicUserDb.watch(onDatabaseChange)
 
-        // update our local db index of url -> userid
-        await privateServerDb.userDbIdx.put(dbUrl, {dbUrl, userId})
-        console.log('loading', userId)
+          // update our local db index of url -> userid
+          await privateServerDb.userDbIdx.put(dbUrl, {dbUrl, userId})
 
-        numLoaded++
-      } catch (e) {
-        console.error('Failed to load external user', userId)
-        console.error(e)
-      }
+          numLoaded++
+        } catch (e) {
+          console.error('Failed to load external user', userId)
+          console.error(e)
+        }
+      })()
     }
   }
   if (numLoaded) {
