@@ -28,6 +28,7 @@
     "express": "^4.17.1",
     "hyperbee": "^1.5.0",
     "hyperspace": "^3.18.1",
+    "ip": "^1.1.5",
     "lodash.debounce": "^4.0.8",
     "monotonic-lexicographic-timestamp": "^1.0.0",
     "node-fetch": "^2.6.1",

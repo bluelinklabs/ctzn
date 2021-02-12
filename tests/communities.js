@@ -1,27 +1,26 @@
 import test from 'ava'
 import { createServer, TestFramework } from './_util.js'
 
-let close
-let api
-let sim = new TestFramework()
+let instances = []
 
-test.before(async () => {
+test.after.always(async t => {
+  for (let inst of instances) {
+    await inst.close()
+  }
+})
+
+test('membership', async t => {
+  let sim = new TestFramework()
   let inst = await createServer()
-  close = inst.close
-  api = inst.api
+  let api = inst.api
+  instances = [inst]
 
   await sim.createCitizen(inst, 'alice')
   await sim.createCitizen(inst, 'bob')
   await sim.createCitizen(inst, 'carla')
   await sim.createCommunity(inst, 'folks')
   await sim.createCommunity(inst, 'ppl')
-})
 
-test.after.always(async t => {
-	await close()
-})
-
-test('membership', async t => {
   const {alice, bob, carla, folks, ppl} = sim.users
 
   await alice.login()
@@ -88,4 +87,38 @@ test('membership', async t => {
   let memberships7 = await api.communities.listMemberships(carla.userId)
   t.is(memberships7.length, 1)
   t.deepEqual(memberships7.find(m => m.value.community.userId === folks.userId).value.community.dbUrl, folks.profile.dbUrl)
+})
+
+test('remote joining & leaving', async t => {
+  let sim = new TestFramework()
+  instances = [
+    await createServer(),
+    await createServer()
+  ]
+  
+  const [inst1, inst2] = instances
+  await sim.createCommunity(inst1, 'folks')
+  await sim.createCitizen(inst2, 'alice')
+
+  const {alice, folks} = sim.users
+
+  await alice.login()
+  await inst2.api.communities.join(folks.userId)
+
+  let members1 = await inst1.api.communities.listMembers(folks.userId)
+  t.is(members1.length, 1)
+  t.deepEqual(members1.find(m => m.value.user.userId === alice.userId).value.user.dbUrl, alice.profile.dbUrl)
+
+  let memberships1 = await inst2.api.communities.listMemberships(alice.userId)
+  t.is(memberships1.length, 1)
+  t.deepEqual(memberships1.find(m => m.value.community.userId === folks.userId).value.community.dbUrl, folks.profile.dbUrl)
+
+  await alice.login()
+  await inst2.api.communities.leave(folks.userId)
+
+  let members2 = await inst1.api.communities.listMembers(folks.userId)
+  t.is(members2.length, 0)
+
+  let memberships2 = await inst2.api.communities.listMemberships(alice.userId)
+  t.is(memberships2.length, 0)
 })

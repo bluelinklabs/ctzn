@@ -1,7 +1,7 @@
 import { publicUserDbs, createUser, catchupIndexes } from '../db/index.js'
-import { isHyperUrl, constructEntryUrl } from '../lib/strings.js'
+import { isHyperUrl, constructEntryUrl, parseUserId } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
-import { fetchUserId, fetchUserInfo } from '../lib/network.js'
+import { fetchUserId, fetchUserInfo, reverseDns, connectWs } from '../lib/network.js'
 import { listCommunityMembers, listCommunityMemberships } from '../db/getters.js'
 
 const createParam = createValidator({
@@ -28,7 +28,17 @@ const listParam = createValidator({
   }
 })
 
-export function setup (wsServer) {
+const userInfoParam = createValidator({
+  type: 'object',
+  required: ['dbUrl', 'userId'],
+  additionalProperties: false,
+  properties: {
+    dbUrl: {type: 'string', format: 'uri'},
+    userId: {type: 'string', pattern: '.+@.+'}
+  }
+})
+
+export function setup (wsServer, serverOpts) {
   wsServer.register('communities.create', async ([info], client) => {
     if (!client?.auth) throw new Error('Must be logged in')
 
@@ -98,34 +108,86 @@ export function setup (wsServer) {
 
     const publicCitizenDb = publicUserDbs.get(client.auth.userId)
     if (!publicCitizenDb) throw new Error('User database not found')
+
+    const publicCommunityDb = publicUserDbs.get(communityInfo.userId)
+    if (!publicCommunityDb || !publicCommunityDb.writable) {
+      // remote join
+      const ws = await connectWs(parseUserId(communityInfo.userId).domain)
+      const remoteJoinOpts = {
+        community,
+        user: {userId: client.auth.userId, dbUrl: publicCitizenDb.url}
+      }
+      const remoteJoinRes = await ws.call('communities.remoteJoin', [remoteJoinOpts])
+      if (!remoteJoinRes?.memberRecord?.url) {
+        throw new Error(`Failed to join remote community, got an unexpected response: ${remoteJoinRes}`)
+      }
+
+      const joinDate = (new Date()).toISOString()
+      const membershipValue = {community: communityInfo, joinDate}
+      await publicCitizenDb.memberships.put(communityInfo.userId, membershipValue)
+      
+      return {
+        membershipRecord: {
+          key: communityInfo.userId,
+          url: constructEntryUrl(publicCitizenDb.url, 'ctzn.network/community-membership', communityInfo.userId)
+        },
+        memberRecord: remoteJoinRes.memberRecord
+      }
+    } else {
+      // local join
+      const joinDate = (new Date()).toISOString()
+      const membershipValue = {community: communityInfo, joinDate}
+      const memberValue = {user: {userId: client.auth.userId, dbUrl: publicCitizenDb.url}, joinDate}
+
+      // validate before writing to avoid partial transactions
+      publicCitizenDb.memberships.schema.assertValid(membershipValue)
+      publicCommunityDb.members.schema.assertValid(memberValue)
+
+      await publicCitizenDb.memberships.put(communityInfo.userId, membershipValue)
+      await publicCommunityDb.members.put(client.auth.userId, memberValue)
+      /* dont await */ catchupIndexes(publicCommunityDb)
+      
+      return {
+        membershipRecord: {
+          key: communityInfo.userId,
+          url: constructEntryUrl(publicCitizenDb.url, 'ctzn.network/community-membership', communityInfo.userId)
+        },
+        memberRecord: {
+          key: client.auth.userId,
+          url: constructEntryUrl(publicCommunityDb.url, 'ctzn.network/community-member', client.auth.userId)
+        }
+      }
+    }
+  })
+
+  wsServer.register('communities.remoteJoin', async ([opts], client) => {
+    opts = opts || {}
+    userInfoParam.assert(opts.user)
+
+    const communityInfo = await fetchUserInfo(opts.community)
     const publicCommunityDb = publicUserDbs.get(communityInfo.userId)
     if (!publicCommunityDb) throw new Error('Community database not found')
     
     if (!publicCommunityDb.writable) {
-      // TODO remote communities.join()
       throw new Error('Community not hosted here')
     }
 
+    const clientDomain = await reverseDns(client, (serverOpts.debugMode) ? () => {
+      return parseUserId(opts.user.userId).domain
+    } : undefined)
+    if (!opts.user.userId.endsWith(`@${clientDomain}`)) {
+      throw new Error(`Joining user's ID (${opts.user.userId}) does not match client domain (${clientDomain})`)
+    }
+
     const joinDate = (new Date()).toISOString()
-    const membershipValue = {community: communityInfo, joinDate}
-    const memberValue = {user: {userId: client.auth.userId, dbUrl: publicCitizenDb.url}, joinDate}
-
-    // validate before writing to avoid partial transactions
-    publicCitizenDb.memberships.schema.assertValid(membershipValue)
-    publicCommunityDb.members.schema.assertValid(memberValue)
-
-    await publicCitizenDb.memberships.put(communityInfo.userId, membershipValue)
-    await publicCommunityDb.members.put(client.auth.userId, memberValue)
+    const memberValue = {user: opts.user, joinDate}
+    await publicCommunityDb.members.put(opts.user.userId, memberValue)
     /* dont await */ catchupIndexes(publicCommunityDb)
     
     return {
-      membershipRecord: {
-        key: communityInfo.userId,
-        url: constructEntryUrl(publicCitizenDb.url, 'ctzn.network/community-membership', communityInfo.userId)
-      },
       memberRecord: {
-        key: client.auth.userId,
-        url: constructEntryUrl(publicCommunityDb.url, 'ctzn.network/community-member', client.auth.userId)
+        key: opts.user.userId,
+        url: constructEntryUrl(publicCommunityDb.url, 'ctzn.network/community-member', opts.user.userId)
       }
     }
   })
@@ -137,15 +199,44 @@ export function setup (wsServer) {
 
     const publicCitizenDb = publicUserDbs.get(client.auth.userId)
     if (!publicCitizenDb) throw new Error('User database not found')
+    
+    const publicCommunityDb = publicUserDbs.get(communityInfo.userId)
+    if (!publicCommunityDb || !publicCommunityDb.writable) {
+      // remote leave
+      const ws = await connectWs(parseUserId(communityInfo.userId).domain)
+      const remoteLeaveOpts = {
+        community,
+        user: {userId: client.auth.userId, dbUrl: publicCitizenDb.url}
+      }
+      await ws.call('communities.remoteLeave', [remoteLeaveOpts])
+
+      await publicCitizenDb.memberships.del(communityInfo.userId)
+    } else {
+      // local leave
+      await publicCitizenDb.memberships.del(communityInfo.userId)
+      await publicCommunityDb.members.del(client.auth.userId)
+    }
+  })
+
+  wsServer.register('communities.remoteLeave', async ([opts], client) => {
+    opts = opts || {}
+    userInfoParam.assert(opts.user)
+
+    const communityInfo = await fetchUserInfo(opts.community)
     const publicCommunityDb = publicUserDbs.get(communityInfo.userId)
     if (!publicCommunityDb) throw new Error('Community database not found')
     
     if (!publicCommunityDb.writable) {
-      // TODO remote communities.leave()
       throw new Error('Community not hosted here')
     }
 
-    await publicCitizenDb.memberships.del(communityInfo.userId)
-    await publicCommunityDb.members.del(client.auth.userId)
+    const clientDomain = await reverseDns(client, (serverOpts.debugMode) ? () => {
+      return parseUserId(opts.user.userId).domain
+    } : undefined)
+    if (!opts.user.userId.endsWith(`@${clientDomain}`)) {
+      throw new Error(`Leaving user's ID (${opts.user.userId}) does not match client domain (${clientDomain})`)
+    }
+
+    await publicCommunityDb.members.del(opts.user.userId)
   })
 }

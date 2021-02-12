@@ -375,7 +375,7 @@ async function getAllExternalDbIds () {
       const members = await db.members.list()
       for (let member of members) {
         if (!member.value.user.userId.endsWith(userIdEnding)) {
-          ids.add(follow.value.user.userId)
+          ids.add(member.value.user.userId)
         }
       }
     }

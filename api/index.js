@@ -18,13 +18,13 @@ export function setup (wsServer, opts) {
     })
   }
 
-  accounts.setup(wsServer)
-  communities.setup(wsServer)
-  if (opts.debugMode) debug.setup(wsServer)
-  follows.setup(wsServer)
-  posts.setup(wsServer)
-  profiles.setup(wsServer)
-  notifications.setup(wsServer)
-  users.setup(wsServer)
-  votes.setup(wsServer)
+  accounts.setup(wsServer, opts)
+  communities.setup(wsServer, opts)
+  if (opts.debugMode) debug.setup(wsServer, opts)
+  follows.setup(wsServer, opts)
+  posts.setup(wsServer, opts)
+  profiles.setup(wsServer, opts)
+  notifications.setup(wsServer, opts)
+  users.setup(wsServer, opts)
+  votes.setup(wsServer, opts)
 }
