@@ -339,7 +339,6 @@ async function loadDbByType (userId, dbUrl) {
   })
   await bee.ready()
   client.replicate(bee.feed)
-  await bee.feed.update({ifAvailable: false}).catch(e => undefined)
 
   const dbDesc = await bee.get('_db')
   if (!dbDesc) throw new Error('Failed to load database description')
