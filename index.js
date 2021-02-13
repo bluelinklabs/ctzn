@@ -225,8 +225,8 @@ function json404 (res, e) {
 }
 
 function getListOpts (req) {
-  const opts = {limit: 10}
-  if (req.query.limit) opts.limit = Math.max(Math.min(req.query.limit, 100), 0)
+  const opts = {}
+  if (req.query.limit) opts.limit = req.query.limit
   if (req.query.lt) opts.lt = req.query.lt
   if (req.query.lte) opts.lte = req.query.lte
   if (req.query.gt) opts.gt = req.query.gt
