@@ -2,6 +2,7 @@ import * as http from 'http'
 import express from 'express'
 import { Server as WebSocketServer } from 'rpc-websockets'
 import cors from 'cors'
+import { Config } from './lib/config.js'
 import * as db from './db/index.js'
 import * as api from './api/index.js'
 import * as perf from './lib/perf.js'
@@ -16,15 +17,16 @@ const DEFAULT_COMMUNITY_AVATAR_PATH = path.join(path.dirname(fileURLToPath(impor
 
 let app
 
-export async function start ({port, configDir, hyperspaceHost, hyperspaceStorage, simulateHyperspace, domain, debugMode, benchmarkMode}) {
-  configDir = configDir || path.join(os.homedir(), '.ctzn')
-  if (benchmarkMode) {
+export async function start (opts) {
+  opts.configDir = opts.configDir || path.join(os.homedir(), '.ctzn')
+  let config = new Config(opts)
+  if (config.benchmarkMode) {
     perf.enable()
   }
-  if (debugMode && DEBUG_MODE_PORTS_MAP[domain]) {
-    port = DEBUG_MODE_PORTS_MAP[domain]
+  if (config.debugMode && DEBUG_MODE_PORTS_MAP[config.domain]) {
+    config.overrides.port = DEBUG_MODE_PORTS_MAP[config.domain]
   }
-  setOrigin(`http://${domain || 'localhost'}:${port}`)
+  setOrigin(`http://${config.domain || 'localhost'}:${config.port}`)
 
   app = express()
   app.set('views', path.join(path.dirname(fileURLToPath(import.meta.url)), 'views'))
@@ -187,7 +189,7 @@ export async function start ({port, configDir, hyperspaceHost, hyperspaceStorage
   })
 
   const wsServer = new WebSocketServer({noServer: true})
-  api.setup(wsServer, {debugMode})
+  api.setup(wsServer, config)
 
   const server = new http.Server(app)
   server.on('upgrade', (request, socket, head) => {
@@ -195,11 +197,11 @@ export async function start ({port, configDir, hyperspaceHost, hyperspaceStorage
       wsServer.wss.emit('connection', socket, request)
     })
   })
-  server.listen(port, () => {
-    console.log(`CTZN server listening at http://localhost:${port}`)
+  server.listen(config.port, () => {
+    console.log(`CTZN server listening at http://localhost:${config.port}`)
   })
 
-  await db.setup({configDir, hyperspaceHost, hyperspaceStorage, simulateHyperspace})
+  await db.setup(config)
 
   // process.on('SIGINT', close)
   // process.on('SIGTERM', close)

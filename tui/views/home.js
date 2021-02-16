@@ -23,7 +23,7 @@ export class HomeView extends BaseView {
     const {screen} = this
     this.isOnline = false
     this.logTails = []
-    this.config = new Config(this.globals.configDir)
+    this.config = new Config({configDir: this.globals.configDir})
 
     this.menu = blessed.text({
       top: '0%+1',
