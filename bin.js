@@ -5,6 +5,7 @@ import * as db from './db/index.js'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
 import * as fs from 'fs'
+import * as tui from './tui/index.js'
 
 const PACKAGE_JSON_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'package.json')
 
@@ -118,10 +119,14 @@ const match = subcommand({
     }
   ],
   root: {
-    command: () => {
+    command: (args) => {
       const packageJson = fs.readFileSync(PACKAGE_JSON_PATH, 'utf8')
       const pkg = JSON.parse(packageJson)
-      console.log('CTZN', pkg.version)
+      if (args.v || args.version) {
+        console.log('CTZN', pkg.version)
+      } else {
+        tui.start({pkg})
+      }
     }
   }
 })
