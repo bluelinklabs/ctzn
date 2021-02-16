@@ -38,6 +38,10 @@ export class HomeView extends BaseView {
     this.menu.key(['r'], () => this.onRestartServer())
     this.menu.key(['k'], () => this.onStopServer())
     this.menu.key(['c'], () => this.onConfigure())
+    this.menu.key(['l'], () => this.screen.spawn('less', [OUT_LOG_PATH]))
+    this.menu.key(['e'], () => this.screen.spawn('less', [ERR_LOG_PATH]))
+    this.menu.key(['up'], () => { this.log.scroll(-20); this.screen.render() })
+    this.menu.key(['down'], () => { this.log.scroll(20); this.screen.render() })
     this.menu.focus()
     screen.append(this.menu)
 
@@ -64,6 +68,16 @@ export class HomeView extends BaseView {
       content: 'Server log',
       style: {bold: true}
     }))
+    screen.append(blessed.text({
+      top: 6,
+      left: '100%-35',
+      content: '(l) Open log'
+    }))
+    screen.append(blessed.text({
+      top: 6,
+      left: '100%-20',
+      content: '(e) Open err log'
+    }))
     
     screen.render()
     this.updateStatus()
@@ -77,10 +91,27 @@ export class HomeView extends BaseView {
   tryTailLogs () {
     if (this.logTails.length) return
     try {
-      this.logTails.push(new tail.Tail(OUT_LOG_PATH, {nLines: 20}))
-      this.logTails.push(new tail.Tail(ERR_LOG_PATH, {nLines: 20}))
-      this.logTails[0].on('line', line => this.log.log(line))
-      this.logTails[1].on('line', line => this.log.log(`{red-fg}${line}{/}`))
+      this.logTails.push(new tail.Tail(ERR_LOG_PATH, {nLines: 10}))
+      let firstErr = true
+      this.logTails[0].on('line', line => {
+        if (firstErr) {
+          this.log.log('')
+          this.log.log('{inverse}Last 10 stderr lines{/}')
+          firstErr = false
+        }
+        this.log.log(`{red-fg}${line}{/}`)
+      })
+
+      this.logTails.push(new tail.Tail(OUT_LOG_PATH, {nLines: 10}))
+      let firstOut = true
+      this.logTails[1].on('line', line => {
+        if (firstOut) {
+          this.log.log('')
+          this.log.log('{inverse}Last 10 stdout lines{/}')
+          firstOut = false
+        }
+        this.log.log(line)
+      })
     } catch (e) {
       this.untailLogs()
     }
@@ -230,7 +261,7 @@ export class HomeView extends BaseView {
     this.log.log('{inverse} Starting server... {/inverse}')
     pm2.connect(err => {
       if (err) return this.log.log(`{red-fg}${err.toString()}{/}`)
-      pm2.start({name: 'ctzn', script: BINJS_PATH, args: ['start', '--configDir', this.config.configDir]}, err => {
+      pm2.start({name: 'ctzn', script: BINJS_PATH, args: ['start', '--configDir', this.config.configDir], log_date_format : 'YYYY-MM-DD HH:mm Z'}, err => {
         if (err) return this.log.log(`{red-fg}${err.toString()}{/}`)
         pm2.disconnect()
         this.updateStatus()
