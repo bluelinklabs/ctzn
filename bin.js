@@ -17,7 +17,6 @@ const match = subcommand({
       name: 'start',
       command: args => {
         start({
-          debugMode: true,
           port: args.port || 3000,
           domain: args.domain,
           configDir: args.configDir,
