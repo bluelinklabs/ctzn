@@ -1,9 +1,12 @@
 import blessed from 'blessed'
+import { Client as WebSocketClient } from 'rpc-websockets'
+import { Config } from '../../lib/config.js'
 
 export class BaseView {
   constructor (screen, globals) {
     this.screen = screen
     this.globals = globals
+    this.config = new Config({configDir: this.globals.configDir})
     this.resetScreen()
     this.setup()
   }
@@ -46,6 +49,17 @@ export class BaseView {
 
   teardown () {
     // override me
+  }
+
+  async connectLoopback () {
+    const ws = new WebSocketClient(`ws://localhost:${this.config.port}`)
+    await new Promise((resolve, reject) => {
+      ws.once('open', resolve)
+      ws.once('error', reject)
+      ws.once('close', reject)
+    })
+    await ws.call('accounts.login', [{username: 'loopback', password: this.config.getLocalAuthToken()}])
+    return ws
   }
 
   async ask (question) {

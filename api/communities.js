@@ -38,7 +38,7 @@ const userInfoParam = createValidator({
   }
 })
 
-export function setup (wsServer, serverOpts) {
+export function setup (wsServer, config) {
   wsServer.register('communities.create', async ([info], client) => {
     if (!client?.auth) throw new Error('Must be logged in')
 
@@ -172,7 +172,7 @@ export function setup (wsServer, serverOpts) {
       throw new Error('Community not hosted here')
     }
 
-    const clientDomain = await reverseDns(client, (serverOpts.debugMode) ? () => {
+    const clientDomain = await reverseDns(client, (config.debugMode) ? () => {
       return parseUserId(opts.user.userId).domain
     } : undefined)
     if (!opts.user.userId.endsWith(`@${clientDomain}`)) {
@@ -230,7 +230,7 @@ export function setup (wsServer, serverOpts) {
       throw new Error('Community not hosted here')
     }
 
-    const clientDomain = await reverseDns(client, (serverOpts.debugMode) ? () => {
+    const clientDomain = await reverseDns(client, (config.debugMode) ? () => {
       return parseUserId(opts.user.userId).domain
     } : undefined)
     if (!opts.user.userId.endsWith(`@${clientDomain}`)) {

@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { publicServerDb, privateServerDb, createUser } from '../db/index.js'
 import { constructUserUrl, constructUserId } from '../lib/strings.js'
 import { verifyPassword } from '../lib/crypto.js'
+import ip from 'ip'
 
 const registerParam = createValidator({
   type: 'object',
@@ -26,7 +27,7 @@ const loginParam = createValidator({
   }
 })
 
-export function setup (wsServer) {
+export function setup (wsServer, config) {
   wsServer.register('accounts.whoami', async (params, client) => {
     if (client.auth) {
       return {
@@ -67,6 +68,17 @@ export function setup (wsServer) {
   wsServer.register('accounts.login', async (params, client) => {
     loginParam.assert(params[0])
     let {username, password} = params[0]
+
+    if (username === 'loopback' && ip.isPrivate(client._socket.remoteAddress)) {
+      if (password === config.getLocalAuthToken()) {
+        client.auth = {
+          sessionId: 'loopback',
+          userId: 'loopback@localhost',
+          username: 'loopback',
+        }
+        return true
+      }
+    }
 
     const accountRecord = await privateServerDb.accounts.get(username)
     if (!accountRecord || !(await verifyPassword(password, accountRecord.value.hashedPassword))) {

@@ -5,7 +5,6 @@ import { fileURLToPath } from 'url'
 import * as os from 'os'
 import * as tail from 'tail'
 import { BaseView } from './base.js'
-import { Config } from '../../lib/config.js'
 import fetch from 'node-fetch'
 import pm2 from 'pm2'
 
@@ -23,7 +22,6 @@ export class HomeView extends BaseView {
     const {screen} = this
     this.isOnline = false
     this.logTails = []
-    this.config = new Config({configDir: this.globals.configDir})
 
     this.menu = blessed.text({
       top: '0%+1',
@@ -31,7 +29,7 @@ export class HomeView extends BaseView {
       width: '100%',
       height: '0%+1',
       tags: true,
-      content: '(s) Start Server  (r) Restart Server  (k) Stop Server  (c) Configure',
+      content: '[s] Start Server  [r] Restart Server  [k] Stop Server  [c] Configure',
       style: {bg: 'black', fg: 'green'}
     })
     this.menu.key(['s'], () => this.onStartServer())
@@ -71,12 +69,12 @@ export class HomeView extends BaseView {
     screen.append(blessed.text({
       top: 6,
       left: '100%-35',
-      content: '(l) Open log'
+      content: '[l] View log'
     }))
     screen.append(blessed.text({
       top: 6,
       left: '100%-20',
-      content: '(e) Open err log'
+      content: '[e] View err log'
     }))
     
     screen.render()
