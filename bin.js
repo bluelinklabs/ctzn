@@ -17,7 +17,7 @@ const match = subcommand({
       name: 'start',
       command: args => {
         start({
-          port: args.port || 3000,
+          port: args.port,
           domain: args.domain,
           configDir: args.configDir,
           hyperspaceHost: args.hyperspaceHost,
