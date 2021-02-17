@@ -4,6 +4,9 @@ import { BaseView } from './base.js'
 
 const FETCH_LATEST_INTERVAL = 2e3
 
+const IS_UNREACHABLE = db => !db.isPrivate && !db.writable && db.peerCount === 0
+const HAS_ISSUE = db => IS_UNREACHABLE(db)
+
 export class HyperspaceView extends BaseView {
   async setup () {
     const {screen} = this
@@ -24,17 +27,20 @@ export class HyperspaceView extends BaseView {
 
     this.selection = 'overview'
     this.databases = []
+    this.dbsListed = []
 
-    this.listing = contrib.tree({
+    this.listing = blessed.listtable({
       top: 1,
       left: 0,
       width: '100%',
       height: '50%',
       tags: true,
-      template: {
-        lines: true,
-        extend: ' ',
-        retract: ' '
+      interactive: true,
+      keys: true,
+      align: 'left',
+      style: {
+        header: {fg: 'black', bg: 'white'},
+        cell: {selected: {bg: 'blue', fg: 'white'}}
       },
       border: {type: 'line'}
     })
@@ -46,16 +52,15 @@ export class HyperspaceView extends BaseView {
       style: {bold: true}
     }))
 
-    this.infopane = blessed.text({
+    this.infopane = blessed.box({
       top: '50%',
       left: 0,
       width: '100%',
       height: '50%',
       tags: true,
-      border: {type: 'line'}
+      // border: {type: 'line'}
     })
     screen.append(this.infopane)
-
 
     // HACK
     // fix some spacing behaviors in blessed-contrib to take the full space possible
@@ -67,11 +72,9 @@ export class HyperspaceView extends BaseView {
       blessed.Box.prototype.render.call(this)
     }
     
-    this.listing.on('select', (node) => {
-      if (node.id) {
-        this.selection = node.id
-        this.fetchLatest()
-      }
+    this.listing.on('select', (node, index) => {
+      this.selection = this.dbsListed[index - 1].key
+      this.fetchLatest()
     })
     
     this.listing.focus()
@@ -87,73 +90,172 @@ export class HyperspaceView extends BaseView {
 
   async fetchLatest () {
     this.databases = await this.api.call('server.listDatabases', []).catch(e => [])
-    const communityDatabases = this.databases.filter(db => db.dbType === 'ctzn.network/public-community-db')
-    const publicCitizenDatabases = this.databases.filter(db => db.dbType === 'ctzn.network/public-citizen-db')
-
-    const isExtended = (key) => this.listing.data?.children?.[key].extended
-    const toItem = db => {
-      return {id: db.key, name: db.userId}
-    }
-    this.listing.setData({
-      extended: true,
-      children: {
-        'Overview': {id: 'overview'},
-        'Server': {id: 'server'},
-        community: {
-          name: `{bold}Community (${communityDatabases.length}){/}`,
-          extended: isExtended('community'),
-          children: communityDatabases.map(toItem)
-        },
-        citizen: {
-          name: `{bold}Citizen (${publicCitizenDatabases.length}){/}`,
-          extended: isExtended('citizen'),
-          children: publicCitizenDatabases.map(toItem)
-        }
-      }
-    })
+    this.dbsListed = this.databases
+      .filter(db => ['ctzn.network/public-server-db', 'ctzn.network/public-citizen-db', 'ctzn.network/public-community-db'].includes(db.dbType))
+      .sort((a, b) => {
+        if (!a.userId) return -1
+        if (!b.userId) return 1
+        return a.userId.localeCompare(b.userId)
+      })
+    const selected = this.listing.selected
+    this.listing.setData([
+      ['Name', 'Peers', 'Writable', 'Status'],
+      ...this.dbsListed.map(db => ([
+        db.userId || 'Server',
+        db.peerCount,
+        db.writable ? 'Yes' : 'No',
+        HAS_ISSUE(db) ? '{red-fg}⚠{/}' : '{green-fg}✔{/}'
+      ]))
+    ])
+    if (selected) this.listing.select(selected)
     this.updateInfoPane()
     this.screen.render()
   }
 
   updateInfoPane () {
-    let lines = []
+    for (let child of this.infopane.children.slice()) {
+      child.detach()
+    }
 
-    const dbInfo = (pub, priv) => {
-      lines.push(`{bold}Public DB:{/} ${pub.key} (${pub.writable ? 'Writable' : 'Read-only'})`)
-      lines.push(`- Peers: ${pub.peerCount} ${pub.isPrivate ? '(Is private)' : ''}`)
-      if (pub.blobs) {
-        lines.push(`{bold}Public Blobs:{/} ${pub.blobs.key} (${pub.blobs.writable ? 'Writable' : 'Read-only'})`)
-        lines.push(`- Peers: ${pub.blobs.peerCount} ${pub.blobs.isPrivate ? '(Is private)' : ''}`)
+    const oneRow = (top, a) => {
+      this.infopane.append(blessed.text({
+        left: 0,
+        top,
+        width: '100%',
+        height: 3,
+        border: {type: 'line'},
+        tags: true,
+        content: a
+      }))
+    }
+    const fourRow = (top, a, b, c, d) => {
+      this.infopane.append(blessed.text({
+        left: 0,
+        top,
+        width: '25%+1',
+        height: 3,
+        border: {type: 'line'},
+        tags: true,
+        content: a
+      }))
+      if (b) {
+        this.infopane.append(blessed.text({
+          left: '25%',
+          top,
+          width: '25%+1',
+          height: 3,
+          border: {type: 'line'},
+          tags: true,
+          content: b
+        }))
       }
-      if (priv) {
-        lines.push(`{bold}Private DB:{/} ${priv.key} (${priv.writable ? 'Writable' : 'Read-only'})`)
-        lines.push(`- Peers: ${priv.peerCount} ${priv.isPrivate ? '(Is private)' : ''}`)
-        if (priv.blobs) {
-          lines.push(`{bold}Public Blobs:{/} ${priv.blobs.key} (${priv.blobs.writable ? 'Writable' : 'Read-only'})`)
-          lines.push(`- Peers: ${priv.blobs.peerCount} ${priv.blobs.isPrivate ? '(Is private)' : ''}`)
-        }
+      if (c) {
+        this.infopane.append(blessed.text({
+          left: '50%',
+          top,
+          width: '25%+1',
+          height: 3,
+          border: {type: 'line'},
+          tags: true,
+          content: c
+        }))
+      }
+      if (d) {
+        this.infopane.append(blessed.text({
+          left: '75%',
+          top,
+          width: '25%',
+          height: 3,
+          border: {type: 'line'},
+          tags: true,
+          content: d
+        }))
       }
     }
 
     if (this.selection === 'overview') {
-      lines.push('{inverse} Overview {/}')
-      lines.push(`- {bold}${this.databases.length}{/} databases are active`)
-      lines.push(`- {bold}${this.databases.filter(db => db.writable).length}{/} are writable, {bold}${this.databases.filter(db => !db.writable).length}{/} are readonly`)
-      lines.push(`- {bold}${this.databases.filter(db => db.peerCount > 0).length}/${this.databases.filter(db => !db.isPrivate).length}{/} public DBs have peers`)
-    } else if (this.selection === 'server') {
-      let pub = this.databases.find(db => db.dbType === 'ctzn.network/public-server-db')
-      let priv = this.databases.find(db => db.dbType === 'ctzn.network/private-server-db')
-      lines.push(`{inverse} Server {/}`)
-      dbInfo(pub, priv)
+      fourRow(0,
+        ` {bold}${this.databases.length}{/} DBs active`,
+        ` {bold}${this.databases.filter(db => db.writable).length}{/} writable`,
+        ` {bold}${this.databases.filter(db => !db.writable).length}{/} readonly`,
+        ` {bold}${this.databases.filter(db => !db.isPrivate).length}{/} public`
+      )
+
+      let issues = []
+      let unreachableDbs = this.databases.filter(IS_UNREACHABLE)
+      if (unreachableDbs.length) {
+        issues.push(` {red-fg}Issue: ${unreachableDbs.length} external database${unreachableDbs.length > 1 ? 's' : ''} are currently unreachable{/}`)
+      }
+      this.infopane.append(blessed.text({
+        left: 0,
+        top: 2,
+        width: '100%',
+        height: '100%-2',
+        border: {type: 'line'},
+        tags: true,
+        content: issues.length ? issues.join('\n') : ' No issues'
+      }))
     } else {
       let pub = this.databases.find(db => db.key === this.selection)
       let priv = undefined
       if (pub.dbType === 'ctzn.network/public-citizen-db') {
         priv = this.databases.find(db => db.userId === pub.userId && db.dbType === 'ctzn.network/private-citizen-db')
+      } else if (pub.dbType === 'ctzn.network/public-server-db') {
+        priv = this.databases.find(db => db.dbType === 'ctzn.network/private-server-db')
       }
-      lines.push(`{inverse} ${pub.userId} {/}`)
-      dbInfo(pub, priv)
+
+      this.infopane.append(blessed.text({
+        left: 0,
+        top: 0,
+        width: '100%',
+        height: 3,
+        style: {bold: true},
+        content: ` ${pub.userId || 'Server'} `,
+        border: {type: 'line'}
+      }))
+      let top = 2
+      fourRow(top,
+        ` {bold}Public DB{/}`,
+        ` ${pub.writable ? 'Writable' : 'Read-only'}`,
+        ` ${pub.isPrivate ? 'Is private' : `Peers: ${pub.peerCount}`}`,
+        IS_UNREACHABLE(pub) ? ' {red-fg}No reachable peers{/}' : ' {green-fg}No issues{/}'
+      )
+      top += 2
+      oneRow(top, ` Key: ${pub.key}`)
+      top += 2
+      if (pub.blobs) {
+        fourRow(top,
+          ` {bold}Public Blobs{/}`,
+          ` ${pub.blobs.writable ? 'Writable' : 'Read-only'}`,
+          ` ${pub.blobs.isPrivate ? 'Is private' : `Peers: ${pub.blobs.peerCount}`}`,
+          IS_UNREACHABLE(pub.blobs) ? ' {red-fg}No reachable peers{/}' : ' {green-fg}No issues{/}'
+        )
+        top += 2
+        oneRow(top, ` Key: ${pub.blobs.key}`)
+        top += 2
+      }
+      if (priv) {
+        fourRow(top,
+          ` {bold}Private DB{/}`,
+          ` ${priv.writable ? 'Writable' : 'Read-only'}`,
+          ` ${priv.isPrivate ? 'Is private' : `Peers: ${priv.peerCount}`}`,
+          IS_UNREACHABLE(priv) ? ' {red-fg}No reachable peers{/}' : ' {green-fg}No issues{/}'
+        )
+        top += 2
+        oneRow(top, ` Key: ${priv.key}`)
+        top += 2
+        if (priv.blobs) {
+          fourRow(top,
+            ` {bold}Private Blobs{/}`,
+            ` ${priv.blobs.writable ? 'Writable' : 'Read-only'}`,
+            ` ${priv.blobs.isPrivate ? 'Is private' : `Peers: ${priv.blobs.peerCount}`}`,
+            IS_UNREACHABLE(priv.blobs) ? ' {red-fg}No reachable peers{/}' : ' {green-fg}No issues{/}'
+          )
+          top += 2
+          oneRow(top, ` Key: ${priv.blobs.key}`)
+          top += 2
+        }
+      }
     }
-    this.infopane.setContent(lines.join('\n'))
   }
 }
