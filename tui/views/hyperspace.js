@@ -73,8 +73,10 @@ export class HyperspaceView extends BaseView {
     }
     
     this.listing.on('select', (node, index) => {
-      this.selection = this.dbsListed[index - 1].key
-      this.fetchLatest()
+      if (this.selection !== this.dbsListed[index - 1].key) {
+        this.selection = this.dbsListed[index - 1].key
+        this.fetchLatest()
+      }
     })
     
     this.listing.focus()
@@ -86,6 +88,7 @@ export class HyperspaceView extends BaseView {
 
   teardown () {
     clearInterval(this.fetchLatestInterval)
+    if (this.api?.socket) this.api?.close()
   }
 
   async fetchLatest () {

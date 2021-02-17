@@ -9,6 +9,8 @@ import through2 from 'through2'
 import bytes from 'bytes'
 import lock from '../lib/lock.js'
 import * as perf from '../lib/perf.js'
+import * as issues from '../lib/issues.js'
+import { DbIndexingIssue } from '../lib/issues/db-indexing.js'
 
 const BACKGROUND_INDEXING_DELAY = 5e3 // how much time is allowed to pass before globally indexing an update
 const BLOB_CHUNK_SIZE = bytes('64kb')
@@ -185,11 +187,13 @@ export class BaseHyperbeeDB extends EventEmitter {
             try {
               await indexer.index(changedDb, change)
             } catch (e) {
-              console.error('Failed to index change')
-              console.error(e)
-              console.error('Changed DB:', changedDb.url)
-              console.error('Change:', change)
-              console.error('Indexer:', indexer.schemaId)
+              issues.add(new DbIndexingIssue({
+                error: e,
+                changedDb,
+                change,
+                indexingDb: this,
+                indexer
+              }))
               break
             }
           }

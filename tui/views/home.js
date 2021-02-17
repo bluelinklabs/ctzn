@@ -22,6 +22,8 @@ export class HomeView extends BaseView {
     const {screen} = this
     this.isOnline = false
     this.logTails = []
+    this.numIssues = 0
+    this.api = undefined
 
     this.status = blessed.text({
       top: 1,
@@ -46,7 +48,7 @@ export class HomeView extends BaseView {
       left: 2,
       height: 1,
       tags: true,
-      content: '{bold}[s]{/} Start Server  {bold}[r]{/} Restart Server  {bold}[k]{/} Stop Server  {bold}[c]{/} Configure'
+      content: '{green-fg}{bold}[s]{/} {green-fg}Start Server{/}  {green-fg}{bold}[r]{/} {green-fg}Restart Server{/}  {green-fg}{bold}[k]{/} {green-fg}Stop Server{/}  {green-fg}{bold}[c]{/} {green-fg}Configure{/}'
     })
     this.menu.key(['s'], () => this.onStartServer())
     this.menu.key(['r'], () => this.onRestartServer())
@@ -94,6 +96,7 @@ export class HomeView extends BaseView {
 
   teardown () {
     clearInterval(this.updateStatusInterval)
+    if (this.api?.socket) this.api?.close()
   }
 
   tryTailLogs () {
@@ -142,16 +145,30 @@ export class HomeView extends BaseView {
       this.isOnline = false
     }
 
+    if (this.isOnline && !this.api) {
+      this.api = await this.connectLoopback().catch(e => undefined)
+    } else if (!this.isOnline && this.api?.socket) {
+      this.api?.close()
+      this.api = undefined
+    }
+    if (this.api) {
+      this.numIssues = (await this.api.call('server.listIssues', []).catch(e => [])).length
+    }
+
     this.status.setContent(this.genStatusContent())
     this.screen.render()
   }
 
   genStatusContent () {
+    let line1 = this.config.domain
+      ? `${this.isOnline ? '{bold}{green-fg}Online{/}' : '{bold}{red-fg}Offline{/}'} (${this.config.domain}:${this.config.port})`
+      : `${this.isOnline ? '{bold}{green-fg}Online{/}' : '{bold}{red-fg}Offline{/}'} {red-bg}{black-fg} Configure your server to get started (press c) {/}`
+    if (this.isOnline && this.numIssues > 0) {
+      line1 += ` {bold}{yellow-fg}Issues: ${this.numIssues}{/} {gray-fg}Press [F3] to review issues{/}`
+    }
     let lines = [
-      this.config.domain
-        ? `${this.isOnline ? '{bold}{green-fg}Online{/}' : '{bold}{red-fg}Offline{/}'} (${this.config.domain}:${this.config.port})`
-        : `${this.isOnline ? '{bold}{green-fg}Online{/}' : '{bold}{red-fg}Offline{/}'} {red-bg}{black-fg} Configure your server to get started (press c) {/}`,
-      `Config dir: ${this.config.configDir}`
+      line1,
+      `Config dir: ${this.config.configDir} `
     ]
     return lines.join('\n')
   }

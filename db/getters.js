@@ -101,7 +101,7 @@ async function fetchIndexedPosts (posts, userIdxId = undefined, {includeReplyCou
   return postEntries.filter(Boolean)
 }
 
-import { inspect } from 'util'
+
 function postEntriesToThread (postEntries) {
   const postEntriesByUrl = {}
   postEntries.forEach(postEntry => { postEntriesByUrl[postEntry.url] = postEntry })

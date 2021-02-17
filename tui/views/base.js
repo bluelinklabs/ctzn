@@ -22,7 +22,7 @@ export class BaseView {
 
   _addCommon () {
     let content = `CTZN ${this.globals.pkg.version} `
-    const items = ['Home', 'Hyperspace']
+    const items = ['Home', 'Hyperspace', 'Issues']
     for (let i = 0; i < items.length; i++) {
       let highlight = this.constructor.name === `${items[i]}View` ? '{inverse}' : ''
       content += `${highlight} {bold}F${i+1}{/}${highlight} ${items[i]} {/}`
@@ -67,8 +67,8 @@ export class BaseView {
     const prompt = blessed.question({
       top: 'center',
       left: 'center',
-      width: '0%+' + width,
-      height: '0%+4',
+      width: width,
+      height: 4,
       border: {
         type: 'line',
         fg: 'green'
@@ -81,16 +81,40 @@ export class BaseView {
     })
     prompt._.okay.style.fg = 'green'
     prompt._.cancel.style.fg = 'green'
-    this.screen.append(prompt)
     this.screen.saveFocus()
+    this.screen.append(prompt)
     return new Promise((resolve, reject) => {
+      prompt.focus()
       prompt.ask(question, (err, res) => {
         prompt.detach()
-        this.screen.restoreFocus()
         this.screen.render()
+        this.screen.restoreFocus()
         if (err) reject(err)
         else resolve(res)
       })
     })
+  }
+
+  async message (content, color = 'green') {
+    let width = Math.max(content.length, 18) + 4
+    const msg = blessed.text({
+      top: 'center',
+      left: 'center',
+      width: width,
+      height: 3,
+      border: {
+        type: 'line',
+        fg: color
+      },
+      tags: true,
+      style: {
+        fg: color,
+        bg: 'black'
+      },
+      content
+    })
+    this.screen.append(msg)
+    await new Promise(r => setTimeout(r, 2e3))
+    msg.detach()
   }
 }

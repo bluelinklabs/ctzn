@@ -13,6 +13,9 @@ import { HYPER_KEY, hyperUrlToKey, constructUserId, getDomain } from '../lib/str
 import { fetchDbUrl } from '../lib/network.js'
 import { hashPassword } from '../lib/crypto.js'
 import * as perf from '../lib/perf.js'
+import * as issues from '../lib/issues.js'
+import { LoadExternalUserDbIssue } from '../lib/issues/load-external-user-db.js'
+import { UnknownUserTypeIssue } from '../lib/issues/unknown-user-type.js'
 import lock from '../lib/lock.js'
 
 let _configDir = undefined
@@ -183,8 +186,7 @@ async function loadMemberUserDbs () {
       await catchupIndexes(publicUserDb)
       numLoaded++
     } else {
-      console.error('Unknown user type record:', user.type)
-      console.error(user)
+      issues.add(new UnknownUserTypeIssue(user))
     }
   }
   console.log('Loaded', numLoaded, 'user DBs (from', users.length, 'member records)')
@@ -331,6 +333,17 @@ export async function whenAllSynced () {
   }
 }
 
+export function getDbByUrl (url) {
+  if (publicServerDb.url === url) return publicServerDb
+  if (privateServerDb.url === url) return privateServerDb
+  for (let db of publicUserDbs.values()) {
+    if (db.url === url) return db
+  }
+  for (let db of privateUserDbs.values()) {
+    if (db.url === url) return db
+  }
+}
+
 async function loadDbByType (userId, dbUrl) {
   const key = hyperUrlToKey(dbUrl)
   const bee = new Hyperbee(client.corestore().get(key), {
@@ -382,46 +395,48 @@ async function getAllExternalDbIds () {
   return Array.from(ids)
 }
 
+export async function loadExternalDb (userId) {
+  let dbUrl, publicUserDb
+  try {
+    dbUrl = await fetchDbUrl(userId)
+  } catch (e) {
+    issues.add(new LoadExternalUserDbIssue({userId, cause: 'Failed to lookup DNS ID', error: e}))
+    return false
+  }
+  try {
+    publicUserDb = await loadDbByType(userId, dbUrl)
+    await publicUserDb.setup()
+    publicUserDbs.set(userId, publicUserDb)
+    publicUserDb.watch(onDatabaseChange)
+  } catch (e) {
+    issues.add(new LoadExternalUserDbIssue({userId, cause: 'Failed to load the database', error: e}))
+    return false
+  }
+  try {
+    // update our local db index of url -> userid
+    await privateServerDb.userDbIdx.put(dbUrl, {dbUrl, userId})
+  } catch (e) {
+    issues.add(new LoadExternalUserDbIssue({userId, cause: 'Failed to update our DNS-ID -> URL database', error: e}))
+    return false    
+  }
+
+  return true
+}
+
 async function loadOrUnloadExternalUserDbs () {
   // load any new follows
-  let numLoaded = 0
   const externalUserIds = await getAllExternalDbIds()
   for (let userId of externalUserIds) {
     if (!publicUserDbs.has(userId)) {
-      ;(async () => {
-        try {
-          const dbUrl = await fetchDbUrl(userId)
-          let publicUserDb = await loadDbByType(userId, dbUrl)
-          await publicUserDb.setup()
-          publicUserDbs.set(userId, publicUserDb)
-          publicUserDb.watch(onDatabaseChange)
-
-          // update our local db index of url -> userid
-          await privateServerDb.userDbIdx.put(dbUrl, {dbUrl, userId})
-
-          numLoaded++
-        } catch (e) {
-          console.error('Failed to load external user', userId)
-          console.error(e)
-        }
-      })()
+      /* dont await */ loadExternalDb(userId)
     }
   }
-  if (numLoaded) {
-    console.log('Loaded', numLoaded, 'external user databases')
-  }
   // unload any unfollowed
-  let numUnloaded = 0
   for (let userId of publicUserDbs.keys()) {
     if (userId.endsWith(getDomain()) || externalUserIds.includes(userId)) {
       continue
     }
-    console.log('unloading', userId)
     publicUserDbs.get(userId).teardown()
     publicUserDbs.delete(userId)
-    numUnloaded++
-  }
-  if (numUnloaded) {
-    console.log('Unloaded', numUnloaded, 'external user databases')
   }
 }

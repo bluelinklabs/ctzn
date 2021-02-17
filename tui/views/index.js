@@ -1,9 +1,11 @@
 import { HomeView } from './home.js'
 import { HyperspaceView } from './hyperspace.js'
+import { IssuesView } from './issues.js'
 
 const VIEWS = {
   'home': HomeView,
-  'hyperspace': HyperspaceView
+  'hyperspace': HyperspaceView,
+  'issues': IssuesView
 }
 let _screen
 let _globals

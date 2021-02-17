@@ -1,4 +1,5 @@
 import * as db from '../db/index.js'
+import * as issues from '../lib/issues.js'
 
 export function setup (wsServer) {
   wsServer.registerLoopback('server.listDatabases', async ([]) => {
@@ -20,5 +21,27 @@ export function setup (wsServer) {
         peerCount: db.blobs.peers?.length || 0
       } : undefined
     }))
+  })
+
+  wsServer.registerLoopback('server.listIssues', () => {
+    return Object.entries(issues.getAll()).map(([id, entries]) => {
+      return {
+        id,
+        entries: entries.map(entry => ({
+          description: entry.description,
+          cause: entry.cause,
+          error: entry.error,
+          canRecover: entry.canRecover
+        }))
+      }
+    })
+  })
+
+  wsServer.registerLoopback('server.recoverIssue', ([issueId]) => {
+    return issues.recover(issueId)
+  })
+
+  wsServer.registerLoopback('server.dismissIssue', ([issueId, opts]) => {
+    return issues.dismiss(issueId, opts)
   })
 }
