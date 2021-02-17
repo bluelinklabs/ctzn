@@ -23,14 +23,30 @@ export class HomeView extends BaseView {
     this.isOnline = false
     this.logTails = []
 
-    this.menu = blessed.text({
-      top: '0%+1',
-      left: '0%',
+    this.status = blessed.text({
+      top: 1,
+      left: 0,
       width: '100%',
-      height: '0%+1',
+      height: 6,
       tags: true,
-      content: '[s] Start Server  [r] Restart Server  [k] Stop Server  [c] Configure',
-      style: {bg: 'black', fg: 'green'}
+      border: {type: 'line'},
+      padding: {left: 1},
+      content: 'Loading...'
+    })
+    screen.append(this.status)
+    screen.append(blessed.text({
+      top: 1,
+      left: 3,
+      content: 'Status',
+      style: {bold: true}
+    }))
+
+    this.menu = blessed.text({
+      top: 5,
+      left: 2,
+      height: 1,
+      tags: true,
+      content: '{bold}[s]{/} Start Server  {bold}[r]{/} Restart Server  {bold}[k]{/} Stop Server  {bold}[c]{/} Configure'
     })
     this.menu.key(['s'], () => this.onStartServer())
     this.menu.key(['r'], () => this.onRestartServer())
@@ -43,38 +59,32 @@ export class HomeView extends BaseView {
     this.menu.focus()
     screen.append(this.menu)
 
-    this.status = blessed.text({
-      top: 3,
-      left: 2,
-      tags: true,
-      content: 'Loading...'
-    })
-    screen.append(this.status)
-
     this.log = contrib.log({
-      top: 6,
-      left: 1,
-      width: '100%-2',
-      height: '100%-6',
+      top: 7,
+      left: 0,
+      width: '100%',
+      height: '100%-7',
       tags: true,
       border: {type: 'line'}
     })
     screen.append(this.log)
     screen.append(blessed.text({
-      top: 6,
+      top: 7,
       left: 3,
       content: 'Server log',
       style: {bold: true}
     }))
     screen.append(blessed.text({
-      top: 6,
+      top: 7,
       left: '100%-35',
-      content: '[l] View log'
+      content: '[l] View log',
+      style: {fg: 'gray'}
     }))
     screen.append(blessed.text({
-      top: 6,
+      top: 7,
       left: '100%-20',
-      content: '[e] View err log'
+      content: '[e] View err log',
+      style: {fg: 'gray'}
     }))
     
     screen.render()
@@ -94,10 +104,10 @@ export class HomeView extends BaseView {
       this.logTails[0].on('line', line => {
         if (firstErr) {
           this.log.log('')
-          this.log.log('{inverse}Last 10 stderr lines{/}')
+          this.log.log('{underline}Last 10 stderr lines{/}')
           firstErr = false
         }
-        this.log.log(`{red-fg}${line}{/}`)
+        this.log.log(`{gray-fg}${line}{/}`)
       })
 
       this.logTails.push(new tail.Tail(OUT_LOG_PATH, {nLines: 10}))
@@ -105,10 +115,10 @@ export class HomeView extends BaseView {
       this.logTails[1].on('line', line => {
         if (firstOut) {
           this.log.log('')
-          this.log.log('{inverse}Last 10 stdout lines{/}')
+          this.log.log('{underline}Last 10 stdout lines{/}')
           firstOut = false
         }
-        this.log.log(line)
+        this.log.log(`{gray-fg}${line}{/}`)
       })
     } catch (e) {
       this.untailLogs()
@@ -139,11 +149,11 @@ export class HomeView extends BaseView {
   genStatusContent () {
     let lines = [
       this.config.domain
-        ? ['Status', `${this.isOnline ? '{green-fg}Online{/}' : '{red-fg}Offline{/}'} (${this.config.domain}:${this.config.port})`]
-        : ['Status', `${this.isOnline ? '{green-fg}Online{/}' : '{red-fg}Offline{/}'} {red-bg}{black-fg} Configure your server to get started (press c) {/}`],
-      ['Config Dir', this.config.configDir]
+        ? `${this.isOnline ? '{bold}{green-fg}Online{/}' : '{bold}{red-fg}Offline{/}'} (${this.config.domain}:${this.config.port})`
+        : `${this.isOnline ? '{bold}{green-fg}Online{/}' : '{bold}{red-fg}Offline{/}'} {red-bg}{black-fg} Configure your server to get started (press c) {/}`,
+      `Config dir: ${this.config.configDir}`
     ]
-    return lines.map(line => `{bold}${line[0]}:{/} ${line[1]}`).join('\n')
+    return lines.join('\n')
   }
 
   // events
@@ -256,7 +266,8 @@ export class HomeView extends BaseView {
   async onStartServer () {
     var res = await this.ask('Start the server?')
     if (!res) return
-    this.log.log('{inverse} Starting server... {/inverse}')
+    this.log.log('')
+    this.log.log('{underline}Starting server... {/underline}')
     pm2.connect(err => {
       if (err) return this.log.log(`{red-fg}${err.toString()}{/}`)
       pm2.start({name: 'ctzn', script: BINJS_PATH, args: ['start', '--configDir', this.config.configDir], log_date_format : 'YYYY-MM-DD HH:mm Z'}, err => {
@@ -270,7 +281,8 @@ export class HomeView extends BaseView {
   async onRestartServer () {
     var res = await this.ask('Restart the server?')
     if (!res) return
-    this.log.log('{inverse} Restarting server... {/inverse}')
+    this.log.log('')
+    this.log.log('{underline}Restarting server... {/underline}')
     pm2.connect(err => {
       if (err) return this.log.log(`{red-fg}${err.toString()}{/}`)
       pm2.restart('ctzn', err => {
@@ -284,11 +296,13 @@ export class HomeView extends BaseView {
   async onStopServer () {
     var res = await this.ask('Stop the server?')
     if (!res) return
-    this.log.log('{inverse} Stopping server... {/inverse}')
+    this.log.log('')
+    this.log.log('{underline}Stopping server... {/underline}')
     pm2.connect(err => {
       if (err) return this.log.log(`{red-fg}${err.toString()}{/}`)
       pm2.stop('ctzn', err => {
         if (err) return this.log.log(`{red-fg}${err.toString()}{/}`)
+        this.log.log('✔️ Stopped')
         pm2.disconnect()
         this.updateStatus()
       })

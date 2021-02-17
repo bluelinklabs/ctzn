@@ -39,8 +39,8 @@ export class HyperspaceView extends BaseView {
       keys: true,
       align: 'left',
       style: {
-        header: {fg: 'black', bg: 'white'},
-        cell: {selected: {bg: 'blue', fg: 'white'}}
+        header: {underline: true},
+        cell: {selected: {bg: 'white', fg: 'black'}}
       },
       border: {type: 'line'}
     })
@@ -99,8 +99,13 @@ export class HyperspaceView extends BaseView {
       })
     const selected = this.listing.selected
     this.listing.setData([
-      ['Name', 'Peers', 'Writable', 'Status'],
+      ['Type', 'Name', 'Peers', 'Writable', 'Status'],
       ...this.dbsListed.map(db => ([
+        ({
+          'ctzn.network/public-server-db': 'Server',
+          'ctzn.network/public-citizen-db': 'Citizen',
+          'ctzn.network/public-community-db': 'Community'
+        })[db.dbType],
         db.userId || 'Server',
         String(db.peerCount),
         db.writable ? 'Yes' : 'No',
@@ -142,7 +147,7 @@ export class HyperspaceView extends BaseView {
         this.infopane.append(blessed.text({
           left: '25%',
           top,
-          width: '25%+1',
+          width: '25%+2',
           height: 3,
           border: {type: 'line'},
           tags: true,
@@ -153,7 +158,7 @@ export class HyperspaceView extends BaseView {
         this.infopane.append(blessed.text({
           left: '50%',
           top,
-          width: '25%+1',
+          width: '25%+3',
           height: 3,
           border: {type: 'line'},
           tags: true,
@@ -164,7 +169,7 @@ export class HyperspaceView extends BaseView {
         this.infopane.append(blessed.text({
           left: '75%',
           top,
-          width: '25%',
+          width: '25%+1',
           height: 3,
           border: {type: 'line'},
           tags: true,
@@ -204,13 +209,18 @@ export class HyperspaceView extends BaseView {
         priv = this.databases.find(db => db.dbType === 'ctzn.network/private-server-db')
       }
 
+      const typeLabel = ({
+        'ctzn.network/public-server-db': 'Server',
+        'ctzn.network/public-citizen-db': 'Citizen',
+        'ctzn.network/public-community-db': 'Community'
+      })[pub.dbType]
       this.infopane.append(blessed.text({
         left: 0,
         top: 0,
         width: '100%',
         height: 3,
-        style: {bold: true},
-        content: ` ${pub.userId || 'Server'} `,
+        tags: true,
+        content: ` {bold}${pub.userId || 'Server'}{/} ${typeLabel}`,
         border: {type: 'line'}
       }))
       let top = 2
