@@ -102,7 +102,7 @@ export class HyperspaceView extends BaseView {
       ['Name', 'Peers', 'Writable', 'Status'],
       ...this.dbsListed.map(db => ([
         db.userId || 'Server',
-        db.peerCount,
+        String(db.peerCount),
         db.writable ? 'Yes' : 'No',
         HAS_ISSUE(db) ? '{red-fg}⚠{/}' : '{green-fg}✔{/}'
       ]))
