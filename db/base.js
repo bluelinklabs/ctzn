@@ -61,6 +61,10 @@ export class BaseHyperbeeDB extends EventEmitter {
     return this.bee?.feed?.writable
   }
 
+  get peers () {
+    return this.bee?.feed?.peers
+  }
+
   get url () {
     return `hyper://${this.key.toString('hex')}/`
   }
@@ -206,6 +210,14 @@ class Blobs {
     this.kv = undefined
     this.feed = undefined
     this.isPrivate = isPrivate
+  }
+
+  get writable () {
+    return this.feed?.writable
+  }
+
+  get peers () {
+    return this.feed?.peers
   }
 
   async setup () {
