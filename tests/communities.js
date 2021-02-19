@@ -156,7 +156,7 @@ test('roles', async t => {
   t.truthy(role1.value.permissions.find(p => p.permId === 'ctzn.network/perm-community-remove-post'))
   t.truthy(role1.value.permissions.find(p => p.permId === 'ctzn.network/perm-community-edit-profile'))
 
-  await api.communities.assignRoles(folks.userId, alice.userId, ['admin', 'super-moderator'])
+  await api.communities.assignRole(folks.userId, alice.userId, 'super-moderator')
   let member1 = await api.communities.getMember(folks.userId, alice.userId)
   t.deepEqual(member1.value.roles, ['admin', 'super-moderator'])
 
@@ -220,11 +220,11 @@ test('permissions', async t => {
   t.truthy(role1.value.permissions.find(p => p.permId === 'ctzn.network/perm-community-manage-roles'))
   t.truthy(role1.value.permissions.find(p => p.permId === 'ctzn.network/perm-community-assign-roles'))
 
-  await api.communities.assignRoles(folks.userId, bob.userId, ['super-moderator'])
+  await api.communities.assignRole(folks.userId, bob.userId, 'super-moderator')
   let member1 = await api.communities.getMember(folks.userId, bob.userId)
   t.deepEqual(member1.value.roles, ['super-moderator'])
 
-  await api.communities.assignRoles(folks.userId, carla.userId, ['moderator'])
+  await api.communities.assignRole(folks.userId, carla.userId, 'moderator')
   let member2 = await api.communities.getMember(folks.userId, carla.userId)
   t.deepEqual(member2.value.roles, ['moderator'])
 
@@ -242,13 +242,19 @@ test('permissions', async t => {
 
   /// ctzn.network/perm-community-assign-roles
   await alice.login()
-  await api.communities.assignRoles(folks.userId, doug.userId, [])
+  await api.communities.createRole(folks.userId, {roleId: 'debug'})
+  await alice.login()
+  await api.communities.assignRole(folks.userId, doug.userId, 'debug')
+  await api.communities.unassignRole(folks.userId, doug.userId, 'debug')
   await bob.login()
-  await api.communities.assignRoles(folks.userId, doug.userId, [])
+  await api.communities.assignRole(folks.userId, doug.userId, 'debug')
+  await api.communities.unassignRole(folks.userId, doug.userId, 'debug')
   await carla.login()
-  await t.throwsAsync(() => api.communities.assignRoles(folks.userId, doug.userId, []))
+  await t.throwsAsync(() => api.communities.assignRole(folks.userId, doug.userId, 'debug'))
+  await t.throwsAsync(() => api.communities.unassignRole(folks.userId, doug.userId, 'debug'))
   await doug.login()
-  await t.throwsAsync(() => api.communities.assignRoles(folks.userId, doug.userId, []))
+  await t.throwsAsync(() => api.communities.assignRole(folks.userId, doug.userId, 'debug'))
+  await t.throwsAsync(() => api.communities.unassignRole(folks.userId, doug.userId, 'debug'))
 
   /// ctzn.network/perm-community-manage-roles
   await alice.login()
