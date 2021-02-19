@@ -76,6 +76,14 @@ export async function listCommunityMemberships (db, opts) {
   return entries
 }
 
+export async function listCommunityRoles (db, opts) {
+  const entries = await db.roles.list(opts)
+  for (let entry of entries) {
+    entry.url = constructEntryUrl(db.url, 'ctzn.network/community-role', entry.key)
+  }
+  return entries
+}
+
 async function fetchIndexedPosts (posts, userIdxId = undefined, {includeReplyCount} = {includeReplyCount: false}) {
   const authorsCache = {}
   const postEntries = await Promise.all(posts.map(async (post) => {

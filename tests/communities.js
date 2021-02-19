@@ -230,15 +230,15 @@ test('permissions', async t => {
 
   /// ctzn.network/perm-community-edit-profile
   await alice.login()
-  await api.communities.editProfile(folks.userId, {displayName: 'Folks 1'})
+  await api.communities.putProfile(folks.userId, {displayName: 'Folks 1'})
   t.is((await api.profiles.get(folks.userId)).value.displayName, 'Folks 1')
   await bob.login()
-  await api.communities.editProfile(folks.userId, {displayName: 'Folks 2'})
+  await api.communities.putProfile(folks.userId, {displayName: 'Folks 2'})
   t.is((await api.profiles.get(folks.userId)).value.displayName, 'Folks 2')
   await carla.login()
-  await t.throwsAsync(() => api.communities.editProfile(folks.userId, {displayName: 'Folks 3'}))
+  await t.throwsAsync(() => api.communities.putProfile(folks.userId, {displayName: 'Folks 3'}))
   await doug.login()
-  await t.throwsAsync(() => api.communities.editProfile(folks.userId, {displayName: 'Folks 3'}))
+  await t.throwsAsync(() => api.communities.putProfile(folks.userId, {displayName: 'Folks 3'}))
 
   /// ctzn.network/perm-community-assign-roles
   await alice.login()

@@ -2,7 +2,7 @@ import { publicUserDbs, createUser, catchupIndexes } from '../db/index.js'
 import { isHyperUrl, constructEntryUrl, parseUserId } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
 import { fetchUserId, fetchUserInfo, reverseDns, connectWs } from '../lib/network.js'
-import { listCommunityMembers, listCommunityMemberships } from '../db/getters.js'
+import { listCommunityMembers, listCommunityMemberships, listCommunityRoles } from '../db/getters.js'
 
 const createParam = createValidator({
   type: 'object',
@@ -287,7 +287,7 @@ export function setup (wsServer, config) {
     }
   })
 
-  wsServer.register('communities.editProfile', async ([community, profile], client) => {
+  wsServer.register('communities.putProfile', async ([community, profile], client) => {
     const authedUser = await lookupAuthedUser(client)
     const {publicCommunityDb} = await lookupCommunity(community)
     await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-edit-profile')
@@ -343,9 +343,18 @@ export function setup (wsServer, config) {
     }
   })
 
-  wsServer.register('communities.listRoles', async ([community], client) => {
-    const {publicCommunityDb} = await lookupCommunity(community)
-    return publicCommunityDb.roles.list()
+  wsServer.register('communities.listRoles', async ([communityUserId, opts], client) => {
+    if (isHyperUrl(communityUserId)) {
+      communityUserId = await fetchUserId(communityUserId)
+    }
+    const publicCommunityDb = publicUserDbs.get(communityUserId)
+    if (!publicCommunityDb) throw new Error('Community database not found')
+
+    if (opts) listParam.assert(opts)
+    opts = opts || {}
+    opts.limit = opts.limit && typeof opts.limit === 'number' ? opts.limit : 100
+    opts.limit = Math.max(Math.min(opts.limit, 100), 1)
+    return listCommunityRoles(publicCommunityDb, opts)
   })
 
   wsServer.register('communities.getRole', async ([community, roleId], client) => {
