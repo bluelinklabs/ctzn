@@ -33,6 +33,8 @@ A list of all schemas and how they're used.
 
 - `ctzn.network/profile` Record of community info (name, description, etc)
 - `ctzn.network/community-member` Record of member users
+- `ctzn.network/community-role` Role definition in the community
+- `ctzn.network/community-ban` Record of a ban from the community
 - `ctzn.network/index-state` Record of indexing states
 - `ctzn.network/feed-idx` Index of content in the community feed
 - `ctzn.network/follow-idx` Index of follows by community members

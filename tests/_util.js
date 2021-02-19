@@ -318,13 +318,9 @@ class TestCommunity {
   }
 
   async setup () {
-    const {userId} = await this.inst.api.debug.createUser({
-      type: 'community',
+    const {userId} = await this.inst.api.communities.create({
       username: this.username,
-      email: `${this.username}@email.com`,
-      profile: {
-        displayName: this.username.slice(0, 1).toUpperCase() + this.username.slice(1)
-      }
+      displayName: this.username.slice(0, 1).toUpperCase() + this.username.slice(1)
     })
     this.userId = userId
     this.profile = await this.inst.api.profiles.get(userId)

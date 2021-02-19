@@ -1,0 +1,33 @@
+{
+  "id": "ctzn.network/community-role",
+  "title": "Community role",
+  "description": "Definition of a role in a community and of its permissions.",
+  "type": "json",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["roleId", "createdAt"],
+    "additionalProperties": false,
+    "properties": {
+      "roleId": {
+        "type": "string"
+      },
+      "permissions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["permId"],
+          "properties": {
+            "permId": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+}

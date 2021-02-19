@@ -24,6 +24,12 @@
           }
         }
       },
+      "roles": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
       "joinDate": {
         "type": "string",
         "format": "date-time"

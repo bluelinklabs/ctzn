@@ -21,6 +21,8 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
     await this.blobs.setup()
     this.profile = this.getTable('ctzn.network/profile')
     this.members = this.getTable('ctzn.network/community-member')
+    this.roles = this.getTable('ctzn.network/community-role')
+    this.bans = this.getTable('ctzn.network/community-ban')
     this.indexState = this.getTable('ctzn.network/index-state')
     this.feedIdx = this.getTable('ctzn.network/feed-idx')
     this.threadIdx = this.getTable('ctzn.network/thread-idx')
@@ -109,7 +111,7 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
           },
           createdAt: (new Date()).toISOString()
         }
-        this.feedIdx.put(mlts(), value)
+        await this.feedIdx.put(mlts(), value)
       } finally {
         release()
         pend()

@@ -1,0 +1,51 @@
+{
+  "id": "ctzn.network/community-ban",
+  "title": "Community ban",
+  "description": "Record of banning from a community.",
+  "type": "json",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["bannedUser", "createdBy", "createdAt"],
+    "additionalProperties": false,
+    "properties": {
+      "bannedUser": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "additionalProperties": false,
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "createdBy": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "additionalProperties": false,
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "reason": {
+        "type": "string"
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+}
