@@ -2,7 +2,7 @@ import { publicUserDbs, createUser, catchupIndexes } from '../db/index.js'
 import { isHyperUrl, constructEntryUrl, parseUserId } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
 import { fetchUserId, fetchUserInfo, reverseDns, connectWs } from '../lib/network.js'
-import { listCommunityMembers, listCommunityMemberships, listCommunityRoles } from '../db/getters.js'
+import { listCommunityMembers, listCommunityMemberships, listCommunityRoles, listCommunityBans } from '../db/getters.js'
 
 const createParam = createValidator({
   type: 'object',
@@ -458,9 +458,13 @@ export function setup (wsServer, config) {
     await publicCommunityDb.feedIdx.del(feedIndexKey)
   })
 
-  wsServer.register('communities.listBans', async ([community], client) => {
+  wsServer.register('communities.listBans', async ([community, opts], client) => {
     const {publicCommunityDb} = await lookupCommunity(community)
-    return publicCommunityDb.bans.list()
+    if (opts) listParam.assert(opts)
+    opts = opts || {}
+    opts.limit = opts.limit && typeof opts.limit === 'number' ? opts.limit : 100
+    opts.limit = Math.max(Math.min(opts.limit, 100), 1)
+    return listCommunityBans(publicCommunityDb, opts)
   })
 
   wsServer.register('communities.getBan', async ([community, userId], client) => {

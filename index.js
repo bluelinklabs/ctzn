@@ -145,6 +145,15 @@ export async function start (opts) {
     }
   })
 
+  app.get('/ctzn/bans/:username', async (req, res) => {
+    try {
+      const db = getDb(req.params.username)
+      res.status(200).json(await dbGetters.listCommunityBans(db, getListOpts(req)))
+    } catch (e) {
+      json404(res, e)
+    }
+  })
+
   app.get('/ctzn/post/:username([^\/]{3,})/:key', async (req, res) => {
     try {
       const db = getDb(req.params.username)

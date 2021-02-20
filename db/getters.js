@@ -84,6 +84,14 @@ export async function listCommunityRoles (db, opts) {
   return entries
 }
 
+export async function listCommunityBans (db, opts) {
+  const entries = await db.bans.list(opts)
+  for (let entry of entries) {
+    entry.url = constructEntryUrl(db.url, 'ctzn.network/community-ban', entry.key)
+  }
+  return entries
+}
+
 async function fetchIndexedPosts (posts, userIdxId = undefined, {includeReplyCount} = {includeReplyCount: false}) {
   const authorsCache = {}
   const postEntries = await Promise.all(posts.map(async (post) => {
