@@ -7,7 +7,6 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "required": ["subject", "vote", "createdAt"],
-    "additionalProperties": false,
     "properties": {
       "subject": {
         "type": "object",
