@@ -14,11 +14,10 @@ test.before(async () => {
   await sim.createCitizen(inst, 'bob')
   await sim.createCitizen(inst, 'carla')
   await sim.createCitizen(inst, 'dan')
+  await sim.users.alice.login()
   await sim.createCommunity(inst, 'folks')
 
   const {alice, bob, carla, folks} = sim.users
-  await alice.login()
-  await api.communities.join(folks.userId)
   await bob.login()
   await api.communities.join(folks.userId)
   await bob.follow(alice)

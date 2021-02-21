@@ -4,7 +4,7 @@ import { publicUserDbs, privateUserDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 import { fetchAuthor, fetchVotes, fetchReplyCount } from '../db/util.js'
-import { getPost, getThread, listPosts } from '../db/getters.js'
+import { getPost, listPosts } from '../db/getters.js'
 
 const mlts = createMlts()
 
@@ -98,10 +98,6 @@ export function setup (wsServer) {
     if (!publicUserDb) throw new Error('User database not found')
 
     return getPost(publicUserDb, key, userId, client.auth)
-  })
-
-  wsServer.register('posts.getThread', async ([subjectUrl], client) => {
-    return getThread(subjectUrl, client.auth)
   })
 
   wsServer.register('posts.create', async ([post], client) => {

@@ -32,19 +32,19 @@ test('user notifications index', async t => {
   await bob.createPost({text: '2'})
   await carla.createPost({text: '3'})
 
-  await alice.createPost({
+  await alice.createComment({
     reply: {root: bob.posts[0]},
     text: 'Comment 1'
   })
-  await carla.createPost({
+  await carla.createComment({
     reply: {root: bob.posts[0], parent: alice.replies[0]},
     text: 'Reply 1'
   })
-  await bob.createPost({
+  await bob.createComment({
     reply: {root: bob.posts[0], parent: alice.replies[0]},
     text: 'Reply 2'
   })
-  await carla.createPost({
+  await carla.createComment({
     reply: {root: bob.posts[0]},
     text: 'Comment 2'
   })
@@ -54,8 +54,14 @@ test('user notifications index', async t => {
   for (let post of bob.posts) {
     await alice.vote({subject: post, vote: 1})
   }
+  for (let reply of bob.replies) {
+    await alice.vote({subject: reply, vote: 1})
+  }
   for (let post of bob.posts) {
     await carla.vote({subject: post, vote: -1})
+  }
+  for (let reply of bob.replies) {
+    await carla.vote({subject: reply, vote: -1})
   }
 
   await new Promise(r => setTimeout(r, 5e3))
@@ -71,9 +77,9 @@ test('user notifications index', async t => {
     [alice, 'upvote', bob.replies[0]],
     [alice, 'upvote', bob.posts[1]],
     [alice, 'upvote', bob.posts[0]],
-    [carla, 'post', {text: 'Comment 2', reply: {root: bob.posts[0]}}],
-    [carla, 'post', {text: 'Reply 1', reply: {root: bob.posts[0], parent: alice.replies[0]}}],
-    [alice, 'post', {text: 'Comment 1', reply: {root: bob.posts[0]}}],
+    [carla, 'comment', {text: 'Comment 2', reply: {root: bob.posts[0]}}],
+    [carla, 'comment', {text: 'Reply 1', reply: {root: bob.posts[0], parent: alice.replies[0]}}],
+    [alice, 'comment', {text: 'Comment 1', reply: {root: bob.posts[0]}}],
     [carla, 'follow', bob],
     [alice, 'follow', bob],
   ])
@@ -94,6 +100,7 @@ test('user & community notifications index', async t => {
   await sim.createCitizen(inst, 'alice')
   await sim.createCitizen(inst, 'bob')
   await sim.createCitizen(inst, 'carla')
+  await sim.users.alice.login()
   await sim.createCommunity(inst, 'folks')
   const {alice, bob, carla, folks} = sim.users
 
@@ -113,21 +120,21 @@ test('user & community notifications index', async t => {
   await bob.createPost({text: '2', community: {userId: folks.userId, dbUrl: folks.profile.dbUrl}})
   await carla.createPost({text: '3', community: {userId: folks.userId, dbUrl: folks.profile.dbUrl}})
 
-  await alice.createPost({
+  await alice.createComment({
     reply: {root: bob.posts[0]},
     text: 'Comment 1'
   })
-  await carla.createPost({
+  await carla.createComment({
     community: {userId: folks.userId, dbUrl: folks.profile.dbUrl},
     reply: {root: bob.posts[1]},
     text: 'Reply 1'
   })
-  await bob.createPost({
+  await bob.createComment({
     community: {userId: folks.userId, dbUrl: folks.profile.dbUrl},
     reply: {root: bob.posts[1], parent: carla.replies[0]},
     text: 'Reply 2'
   })
-  await carla.createPost({
+  await carla.createComment({
     community: {userId: folks.userId, dbUrl: folks.profile.dbUrl},
     reply: {root: bob.posts[1]},
     text: 'Comment 2'
@@ -138,8 +145,14 @@ test('user & community notifications index', async t => {
   for (let post of bob.posts) {
     await alice.vote({subject: post, vote: 1})
   }
+  for (let reply of bob.replies) {
+    await alice.vote({subject: reply, vote: 1})
+  }
   for (let post of bob.posts) {
     await carla.vote({subject: post, vote: -1})
+  }
+  for (let reply of bob.replies) {
+    await carla.vote({subject: reply, vote: -1})
   }
 
   await new Promise(r => setTimeout(r, 5e3))
@@ -155,9 +168,9 @@ test('user & community notifications index', async t => {
     [alice, 'upvote', bob.replies[0]],
     [alice, 'upvote', bob.posts[1]],
     [alice, 'upvote', bob.posts[0]],
-    [carla, 'post', {text: 'Comment 2', reply: {root: bob.posts[1]}}],
-    [carla, 'post', {text: 'Reply 1', reply: {root: bob.posts[1]}}],
-    [alice, 'post', {text: 'Comment 1', reply: {root: bob.posts[0]}}],
+    [carla, 'comment', {text: 'Comment 2', reply: {root: bob.posts[1]}}],
+    [carla, 'comment', {text: 'Reply 1', reply: {root: bob.posts[1]}}],
+    [alice, 'comment', {text: 'Comment 1', reply: {root: bob.posts[0]}}],
     [carla, 'follow', bob],
     [alice, 'follow', bob],
   ])

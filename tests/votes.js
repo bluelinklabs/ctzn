@@ -13,6 +13,7 @@ test.before(async () => {
   await sim.createCitizen(inst, 'alice')
   await sim.createCitizen(inst, 'bob')
   await sim.createCitizen(inst, 'carla')
+  await sim.users.alice.login()
   await sim.createCommunity(inst, 'folks')
 
   const {alice, bob, carla, folks} = sim.users

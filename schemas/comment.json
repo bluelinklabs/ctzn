@@ -1,0 +1,68 @@
+{
+  "id": "ctzn.network/comment",
+  "title": "Comment",
+  "description": "A comment on some URL",
+  "type": "json",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["text", "reply", "createdAt"],
+    "properties": {
+      "text": {
+        "type": "string"
+      },
+      "community": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": ["root"],
+        "properties": {
+          "root": {
+            "type": "object",
+            "required": ["dbUrl", "authorId"],
+            "properties": {
+              "dbUrl": {
+                "type": "string",
+                "format": "uri"
+              },
+              "authorId": {
+                "type": "string",
+                "pattern": ".+@.+"
+              }
+            }
+          },
+          "parent": {
+            "type": "object",
+            "required": ["dbUrl", "authorId"],
+            "properties": {
+              "dbUrl": {
+                "type": "string",
+                "format": "uri"
+              },
+              "authorId": {
+                "type": "string",
+                "pattern": ".+@.+"
+              }
+            }
+          }
+        }
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+}

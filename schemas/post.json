@@ -1,7 +1,7 @@
 {
   "id": "ctzn.network/post",
   "title": "Post",
-  "description": "A social media feed post",
+  "description": "A top-level post",
   "type": "json",
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -27,40 +27,6 @@
           "userId": {
             "type": "string",
             "pattern": ".+@.+"
-          }
-        }
-      },
-      "reply": {
-        "type": "object",
-        "required": ["root"],
-        "properties": {
-          "root": {
-            "type": "object",
-            "required": ["dbUrl", "authorId"],
-            "properties": {
-              "dbUrl": {
-                "type": "string",
-                "format": "uri"
-              },
-              "authorId": {
-                "type": "string",
-                "pattern": ".+@.+"
-              }
-            }
-          },
-          "parent": {
-            "type": "object",
-            "required": ["dbUrl", "authorId"],
-            "properties": {
-              "dbUrl": {
-                "type": "string",
-                "format": "uri"
-              },
-              "authorId": {
-                "type": "string",
-                "pattern": ".+@.+"
-              }
-            }
           }
         }
       },

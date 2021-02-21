@@ -99,15 +99,20 @@ export class TestFramework {
     }
   }
 
-  testPost (t, entry, desc, reply = undefined) {
+  testPost (t, entry, desc) {
     const user = desc[0]
     t.truthy(entry.url.startsWith(user.profile.dbUrl))
     t.is(entry.author.userId, user.userId)
     t.is(entry.value.text, desc[1])
-    if (reply) {
-      t.is(entry.value.reply.root.dbUrl, reply.root.url)
-      if (reply.parent) t.is(entry.value.reply.parent.dbUrl, reply.parent.url)
-    }
+  }
+
+  testComment (t, entry, desc, reply) {
+    const user = desc[0]
+    t.truthy(entry.url.startsWith(user.profile.dbUrl))
+    t.is(entry.author.userId, user.userId)
+    t.is(entry.value.text, desc[1])
+    t.is(entry.value.reply.root.dbUrl, reply.root.url)
+    if (reply.parent) t.is(entry.value.reply.parent.dbUrl, reply.parent.url)
   }
 
   testThread (t, entries, descs) {
@@ -223,8 +228,8 @@ export class TestFramework {
           t.is(entry.item.subject.dbUrl, desc[2].profile.dbUrl, itemDesc)
           t.is(entry.item.subject.userId, desc[2].userId, itemDesc)
           break
-        case 'post':
-          t.is(schemaId, 'ctzn.network/post', itemDesc)
+        case 'comment':
+          t.is(schemaId, 'ctzn.network/comment', itemDesc)
           t.is(entry.item.text, desc[2].text, itemDesc)
           t.is(entry.item.reply.root.dbUrl, desc[2].reply.root.url, itemDesc)
           if (desc[2].reply.parent) t.is(entry.item.reply.parent.dbUrl, desc[2].reply.parent.url, itemDesc)
@@ -247,12 +252,13 @@ class TestCitizen {
     this.username = username
     this.userId = undefined
     this.posts = []
+    this.comments = []
     this.following = {}
     this.votes = {}
   }
 
   get replies () {
-    return this.posts.filter(p => !!p.value.reply)
+    return this.comments.filter(p => !!p.value.reply)
   }
 
   async setup () {
@@ -273,7 +279,14 @@ class TestCitizen {
     await this.inst.api.accounts.login({username: this.username, password: 'password'})
   }
 
-  async createPost ({text, extendedText, community, reply}) {
+  async createPost ({text, extendedText, community}) {
+    await this.login()
+    const {url} = await this.inst.api.posts.create({text, extendedText, community})
+    this.posts.push(await this.inst.api.posts.get(url))
+    return this.posts[this.posts.length - 1]
+  }
+
+  async createComment ({text, community, reply}) {
     await this.login()
     if (reply) {
       reply.root = {dbUrl: reply.root.url, authorId: reply.root.author.userId}
@@ -281,9 +294,9 @@ class TestCitizen {
         reply.parent = {dbUrl: reply.parent.url, authorId: reply.parent.author.userId}
       }
     }
-    const {url} = await this.inst.api.posts.create({text, extendedText, community, reply})
-    this.posts.push(await this.inst.api.posts.get(url))
-    return this.posts[this.posts.length - 1]
+    const {url} = await this.inst.api.comments.create({text, community, reply})
+    this.comments.push(await this.inst.api.comments.get(url))
+    return this.comments[this.comments.length - 1]
   }
 
   async follow (TestCitizen) {

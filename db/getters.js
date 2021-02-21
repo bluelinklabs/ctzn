@@ -32,14 +32,26 @@ export async function listPosts (db, opts, authorId, auth = undefined) {
   }
 }
 
+export async function getComment (db, key, authorId, auth = undefined) {
+  const commentEntry = await db.comments.get(key)
+  if (!commentEntry) {
+    throw new Error('Post not found')
+  }
+  commentEntry.url = constructEntryUrl(db.url, 'ctzn.network/comment', commentEntry.key)
+  commentEntry.author = await fetchAuthor(authorId)
+  commentEntry.votes = await fetchVotes(commentEntry, auth?.userId)
+  commentEntry.replyCount = await fetchReplyCount(commentEntry, auth?.userId)
+  return commentEntry
+}
+
 export async function getThread (subjectUrl, auth = undefined) {
   const subject = await dbGet(subjectUrl)
   if (!subject?.entry) throw new Error('Thread subject not found')
   subject.entry.url = subjectUrl
   subject.entry.author = {userId: subject.db.userId, dbUrl: subject.db.url}
   const replies = await fetchReplies(subject.entry, auth?.userId)
-  const postEntries = await fetchIndexedPosts(replies, auth?.userId)
-  return postEntriesToThread(postEntries)
+  const commentEntries = await fetchIndexedComments(replies, auth?.userId)
+  return commentEntriesToThread(commentEntries)
 }
 
 export async function listFollowers (userId, auth = undefined) {
@@ -117,29 +129,53 @@ async function fetchIndexedPosts (posts, userIdxId = undefined, {includeReplyCou
   return postEntries.filter(Boolean)
 }
 
+async function fetchIndexedComments (comments, userIdxId = undefined, {includeReplyCount} = {includeReplyCount: false}) {
+  const authorsCache = {}
+  const commentEntries = await Promise.all(comments.map(async (post) => {
+    try {
+      const {origin, key} = parseEntryUrl(post.dbUrl)
 
-function postEntriesToThread (postEntries) {
-  const postEntriesByUrl = {}
-  postEntries.forEach(postEntry => { postEntriesByUrl[postEntry.url] = postEntry })
+      const userId = await fetchUserId(origin)
+      const publicUserDb = publicUserDbs.get(userId)
+      if (!publicUserDb) return undefined
 
-  const rootPostEntries = []
-  postEntries.forEach(postEntry => {
-    if (postEntry.value.reply?.parent) {
-      let parent = postEntriesByUrl[postEntry.value.reply.parent.dbUrl]
+      const commentEntry = await publicUserDb.comments.get(key)
+      if (!commentEntry) return undefined
+      commentEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
+      commentEntry.author = await fetchAuthor(userId, authorsCache)
+      commentEntry.votes = await fetchVotes(commentEntry, userIdxId)
+      if (includeReplyCount) commentEntry.replyCount = await fetchReplyCount(commentEntry, userIdxId)
+      return commentEntry
+    } catch (e) {
+      console.log(e)
+      return undefined
+    }
+  }))
+  return commentEntries.filter(Boolean)
+}
+
+function commentEntriesToThread (commentEntries) {
+  const commentEntriesByUrl = {}
+  commentEntries.forEach(commentEntry => { commentEntriesByUrl[commentEntry.url] = commentEntry })
+
+  const rootCommentEntries = []
+  commentEntries.forEach(commentEntry => {
+    if (commentEntry.value.reply?.parent) {
+      let parent = commentEntriesByUrl[commentEntry.value.reply.parent.dbUrl]
       if (!parent) {
-        postEntry.isMissingParent = true
-        rootPostEntries.push(postEntry)
+        commentEntry.isMissingParent = true
+        rootCommentEntries.push(commentEntry)
         return
       }
       if (!parent.replies) {
         parent.replies = []
         parent.replyCount = 0
       }
-      parent.replies.push(postEntry)
+      parent.replies.push(commentEntry)
       parent.replyCount++
     } else {
-      rootPostEntries.push(postEntry)
+      rootCommentEntries.push(commentEntry)
     }
   })
-  return rootPostEntries
+  return rootCommentEntries
 }

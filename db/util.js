@@ -134,8 +134,8 @@ export async function fetchReplies (subject, userIdxId = undefined) {
 }
 
 export async function fetchReplyCount (subject, userIdxId = undefined) {
-  const posts = await fetchReplies(subject, userIdxId)
-  return posts.length
+  const comments = await fetchReplies(subject, userIdxId)
+  return comments.length
 }
 
 async function fetchNotificationsInner (userInfo, {after, before} = {}) {

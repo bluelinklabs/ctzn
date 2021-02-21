@@ -17,6 +17,7 @@ A list of all schemas and how they're used.
 
 - `ctzn.network/profile` Record of user info (name, description, etc)
 - `ctzn.network/post` A single post
+- `ctzn.network/comment` A comment on some item
 - `ctzn.network/vote` A vote up or down on some URL
 - `ctzn.network/follow` Record of following another user
 - `ctzn.network/community-membership` Record of membership in a community
