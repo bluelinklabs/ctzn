@@ -13,6 +13,9 @@
         "minLength": 1,
         "maxLength": 256
       },
+      "extendedText": {
+        "type": "string"
+      },
       "community": {
         "type": "object",
         "required": ["dbUrl", "userId"],

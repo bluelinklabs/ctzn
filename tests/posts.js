@@ -13,6 +13,7 @@ test.before(async () => {
   await sim.createCitizen(inst, 'alice')
   await sim.createCitizen(inst, 'bob')
   await sim.createCitizen(inst, 'carla')
+  await sim.users.alice.login()
   await sim.createCommunity(inst, 'folks')
   await sim.createCommunity(inst, 'ppl')
 
@@ -138,4 +139,12 @@ test('multiple users posting to community', async t => {
     [bob, '2'],
     [carla, '3']
   ])
+})
+
+test('extended text', async t => {
+  const bob = sim.users.bob
+  let post = await bob.createPost({text: 'the limited text', extendedText: 'the unlimited text'})
+  let postRecord = await api.posts.get(post.url)
+  t.is(postRecord.value.text, 'the limited text')
+  t.is(postRecord.value.extendedText, 'the unlimited text')
 })

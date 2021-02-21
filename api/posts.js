@@ -133,7 +133,8 @@ export function setup (wsServer) {
       throw new Error('Post not found')
     }
 
-    postEntry.value.text = post?.text
+    postEntry.value.text = ('text' in post) ? post.text : postEntry.value.text
+    postEntry.value.extendedText = ('extendedText' in post) ? post.extendedText : postEntry.value.extendedText
     await publicUserDb.posts.put(key, postEntry.value)
     await onDatabaseChange(publicUserDb, [privateUserDbs.get(client.auth.userId)])
 

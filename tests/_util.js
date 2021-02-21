@@ -273,7 +273,7 @@ class TestCitizen {
     await this.inst.api.accounts.login({username: this.username, password: 'password'})
   }
 
-  async createPost ({text, community, reply}) {
+  async createPost ({text, extendedText, community, reply}) {
     await this.login()
     if (reply) {
       reply.root = {dbUrl: reply.root.url, authorId: reply.root.author.userId}
@@ -281,8 +281,9 @@ class TestCitizen {
         reply.parent = {dbUrl: reply.parent.url, authorId: reply.parent.author.userId}
       }
     }
-    const {url} = await this.inst.api.posts.create({text, community, reply})
+    const {url} = await this.inst.api.posts.create({text, extendedText, community, reply})
     this.posts.push(await this.inst.api.posts.get(url))
+    return this.posts[this.posts.length - 1]
   }
 
   async follow (TestCitizen) {
