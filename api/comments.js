@@ -11,8 +11,8 @@ export function setup (wsServer) {
   wsServer.register('comments.get', async ([userId, key], client) => {
     if (!key && userId) {
       let parsed = parseEntryUrl(userId)
-      if (parsed.schemaId !== 'ctzn.network/post') {
-        throw new Error('Not a post URL')
+      if (parsed.schemaId !== 'ctzn.network/comment') {
+        throw new Error('Not a comment URL')
       }
       userId = await fetchUserId(parsed.origin)
       key = parsed.key
@@ -43,7 +43,7 @@ export function setup (wsServer) {
     }
     await onDatabaseChange(publicUserDb, indexingDbs)
     
-    const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', key)
+    const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
     return {key, url}
   })
 
@@ -61,7 +61,7 @@ export function setup (wsServer) {
     await publicUserDb.comments.put(key, postEntry.value)
     await onDatabaseChange(publicUserDb, [privateUserDbs.get(client.auth.userId)])
 
-    const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', postEntry.key)
+    const url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', postEntry.key)
     return {key, url}
   })
 
