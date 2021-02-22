@@ -180,6 +180,15 @@ export async function start (opts) {
     }
   })
 
+  app.get('/ctzn/comment/:username([^\/]{3,})/:key', async (req, res) => {
+    try {
+      const db = getDb(req.params.username)
+      res.status(200).json(await dbGetters.getComment(db, req.params.key, usernameToUserId(req.params.username)))
+    } catch (e) {
+      json404(res, e)
+    }
+  })
+
   app.get('/hyper/:username([^\/]{3,})/:schemaNs/:schemaName', async (req, res) => {
     try {
       const db = getDb(req.params.username)
