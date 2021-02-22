@@ -44,4 +44,65 @@ export function setup (wsServer) {
   wsServer.registerLoopback('server.dismissIssue', ([issueId, opts]) => {
     return issues.dismiss(issueId, opts)
   })
+
+  wsServer.registerLoopback('server.listCommunities', async ([]) => {
+    let communityDbs = Array.from(db.publicUserDbs.values()).filter(db => db.dbType === 'ctzn.network/public-community-db')
+    return Promise.all(communityDbs.map(async db => {
+      let profile = await db.profile.get('self')
+      let members = await db.members.list()
+      return {
+        userId: db.userId,
+        displayName: profile?.value?.displayName || '',
+        numMembers: members?.length,
+        admins: members.filter(m => m.value.roles?.includes('admin')).map(m => m.value.user.userId)
+      }
+    }))
+  })
+
+  wsServer.registerLoopback('server.addCommunityAdmin', async ([communityUserId, adminUserId]) => {
+    await updateCommunityMemberRole(communityUserId, adminUserId, memberRecordValue => {
+      memberRecordValue.roles = memberRecordValue.roles || []
+      if (!memberRecordValue.roles.includes('admin')) {
+        memberRecordValue.roles.push('admin')
+      }
+    })
+  })
+
+  wsServer.registerLoopback('server.removeCommunityAdmin', async ([communityUserId, adminUserId]) => {
+    await updateCommunityMemberRole(communityUserId, adminUserId, memberRecordValue => {
+      memberRecordValue.roles = memberRecordValue.roles || []
+      if (memberRecordValue.roles.includes('admin')) {
+        memberRecordValue.roles = memberRecordValue.roles.filter(r => r !== 'admin')
+      }
+    })
+  })
+}
+
+async function updateCommunityMemberRole (communityUserId, memberUserId, fn) {
+  const publicCommunityDb = db.publicUserDbs.get(communityUserId)
+  const publicCitizenDb = db.publicUserDbs.get(memberUserId)
+
+  if (!publicCommunityDb) throw new Error('Community DB not found')
+  if (!publicCitizenDb) throw new Error('Citizen DB not found')
+
+  let memberRecord = await publicCommunityDb.members.get(memberUserId)
+  if (!memberRecord) {
+    // create member and membership records
+    const joinDate = (new Date()).toISOString()
+    const membershipValue = {community: {userId: communityUserId, dbUrl: publicCommunityDb.url}, joinDate}
+    const memberValue = {user: {userId: memberUserId, dbUrl: publicCitizenDb.url}, joinDate}
+
+    fn(memberValue)
+
+    // validate before writing to avoid partial transactions
+    publicCitizenDb.memberships.schema.assertValid(membershipValue)
+    publicCommunityDb.members.schema.assertValid(memberValue)
+
+    await publicCitizenDb.memberships.put(communityUserId, membershipValue)
+    await publicCommunityDb.members.put(memberUserId, memberValue)
+  } else {
+    // update existing record
+    fn(memberRecord.value)
+    await publicCommunityDb.members.put(memberUserId, memberRecord.value)
+  }
 }

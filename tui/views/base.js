@@ -22,7 +22,7 @@ export class BaseView {
 
   _addCommon () {
     let content = `CTZN ${this.globals.pkg.version} `
-    const items = ['Home', 'Hyperspace', 'Issues']
+    const items = ['Home', 'Hyperspace', 'Issues', 'Communities']
     for (let i = 0; i < items.length; i++) {
       let highlight = this.constructor.name === `${items[i]}View` ? '{inverse}' : ''
       content += `${highlight} {bold}F${i+1}{/}${highlight} ${items[i]} {/}`
@@ -86,6 +86,39 @@ export class BaseView {
     return new Promise((resolve, reject) => {
       prompt.focus()
       prompt.ask(question, (err, res) => {
+        prompt.detach()
+        this.screen.render()
+        this.screen.restoreFocus()
+        if (err) reject(err)
+        else resolve(res)
+      })
+    })
+  }
+
+  async prompt (question) {
+    let width = Math.max(question.length, 18) + 4
+    const prompt = blessed.prompt({
+      top: 'center',
+      left: 'center',
+      width: width,
+      height: 8,
+      border: {
+        type: 'line',
+        fg: 'green'
+      },
+      tags: true,
+      style: {
+        fg: 'green',
+        bg: 'black'
+      }
+    })
+    prompt._.okay.style.fg = 'green'
+    prompt._.cancel.style.fg = 'green'
+    this.screen.saveFocus()
+    this.screen.append(prompt)
+    return new Promise((resolve, reject) => {
+      prompt.focus()
+      prompt.input(question, (err, res) => {
         prompt.detach()
         this.screen.render()
         this.screen.restoreFocus()
