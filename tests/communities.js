@@ -346,3 +346,68 @@ test('bans', async t => {
   await bob.login()
   await api.communities.join(folks.userId)
 })
+
+test('post and comment removal', async t => {
+  let sim = new TestFramework()
+  let inst = await createServer()
+  let api = inst.api
+  instances = [inst]
+
+  await sim.createCitizen(inst, 'alice')
+  await sim.createCitizen(inst, 'bob')
+  await sim.users.alice.login()
+  await sim.createCommunity(inst, 'folks')
+  const {alice, bob, folks} = sim.users
+  await bob.login()
+  await api.communities.join(folks.userId)
+
+  await bob.login()
+  await bob.createPost({text: 'Post 1', community: {userId: folks.userId, dbUrl: folks.profile.dbUrl}})
+  await bob.createPost({text: 'Post 2', community: {userId: folks.userId, dbUrl: folks.profile.dbUrl}})
+  await bob.createPost({text: 'Post 3', community: {userId: folks.userId, dbUrl: folks.profile.dbUrl}})
+
+  await bob.createComment({
+    reply: {root: bob.posts[0]},
+    community: {userId: folks.userId, dbUrl: folks.profile.dbUrl},
+    text: 'Test 1'
+  })
+  await bob.createComment({
+    reply: {root: bob.posts[0], parent: bob.comments[0]},
+    community: {userId: folks.userId, dbUrl: folks.profile.dbUrl},
+    text: 'Test 2'
+  })
+  await bob.createComment({
+    reply: {root: bob.posts[0]},
+    community: {userId: folks.userId, dbUrl: folks.profile.dbUrl},
+    text: 'Test 3'
+  })
+
+  await alice.login()
+
+  let posts1 = await api.posts.listUserFeed(folks.userId)
+  sim.testFeed(t, posts1, [
+    [bob, 'Post 1'],
+    [bob, 'Post 2'],
+    [bob, 'Post 3']
+  ])
+  let thread1 = await api.comments.getThread(bob.posts[0].url)
+  sim.testThread(t, thread1, [
+    [bob, 'Test 1', [
+      [bob, 'Test 2']
+    ]],
+    [bob, 'Test 3']
+  ])
+
+  await api.communities.removePost(folks.userId, bob.posts[1].url)
+  let posts2 = await api.posts.listUserFeed(folks.userId)
+  sim.testFeed(t, posts2, [
+    [bob, 'Post 1'],
+    [bob, 'Post 3']
+  ])
+
+  await api.communities.removeComment(folks.userId, bob.posts[0].url, bob.comments[1].url)
+  sim.testThread(t, thread1, [
+    [bob, 'Test 1'],
+    [bob, 'Test 3']
+  ])
+})

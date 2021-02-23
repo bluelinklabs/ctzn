@@ -28,7 +28,7 @@ export async function listPosts (db, opts, authorId, auth = undefined) {
     return entries
   } else if (db.dbType === 'ctzn.network/public-community-db') {
     const entries = await db.feedIdx.list(opts)
-    return fetchIndexedPosts(entries.map(entry => entry.value.item), auth?.userId, {includeReplyCount: true})
+    return fetchIndexedPosts(entries, auth?.userId, {includeReplyCount: true})
   }
 }
 
@@ -104,10 +104,11 @@ export async function listCommunityBans (db, opts) {
   return entries
 }
 
-async function fetchIndexedPosts (posts, userIdxId = undefined, {includeReplyCount} = {includeReplyCount: false}) {
+async function fetchIndexedPosts (postsFeedEntries, userIdxId = undefined, {includeReplyCount} = {includeReplyCount: false}) {
   const authorsCache = {}
-  const postEntries = await Promise.all(posts.map(async (post) => {
+  const postEntries = await Promise.all(postsFeedEntries.map(async (postFeedEntry) => {
     try {
+      const post = postFeedEntry.value.item
       const {origin, key} = parseEntryUrl(post.dbUrl)
 
       const userId = await fetchUserId(origin)

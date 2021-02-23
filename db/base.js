@@ -6,6 +6,7 @@ import Hyperbee from 'hyperbee'
 import pump from 'pump'
 import concat from 'concat-stream'
 import through2 from 'through2'
+import { Writable } from 'stream'
 import bytes from 'bytes'
 import lock from '../lib/lock.js'
 import * as perf from '../lib/perf.js'
@@ -331,6 +332,25 @@ class Table {
           if (err) reject(err)
         }
       )
+    })
+  }
+
+  scanFind (opts, fn) {
+    return new Promise((resolve, reject) => {
+      let found = false
+      const rs = this.createReadStream(opts)
+      rs.on('data', entry => {
+        if (found) return
+        if (fn(entry)) {
+          // TODO fix rs.destroy()
+          // rs.destroy()
+          found = true
+          resolve(entry)
+        }
+      })
+      rs.on('end', () => {
+        if (!found) resolve(undefined)
+      })
     })
   }
 
