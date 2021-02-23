@@ -4,6 +4,10 @@ Permissions are assigned to [community roles](./community-roles.md).
 
 The following permissions are defined:
 
+## `ctzn.network/perm-admin`
+
+Special permission indicating the user is an admin and has access to all permissions.
+
 ## `ctzn.network/perm-community-ban`
 
 A role with this permission can remove, ban, and unban members from a community.
@@ -11,6 +15,10 @@ A role with this permission can remove, ban, and unban members from a community.
 ## `ctzn.network/perm-community-remove-post`
 
 A role with this permission can remove posts from the community's feed index.
+
+## `ctzn.network/perm-community-remove-comment`
+
+A role with this permission can remove comments from the community's feed index.
 
 ## `ctzn.network/perm-community-edit-profile`
 

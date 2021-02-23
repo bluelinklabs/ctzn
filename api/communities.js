@@ -69,6 +69,7 @@ export function setup (wsServer, config) {
       permissions: [
         {permId: 'ctzn.network/perm-community-ban'},
         {permId: 'ctzn.network/perm-community-remove-post'},
+        {permId: 'ctzn.network/perm-community-remove-comment'}
       ],
       createdAt: ts
     })
@@ -451,11 +452,45 @@ export function setup (wsServer, config) {
     }
   })
 
+  wsServer.register('communities.listUserPermissions', async ([community, memberId], client) => {
+    const {publicCommunityDb} = await lookupCommunity(community)
+    const memberRecord = await publicCommunityDb.members.get(memberId)
+    if (!memberRecord) return []
+    if (memberRecord.value.roles?.includes('admin')) {
+      return [{permId: 'ctzn.network/perm-admin'}]
+    }
+    const roleRecords = await Promise.all(memberRecord.value.roles?.map(roleId => publicCommunityDb.roles.get(roleId)) || [])
+    return roleRecords.map(roleRecord => roleRecord.value.permissions || []).flat()
+  })
+
+  wsServer.register('communities.getUserPermission', async ([community, memberId, permId], client) => {
+    const {publicCommunityDb} = await lookupCommunity(community)
+    const memberRecord = await publicCommunityDb.members.get(memberId)
+    if (!memberRecord) return false
+    if (memberRecord.value.roles?.includes('admin')) {
+      return {permId: 'ctzn.network/perm-admin'}
+    }
+    const roleRecords = await Promise.all(memberRecord.value.roles?.map(roleId => publicCommunityDb.roles.get(roleId)) || [])
+    for (let roleRecord of roleRecords) {
+      const perm = roleRecord.value.permissions?.find(p => p.permId === permId)
+      if (perm) return perm
+    }
+    return false
+  })
+
   wsServer.register('communities.removePost', async ([community, feedIndexKey], client) => {
     const authedUser = await lookupAuthedUser(client)
     const {publicCommunityDb} = await lookupCommunity(community)
     await assertUserPermission(publicCommunityDb, authedUser.authedUser.userId, 'ctzn.network/perm-community-remove-post')
     await publicCommunityDb.feedIdx.del(feedIndexKey)
+  })
+
+  wsServer.register('communities.removeComment', async ([community, threadIndexKey], client) => {
+    const authedUser = await lookupAuthedUser(client)
+    const {publicCommunityDb} = await lookupCommunity(community)
+    await assertUserPermission(publicCommunityDb, authedUser.authedUser.userId, 'ctzn.network/perm-community-remove-comment')
+    // TODO
+    // await publicCommunityDb.feedIdx.del(feedIndexKey)
   })
 
   wsServer.register('communities.listBans', async ([community, opts], client) => {

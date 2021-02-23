@@ -134,9 +134,10 @@ test('roles', async t => {
   let roles1 = await api.communities.listRoles(folks.userId)
   t.is(roles1.length, 1)
   t.is(roles1[0].value.roleId, 'moderator')
-  t.is(roles1[0].value.permissions.length, 2)
+  t.is(roles1[0].value.permissions.length, 3)
   t.truthy(roles1[0].value.permissions.find(p => p.permId === 'ctzn.network/perm-community-ban'))
   t.truthy(roles1[0].value.permissions.find(p => p.permId === 'ctzn.network/perm-community-remove-post'))
+  t.truthy(roles1[0].value.permissions.find(p => p.permId === 'ctzn.network/perm-community-remove-comment'))
 
   await alice.login()
   await api.communities.createRole(folks.userId, {
@@ -227,6 +228,33 @@ test('permissions', async t => {
   await api.communities.assignRole(folks.userId, carla.userId, 'moderator')
   let member2 = await api.communities.getMember(folks.userId, carla.userId)
   t.deepEqual(member2.value.roles, ['moderator'])
+
+  let perms1 = await api.communities.listUserPermissions(folks.userId, alice.userId)
+  t.is(perms1.length, 1)
+  t.truthy(perms1.find(p => p.permId === 'ctzn.network/perm-admin'))
+
+  let perms2 = await api.communities.listUserPermissions(folks.userId, bob.userId)
+  t.is(perms2.length, 5)
+  t.truthy(perms2.find(p => p.permId === 'ctzn.network/perm-community-ban'))
+  t.truthy(perms2.find(p => p.permId === 'ctzn.network/perm-community-remove-post'))
+  t.truthy(perms2.find(p => p.permId === 'ctzn.network/perm-community-edit-profile'))
+  t.truthy(perms2.find(p => p.permId === 'ctzn.network/perm-community-manage-roles'))
+  t.truthy(perms2.find(p => p.permId === 'ctzn.network/perm-community-assign-roles'))
+
+  let perms3 = await api.communities.listUserPermissions(folks.userId, carla.userId)
+  t.is(perms3.length, 3)
+  t.truthy(perms3.find(p => p.permId === 'ctzn.network/perm-community-ban'))
+  t.truthy(perms3.find(p => p.permId === 'ctzn.network/perm-community-remove-post'))
+  t.truthy(perms3.find(p => p.permId === 'ctzn.network/perm-community-remove-comment'))
+
+  let perm1 = await api.communities.getUserPermission(folks.userId, alice.userId, 'ctzn.network/perm-community-ban')
+  t.truthy(perm1.permId, 'ctzn.network/perm-admin')
+
+  let perm2 = await api.communities.getUserPermission(folks.userId, carla.userId, 'ctzn.network/perm-community-ban')
+  t.truthy(perm2.permId, 'ctzn.network/perm-community-ban')
+
+  let perm3 = await api.communities.getUserPermission(folks.userId, carla.userId, 'ctzn.network/perm-manage-roles')
+  t.falsy(perm3)
 
   /// ctzn.network/perm-community-edit-profile
   await alice.login()
