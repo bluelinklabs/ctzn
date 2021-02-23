@@ -7,11 +7,14 @@ import * as db from './db/index.js'
 import * as api from './api/index.js'
 import * as perf from './lib/perf.js'
 import * as path from 'path'
+import * as fs from 'fs'
 import { fileURLToPath } from 'url'
 import * as os from 'os'
 import { setOrigin, getDomain, parseAcctUrl, usernameToUserId, constructUserUrl, DEBUG_MODE_PORTS_MAP } from './lib/strings.js'
 import * as dbGetters from './db/getters.js'
 
+const PACKAGE_JSON_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'package.json')
+const PACKAGE_JSON = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, 'utf8'))
 const DEFAULT_USER_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'static', 'img', 'default-user-avatar.jpg')
 const DEFAULT_COMMUNITY_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'static', 'img', 'default-community-avatar.jpg')
 
@@ -58,6 +61,12 @@ export async function start (opts) {
     } catch (e) {
       json404(res, e)
     }
+  })
+
+  app.get('/ctzn/server-info', async (req, res) => {
+    res.status(200).json({
+      version: PACKAGE_JSON.version
+    })
   })
 
   app.get('/ctzn/profile/:username([^\/]{3,})', async (req, res) => {
