@@ -89,3 +89,9 @@ CTZN is [generously supported on Patreon](https://www.patreon.com/paul_maf_and_a
 - Benjamin Terry
 - Marcel Miranda
 - Will 
+
+### Other platforms
+
+We've also received gracious donations outside of patreon from:
+
+- cryptokoh.eth
