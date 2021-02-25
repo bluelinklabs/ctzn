@@ -66,7 +66,8 @@ export function setup (wsServer) {
 
     const postEntries = []
     const authorsCache = {}
-    const mergedCursor = mergeCursors(cursors, {limit: Math.min(opts?.limit || 100, 100)})  
+    const limit = Math.min(opts?.limit || 100, 100)
+    const mergedCursor = mergeCursors(cursors)
     for await (let [db, entry] of mergedCursor) {
       if (db.dbType === 'ctzn.network/public-community-db') {
         const {origin, key} = parseEntryUrl(entry.value.item.dbUrl)
@@ -87,6 +88,9 @@ export function setup (wsServer) {
       entry.author = await fetchAuthor(db.userId, authorsCache)
       entry.replyCount = await fetchReplyCount(entry, client?.auth?.userId)
       postEntries.push(entry)
+      if (postEntries.length >= limit) {
+        break
+      }
     }
 
     return postEntries
@@ -156,11 +160,10 @@ export function setup (wsServer) {
   })
 }
 
-async function* mergeCursors (cursors, opts) {
-  let numEmitted = 0
+async function* mergeCursors (cursors) {
   let cursorResults = []
   
-  while (!opts.limit || numEmitted < opts.limit) {
+  while (true) {
     let bestI = -1
     for (let i = 0; i < cursors.length; i++) {
       if (!cursors[i]) continue
@@ -179,7 +182,6 @@ async function* mergeCursors (cursors, opts) {
     }
 
     if (bestI === -1) return // out of results
-    numEmitted++
     yield [cursors[bestI].db, cursorResults[bestI].shift()]
   }
 }
