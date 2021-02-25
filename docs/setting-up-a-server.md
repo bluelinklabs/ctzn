@@ -46,23 +46,22 @@ GCloud may give you an error saying you need to verify ownership of the domain b
 
 ## Step 6 - Start CTZN
 
-Create `~/ctzn.sh` and paste the following line into it:
+Run `ctzn`. You will be presented with a terminal UI.
 
-```
-ctzn start --domain $DOMAIN
-```
+Hit `c` to configure your server. Set the domain, port, and any other settings needed. Hit `Escape` to exit the form and `Enter` to save changes.
 
-(Remember to replace `$DOMAIN` with your actual domain name.)
+Hit `s` to start the server.
 
-Save `~/ctzn.sh` and then run the following command:
+## Step 7 - Create your Terms of Service and Privacy Policy documents
 
-```
-pm2 start ~/ctzn.sh
-```
+You will need to maintain a Terms of Service and Privacy Policy for your server. These will be presented to new users during signup.
 
-You can ensure that CTZN started correctly by running `pm2 log` and checking for error messages.
+These documents are saved in your config directory, which is `~/.ctzn` by default. The documents are:
 
-## Step 7 - Setup your certificate with LetsEncrypt
+- `~/.ctzn/terms-of-service.txt` The Terms of Service.
+- `~/.ctzn/privacy-policy.txt` The Privacy Policy.
+
+## Step 8 - Setup your certificate with LetsEncrypt
 
 Follow these steps (again, we're assuming you're using Debian):
 
@@ -72,7 +71,7 @@ Follow these steps (again, we're assuming you're using Debian):
 - Setup your certbot exec path `sudo ln -s /snap/bin/certbot /usr/bin/certbot`
 - Use certbot's setup process `sudo certbot --nginx`
 
-## Step 8 - Configure the nginx reverse proxy
+## Step 9 - Configure the nginx reverse proxy
 
 Start by opening the site config in your preferred editor:
 
@@ -107,7 +106,7 @@ Save and quit the editor, then run:
 sudo service nginx reload
 ```
 
-## Step 9 - Open your firewall rules (optional)
+## Step 10 - Open your firewall rules (optional)
 
 It's not clear whether this is needed, but you might want to create firewall rules which allow ingress and egress from UDP and TCP in the port ranges of 1024-65335.
 
