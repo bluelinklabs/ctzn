@@ -354,6 +354,25 @@ class Table {
     })
   }
 
+  cursorRead (opts = {}) {
+    let lt = opts.lt
+    const reverse = opts.reverse
+    let atEnd = false
+    return {
+      db: this.db,
+      next: async (n) => {
+        if (atEnd) return null
+        let res = await this.list({lt, reverse, limit: n})
+        if (res.length === 0) {
+          atEnd = true
+          return null
+        }
+        lt = res[res.length - 1].key
+        return res
+      }
+    }
+  }
+
   onPut (cb) {
     this._onPutCbs = this._onPutCbs || []
     this._onPutCbs.push(cb)

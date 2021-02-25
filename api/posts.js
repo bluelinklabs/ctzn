@@ -1,11 +1,13 @@
+import lexint from 'lexicographic-integer-encoding'
 import createMlts from 'monotonic-lexicographic-timestamp'
 import { createValidator } from '../lib/schemas.js'
 import { publicUserDbs, privateUserDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
-import { fetchAuthor, fetchVotes, fetchReplyCount } from '../db/util.js'
+import { fetchAuthor, fetchReplyCount } from '../db/util.js'
 import { getPost, listPosts } from '../db/getters.js'
 
+const lexintEncoder = lexint('hex')
 const mlts = createMlts()
 
 const listParam = createValidator({
@@ -38,8 +40,8 @@ export function setup (wsServer) {
   })
 
   wsServer.register('posts.listHomeFeed', async ([opts], client) => {
-    // TODO add pagination. For now, just return nothing when more results are requested.
-    if (opts?.lt) return []
+    opts = opts && typeof opts === 'object' ? opts : {}
+    opts.lt = opts.lt && typeof opts.lt === 'string' ? opts.lt : lexintEncoder.encode(Date.now())
 
     if (!client?.auth) throw new Error('Must be logged in')
     const publicUserDb = publicUserDbs.get(client.auth.userId)
@@ -47,38 +49,44 @@ export function setup (wsServer) {
 
     const followEntries = await publicUserDb.follows.list()
     followEntries.unshift({value: {subject: client.auth}})
-    let postEntries = (await Promise.all(followEntries.map(async followEntry => {
-      const followedUserDb = publicUserDbs.get(followEntry.value.subject.userId)
-      if (!followedUserDb) return []
-      
-      const entries = await followedUserDb.posts.list({limit: 10, reverse: true})
-      return entries.filter(entry => {
-        if (entry.value.community) {
-          return false // filter out community posts by followed users
-        }
-        entry.author = followEntry.value.subject
-        entry.url = constructEntryUrl(followEntry.value.subject.dbUrl, 'ctzn.network/post', entry.key)
-        return true
-      })
-    }))).flat()
-
     const membershipEntries = await publicUserDb.memberships.list()
-    postEntries = postEntries.concat((await Promise.all(membershipEntries.map(async membershipEntry => {
-      const communityDb = publicUserDbs.get(membershipEntry.value.community.userId)
-      if (!communityDb) return []
-      
-      const entries = await listPosts(communityDb, {limit: 10, reverse: true}, communityDb.userId, client.auth)
-      return entries
-    }))).flat())
+    const sourceDbs = [
+      ...followEntries.map(f => publicUserDbs.get(f.value.subject.userId)),
+      ...membershipEntries.map(m => publicUserDbs.get(m.value.community.userId))
+    ]
 
-    postEntries.sort((a, b) => Number(new Date(b.value.createdAt)) - Number(new Date(a.value.createdAt)))
-    postEntries = postEntries.slice(0, 100)
+    const cursors = sourceDbs.map(db => {
+      if (!db) return undefined
+      if (db.dbType === 'ctzn.network/public-citizen-db') {
+        return db.posts.cursorRead({lt: opts?.lt, reverse: true})
+      } else if (db.dbType === 'ctzn.network/public-community-db') {
+        return db.feedIdx.cursorRead({lt: opts?.lt, reverse: true})
+      }
+    })
 
+    const postEntries = []
     const authorsCache = {}
-    for (let entry of postEntries) {
-      entry.author = await fetchAuthor(entry.author.userId, authorsCache)
-      entry.votes = await fetchVotes(entry, client?.auth?.userId)
+    const mergedCursor = mergeCursors(cursors, {limit: Math.min(opts?.limit || 100, 100)})  
+    for await (let [db, entry] of mergedCursor) {
+      if (db.dbType === 'ctzn.network/public-community-db') {
+        const {origin, key} = parseEntryUrl(entry.value.item.dbUrl)
+        
+        const userId = await fetchUserId(origin)
+        const publicUserDb = publicUserDbs.get(userId)
+        if (!publicUserDb) continue
+
+        entry = await publicUserDb.posts.get(key)
+        if (!entry) continue
+        db = publicUserDb
+      } else {
+        if (entry.value.community) {
+          continue // filter out community posts by followed users
+        }
+      }
+      entry.url = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
+      entry.author = await fetchAuthor(db.userId, authorsCache)
       entry.replyCount = await fetchReplyCount(entry, client?.auth?.userId)
+      postEntries.push(entry)
     }
 
     return postEntries
@@ -146,4 +154,32 @@ export function setup (wsServer) {
     await publicUserDb.posts.del(key)
     await onDatabaseChange(publicUserDb, [privateUserDbs.get(client.auth.userId)])
   })
+}
+
+async function* mergeCursors (cursors, opts) {
+  let numEmitted = 0
+  let cursorResults = []
+  
+  while (!opts.limit || numEmitted < opts.limit) {
+    let bestI = -1
+    for (let i = 0; i < cursors.length; i++) {
+      if (!cursors[i]) continue
+      if (!cursorResults[i]?.length) {
+        cursorResults[i] = await cursors[i].next(10)
+      }
+      if (cursorResults[i]?.length) {
+        if (bestI === -1) {
+          bestI = i
+        } else {
+          if (cursorResults[i][0].key.localeCompare(cursorResults[bestI][0].key) === 1) {
+            bestI = i
+          }
+        }
+      }
+    }
+
+    if (bestI === -1) return // out of results
+    numEmitted++
+    yield [cursors[bestI].db, cursorResults[bestI].shift()]
+  }
 }
