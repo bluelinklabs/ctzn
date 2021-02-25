@@ -6,6 +6,9 @@ import { Config } from './lib/config.js'
 import * as db from './db/index.js'
 import * as api from './api/index.js'
 import * as perf from './lib/perf.js'
+import { NoTermsOfServiceIssue } from './lib/issues/no-terms-of-service.js'
+import { NoPrivacyPolicyIssue } from './lib/issues/no-privacy-policy.js'
+import * as issues from './lib/issues.js'
 import * as path from 'path'
 import * as fs from 'fs'
 import { fileURLToPath } from 'url'
@@ -30,6 +33,8 @@ export async function start (opts) {
     config.overrides.port = DEBUG_MODE_PORTS_MAP[config.domain]
   }
   setOrigin(`http://${config.domain || 'localhost'}:${config.port}`)
+  const TERMS_OF_SERVICE_PATH = path.join(opts.configDir, 'terms-of-service.txt')
+  const PRIVACY_POLICY_PATH = path.join(opts.configDir, 'privacy-policy.txt')
 
   app = express()
   app.set('views', path.join(path.dirname(fileURLToPath(import.meta.url)), 'views'))
@@ -67,6 +72,34 @@ export async function start (opts) {
     res.status(200).json({
       version: PACKAGE_JSON.version
     })
+  })
+
+  app.get('/ctzn/server-terms-of-service', async (req, res) => {
+    let txt
+    try {
+      txt = await fs.promises.readFile(TERMS_OF_SERVICE_PATH, 'utf8')
+    } catch (e) {
+      issues.add(new NoTermsOfServiceIssue())
+    }
+    if (txt) {
+      res.status(200).end(txt)
+    } else {
+      res.status(404).end()
+    }
+  })
+
+  app.get('/ctzn/server-privacy-policy', async (req, res) => {
+    let txt
+    try {
+      txt = await fs.promises.readFile(PRIVACY_POLICY_PATH, 'utf8')
+    } catch (e) {
+      issues.add(new NoPrivacyPolicyIssue())
+    }
+    if (txt) {
+      res.status(200).end(txt)
+    } else {
+      res.status(404).end()
+    }
   })
 
   app.get('/ctzn/profile/:username([^\/]{3,})', async (req, res) => {
