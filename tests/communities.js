@@ -13,7 +13,7 @@ test('membership', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
   let api = inst.api
-  instances = [inst]
+  instances.push(inst)
 
   await sim.createCitizen(inst, 'alice')
   await sim.createCitizen(inst, 'bob')
@@ -87,12 +87,11 @@ test('membership', async t => {
 
 test('remote joining & leaving', async t => {
   let sim = new TestFramework()
-  instances = [
-    await createServer(),
-    await createServer()
-  ]
+  let inst1 = await createServer()
+  let inst2 = await createServer()
+  instances.push(inst1)
+  instances.push(inst2)
   
-  const [inst1, inst2] = instances
   await sim.createCitizen(inst1, 'bob')
   await sim.users.bob.login()
   await sim.createCommunity(inst1, 'folks')
@@ -124,7 +123,7 @@ test('roles', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
   let api = inst.api
-  instances = [inst]
+  instances.push(inst)
 
   await sim.createCitizen(inst, 'alice')
   await sim.users.alice.login()
@@ -183,7 +182,7 @@ test('permissions', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
   let api = inst.api
-  instances = [inst]
+  instances.push(inst)
 
   await sim.createCitizen(inst, 'alice')
   await sim.createCitizen(inst, 'bob')
@@ -319,7 +318,7 @@ test('bans', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
   let api = inst.api
-  instances = [inst]
+  instances.push(inst)
 
   await sim.createCitizen(inst, 'alice')
   await sim.createCitizen(inst, 'bob')
@@ -351,7 +350,7 @@ test('post and comment removal', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
   let api = inst.api
-  instances = [inst]
+  instances.push(inst)
 
   await sim.createCitizen(inst, 'alice')
   await sim.createCitizen(inst, 'bob')
