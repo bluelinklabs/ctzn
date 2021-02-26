@@ -54,7 +54,7 @@ export function setup (wsServer) {
         userId: db.userId,
         displayName: profile?.value?.displayName || '',
         numMembers: members?.length,
-        admins: members.filter(m => m.value.roles?.includes('admin')).map(m => m.value.user.userId)
+        admins: members?.filter(m => m.value.roles?.includes('admin')).map(m => m.value.user.userId)
       }
     }))
   })
