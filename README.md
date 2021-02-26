@@ -11,6 +11,10 @@ A decentralized social network with a strong focus on building communities.
 
 Read the [initial design document](./docs/design.md) to learn more about the architecture.
 
+## ⚠️ Alpha Software
+
+CTZN is still in development! If you decide to run a server or build against the protocol, beware that breaking changes may occur and won't always be communicated ahead of time. We will create a stability process once CTZN reaches beta.
+
 ## 📚 Docs
 
 - **Setup**
