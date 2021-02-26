@@ -21,6 +21,7 @@ CTZN is still in development! If you decide to run a server or build against the
     - [**How to set up a CTZN server**](./docs/setting-up-a-server.md)
 - **Architecture**
     - [**Design overview**](./docs/design.md)
+    - [**Roadmap**](./docs/roadmap.md)
     - [**Database schemas overview**](./docs/schemas.md)
     - [**Community roles system**](./docs/community-roles.md)
     - [**Community permissions system**](./docs/permissions.md)
