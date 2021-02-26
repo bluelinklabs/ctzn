@@ -11,6 +11,7 @@ export function start ({pkg, configDir}) {
     dockBorders: true
     // log: './tui.log'
   })
+  screen._listenedMouse = true // HACK- short-circuit blessed's mouse handling to disable it
   screen.title = `CTZN ${pkg.version}`
   screen.key(['C-c'], function(ch, key) {
     return process.exit(0)

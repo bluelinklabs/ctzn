@@ -54,8 +54,8 @@ export class HomeView extends BaseView {
     this.menu.key(['r'], () => this.onRestartServer())
     this.menu.key(['k'], () => this.onStopServer())
     this.menu.key(['c'], () => this.onConfigure())
-    this.menu.key(['l'], () => this.screen.spawn('less', [OUT_LOG_PATH]))
-    this.menu.key(['e'], () => this.screen.spawn('less', [ERR_LOG_PATH]))
+    this.menu.key(['l'], () => this.screen.spawn('less', [OUT_LOG_PATH, '2>', '/dev/null']))
+    this.menu.key(['e'], () => this.screen.spawn('less', [ERR_LOG_PATH, '2>', '/dev/null']))
     this.menu.key(['up'], () => { this.log.scroll(-20); this.screen.render() })
     this.menu.key(['down'], () => { this.log.scroll(20); this.screen.render() })
     this.menu.focus()
@@ -232,7 +232,6 @@ export class HomeView extends BaseView {
         height: 3,
         interactive: true,
         keys: true,
-        mouse: true,
         inputOnFocus: true,
         border: {type: 'line'}
       })
