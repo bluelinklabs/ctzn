@@ -108,13 +108,13 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
       const pend = perf.measure(`privateUserDb:follows-indexer`)
       let subject = change.value?.subject
       if (!subject) {
-        const oldEntry = await db.bee.checkout(change.seq).get(change.key)
+        const oldEntry = await db.bee.checkout(change.seq).get(change.key, {timeout: 10e3})
         subject = oldEntry.value.subject
       }
 
       const release = await this.lock(`follows-idx:${subject.userId}`)
       try {
-        let followsIdxEntry = await this.followsIdx.get(subject.userId).catch(e => undefined)
+        let followsIdxEntry = await this.followsIdx.get(subject.userId)
         if (!followsIdxEntry) {
           followsIdxEntry = {
             key: subject.userId,
@@ -152,7 +152,7 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
       let replyParent = change.value?.reply?.parent
       let community = change.value?.community
       if (!change.value) {
-        const oldEntry = await db.bee.checkout(change.seq).get(change.key)
+        const oldEntry = await db.bee.checkout(change.seq).get(change.key, {timeout: 10e3})
         replyRoot = oldEntry.value.reply?.root
         replyParent = oldEntry.value.reply?.parent
         community = oldEntry.value?.community
@@ -172,7 +172,7 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
       for (let target of targets) {
         const release = await this.lock(`thread-idx:${target.dbUrl}`)
         try {
-          let threadIdxEntry = await this.threadIdx.get(target.dbUrl).catch(e => undefined)
+          let threadIdxEntry = await this.threadIdx.get(target.dbUrl)
           if (!threadIdxEntry) {
             threadIdxEntry = {
               key: target.dbUrl,
@@ -209,11 +209,11 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
         const voteUrl = constructEntryUrl(db.url, 'ctzn.network/vote', change.keyParsed.key)
         let subject = change.value?.subject
         if (!subject) {
-          const oldEntry = await db.bee.checkout(change.seq).get(change.key)
+          const oldEntry = await db.bee.checkout(change.seq).get(change.key, {timeout: 10e3})
           subject = oldEntry.value.subject
         }
 
-        let votesIdxEntry = await this.votesIdx.get(subject.dbUrl).catch(e => undefined)
+        let votesIdxEntry = await this.votesIdx.get(subject.dbUrl)
         if (!votesIdxEntry) {
           votesIdxEntry = {
             key: change.keyParsed.key,
