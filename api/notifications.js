@@ -7,7 +7,8 @@ const listParam = createValidator({
   additionalProperties: false,
   properties: {
     after: {type: 'string', format: 'date-time'},
-    before: {type: 'string', format: 'date-time'}
+    before: {type: 'string', format: 'date-time'},
+    limit: {type: 'number'}
   }
 })
 
