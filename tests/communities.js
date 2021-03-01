@@ -410,3 +410,18 @@ test('post and comment removal', async t => {
     [bob, 'Test 3']
   ])
 })
+
+test('valid usernames', async t => {
+  let sim = new TestFramework()
+  let inst = await createServer()
+  instances.push(inst)
+
+  await sim.createCitizen(inst, 'alice')
+  await sim.users.alice.login()
+  await sim.createCommunity(inst, 'folks')
+  await sim.createCommunity(inst, 'good-folks')
+  await sim.createCommunity(inst, 'folks2')
+  await t.throwsAsync(() => sim.createCommunity(inst, '1folks'))
+  await t.throwsAsync(() => sim.createCommunity(inst, 'good-folks-'))
+  await t.throwsAsync(() => sim.createCommunity(inst, '-good-folks'))
+})

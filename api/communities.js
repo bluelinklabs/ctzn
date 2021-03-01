@@ -9,7 +9,7 @@ const createParam = createValidator({
   required: ['username', 'displayName'],
   additionalProperties: false,
   properties: {
-    username: {type: 'string', pattern: "^([a-zA-Z][a-zA-Z0-9]{2,63})$"},
+    username: {type: 'string', pattern: "^([a-zA-Z][a-zA-Z0-9-]{2,62}[a-zA-Z0-9])$"},
     displayName: {type: 'string', minLength: 1, maxLength: 64},
     description: {type: 'string', maxLength: 256}
   }
