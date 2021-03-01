@@ -177,7 +177,14 @@ async function fetchNotificationsInner (userInfo, {after, before, limit} = {}) {
   notificationEntries = notificationEntries.filter((entry, index) => {
     return notificationEntries.findIndex(entry2 => entry2.value.itemUrl === entry.value.itemUrl) === index
   })
-  notificationEntries.sort((a, b) => b.value.createdAt.localeCompare(a.value.createdAt))
+  notificationEntries.sort((a, b) => {
+    let akey = a.key.includes(':') ? a.key.split(':')[1] : a.key
+    let bkey = b.key.includes(':') ? b.key.split(':')[1] : b.key
+    return bkey.localeCompare(akey)
+  })
+  if (notificationEntries.length > limit) {
+    notificationEntries = notificationEntries.slice(0, limit)
+  }
   return notificationEntries
 }
 

@@ -68,12 +68,14 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
 
       const release = await this.lock(`notifications-idx:${change.url}`)
       try {
+        let itemCreatedAt
         switch (change.keyParsed.schemaId) {
           case 'ctzn.network/follow':
             // following me?
             if (change.value.subject.dbUrl !== myUrl) {
               return false
             }
+            itemCreatedAt = new Date(change.value.createdAt)
             break
           case 'ctzn.network/comment': {
             // self-post reply on my content?
@@ -84,6 +86,7 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
               || change.value.reply.parent?.dbUrl.startsWith(myUrl)
             )
             if (!onMyPost) return
+            itemCreatedAt = new Date(change.value.createdAt)
             break
           }
           case 'ctzn.network/vote':
@@ -91,12 +94,14 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
             if (!change.value.subject.dbUrl.startsWith(myUrl)) {
               return false
             }
+            itemCreatedAt = new Date(change.value.createdAt)
             break
         }
         
-        await this.notificationsIdx.put(mlts(), {
+        const createdAt = new Date()
+        await this.notificationsIdx.put(mlts(Math.min(createdAt, itemCreatedAt || createdAt)), {
           itemUrl: constructEntryUrl(db.url, change.keyParsed.schemaId, change.keyParsed.key),
-          createdAt: (new Date()).toISOString()
+          createdAt: createdAt.toISOString()
         })
       } finally {
         release()

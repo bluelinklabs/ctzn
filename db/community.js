@@ -47,27 +47,32 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
       const pend = perf.measure(`publicCommunityDb:notifications-indexer`)
 
       const release = await this.lock(`notifications-idx:${change.url}`)
-      const createKey = url => `${hyperUrlToKeyStr(url)}:${mlts()}`
+      const createdAt = new Date()
       const notification = {
         itemUrl: constructEntryUrl(db.url, change.keyParsed.schemaId, change.keyParsed.key),
-        createdAt: (new Date()).toISOString()
+        createdAt: createdAt.toISOString()
+      }
+      const createKey = (url, itemCreatedAt) => {
+        return `${hyperUrlToKeyStr(url)}:${mlts(Math.min(createdAt, itemCreatedAt || createdAt))}`
       }
       try {
         switch (change.keyParsed.schemaId) {
           case 'ctzn.network/follow':
             if (change.value.subject.dbUrl !== db.url) {
-              await this.notificationsIdx.put(createKey(change.value.subject.dbUrl), notification)
+              let itemCreatedAt = new Date(change.value.createdAt)
+              await this.notificationsIdx.put(createKey(change.value.subject.dbUrl, itemCreatedAt), notification)
             }
             break
           case 'ctzn.network/comment': {
             // reply to content in my community?
             if (!change.value.reply) return // not a reply
             if (change.value.community?.userId !== this.userId) return // not in our community
+            let itemCreatedAt = new Date(change.value.createdAt)
             if (!change.value.reply.root.dbUrl.startsWith(db.url)) {
-              await this.notificationsIdx.put(createKey(change.value.reply.root.dbUrl), notification)
+              await this.notificationsIdx.put(createKey(change.value.reply.root.dbUrl, itemCreatedAt), notification)
             }
             if (change.value.reply.parent && !change.value.reply.parent.dbUrl.startsWith(db.url)) {
-              await this.notificationsIdx.put(createKey(change.value.reply.parent.dbUrl), notification)
+              await this.notificationsIdx.put(createKey(change.value.reply.parent.dbUrl, itemCreatedAt), notification)
             }
             break
           }
@@ -85,7 +90,8 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
             if (subject.entry?.value?.community?.userId !== this.userId) {
               return // subject is not in our community
             }
-            await this.notificationsIdx.put(createKey(change.value.subject.dbUrl), notification)
+            let itemCreatedAt = new Date(change.value.createdAt)
+            await this.notificationsIdx.put(createKey(change.value.subject.dbUrl, itemCreatedAt), notification)
             break
         }
       } finally {
