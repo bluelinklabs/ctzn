@@ -209,6 +209,9 @@ async function fetchNotification (notificationEntry) {
   return {
     itemUrl: notificationEntry.value.itemUrl,
     createdAt: notificationEntry.value.createdAt,
+    blendedCreatedAt: item?.value?.createdAt
+      ? (item.value.createdAt < notificationEntry.value.createdAt ? item.value.createdAt : notificationEntry.value.createdAt)
+      : notificationEntry.value.createdAt,
     author: {
       userId,
       url: constructUserUrl(userId)
