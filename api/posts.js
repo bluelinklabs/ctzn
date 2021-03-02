@@ -6,6 +6,7 @@ import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 import { fetchAuthor, fetchReplyCount } from '../db/util.js'
 import { getPost, listPosts } from '../db/getters.js'
+import * as errors from '../lib/errors.js'
 
 const lexintEncoder = lexint('hex')
 const mlts = createMlts()
@@ -34,7 +35,7 @@ export function setup (wsServer) {
 
     userId = await fetchUserId(userId)
     const publicUserDb = publicUserDbs.get(userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
 
     return listPosts(publicUserDb, opts, userId, client.auth)
   })
@@ -43,9 +44,9 @@ export function setup (wsServer) {
     opts = opts && typeof opts === 'object' ? opts : {}
     opts.lt = opts.lt && typeof opts.lt === 'string' ? opts.lt : lexintEncoder.encode(Date.now())
 
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
     const publicUserDb = publicUserDbs.get(client.auth.userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
 
     const followEntries = await publicUserDb.follows.list()
     followEntries.unshift({value: {subject: client.auth}})
@@ -100,22 +101,22 @@ export function setup (wsServer) {
     if (!key && userId) {
       let parsed = parseEntryUrl(userId)
       if (parsed.schemaId !== 'ctzn.network/post') {
-        throw new Error('Not a post URL')
+        throw new errors.ValidationError('Not a post URL')
       }
       userId = await fetchUserId(parsed.origin)
       key = parsed.key
     }
 
     const publicUserDb = publicUserDbs.get(userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
 
     return getPost(publicUserDb, key, userId, client.auth)
   })
 
   wsServer.register('posts.create', async ([post], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
     const publicUserDb = publicUserDbs.get(client.auth.userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
 
     const key = mlts()
     post.createdAt = (new Date()).toISOString()
@@ -132,13 +133,13 @@ export function setup (wsServer) {
   })
 
   wsServer.register('posts.edit', async ([key, post], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
     const publicUserDb = publicUserDbs.get(client.auth.userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
 
     const postEntry = await publicUserDb.posts.get(key)
     if (!postEntry) {
-      throw new Error('Post not found')
+      throw new errors.NotFoundError('Post not found')
     }
 
     postEntry.value.text = ('text' in post) ? post.text : postEntry.value.text
@@ -151,9 +152,9 @@ export function setup (wsServer) {
   })
 
   wsServer.register('posts.del', async ([key], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
     const publicUserDb = publicUserDbs.get(client.auth.userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
     
     await publicUserDb.posts.del(key)
     await onDatabaseChange(publicUserDb, [privateUserDbs.get(client.auth.userId)])

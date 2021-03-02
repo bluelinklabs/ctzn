@@ -1,9 +1,9 @@
 import createMlts from 'monotonic-lexicographic-timestamp'
-import { createValidator } from '../lib/schemas.js'
 import { publicUserDbs, privateUserDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 import { getComment, getThread } from '../db/getters.js'
+import * as errors from '../lib/errors.js'
 
 const mlts = createMlts()
 
@@ -29,9 +29,9 @@ export function setup (wsServer) {
   })
 
   wsServer.register('comments.create', async ([post], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
     const publicUserDb = publicUserDbs.get(client.auth.userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
 
     const key = mlts()
     post.createdAt = (new Date()).toISOString()
@@ -48,9 +48,9 @@ export function setup (wsServer) {
   })
 
   wsServer.register('comments.edit', async ([key, post], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
     const publicUserDb = publicUserDbs.get(client.auth.userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
 
     const postEntry = await publicUserDb.comments.get(key)
     if (!postEntry) {
@@ -66,9 +66,9 @@ export function setup (wsServer) {
   })
 
   wsServer.register('comments.del', async ([key], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
     const publicUserDb = publicUserDbs.get(client.auth.userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
     
     await publicUserDb.comments.del(key)
     await onDatabaseChange(publicUserDb, [privateUserDbs.get(client.auth.userId)])

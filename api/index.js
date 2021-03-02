@@ -15,7 +15,13 @@ export function setup (wsServer, config) {
   wsServer.register = function (methodName, methodHandler) {
     origRegister.call(this, methodName, async (params, socket_id) => {
       const client = wsServer.namespaces['/'].clients.get(socket_id)
-      const res = await methodHandler(params, client)//.catch(e => {throw new Error(e.stack)}) // uncomment this to get a stack in rpc errors
+      const res = await methodHandler(params, client).catch(e => {
+        throw {
+          code: e.rpcCode || -32000,
+          message: e.name,
+          data: e.message
+        }
+      })
       return typeof res === 'undefined' ? null : res
     })
   }

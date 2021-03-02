@@ -2,6 +2,7 @@ import { publicUserDbs, createUser, catchupIndexes } from '../db/index.js'
 import { isHyperUrl, constructEntryUrl, parseUserId } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
 import { fetchUserId, fetchUserInfo, reverseDns, connectWs } from '../lib/network.js'
+import * as errors from '../lib/errors.js'
 import { listCommunityMembers, listCommunityMemberships, listCommunityRoles, listCommunityBans } from '../db/getters.js'
 import bytes from 'bytes'
 
@@ -41,10 +42,10 @@ const userInfoParam = createValidator({
 
 export function setup (wsServer, config) {
   wsServer.register('communities.create', async ([info], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
 
     const publicCitizenDb = publicUserDbs.get(client.auth.userId)
-    if (!publicCitizenDb) throw new Error('User database not found')
+    if (!publicCitizenDb) throw new errors.NotFoundError('User database not found')
     
     info = info || {}
     createParam.assert(info)
@@ -94,7 +95,7 @@ export function setup (wsServer, config) {
       communityUserId = await fetchUserId(communityUserId)
     }
     const publicCommunityDb = publicUserDbs.get(communityUserId)
-    if (!publicCommunityDb) throw new Error('Community database not found')
+    if (!publicCommunityDb) throw new errors.NotFoundError('Community database not found')
 
     return publicCommunityDb.members.get(memberUserId)
   })
@@ -104,7 +105,7 @@ export function setup (wsServer, config) {
       communityUserId = await fetchUserId(communityUserId)
     }
     const publicCommunityDb = publicUserDbs.get(communityUserId)
-    if (!publicCommunityDb) throw new Error('Community database not found')
+    if (!publicCommunityDb) throw new errors.NotFoundError('Community database not found')
 
     if (opts) listParam.assert(opts)
     opts = opts || {}
@@ -118,7 +119,7 @@ export function setup (wsServer, config) {
       citizenUserId = await fetchUserId(citizenUserId)
     }
     const publicCitizenDb = publicUserDbs.get(citizenUserId)
-    if (!publicCitizenDb) throw new Error('Citizen database not found')
+    if (!publicCitizenDb) throw new errors.NotFoundError('Citizen database not found')
 
     if (opts) listParam.assert(opts)
     opts = opts || {}
@@ -128,10 +129,10 @@ export function setup (wsServer, config) {
   })
 
   wsServer.register('communities.join', async ([community], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
 
     const publicCitizenDb = publicUserDbs.get(client.auth.userId)
-    if (!publicCitizenDb) throw new Error('User database not found')
+    if (!publicCitizenDb) throw new errors.NotFoundError('User database not found')
 
     const communityInfo = await fetchUserInfo(community)
     const publicCommunityDb = publicUserDbs.get(communityInfo.userId)
@@ -165,7 +166,7 @@ export function setup (wsServer, config) {
       // check for a ban
       const ban = await publicCommunityDb.bans.get(client.auth.userId)
       if (ban) {
-        throw new Error(`You have been banned from this community. ${ban.value.reason ? `Reason: ${ban.value.reason}` : ''}`)
+        throw new errors.PermissionsError(`You have been banned from this community. ${ban.value.reason ? `Reason: ${ban.value.reason}` : ''}`)
       }
 
       // create member and membership records
@@ -201,7 +202,7 @@ export function setup (wsServer, config) {
     const communityInfo = await fetchUserInfo(opts.community)
     const publicCommunityDb = publicUserDbs.get(communityInfo.userId)
     if (!publicCommunityDb?.writable) {
-      throw new Error('Community not hosted here')
+      throw new errors.NotFoundError('Community not hosted here')
     }
 
     // validate the server making the request is the home of the joining user
@@ -215,7 +216,7 @@ export function setup (wsServer, config) {
     // check for a ban
     const ban = await publicCommunityDb.bans.get(opts.user.userId)
     if (ban) {
-      throw new Error(`You have been banned from this community. ${ban.value.reason ? `Reason: ${ban.value.reason}` : ''}`)
+      throw new errors.PermissionsError(`You have been banned from this community. ${ban.value.reason ? `Reason: ${ban.value.reason}` : ''}`)
     }
 
     // create member record
@@ -233,10 +234,10 @@ export function setup (wsServer, config) {
   })
 
   wsServer.register('communities.leave', async ([community], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
 
     const publicCitizenDb = publicUserDbs.get(client.auth.userId)
-    if (!publicCitizenDb) throw new Error('User database not found')
+    if (!publicCitizenDb) throw new errors.NotFoundError('User database not found')
     
     const communityInfo = await fetchUserInfo(community)
     const publicCommunityDb = publicUserDbs.get(communityInfo.userId)
@@ -270,7 +271,7 @@ export function setup (wsServer, config) {
     const communityInfo = await fetchUserInfo(opts.community)
     const publicCommunityDb = publicUserDbs.get(communityInfo.userId)
     if (!publicCommunityDb?.writable) {
-      throw new Error('Community not hosted here')
+      throw new errors.NotFoundError('Community not hosted here')
     }
 
     // validate the server making the request is the home of the joining user
@@ -302,7 +303,7 @@ export function setup (wsServer, config) {
     await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-edit-profile')
 
     if ((avatarBase64.length / 1.33) > config.avatarSizeLimit) {
-      throw new Error(`Your avatar image is too big! It must be smaller than ${bytes(config.avatarSizeLimit)}.`)
+      throw new errors.ValidationError(`Your avatar image is too big! It must be smaller than ${bytes(config.avatarSizeLimit)}.`)
     }
 
     await publicCommunityDb.blobs.put('avatar', Buffer.from(avatarBase64, 'base64'))
@@ -378,7 +379,7 @@ export function setup (wsServer, config) {
       communityUserId = await fetchUserId(communityUserId)
     }
     const publicCommunityDb = publicUserDbs.get(communityUserId)
-    if (!publicCommunityDb) throw new Error('Community database not found')
+    if (!publicCommunityDb) throw new errors.NotFoundError('Community database not found')
 
     if (opts) listParam.assert(opts)
     opts = opts || {}
@@ -393,7 +394,7 @@ export function setup (wsServer, config) {
   })
 
   wsServer.register('communities.createRole', async ([community, role], client) => {
-    if (role?.roleId === 'admin') throw new Error('Cannot edit the admin role')
+    if (role?.roleId === 'admin') throw new errors.PermissionsError('Cannot edit the admin role')
     const authedUser = await lookupAuthedUser(client)
     const {publicCommunityDb} = await lookupCommunity(community)
     await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-manage-roles')
@@ -414,7 +415,7 @@ export function setup (wsServer, config) {
   })
 
   wsServer.register('communities.editRole', async ([community, roleId, role], client) => {
-    if (roleId === 'admin') throw new Error('Cannot edit the admin role')
+    if (roleId === 'admin') throw new errors.PermissionsError('Cannot edit the admin role')
     const authedUser = await lookupAuthedUser(client)
     const {publicCommunityDb} = await lookupCommunity(community)
     await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-manage-roles')
@@ -430,7 +431,7 @@ export function setup (wsServer, config) {
   })
 
   wsServer.register('communities.deleteRole', async ([community, roleId], client) => {
-    if (roleId === 'admin') throw new Error('Cannot edit the admin role')
+    if (roleId === 'admin') throw new errors.PermissionsError('Cannot edit the admin role')
     const authedUser = await lookupAuthedUser(client)
     const {publicCommunityDb} = await lookupCommunity(community)
     await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-manage-roles')
@@ -562,9 +563,9 @@ export function setup (wsServer, config) {
 }
 
 async function lookupAuthedUser (client) {
-  if (!client?.auth) throw new Error('Must be logged in')
+  if (!client?.auth) throw new errors.SessionError()
   const publicCitizenDb = publicUserDbs.get(client.auth.userId)
-  if (!publicCitizenDb) throw new Error('User database not found')
+  if (!publicCitizenDb) throw new errors.NotFoundError('User database not found')
   return {citizenInfo: client.auth, publicCitizenDb}
 }
 
@@ -572,14 +573,14 @@ async function lookupCommunity (community) {
   const communityInfo = await fetchUserInfo(community)
   const publicCommunityDb = publicUserDbs.get(communityInfo.userId)
   if (!publicCommunityDb?.writable) {
-    throw new Error('Community not hosted here')
+    throw new errors.NotFoundError('Community not hosted here')
   }
   return {communityInfo, publicCommunityDb}
 }
 
 async function assertUserPermission (publicCommunityDb, userId, permId) {
   const memberRecord = await publicCommunityDb.members.get(userId)
-  if (!memberRecord?.value?.roles?.length) throw new Error(`Permission denied: ${permId}`)
+  if (!memberRecord?.value?.roles?.length) throw new errors.PermissionsError(`Permission denied: ${permId}`)
   const roles = memberRecord.value.roles
   if (roles.includes('admin')) {
     return true
@@ -590,5 +591,5 @@ async function assertUserPermission (publicCommunityDb, userId, permId) {
       return true
     }
   }
-  throw new Error(`Permission denied: ${permId}`)
+  throw new errors.PermissionsError(`Permission denied: ${permId}`)
 }

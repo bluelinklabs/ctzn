@@ -1,17 +1,18 @@
 import { publicUserDbs } from '../db/index.js'
 import { constructUserUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
+import * as errors from '../lib/errors.js'
 import bytes from 'bytes'
 
 export function setup (wsServer, config) {
   wsServer.register('profiles.get', async ([userId]) => {
     userId = await fetchUserId(userId)
     const publicUserDb = publicUserDbs.get(userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
 
     const profileEntry = await publicUserDb.profile.get('self')
     if (!profileEntry) {
-      throw new Error('User profile not found')
+      throw new errors.NotFoundError('User profile not found')
     }
     profileEntry.url = constructUserUrl(userId)
     profileEntry.userId = userId
@@ -21,9 +22,9 @@ export function setup (wsServer, config) {
   })
 
   wsServer.register('profiles.put', async ([profile], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
     const publicUserDb = publicUserDbs.get(client.auth.userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
 
     await publicUserDb.profile.put('self', profile)
     
@@ -32,12 +33,12 @@ export function setup (wsServer, config) {
   })
 
   wsServer.register('profiles.putAvatar', async ([avatarBase64], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
     const publicUserDb = publicUserDbs.get(client.auth.userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
 
     if ((avatarBase64.length / 1.33) > config.avatarSizeLimit) {
-      throw new Error(`Your avatar image is too big! It must be smaller than ${bytes(config.avatarSizeLimit)}.`)
+      throw new errors.ValidationError(`Your avatar image is too big! It must be smaller than ${bytes(config.avatarSizeLimit)}.`)
     }
 
     await publicUserDb.blobs.put('avatar', Buffer.from(avatarBase64, 'base64'))

@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { publicServerDb, privateServerDb, createUser } from '../db/index.js'
 import { constructUserUrl, constructUserId } from '../lib/strings.js'
 import { verifyPassword } from '../lib/crypto.js'
+import * as errors from '../lib/errors.js'
 import ip from 'ip'
 
 const registerParam = createValidator({
@@ -46,7 +47,7 @@ export function setup (wsServer, config) {
     if (sessionRecord) {
       const user = await publicServerDb.users.get(sessionRecord.value.username)
       if (!user) {
-        throw new Error('User not found')
+        throw new errors.NotFoundError('User not found')
       }
       client.auth = {
         username: sessionRecord.value.username,
@@ -82,12 +83,12 @@ export function setup (wsServer, config) {
 
     const accountRecord = await privateServerDb.accounts.get(username)
     if (!accountRecord || !(await verifyPassword(password, accountRecord.value.hashedPassword))) {
-      throw new Error('Invalid username or password')
+      throw new errors.InvalidCredentialsError()
     }
 
     const user = await publicServerDb.users.get(username)
     if (!user) {
-      throw new Error('User not found')
+      throw new errors.NotFoundError('User not found')
     }
     const userId = constructUserId(username)
     const sess = await createSession(client, {username, userId, dbUrl: user.value.dbUrl})

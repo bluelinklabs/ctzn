@@ -3,6 +3,7 @@ import { isHyperUrl, constructEntryUrl } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
 import { fetchUserId, fetchUserInfo } from '../lib/network.js'
 import { listFollowers, listFollows } from '../db/getters.js'
+import * as errors from '../lib/errors.js'
 
 const listParam = createValidator({
   type: 'object',
@@ -34,7 +35,7 @@ export function setup (wsServer) {
     opts.limit = Math.max(Math.min(opts.limit, 100), 1)
 
     const publicUserDb = publicUserDbs.get(userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
     return listFollows(publicUserDb, opts)
   })
 
@@ -47,7 +48,7 @@ export function setup (wsServer) {
     }
 
     const publicUserDb = publicUserDbs.get(userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
     
     const followEntry = await publicUserDb.follows.get(subjectId)
     if (followEntry) {
@@ -57,13 +58,13 @@ export function setup (wsServer) {
   })
 
   wsServer.register('follows.follow', async ([subject], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
     const publicUserDb = publicUserDbs.get(client.auth.userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
 
     const subjectInfo = await fetchUserInfo(subject)
     const key = subjectInfo.userId
-    if (!key) throw new Error('Must provide subject userId or URL')
+    if (!key) throw new errors.ValidationError('Must provide subject userId or URL')
     const value = {
       subject: subjectInfo,
       createdAt: (new Date()).toISOString()
@@ -77,13 +78,13 @@ export function setup (wsServer) {
   })
 
   wsServer.register('follows.unfollow', async ([subject], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
     const publicUserDb = publicUserDbs.get(client.auth.userId)
-    if (!publicUserDb) throw new Error('User database not found')
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
 
     const subjectInfo = await fetchUserInfo(subject)
     const key = subjectInfo.userId
-    if (!key) throw new Error('Must provide subject userId or URL')
+    if (!key) throw new errors.ValidationError('Must provide subject userId or URL')
     await publicUserDb.follows.del(key)
     await onDatabaseChange(publicUserDb)
   })

@@ -1,6 +1,7 @@
 import { privateUserDbs, privateServerDb } from '../db/index.js'
 import { createValidator } from '../lib/schemas.js'
 import { fetchNotications, countNotications } from '../db/util.js'
+import * as errors from '../lib/errors.js'
 
 const listParam = createValidator({
   type: 'object',
@@ -14,7 +15,7 @@ const listParam = createValidator({
 
 export function setup (wsServer) {
   wsServer.register('notifications.list', async ([opts], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
 
     opts = opts || {}
     listParam.assert(opts)
@@ -22,9 +23,9 @@ export function setup (wsServer) {
   })
 
   wsServer.register('notifications.count', async ([opts], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
     const privateUserDb = privateUserDbs.get(client.auth.userId)
-    if (!privateUserDb) throw new Error('User database not found')
+    if (!privateUserDb) throw new errors.NotFoundError('User database not found')
 
     opts = opts || {}
     listParam.assert(opts)
@@ -32,21 +33,21 @@ export function setup (wsServer) {
   })
 
   wsServer.register('notifications.getNotificationsClearedAt', async ([opts], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
 
     const accountRecord = await privateServerDb.accounts.get(client.auth.username)
-    if (!accountRecord) throw new Error('User account record not found')
+    if (!accountRecord) throw new errors.NotFoundError('User account record not found')
     
     return accountRecord.value.notificationsClearedAt || null
   })
 
   wsServer.register('notifications.updateNotificationsClearedAt', async ([opts], client) => {
-    if (!client?.auth) throw new Error('Must be logged in')
+    if (!client?.auth) throw new errors.SessionError()
 
     const release = await privateServerDb.lock('accounts')
     try {
       const accountRecord = await privateServerDb.accounts.get(client.auth.username)
-      if (!accountRecord) throw new Error('User account record not found')
+      if (!accountRecord) throw new errors.NotFoundError('User account record not found')
       accountRecord.value.notificationsClearedAt = (new Date()).toISOString()
       await privateServerDb.accounts.put(client.auth.username, accountRecord.value)
       return accountRecord.value.notificationsClearedAt
