@@ -3,6 +3,7 @@ import { isHyperUrl, constructEntryUrl, parseUserId } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
 import { fetchUserId, fetchUserInfo, reverseDns, connectWs } from '../lib/network.js'
 import { listCommunityMembers, listCommunityMemberships, listCommunityRoles, listCommunityBans } from '../db/getters.js'
+import bytes from 'bytes'
 
 const createParam = createValidator({
   type: 'object',
@@ -299,6 +300,11 @@ export function setup (wsServer, config) {
     const authedUser = await lookupAuthedUser(client)
     const {publicCommunityDb} = await lookupCommunity(community)
     await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-edit-profile')
+
+    if ((avatarBase64.length / 1.33) > config.avatarSizeLimit) {
+      throw new Error(`Your avatar image is too big! It must be smaller than ${bytes(config.avatarSizeLimit)}.`)
+    }
+
     await publicCommunityDb.blobs.put('avatar', Buffer.from(avatarBase64, 'base64'))
   })
 
