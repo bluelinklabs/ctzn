@@ -14,6 +14,7 @@ import { fetchDbUrl } from '../lib/network.js'
 import { hashPassword } from '../lib/crypto.js'
 import * as perf from '../lib/perf.js'
 import * as issues from '../lib/issues.js'
+import { CaseInsensitiveMap } from '../lib/map.js'
 import { LoadExternalUserDbIssue } from '../lib/issues/load-external-user-db.js'
 import { UnknownUserTypeIssue } from '../lib/issues/unknown-user-type.js'
 import lock from '../lib/lock.js'
@@ -23,8 +24,8 @@ export let configPath = undefined
 export let config = undefined
 export let publicServerDb = undefined
 export let privateServerDb = undefined
-export let publicUserDbs = new Map()
-export let privateUserDbs = new Map()
+export let publicUserDbs = new CaseInsensitiveMap()
+export let privateUserDbs = new CaseInsensitiveMap()
 
 export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simulateHyperspace}) {
   await hyperspace.setup({hyperspaceHost, hyperspaceStorage, simulateHyperspace})
@@ -162,25 +163,35 @@ async function loadMemberUserDbs () {
   let users = await publicServerDb.users.list()
   for (let user of users) {
     if (user.value.type === 'citizen') {
-      let publicUserDb = new PublicCitizenDB(constructUserId(user.key), hyperUrlToKey(user.value.dbUrl))
+      const userId = constructUserId(user.key)
+      if (publicUserDbs.has(userId)) {
+        console.error('Skipping db load due to duplicate userId', userId)
+        continue
+      }
+      let publicUserDb = new PublicCitizenDB(userId, hyperUrlToKey(user.value.dbUrl))
       await publicUserDb.setup()
-      publicUserDbs.set(constructUserId(user.key), publicUserDb)
+      publicUserDbs.set(userId, publicUserDb)
       publicUserDb.watch(onDatabaseChange)
       publicUserDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
       await catchupIndexes(publicUserDb)
 
       let accountEntry = await privateServerDb.accounts.get(user.value.username)
-      let privateUserDb = new PrivateCitizenDB(constructUserId(user.key), hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicUserDb)
+      let privateUserDb = new PrivateCitizenDB(userId, hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicUserDb)
       await privateUserDb.setup()
-      privateUserDbs.set(constructUserId(user.key), privateUserDb)
+      privateUserDbs.set(userId, privateUserDb)
       privateUserDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
       await catchupIndexes(privateUserDb)
 
       numLoaded++
     } else if (user.value.type === 'community') {
-      let publicUserDb = new PublicCommunityDB(constructUserId(user.key), hyperUrlToKey(user.value.dbUrl))
+      const userId = constructUserId(user.key)
+      if (publicUserDbs.has(userId)) {
+        console.error('Skipping db load due to duplicate userId', userId)
+        continue
+      }
+      let publicUserDb = new PublicCommunityDB(userId, hyperUrlToKey(user.value.dbUrl))
       await publicUserDb.setup()
-      publicUserDbs.set(constructUserId(user.key), publicUserDb)
+      publicUserDbs.set(userId, publicUserDb)
       publicUserDb.watch(onDatabaseChange)
       publicUserDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
       await catchupIndexes(publicUserDb)
@@ -432,7 +443,8 @@ async function loadOrUnloadExternalUserDbs () {
     }
   }
   // unload any unfollowed
-  for (let userId of publicUserDbs.keys()) {
+  for (let value of publicUserDbs.values()) {
+    const {userId} = value
     if (userId.endsWith(getDomain()) || externalUserIds.includes(userId)) {
       continue
     }
