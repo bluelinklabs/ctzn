@@ -252,6 +252,13 @@ class Blobs {
     await this.feed.close()
   }
 
+  async getPointer (key) {
+    const pointer = await this.kv.get(key, {timeout: READ_TIMEOUT})
+    if (!pointer) throw new Error('Blob not found')
+    blobPointer.assert(pointer.value)
+    return pointer.value
+  }
+
   async createReadStream (key) {
     const pointer = await this.kv.get(key, {timeout: READ_TIMEOUT})
     if (!pointer) throw new Error('Blob not found')
@@ -259,6 +266,14 @@ class Blobs {
     return this.feed.createReadStream({
       start: pointer.value.start,
       end: pointer.value.end,
+      timeout: READ_TIMEOUT
+    })
+  }
+
+  async createReadStreamFromPointer (pointer) {
+    return this.feed.createReadStream({
+      start: pointer.start,
+      end: pointer.end,
       timeout: READ_TIMEOUT
     })
   }

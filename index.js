@@ -128,17 +128,38 @@ export async function start (opts) {
       const userId = usernameToUserId(req.params.username)
       userDb = db.publicUserDbs.get(userId)
       if (!userDb) {
-        res.sendFile(DEFAULT_USER_AVATAR_PATH)
-        return
+        if (req.headers['if-none-match'] === `W/default-citizen-avatar`) {
+          return res.status(304).end()
+        } else {
+          res.setHeader('ETag', 'W/default-citizen-avatar')
+          return res.sendFile(DEFAULT_USER_AVATAR_PATH)
+        }
+      }
+      
+      const ptr = await userDb.blobs.getPointer('avatar')
+      const etag = `W/block-${ptr.start}`
+      if (req.headers['if-none-match'] === etag) {
+        return res.status(304).end()
       }
 
+      res.setHeader('ETag', etag)
       const s = await userDb.blobs.createReadStream('avatar')
       s.pipe(res)
     } catch (e) {
       if (userDb && userDb.dbType === 'ctzn.network/public-community-db') {
-        res.sendFile(DEFAULT_COMMUNITY_AVATAR_PATH)
+        if (req.headers['if-none-match'] === `W/default-community-avatar`) {
+          return res.status(304).end()
+        } else {
+          res.setHeader('ETag', 'W/default-community-avatar')
+          return res.sendFile(DEFAULT_COMMUNITY_AVATAR_PATH)
+        }
       } else {
-        res.sendFile(DEFAULT_USER_AVATAR_PATH)
+        if (req.headers['if-none-match'] === `W/default-citizen-avatar`) {
+          return res.status(304).end()
+        } else {
+          res.setHeader('ETag', 'W/default-citizen-avatar')
+          return res.sendFile(DEFAULT_USER_AVATAR_PATH)
+        }
       }
     }
   })
