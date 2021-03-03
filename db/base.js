@@ -246,6 +246,7 @@ class Blobs {
   }
 
   async teardown () {
+    if (!this.feed) return
     if (!this.isPrivate) {
       client.network.configure(this.feed, {announce: false, lookup: false})
     }

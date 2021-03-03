@@ -22,7 +22,7 @@ export class BaseView {
 
   _addCommon () {
     let content = `CTZN ${this.globals.pkg.version} `
-    const items = ['Home', 'Hyperspace', 'Issues', 'Communities']
+    const items = ['Home', 'Hyperspace', 'Issues', 'Communities', 'Accounts']
     for (let i = 0; i < items.length; i++) {
       let highlight = this.constructor.name === `${items[i]}View` ? '{inverse}' : ''
       content += `${highlight} {bold}F${i+1}{/}${highlight} ${items[i]} {/}`

@@ -1,5 +1,6 @@
 import * as db from '../db/index.js'
 import * as issues from '../lib/issues.js'
+import { constructUserId } from '../lib/strings.js'
 
 export function setup (wsServer) {
   wsServer.registerLoopback('server.listDatabases', async ([]) => {
@@ -45,6 +46,20 @@ export function setup (wsServer) {
     return issues.dismiss(issueId, opts)
   })
 
+  wsServer.registerLoopback('server.listAccounts', async ([]) => {
+    let userRecords = await db.publicServerDb.users.list()
+    userRecords = userRecords.filter(userRecord => userRecord.value.type === 'citizen')
+    return await Promise.all(userRecords.map(async userRecord => {
+      const userId = constructUserId(userRecord.key)
+      const publicUserDb = db.publicUserDbs.get(userId)
+      const profile = publicUserDb ? await publicUserDb.profile.get('self') : undefined
+      return {
+        userId,
+        displayName: profile?.value?.displayName || ''
+      }
+    }))
+  })
+
   wsServer.registerLoopback('server.listCommunities', async ([]) => {
     let communityDbs = Array.from(db.publicUserDbs.values()).filter(db => db.dbType === 'ctzn.network/public-community-db')
     return Promise.all(communityDbs.map(async db => {
@@ -75,6 +90,10 @@ export function setup (wsServer) {
         memberRecordValue.roles = memberRecordValue.roles.filter(r => r !== 'admin')
       }
     })
+  })
+
+  wsServer.registerLoopback('server.removeUser', async ([username]) => {
+    await db.deleteUser(username)
   })
 }
 

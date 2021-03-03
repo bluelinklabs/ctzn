@@ -2,12 +2,14 @@ import { HomeView } from './home.js'
 import { HyperspaceView } from './hyperspace.js'
 import { IssuesView } from './issues.js'
 import { CommunitiesView } from './communities.js'
+import { AccountsView } from './accounts.js'
 
 const VIEWS = {
   'home': HomeView,
   'hyperspace': HyperspaceView,
   'issues': IssuesView,
-  'communities': CommunitiesView
+  'communities': CommunitiesView,
+  'accounts': AccountsView
 }
 let _screen
 let _globals

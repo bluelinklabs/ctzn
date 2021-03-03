@@ -20,6 +20,7 @@ export function start ({pkg, configDir}) {
   screen.key(['f2'], () => views.goto('hyperspace'))
   screen.key(['f3'], () => views.goto('issues'))
   screen.key(['f4'], () => views.goto('communities'))
+  screen.key(['f5'], () => views.goto('accounts'))
 
   views.setup({screen}, {pkg, configDir})
   views.goto('home')

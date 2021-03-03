@@ -117,6 +117,29 @@ export async function createUser ({type, username, email, password, profile}) {
   }
 }
 
+export async function deleteUser (username) {
+  console.log('Deleting user:', username)
+  try {
+    const userId = constructUserId(username)
+    if (publicUserDbs.has(userId)) {
+      await publicUserDbs.get(userId).teardown()
+      publicUserDbs.delete(userId)
+    }
+    if (privateUserDbs.has(userId)) {
+      await privateUserDbs.get(userId).teardown()
+      privateUserDbs.delete(userId)
+    }
+    await publicServerDb.users.del(username)
+    await privateServerDb.accounts.del(username)
+    await onDatabaseChange(publicServerDb, [privateServerDb])
+    console.log('Successfully deleted user:', username)
+  } catch (e) {
+    console.error('Failed to delete user:', username)
+    console.error(e)
+    throw e
+  }
+}
+
 export async function cleanup () {
   await hyperspace.cleanup()
 }
