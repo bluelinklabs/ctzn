@@ -48,13 +48,13 @@ export function setup (wsServer) {
 
   wsServer.registerLoopback('server.listAccounts', async ([]) => {
     let userRecords = await db.publicServerDb.users.list()
-    userRecords = userRecords.filter(userRecord => userRecord.value.type === 'citizen')
     return await Promise.all(userRecords.map(async userRecord => {
       const userId = constructUserId(userRecord.key)
       const publicUserDb = db.publicUserDbs.get(userId)
       const profile = publicUserDb ? await publicUserDb.profile.get('self') : undefined
       return {
         userId,
+        type: userRecord.value.type,
         displayName: profile?.value?.displayName || ''
       }
     }))

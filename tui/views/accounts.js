@@ -108,10 +108,11 @@ export class AccountsView extends BaseView {
     this.accounts = await this.api.call('server.listAccounts', []).catch(e => [])
     const selected = this.listing.selected
     this.listing.setData([
-      ['ID', 'Name'],
+      ['ID', 'Name', 'Type'],
       ...this.accounts.map(account => ([
         String(account.userId),
-        String(account.displayName)
+        String(account.displayName),
+        String(account.type)
       ]))
     ])
     if (selected) this.listing.select(selected)
