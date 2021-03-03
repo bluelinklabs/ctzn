@@ -200,8 +200,8 @@ export async function countNotications (userInfo, opts) {
 
 async function fetchNotification (notificationEntry) {
   const itemUrlp = parseEntryUrl(notificationEntry.value.itemUrl)
-  const userId = await fetchUserId(itemUrlp.origin)
-  const db = publicUserDbs.get(userId)
+  const userId = await fetchUserId(itemUrlp.origin).catch(e => undefined)
+  const db = userId ? publicUserDbs.get(userId) : undefined
   let item
   if (db) {
     item = await db.getTable(itemUrlp.schemaId).get(itemUrlp.key)
