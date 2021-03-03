@@ -29,7 +29,7 @@ Point your domain name's A record to the server. We'll refer to that domain as `
 
 ## Step 5 - Enable gcloud's PTR record
 
-**Note: CTZN requires a PTR record so if you're using a different platform than Google Cloud, you WILL need to solve this.**
+**Note: CTZN requires a PTR record so if you're using a different platform (server host) than Google Cloud, you WILL need to solve this.**
 
 From the Compute Engine dashboard, follow these steps:
 
@@ -43,6 +43,8 @@ From the Compute Engine dashboard, follow these steps:
 - Click "Save" at the bottom of the page.
 
 GCloud may give you an error saying you need to verify ownership of the domain before enabling the PTR record. Follow the steps they provide (it's fairly intuitive) and then complete these steps again.
+
+You may verify the correctness of your PTR setup by running `nslookup $IP_ADDRESS`. It should point to the `$DOMAIN`.
 
 ## Step 6 - Start CTZN
 
