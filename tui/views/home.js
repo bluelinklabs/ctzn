@@ -7,6 +7,8 @@ import * as tail from 'tail'
 import { BaseView } from './base.js'
 import fetch from 'node-fetch'
 import pm2 from 'pm2'
+import _get from 'lodash.get'
+import _set from 'lodash.set'
 
 const BINJS_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../bin.js')
 const OUT_LOG_PATH = path.join(os.homedir(), '.pm2/logs/ctzn-out.log')
@@ -182,6 +184,7 @@ export class HomeView extends BaseView {
       left: '0%',
       width: '100%',
       height: '100%-1',
+      scrollable: true,
       tags: true,
       border: {type: 'line'},
       style: {bg: 'black', fg: 'white'}
@@ -216,7 +219,7 @@ export class HomeView extends BaseView {
       offset += 2
     }
     let inputs = []
-    const input = ({label, key}) => {
+    const input = ({label, key, def, censor}) => {
       let myIndex = inputs.length
       form.append(blessed.text({
         top: `0%+${1 + offset}`,
@@ -230,6 +233,7 @@ export class HomeView extends BaseView {
         left: '30%',
         width: '100%-30',
         height: 3,
+        censor,
         interactive: true,
         keys: true,
         inputOnFocus: true,
@@ -240,7 +244,9 @@ export class HomeView extends BaseView {
       textbox.key(['down', 'enter'], () => inputs[myIndex + 1]?.focus())
       textbox.key(['escape'], () => askFinished())
       form.append(textbox)
-      if (this.config[key]) textbox.setValue(String(this.config[key]))
+      if (_get(this.config, key, def)) {
+        textbox.setValue(String(_get(this.config, key, def)))
+      }
       inputs.push(textbox)
       offset += 2
     }
@@ -248,6 +254,12 @@ export class HomeView extends BaseView {
     header({label: 'Basics'})
     input({label: 'Domain', key: 'domain'})
     input({label: 'Port', key: 'port'})
+    header({label: 'SMTP Server Settings'})
+    input({label: 'Domain', key: 'smtpConfig.host'})
+    input({label: 'Port', key: 'smtpConfig.port', def: 465})
+    input({label: 'Login username', key: 'smtpConfig.username'})
+    input({label: 'Login password', key: 'smtpConfig.password', censor: true})
+    input({label: '"From" address', key: 'smtpConfig.senderAddress'})
     header({label: 'Advanced'})
     input({label: 'Hyperspace Host', key: 'hyperspaceHost'})
     input({label: 'Hyperspace Storage Dir', key: 'hyperspaceStorage'})
@@ -273,7 +285,11 @@ export class HomeView extends BaseView {
     }
     form.key(['up', 'down'], () => inputs[0].focus())
     form.key(['escape'], () => askFinished())
-    form.on('submit', (data) => {
+    form.on('submit', (kvs) => {
+      var data = {}
+      for (let k in kvs) {
+        _set(data, k, kvs[k])
+      }
       this.config.update(data)
       teardown()
     })
