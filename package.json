@@ -1,6 +1,6 @@
 {
   "name": "ctzn",
-  "version": "0.14.1",
+  "version": "0.15.0",
   "description": "A hybrid p2p/federated social network mad science experiment",
   "main": "index.js",
   "type": "module",
