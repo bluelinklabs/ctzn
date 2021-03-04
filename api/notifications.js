@@ -44,7 +44,7 @@ export function setup (wsServer) {
   wsServer.register('notifications.updateNotificationsClearedAt', async ([opts], client) => {
     if (!client?.auth) throw new errors.SessionError()
 
-    const release = await privateServerDb.lock('accounts')
+    const release = await privateServerDb.lock(`accounts:${client.auth.username}`)
     try {
       const accountRecord = await privateServerDb.accounts.get(client.auth.username)
       if (!accountRecord) throw new errors.NotFoundError('User account record not found')

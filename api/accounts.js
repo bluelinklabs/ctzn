@@ -2,9 +2,13 @@ import { createValidator } from '../lib/schemas.js'
 import { v4 as uuidv4 } from 'uuid'
 import { publicServerDb, privateServerDb, createUser } from '../db/index.js'
 import { constructUserUrl, constructUserId } from '../lib/strings.js'
-import { verifyPassword } from '../lib/crypto.js'
+import { hashPassword, verifyPassword, generateRecoveryCode } from '../lib/crypto.js'
 import * as errors from '../lib/errors.js'
+import * as email from '../lib/email.js'
 import ip from 'ip'
+import deindent from 'deindent'
+
+const PASSWORD_CHANGE_CODE_LIFETIME = 1e3 * 60 * 60 * 24 // 24 hours
 
 const registerParam = createValidator({
   type: 'object',
@@ -136,6 +140,90 @@ export function setup (wsServer, config) {
       username
     }
   })
+
+  wsServer.register('accounts.requestChangePasswordCode', async ([username]) => {
+    if (!username || typeof username !== 'string') {
+      throw new errors.NotFoundError('User does not exist')
+    }
+
+    const code = generateRecoveryCode()
+    let accountRecord
+    const release = await privateServerDb.lock(`accounts:${username}`)
+    try {
+      accountRecord = await privateServerDb.accounts.get(username)
+      if (!accountRecord) {
+        throw new errors.NotFoundError('User does not exist')
+      }
+      if (!accountRecord.value.email) {
+        throw new errors.NotFoundError('User does not have an email address on file')
+      }
+      accountRecord.value.passwordChangeCode = code
+      accountRecord.value.passwordChangeCodeCreatedAt = (new Date()).toISOString()
+      await privateServerDb.accounts.put(username, accountRecord.value)
+    } finally {
+      release()
+    }
+
+    const text = deindent`
+      Hello! You have received this email because a password-change was requested for your account at ${config.domain}.
+      
+      Use the following code to update your password: ${code}
+
+      If you didn't request a password change, you can ignore this email.
+    `
+    const html = deindent`
+      Hello! You have received this email because a password-change was requested for your account at ${config.domain}.
+
+      Use the following code to update your password: <b>${code}</b>
+
+      If you didn't request a password change, you can ignore this email.
+    `
+    await email.send({
+      to: accountRecord.value.email,
+      subject: `Password change code for ${config.domain}`,
+      text,
+      html
+    })
+  })
+
+  wsServer.register('accounts.changePasswordUsingCode', async ([username, code, newPassword]) => {
+    if (!username || typeof username !== 'string') {
+      throw new errors.NotFoundError('User does not exist')
+    }
+    if (!code || typeof code !== 'string') {
+      throw new errors.ValidationError('Invalid password-change code')
+    }
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 1) {
+      throw new errors.ValidationError('Please enter a new password')
+    }
+
+    let accountRecord
+    const release = await privateServerDb.lock(`accounts:${username}`)
+    try {
+      accountRecord = await privateServerDb.accounts.get(username)
+      if (!accountRecord) {
+        throw new errors.NotFoundError('User does not exist')
+      }
+      if (!accountRecord.value.passwordChangeCode || !accountRecord.value.passwordChangeCodeCreatedAt) {
+        throw new errors.InvalidCredentialsError('Password change code has expired')
+      }
+      const createdAt = new Date(accountRecord.value.passwordChangeCodeCreatedAt)
+      if (Date.now() - createdAt > PASSWORD_CHANGE_CODE_LIFETIME) {
+        throw new errors.InvalidCredentialsError('Password change code has expired')
+      }
+      if (code !== accountRecord.value.passwordChangeCode) {
+        throw new errors.InvalidCredentialsError('Invalid code, please make sure you\'re using the code which was emailed to you')
+      }
+
+      accountRecord.value.hashedPassword = await hashPassword(newPassword)
+      accountRecord.value.passwordChangeCode = undefined
+      accountRecord.value.passwordChangeCodeCreatedAt = undefined
+      await privateServerDb.accounts.put(username, accountRecord.value)
+    } finally {
+      release()
+    }
+  })
+  
 
   wsServer.register('accounts.unregister', async (params, socket_id) => {
     return 'todo'

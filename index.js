@@ -9,6 +9,7 @@ import * as perf from './lib/perf.js'
 import { NoTermsOfServiceIssue } from './lib/issues/no-terms-of-service.js'
 import { NoPrivacyPolicyIssue } from './lib/issues/no-privacy-policy.js'
 import * as issues from './lib/issues.js'
+import * as email from './lib/email.js'
 import * as path from 'path'
 import * as fs from 'fs'
 import { fileURLToPath } from 'url'
@@ -291,6 +292,7 @@ export async function start (opts) {
     console.log(`CTZN server listening at http://localhost:${config.port}`)
   })
 
+  await email.setup(config)
   await db.setup(config)
 
   // process.on('SIGINT', close)

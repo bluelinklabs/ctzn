@@ -15,6 +15,13 @@
       "hashedPassword": {
         "type": "string"
       },
+      "passwordChangeCode": {
+        "type": "string"
+      },
+      "passwordChangeCodeCreatedAt": {
+        "type": "string",
+        "format": "date-time"
+      },
       "privateDbUrl": {
         "type": "string",
         "pattern": "^hyper://([a-f0-9]{64})/$"
