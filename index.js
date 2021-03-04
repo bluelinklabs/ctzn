@@ -128,26 +128,21 @@ export async function start (opts) {
     try {
       const userId = usernameToUserId(req.params.username)
       userDb = db.publicUserDbs.get(userId)
-      if (!userDb) {
-        if (req.headers['if-none-match'] === `W/default-citizen-avatar`) {
-          return res.status(304).end()
-        } else {
-          res.setHeader('ETag', 'W/default-citizen-avatar')
-          return res.sendFile(DEFAULT_USER_AVATAR_PATH)
-        }
-      }
+      if (!userDb) throw 'Not found'
       
       const ptr = await userDb.blobs.getPointer('avatar')
+      if (!ptr) throw 'Not found'
+
       const etag = `W/block-${ptr.start}`
       if (req.headers['if-none-match'] === etag) {
         return res.status(304).end()
       }
 
       res.setHeader('ETag', etag)
-      const s = await userDb.blobs.createReadStream('avatar')
+      const s = await userDb.blobs.createReadStreamFromPointer(ptr)
       s.pipe(res)
     } catch (e) {
-      if (userDb && userDb.dbType === 'ctzn.network/public-community-db') {
+      if (userDb?.dbType === 'ctzn.network/public-community-db') {
         if (req.headers['if-none-match'] === `W/default-community-avatar`) {
           return res.status(304).end()
         } else {
@@ -162,6 +157,29 @@ export async function start (opts) {
           return res.sendFile(DEFAULT_USER_AVATAR_PATH)
         }
       }
+    }
+  })
+
+  app.get('/ctzn/blobs/:username([^\/]{3,})/:blobname', async (req, res) => {
+    let userDb
+    try {
+      const userId = usernameToUserId(req.params.username)
+      userDb = db.publicUserDbs.get(userId)
+      if (!userDb) return res.status(404).end()
+      
+      const ptr = await userDb.blobs.getPointer(req.params.blobname)
+      if (!ptr) return res.status(404).end()
+
+      const etag = `W/block-${ptr.start}`
+      if (req.headers['if-none-match'] === etag) {
+        return res.status(304).end()
+      }
+
+      res.setHeader('ETag', etag)
+      const s = await userDb.blobs.createReadStreamFromPointer(ptr)
+      s.pipe(res)
+    } catch (e) {
+      return res.status(404).end()
     }
   })
 

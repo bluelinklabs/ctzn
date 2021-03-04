@@ -1,4 +1,5 @@
 import * as accounts from './accounts.js'
+import * as blobs from './blobs.js'
 import * as comments from './comments.js'
 import * as communities from './communities.js'
 import * as debug from './debug.js'
@@ -37,6 +38,7 @@ export function setup (wsServer, config) {
   }
 
   accounts.setup(wsServer, config)
+  blobs.setup(wsServer, config)
   comments.setup(wsServer, config)
   communities.setup(wsServer, config)
   if (config.debugMode) debug.setup(wsServer, config)
