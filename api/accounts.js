@@ -172,10 +172,10 @@ export function setup (wsServer, config) {
       If you didn't request a password change, you can ignore this email.
     `
     const html = deindent`
-      Hello! You have received this email because a password-change was requested for your account at ${config.domain}.
-
-      Use the following code to update your password: <b>${code}</b>
-
+      Hello! You have received this email because a password-change was requested for your account at ${config.domain}.<br>
+      <br>
+      Use the following code to update your password: <b>${code}</b><br>
+      <br>
       If you didn't request a password change, you can ignore this email.
     `
     await email.send({
