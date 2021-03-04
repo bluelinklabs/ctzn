@@ -13,6 +13,48 @@
         "minLength": 1,
         "maxLength": 256
       },
+      "media": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["blobs"],
+          "properties": {
+            "caption": {
+              "type": "string"
+            },
+            "blobs": {
+              "type": "object",
+              "required": ["original"],
+              "properties": {
+                "thumb": {
+                  "type": "object",
+                  "required": ["mimeType", "blobName"],
+                  "properties": {
+                    "mimeType": {
+                      "type": "string"
+                    },
+                    "blobName": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "original": {
+                  "type": "object",
+                  "required": ["mimeType", "blobName"],
+                  "properties": {
+                    "mimeType": {
+                      "type": "string"
+                    },
+                    "blobName": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "extendedText": {
         "type": "string"
       },
