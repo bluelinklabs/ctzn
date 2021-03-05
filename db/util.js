@@ -138,12 +138,12 @@ export async function fetchReplyCount (subject, userIdxId = undefined) {
   return comments.length
 }
 
-async function fetchNotificationsInner (userInfo, {after, before, limit} = {}) {
+async function fetchNotificationsInner (userInfo, {lt, gt, after, before, limit} = {}) {
   let notificationEntries = []
   limit = Math.max(Math.min(limit || 20, 20), 1)
 
-  const ltKey = before ? lexintEncoder.encode(Number(new Date(before))) : undefined
-  const gtKey = after ? lexintEncoder.encode(Number(new Date(after))) : undefined
+  const ltKey = lt ? lt : before ? lexintEncoder.encode(Number(new Date(before))) : undefined
+  const gtKey = gt ? gt : after ? lexintEncoder.encode(Number(new Date(after))) : undefined
   const dbKey = hyperUrlToKeyStr(userInfo.dbUrl)
 
   if (privateUserDbs.has(userInfo.userId)) {
@@ -207,6 +207,7 @@ async function fetchNotification (notificationEntry) {
     item = await db.getTable(itemUrlp.schemaId).get(itemUrlp.key)
   }
   return {
+    key: notificationEntry.key,
     itemUrl: notificationEntry.value.itemUrl,
     createdAt: notificationEntry.value.createdAt,
     blendedCreatedAt: item?.value?.createdAt

@@ -84,6 +84,12 @@ test('user notifications index', async t => {
     [alice, 'follow', bob],
   ])
 
+  let notes1 = await api.notifications.list({limit: 2})
+  t.is(notes1.length, 2)
+  let notes2 = await api.notifications.list({limit: 2, lt: notes1[1].key})
+  t.is(notes2.length, 2)
+  t.truthy(notes1[1].key !== notes2[0].key)
+
   await close()
   close = undefined
 })
