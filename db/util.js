@@ -207,7 +207,7 @@ async function fetchNotification (notificationEntry) {
     item = await db.getTable(itemUrlp.schemaId).get(itemUrlp.key)
   }
   return {
-    key: notificationEntry.key,
+    key: notificationEntry.key.includes(':') ? notificationEntry.key.split(':')[1] : notificationEntry.key,
     itemUrl: notificationEntry.value.itemUrl,
     createdAt: notificationEntry.value.createdAt,
     blendedCreatedAt: item?.value?.createdAt
