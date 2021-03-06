@@ -82,13 +82,13 @@ export class HomeView extends BaseView {
       top: 7,
       left: '100%-35',
       content: '[l] View log',
-      style: {fg: 'gray'}
+      style: {fg: 'green'}
     }))
     screen.append(blessed.text({
       top: 7,
       left: '100%-20',
       content: '[e] View err log',
-      style: {fg: 'gray'}
+      style: {fg: 'green'}
     }))
     
     screen.render()
