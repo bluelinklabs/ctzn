@@ -18,7 +18,7 @@ A list of all schemas and how they're used.
 - `ctzn.network/profile` Record of user info (name, description, etc)
 - `ctzn.network/post` A single post
 - `ctzn.network/comment` A comment on some item
-- `ctzn.network/vote` A vote up or down on some URL
+- `ctzn.network/reaction` A reaction-string attached to some URL
 - `ctzn.network/follow` Record of following another user
 - `ctzn.network/community-membership` Record of membership in a community
 
@@ -27,7 +27,7 @@ A list of all schemas and how they're used.
 - `ctzn.network/index-state` Record of indexing states
 - `ctzn.network/follow-idx` Index of follows by followed users & self
 - `ctzn.network/thread-idx` Index of 'self' reply-posts by followed users & self
-- `ctzn.network/vote-idx` Index of votes by followed users & self
+- `ctzn.network/reaction-idx` Index of reactions by followed users & self
 - `ctzn.network/notification-idx` Index of notification activity by followed users & self
 
 ## Public community db schemas
@@ -40,5 +40,5 @@ A list of all schemas and how they're used.
 - `ctzn.network/feed-idx` Index of content in the community feed
 - `ctzn.network/follow-idx` Index of follows by community members
 - `ctzn.network/thread-idx` Index of community reply-posts by community members
-- `ctzn.network/vote-idx` Index of votes by community members
+- `ctzn.network/reaction-idx` Index of reactions by community members
 - `ctzn.network/notification-idx` Index of notification activity by community members

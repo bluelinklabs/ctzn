@@ -49,19 +49,19 @@ test('user notifications index', async t => {
     text: 'Comment 2'
   })
 
-  await bob.vote({subject: bob.posts[0], vote: 1})
-  await bob.vote({subject: bob.posts[1], vote: -1})
+  await bob.react({subject: bob.posts[0], reaction: 'like'})
+  await bob.react({subject: bob.posts[1], reaction: 'woah'})
   for (let post of bob.posts) {
-    await alice.vote({subject: post, vote: 1})
+    await alice.react({subject: post, reaction: 'like'})
   }
   for (let reply of bob.replies) {
-    await alice.vote({subject: reply, vote: 1})
+    await alice.react({subject: reply, reaction: 'like'})
   }
   for (let post of bob.posts) {
-    await carla.vote({subject: post, vote: -1})
+    await carla.react({subject: post, reaction: 'woah'})
   }
   for (let reply of bob.replies) {
-    await carla.vote({subject: reply, vote: -1})
+    await carla.react({subject: reply, reaction: 'woah'})
   }
 
   await new Promise(r => setTimeout(r, 5e3))
@@ -71,12 +71,12 @@ test('user notifications index', async t => {
   var notifications = await api.notifications.list()
   notifications.sort((a, b) => new Date(b.item.createdAt) - new Date(a.item.createdAt))
   sim.testNotifications(t, notifications, [
-    [carla, 'downvote', bob.replies[0]],
-    [carla, 'downvote', bob.posts[1]],
-    [carla, 'downvote', bob.posts[0]],
-    [alice, 'upvote', bob.replies[0]],
-    [alice, 'upvote', bob.posts[1]],
-    [alice, 'upvote', bob.posts[0]],
+    [carla, 'reaction', bob.replies[0], 'woah'],
+    [carla, 'reaction', bob.posts[1], 'woah'],
+    [carla, 'reaction', bob.posts[0], 'woah'],
+    [alice, 'reaction', bob.replies[0], 'like'],
+    [alice, 'reaction', bob.posts[1], 'like'],
+    [alice, 'reaction', bob.posts[0], 'like'],
     [carla, 'comment', {text: 'Comment 2', reply: {root: bob.posts[0]}}],
     [carla, 'comment', {text: 'Reply 1', reply: {root: bob.posts[0], parent: alice.replies[0]}}],
     [alice, 'comment', {text: 'Comment 1', reply: {root: bob.posts[0]}}],
@@ -146,19 +146,19 @@ test('user & community notifications index', async t => {
     text: 'Comment 2'
   })
 
-  await bob.vote({subject: bob.posts[0], vote: 1})
-  await bob.vote({subject: bob.posts[1], vote: -1})
+  await bob.react({subject: bob.posts[0], reaction: 'like'})
+  await bob.react({subject: bob.posts[1], reaction: 'woah'})
   for (let post of bob.posts) {
-    await alice.vote({subject: post, vote: 1})
+    await alice.react({subject: post, reaction: 'like'})
   }
   for (let reply of bob.replies) {
-    await alice.vote({subject: reply, vote: 1})
+    await alice.react({subject: reply, reaction: 'like'})
   }
   for (let post of bob.posts) {
-    await carla.vote({subject: post, vote: -1})
+    await carla.react({subject: post, reaction: 'woah'})
   }
   for (let reply of bob.replies) {
-    await carla.vote({subject: reply, vote: -1})
+    await carla.react({subject: reply, reaction: 'woah'})
   }
 
   await new Promise(r => setTimeout(r, 5e3))
@@ -168,12 +168,12 @@ test('user & community notifications index', async t => {
   var notifications = await api.notifications.list()
   notifications.sort((a, b) => new Date(b.item.createdAt) - new Date(a.item.createdAt))
   sim.testNotifications(t, notifications, [
-    [carla, 'downvote', bob.replies[0]],
-    [carla, 'downvote', bob.posts[1]],
-    // bob does not follow carla so he does not receive [carla, 'downvote', bob.posts[0]],
-    [alice, 'upvote', bob.replies[0]],
-    [alice, 'upvote', bob.posts[1]],
-    [alice, 'upvote', bob.posts[0]],
+    [carla, 'reaction', bob.replies[0], 'woah'],
+    [carla, 'reaction', bob.posts[1], 'woah'],
+    // bob does not follow carla so he does not receive [carla, 'reaction', bob.posts[0], 'woah'],
+    [alice, 'reaction', bob.replies[0], 'like'],
+    [alice, 'reaction', bob.posts[1], 'like'],
+    [alice, 'reaction', bob.posts[0], 'like'],
     [carla, 'comment', {text: 'Comment 2', reply: {root: bob.posts[1]}}],
     [carla, 'comment', {text: 'Reply 1', reply: {root: bob.posts[1]}}],
     [alice, 'comment', {text: 'Comment 1', reply: {root: bob.posts[0]}}],

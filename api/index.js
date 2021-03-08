@@ -7,9 +7,9 @@ import * as follows from './follows.js'
 import * as posts from './posts.js'
 import * as profiles from './profiles.js'
 import * as notifications from './notifications.js'
+import * as reactions from './reactions.js'
 import * as server from './server.js'
 import * as users from './users.js'
-import * as votes from './votes.js'
 
 export function setup (wsServer, config) {
   const origRegister = wsServer.register
@@ -46,7 +46,7 @@ export function setup (wsServer, config) {
   posts.setup(wsServer, config)
   profiles.setup(wsServer, config)
   notifications.setup(wsServer, config)
+  reactions.setup(wsServer, config)
   server.setup(wsServer, config)
   users.setup(wsServer, config)
-  votes.setup(wsServer, config)
 }

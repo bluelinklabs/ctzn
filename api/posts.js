@@ -4,7 +4,7 @@ import { createValidator } from '../lib/schemas.js'
 import { publicUserDbs, privateUserDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
-import { fetchAuthor, fetchReplyCount } from '../db/util.js'
+import { fetchAuthor, fetchReactions, fetchReplyCount } from '../db/util.js'
 import { getPost, listPosts } from '../db/getters.js'
 import * as errors from '../lib/errors.js'
 
@@ -87,6 +87,7 @@ export function setup (wsServer) {
       }
       entry.url = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
       entry.author = await fetchAuthor(db.userId, authorsCache)
+      entry.reactions = (await fetchReactions(entry, client?.auth?.userId)).reactions
       entry.replyCount = await fetchReplyCount(entry, client?.auth?.userId)
       postEntries.push(entry)
       if (postEntries.length >= limit) {

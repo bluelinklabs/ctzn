@@ -196,10 +196,10 @@ export class TestFramework {
     return user.posts.slice().map(p => p.url)
   }
 
-  getExpectedVoterIds (subject, vote) {
+  getExpectedReactorIds (subject, reaction) {
     var ids = []
     for (let username in this.users) {
-      if (this.users[username].votes[subject.url] === vote) {
+      if (this.users[username].reactions[subject.url][reaction]) {
         ids.push(this.users[username].userId)
       }
     }
@@ -235,10 +235,9 @@ export class TestFramework {
           if (desc[2].reply.parent) t.is(entry.item.reply.parent.dbUrl, desc[2].reply.parent.url, itemDesc)
           else t.falsy(entry.item.reply.parent, itemDesc)
           break
-        case 'upvote':
-        case 'downvote':
-          t.is(schemaId, 'ctzn.network/vote', itemDesc)
-          t.is(entry.item.vote, desc[1] === 'upvote' ? 1 : -1, itemDesc)
+        case 'reaction':
+          t.is(schemaId, 'ctzn.network/reaction', itemDesc)
+          t.is(entry.item.reaction, desc[3], itemDesc)
           t.is(entry.item.subject.dbUrl, desc[2].url, itemDesc)
           break
       }
@@ -254,7 +253,7 @@ class TestCitizen {
     this.posts = []
     this.comments = []
     this.following = {}
-    this.votes = {}
+    this.reactions = {}
   }
 
   get replies () {
@@ -311,15 +310,17 @@ class TestCitizen {
     delete this.following[TestCitizen.userId]
   }
 
-  async vote ({subject, vote}) {
+  async react ({subject, reaction}) {
     await this.login()
-    if (vote !== 0) {
-      await this.inst.api.votes.put({subject: {dbUrl: subject.url, authorId: subject.author.userId}, vote})
-      this.votes[subject.url] = vote
-    } else {
-      await this.inst.api.votes.del(subject.url)
-      delete this.votes[subject.url]
-    }
+    await this.inst.api.reactions.put({subject: {dbUrl: subject.url, authorId: subject.author.userId}, reaction})
+    this.reactions[subject.url] = this.reactions[subject.url] || {}
+    this.reactions[subject.url][reaction] = true
+  }
+
+  async unreact ({subject, reaction}) {
+    await this.login()
+    await this.inst.api.reactions.del(subject.url, reaction)
+    delete this.reactions[subject.url][reaction]
   }
 }
 

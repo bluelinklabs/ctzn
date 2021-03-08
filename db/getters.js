@@ -1,7 +1,7 @@
 import { publicUserDbs } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId, fetchUserInfo } from '../lib/network.js'
-import { dbGet, fetchAuthor, fetchVotes, fetchReplyCount, fetchReplies, fetchSelfIndexFollowerIds, fetchCommunityIndexesFollowerIds } from './util.js'
+import { dbGet, fetchAuthor, fetchReactions, fetchReplyCount, fetchReplies, fetchSelfIndexFollowerIds, fetchCommunityIndexesFollowerIds } from './util.js'
 
 export async function getPost (db, key, authorId, auth = undefined) {
   const postEntry = await db.posts.get(key)
@@ -10,7 +10,7 @@ export async function getPost (db, key, authorId, auth = undefined) {
   }
   postEntry.url = constructEntryUrl(db.url, 'ctzn.network/post', postEntry.key)
   postEntry.author = await fetchAuthor(authorId)
-  postEntry.votes = await fetchVotes(postEntry, auth?.userId)
+  postEntry.reactions = (await fetchReactions(postEntry, auth?.userId)).reactions
   postEntry.replyCount = await fetchReplyCount(postEntry, auth?.userId)
   return postEntry
 }
@@ -22,7 +22,7 @@ export async function listPosts (db, opts, authorId, auth = undefined) {
     for (let entry of entries) {
       entry.url = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
       entry.author = await fetchAuthor(authorId, authorsCache)
-      entry.votes = await fetchVotes(entry, auth?.userId)
+      entry.reactions = (await fetchReactions(entry, auth?.userId)).reactions
       entry.replyCount = await fetchReplyCount(entry, auth?.userId)
     }
     return entries
@@ -39,7 +39,7 @@ export async function getComment (db, key, authorId, auth = undefined) {
   }
   commentEntry.url = constructEntryUrl(db.url, 'ctzn.network/comment', commentEntry.key)
   commentEntry.author = await fetchAuthor(authorId)
-  commentEntry.votes = await fetchVotes(commentEntry, auth?.userId)
+  commentEntry.reactions = (await fetchReactions(commentEntry, auth?.userId)).reactions
   commentEntry.replyCount = await fetchReplyCount(commentEntry, auth?.userId)
   return commentEntry
 }
@@ -119,7 +119,7 @@ async function fetchIndexedPosts (postsFeedEntries, userIdxId = undefined, {incl
       if (!postEntry) return undefined
       postEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', key)
       postEntry.author = await fetchAuthor(userId, authorsCache)
-      postEntry.votes = await fetchVotes(postEntry, userIdxId)
+      postEntry.reactions = (await fetchReactions(postEntry, userIdxId)).reactions
       if (includeReplyCount) postEntry.replyCount = await fetchReplyCount(postEntry, userIdxId)
       return postEntry
     } catch (e) {
@@ -144,7 +144,7 @@ async function fetchIndexedComments (comments, userIdxId = undefined, {includeRe
       if (!commentEntry) return undefined
       commentEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
       commentEntry.author = await fetchAuthor(userId, authorsCache)
-      commentEntry.votes = await fetchVotes(commentEntry, userIdxId)
+      commentEntry.reactions = (await fetchReactions(commentEntry, userIdxId)).reactions
       if (includeReplyCount) commentEntry.replyCount = await fetchReplyCount(commentEntry, userIdxId)
       return commentEntry
     } catch (e) {

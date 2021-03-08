@@ -63,43 +63,49 @@ export async function fetchCommunityIndexesFollowerIds (subjectUserId, community
   return concatUniq(...followerIds)
 }
 
-export async function fetchVotes (subject, userIdxId = undefined) {
+export async function fetchReactions (subject, userIdxId = undefined) {
   let subjectInfo
-  let upvoteUrls
-  let downvoteUrls
+  let reactionsUrls = {}
 
   if (subject?.value?.community?.userId) {
-    // fetch votes in post's community index
-    let votesCommunityIdxEntry
-    let votesUserIdxEntry
+    // fetch reactions in post's community index
+    let reactionsCommunityIdxEntry
+    let reactionsUserIdxEntry
     if (publicUserDbs.has(subject.value.community.userId)) {
-      votesCommunityIdxEntry = await publicUserDbs.get(subject.value.community.userId).votesIdx.get(subject.url)
+      reactionsCommunityIdxEntry = await publicUserDbs.get(subject.value.community.userId).reactionsIdx.get(subject.url)
     }
     if (userIdxId && privateUserDbs.has(userIdxId)) {
-      votesUserIdxEntry = await privateUserDbs.get(userIdxId).votesIdx.get(subject.url)
+      reactionsUserIdxEntry = await privateUserDbs.get(userIdxId).reactionsIdx.get(subject.url)
     }
-    subjectInfo = votesCommunityIdxEntry?.value?.subject || votesUserIdxEntry?.value?.subject
-    upvoteUrls = concatUniq(votesCommunityIdxEntry?.value?.upvoteUrls, votesUserIdxEntry?.value?.upvoteUrls)
-    downvoteUrls = concatUniq(votesCommunityIdxEntry?.value?.downvoteUrls, votesUserIdxEntry?.value?.downvoteUrls)
+    subjectInfo = reactionsCommunityIdxEntry?.value?.subject || reactionsUserIdxEntry?.value?.subject
+    reactionsUrls = mergeReactionObjects(reactionsCommunityIdxEntry?.value?.reactions, reactionsUserIdxEntry?.value?.reactions)
   } else {
-    // fetch votes in author and authed-user indexes
-    let votesAuthorIdxEntry
-    let votesUserIdxEntry
+    // fetch reactions in author and authed-user indexes
+    let reactionsAuthorIdxEntry
+    let reactionsUserIdxEntry
     if (subject.author && privateUserDbs.has(subject.author.userId)) {
-      votesAuthorIdxEntry = await privateUserDbs.get(subject.author.userId).votesIdx.get(subject.url)
+      reactionsAuthorIdxEntry = await privateUserDbs.get(subject.author.userId).reactionsIdx.get(subject.url)
     }
     if (userIdxId && userIdxId !== subject.author?.userId && privateUserDbs.has(userIdxId)) {
-      votesUserIdxEntry = await privateUserDbs.get(userIdxId).votesIdx.get(subject.url)
+      reactionsUserIdxEntry = await privateUserDbs.get(userIdxId).reactionsIdx.get(subject.url)
     }
-    subjectInfo = votesAuthorIdxEntry?.value?.subject || votesUserIdxEntry?.value?.subject
-    upvoteUrls = concatUniq(votesAuthorIdxEntry?.value?.upvoteUrls, votesUserIdxEntry?.value?.upvoteUrls)
-    downvoteUrls = concatUniq(votesAuthorIdxEntry?.value?.downvoteUrls, votesUserIdxEntry?.value?.downvoteUrls)
+    subjectInfo = reactionsAuthorIdxEntry?.value?.subject || reactionsUserIdxEntry?.value?.subject
+    reactionsUrls = mergeReactionObjects(reactionsAuthorIdxEntry?.value?.reactions, reactionsUserIdxEntry?.value?.reactions)
   }
+
+  // go from {reaction: [urls]} to [reaction,[userIds]]
+  let reactionsIdsPairs = await Promise.all(
+    Object.entries(reactionsUrls).map(async ([reaction, urls]) => {
+      return [
+        reaction,
+        await Promise.all(urls.map(fetchUserId))
+      ]
+    })
+  )
 
   return {
     subject: subjectInfo || {dbUrl: subject.url},
-    upvoterIds: await Promise.all(upvoteUrls.map(fetchUserId)),
-    downvoterIds: await Promise.all(downvoteUrls.map(fetchUserId))
+    reactions: Object.fromEntries(reactionsIdsPairs)
   }
 }
 
@@ -221,6 +227,16 @@ async function fetchNotification (notificationEntry) {
   }
 }
 
+function mergeReactionObjects (a, b) {
+  a = a || {}
+  b = b || {}
+  let obj = {}
+  let keys = Array.from(new Set(Object.keys(a).concat(Object.keys(b))))
+  for (let key of keys) {
+    obj[key] = concatUniq(a[key] || [], b[key] || [])
+  }
+  return obj
+}
 
 function concatUniq (...args){
   return Array.from(new Set(concat(...args)))

@@ -22,7 +22,7 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
     this.profile = this.getTable('ctzn.network/profile')
     this.posts = this.getTable('ctzn.network/post')
     this.comments = this.getTable('ctzn.network/comment')
-    this.votes = this.getTable('ctzn.network/vote')
+    this.reactions = this.getTable('ctzn.network/reaction')
     this.follows = this.getTable('ctzn.network/follow')
     this.memberships = this.getTable('ctzn.network/community-membership')
 
@@ -53,12 +53,12 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
     this.threadIdx = this.getTable('ctzn.network/thread-idx')
     this.followsIdx = this.getTable('ctzn.network/follow-idx')
     this.notificationsIdx = this.getTable('ctzn.network/notification-idx')
-    this.votesIdx = this.getTable('ctzn.network/vote-idx')
+    this.reactionsIdx = this.getTable('ctzn.network/reaction-idx')
 
     const NOTIFICATIONS_SCHEMAS = [
       'ctzn.network/follow',
       'ctzn.network/comment',
-      'ctzn.network/vote'
+      'ctzn.network/reaction'
     ]
     this.createIndexer('ctzn.network/notification-idx', NOTIFICATIONS_SCHEMAS, async (db, change) => {
       const myUrl = this.publicUserDb.url
@@ -89,8 +89,8 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
             itemCreatedAt = new Date(change.value.createdAt)
             break
           }
-          case 'ctzn.network/vote':
-            // vote on my content?
+          case 'ctzn.network/reaction':
+            // reaction on my content?
             if (!change.value.subject.dbUrl.startsWith(myUrl)) {
               return false
             }
@@ -207,42 +207,57 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
       }
     })
 
-    this.createIndexer('ctzn.network/vote-idx', ['ctzn.network/vote'], async (db, change) => {
-      const pend = perf.measure(`privateUserDb:votes-indexer`)
-      const release = await this.lock(`votes-idx:${change.keyParsed.key}`)
+    this.createIndexer('ctzn.network/reaction-idx', ['ctzn.network/reaction'], async (db, change) => {
+      const idxKey = change.keyParsed.key.split(':').slice(1).join(':')
+      
+      const pend = perf.measure(`privateUserDb:reactions-indexer`)
+      const release = await this.lock(`reactions-idx:${idxKey}`)
       try {
-        const voteUrl = constructEntryUrl(db.url, 'ctzn.network/vote', change.keyParsed.key)
+        const reactionUrl = constructEntryUrl(db.url, 'ctzn.network/reaction', change.keyParsed.key)
         let subject = change.value?.subject
+        let oldReaction
         if (!subject) {
           const oldEntry = await db.bee.checkout(change.seq).get(change.key, {timeout: 10e3})
           subject = oldEntry.value.subject
+          oldReaction = oldEntry.value.reaction
         }
 
-        let votesIdxEntry = await this.votesIdx.get(subject.dbUrl)
-        if (!votesIdxEntry) {
-          votesIdxEntry = {
-            key: change.keyParsed.key,
+        let reactionsIdxEntry = await this.reactionsIdx.get(subject.dbUrl)
+        if (!reactionsIdxEntry) {
+          reactionsIdxEntry = {
+            key: idxKey,
             value: {
               subject,
-              upvoteUrls: [],
-              downvoteUrls: []
+              reactions: {}
             }
           }
         }
-        let upvoteUrlIndex = votesIdxEntry.value.upvoteUrls.indexOf(voteUrl)
-        if (upvoteUrlIndex !== -1) votesIdxEntry.value.upvoteUrls.splice(upvoteUrlIndex, 1)
-        let downvoteUrlIndex = votesIdxEntry.value.downvoteUrls.indexOf(voteUrl)
-        if (downvoteUrlIndex !== -1) votesIdxEntry.value.downvoteUrls.splice(downvoteUrlIndex, 1)
   
-        if (change.value) {
-          if (change.value.vote === 1) {
-            votesIdxEntry.value.upvoteUrls.push(voteUrl)
-          } else if (change.value.vote === -1) {
-            votesIdxEntry.value.downvoteUrls.push(voteUrl)
+        if (change.value?.reaction) {
+          let i = -1
+          if (reactionsIdxEntry.value.reactions[change.value.reaction]) {
+            i = reactionsIdxEntry.value.reactions[change.value.reaction].indexOf(reactionUrl)
+          }
+          if (i === -1) {
+            if (!reactionsIdxEntry.value.reactions[change.value.reaction]) {
+              reactionsIdxEntry.value.reactions[change.value.reaction] = []
+            }
+            reactionsIdxEntry.value.reactions[change.value.reaction].push(reactionUrl)
+          }
+        } else if (oldReaction) {
+          let i = reactionsIdxEntry.value.reactions[oldReaction]?.indexOf(reactionUrl)
+          if (i !== -1) {
+            reactionsIdxEntry.value.reactions[oldReaction].splice(i, 1)
+            if (!reactionsIdxEntry.value.reactions[oldReaction].length) {
+              delete reactionsIdxEntry.value.reactions[oldReaction]
+            }
           }
         }
   
-        await this.votesIdx.put(votesIdxEntry.key, votesIdxEntry.value)
+        await this.reactionsIdx.put(reactionsIdxEntry.key, reactionsIdxEntry.value)
+      } catch (e) {
+        console.log(e)
+        throw e
       } finally {
         release()
         pend()
