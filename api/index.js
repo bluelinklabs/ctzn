@@ -12,6 +12,13 @@ import * as server from './server.js'
 import * as users from './users.js'
 
 export function setup (wsServer, config) {
+  wsServer.wss.on('connection', function connection(ws, req) {
+    const { headers } = req // { host: ctzn.politis.network, x-forwarded-for: 121.232.353.23, ... }
+
+    // Save request headers onto the ws client for later
+    ws.headers = req.headers
+  })
+
   const origRegister = wsServer.register
   wsServer.register = function (methodName, methodHandler) {
     origRegister.call(this, methodName, async (params, socket_id) => {
