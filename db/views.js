@@ -154,9 +154,9 @@ export function setup () {
 
   define('ctzn.network/notifications-count-view', async (auth, opts) => {
     if (!auth) throw new errors.SessionError()
-    const privateUserDb = privateUserDbs.get(auth.userId)
+    const privateUserDb = db.privateUserDbs.get(auth.userId)
     if (!privateUserDb) throw new errors.NotFoundError('User database not found')
-    return {count: await countNotications(client.auth, opts)}
+    return {count: await countNotications(auth, opts)}
   })
 
   define('ctzn.network/reactions-to-view', async (auth, subjectUrl) => {

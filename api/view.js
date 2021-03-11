@@ -4,8 +4,8 @@ import concat from 'concat-stream'
 
 export function setup (wsServer) {
   wsServer.register('view.get', async ([schemaId, ...args], client) => {
-    if (dbViews.getType(schemaId) === 'blob-view') {
-      const {createStream} = await dbViews.exec(schemaId, undefined, ...args)
+    if (views.getType(schemaId) === 'blob-view') {
+      const {createStream} = await views.exec(schemaId, undefined, ...args)
       const stream = await createStream()
       return new Promise((resolve, reject) => {
         pump(

@@ -41,6 +41,6 @@ function getListOpts (listOpts = {}) {
 
 function getDb (userId) {
   const publicUserDb = publicUserDbs.get(userId)
-  if (!publicUserDb) throw new Error('User database not found')
+  if (!publicUserDb) throw new Error(`User database "${userId}" not found`)
   return publicUserDb
 }

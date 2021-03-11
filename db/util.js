@@ -196,7 +196,7 @@ async function fetchNotificationsInner (userInfo, {lt, gt, after, before, limit}
 
 export async function fetchNotications (userInfo, opts) {
   const notificationEntries = await fetchNotificationsInner(userInfo, opts)
-  return await Promise.all(notificationEntries.map(fetchNotification))
+  return (await Promise.all(notificationEntries.map(fetchNotification))).filter(Boolean)
 }
 
 export async function countNotications (userInfo, opts) {
@@ -207,6 +207,7 @@ export async function countNotications (userInfo, opts) {
 async function fetchNotification (notificationEntry) {
   const itemUrlp = parseEntryUrl(notificationEntry.value.itemUrl)
   const userId = await fetchUserId(itemUrlp.origin).catch(e => undefined)
+  if (!userId) return undefined
   const db = userId ? publicUserDbs.get(userId) : undefined
   let item
   if (db) {
