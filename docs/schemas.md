@@ -14,8 +14,38 @@ Schemas contain the following standard attributes:
 - `title` A human-readable title for the schema.
 - `description` A human-readable description of the schema.
 - `type` A string identifying what type of information the schema represents.
+- `keyTemplate` An array defining how to generate keys in the table, used when `type` is `"json-table"`. See "Key Templates" below.
 - `definition` An object defining the schema, used when `type` is `"json-table"` or `"json-view"`. In the case of `json-table`, defines the record schema. In the case of `json-view`, defines the schema of a view response. Is a [JSON Schema](https://json-schema.org/).
 - `parameters` An object defining call parameters, used when `type` is `"json-view"` or `"blob-view"`. Is a [JSON Schema](https://json-schema.org/).
+
+## Key templates
+
+Key templates are used to automatically generate the keys in a table. They are an array of objects. If the array has multiple items, they represent segments which are concatenated together (useful for generating compound keys).
+
+Here are some example key templates:
+
+```js
+[{"type": "auto"}] // an auto-generated key
+[{"type": "json-pointer", "value": "/username"}] // a key generated from the record data
+[{"type": "string", "value": "profile"}] // a fixed-string key
+
+// a compound key generated from the record data:
+[
+  {"type": "json-pointer", "value": "/username"},
+  {"type": "string", "value": ":"},
+  {"type": "json-pointer", "value": "/pagename"}
+]
+```
+
+The objects in a key template fit the following shape:
+
+- `type` The type of template segment. Must be one of:
+  - `"auto"` An auto-generated string which is guaranteed to monotonically increase.
+  - `"json-pointer"` A json-pointer which references a value in the data. Must resolve to a literal (string, number, boolean) and not an object or array.
+  - `"string"` A fixed string value.
+- `value` The value of the segment, depending on the type.
+  - When `type = json-pointer`, a json-pointer to the record attribute which will be used as the key.
+  - When `type = string`, a string which will always be inserted in that segment.
 
 ## Public server db schemas
 

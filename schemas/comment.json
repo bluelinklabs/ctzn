@@ -3,6 +3,7 @@
   "title": "Comment",
   "description": "A comment on some URL",
   "type": "json-table",
+  "keyTemplate": [{"type": "auto"}],
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",

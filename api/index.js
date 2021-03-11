@@ -1,13 +1,9 @@
 import * as accounts from './accounts.js'
 import * as blobs from './blobs.js'
-import * as comments from './comments.js'
 import * as communities from './communities.js'
 import * as debug from './debug.js'
-import * as follows from './follows.js'
-import * as posts from './posts.js'
 import * as profiles from './profiles.js'
 import * as notifications from './notifications.js'
-import * as reactions from './reactions.js'
 import * as server from './server.js'
 import * as table from './table.js'
 import * as users from './users.js'
@@ -47,14 +43,10 @@ export function setup (wsServer, config) {
 
   accounts.setup(wsServer, config)
   blobs.setup(wsServer, config)
-  comments.setup(wsServer, config)
   communities.setup(wsServer, config)
   if (config.debugMode) debug.setup(wsServer, config)
-  follows.setup(wsServer, config)
-  posts.setup(wsServer, config)
   profiles.setup(wsServer, config)
   notifications.setup(wsServer, config)
-  reactions.setup(wsServer, config)
   server.setup(wsServer, config)
   table.setup(wsServer, config)
   users.setup(wsServer, config)

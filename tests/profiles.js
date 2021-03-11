@@ -24,11 +24,15 @@ test.after.always(async t => {
 })
 
 test('basic CRUD', async t => {
-  await inst.api.profiles.put({
-    displayName: 'Bobo Roberts',
-    description: 'Some citizen',
-    homepageUrl: 'http://example.com'
-  })
+  await inst.api.table.insert(
+    `bobo@${inst.domain}`,
+    'ctzn.network/profile',
+    {
+      displayName: 'Bobo Roberts',
+      description: 'Some citizen',
+      homepageUrl: 'http://example.com'
+    }
+  )
 
   let profile1 = await inst.api.view.get('ctzn.network/profile-view', `bobo@${inst.domain}`)
   t.is(profile1.userId, `bobo@${inst.domain}`)

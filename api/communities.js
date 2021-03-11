@@ -16,19 +16,6 @@ const createParam = createValidator({
   }
 })
 
-const listParam = createValidator({
-  type: 'object',
-  additionalProperties: false,
-  properties: {
-    lt: {type: 'string'},
-    lte: {type: 'string'},
-    gt: {type: 'string'},
-    gte: {type: 'string'},
-    reverse: {type: 'boolean'},
-    limit: {type: 'number'}
-  }
-})
-
 const userInfoParam = createValidator({
   type: 'object',
   required: ['dbUrl', 'userId'],

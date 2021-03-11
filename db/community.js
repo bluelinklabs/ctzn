@@ -106,6 +106,11 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
       if (community?.userId !== this.userId && community?.dbUrl !== this.url) {
         return // ignore posts not in our community
       }
+      const oldEntry = await db.bee.checkout(change.seq).get(change.key, {timeout: 10e3})
+      if (oldEntry) {
+        return // ignore edits of existing posts, will cause double-indexing
+      }
+
       const changeUrl = constructEntryUrl(db.url, change.keyParsed.schemaId, change.keyParsed.key)
       const pend = perf.measure(`publicCommunityDb:feed-indexer`)
       const release = await this.lock(`feed-idx:${changeUrl}`)

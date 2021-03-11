@@ -3,6 +3,7 @@
   "title": "Post",
   "description": "A top-level post",
   "type": "json-table",
+  "keyTemplate": [{"type": "auto"}],
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",

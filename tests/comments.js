@@ -59,7 +59,12 @@ test('single user viewing self content', async t => {
   let reply2 = await api.view.get('ctzn.network/comment-view', bob.userId, bob.comments[1].key)
   sim.testComment(t, reply2, [bob, 'Reply 1'], {root: bob.posts[0], parent: bob.comments[0]})
 
-  await api.comments.edit(bob.comments[0].key, {text: 'The First Comment'})
+  await api.table.update(
+    bob.userId,
+    'ctzn.network/comment',
+    bob.comments[0].key,
+    Object.assign({}, bob.comments[0].value, {text: 'The First Comment'})
+  )
   let reply1Edited = await api.view.get('ctzn.network/comment-view', bob.userId, bob.comments[0].key)
   sim.testComment(t, reply1Edited, [bob, 'The First Comment'], {root: bob.posts[0]})
 
@@ -205,7 +210,7 @@ test('community', async t => {
 test('missing parent comments', async t => {
   const {alice, bob, carla} = sim.users
   await bob.login()
-  await api.comments.del(bob.comments[0].key)
+  await api.table.del(bob.userId, 'ctzn.network/comment', bob.comments[0].key)
   await t.throwsAsync(() => api.view.get('ctzn.network/comment-view', bob.userId, bob.comments[0].key))
   let thread2 = (await api.view.get('ctzn.network/thread-view', bob.posts[0].url)).comments
   sim.testThread(t, thread2, [

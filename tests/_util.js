@@ -251,6 +251,7 @@ class TestCitizen {
     this.inst = inst
     this.username = username
     this.userId = undefined
+    this.dbUrl = undefined
     this.posts = []
     this.comments = []
     this.following = {}
@@ -262,7 +263,7 @@ class TestCitizen {
   }
 
   async setup () {
-    const {userId} = await this.inst.api.debug.createUser({
+    const {userId, dbUrl} = await this.inst.api.debug.createUser({
       type: 'citizen',
       username: this.username,
       email: `${this.username}@email.com`,
@@ -272,6 +273,7 @@ class TestCitizen {
       }
     })
     this.userId = userId
+    this.dbUrl = dbUrl
     this.profile = await this.inst.api.view.get('ctzn.network/profile-view', userId)
   }
 
@@ -281,7 +283,11 @@ class TestCitizen {
 
   async createPost ({text, extendedText, community}) {
     await this.login()
-    const {url} = await this.inst.api.posts.create({text, extendedText, community})
+    const {url} = await this.inst.api.table.insert(
+      this.userId,
+      'ctzn.network/post',
+      {text, extendedText, community, createdAt: (new Date()).toISOString()}
+    )
     this.posts.push(await this.inst.api.view.get('ctzn.network/post-view', url))
     return this.posts[this.posts.length - 1]
   }
@@ -294,33 +300,51 @@ class TestCitizen {
         reply.parent = {dbUrl: reply.parent.url, authorId: reply.parent.author.userId}
       }
     }
-    const {url} = await this.inst.api.comments.create({text, community, reply})
+    const {url} = await this.inst.api.table.insert(
+      this.userId,
+      'ctzn.network/comment',
+      {text, community, reply, createdAt: (new Date()).toISOString()}
+    )
     this.comments.push(await this.inst.api.view.get('ctzn.network/comment-view', url))
     return this.comments[this.comments.length - 1]
   }
 
-  async follow (TestCitizen) {
+  async follow (testCitizen) {
     await this.login()
-    await this.inst.api.follows.follow(TestCitizen.userId)
-    this.following[TestCitizen.userId] = TestCitizen
+    await this.inst.api.table.insert(this.userId, 'ctzn.network/follow', {
+      subject: {
+        userId: testCitizen.userId,
+        dbUrl: testCitizen.dbUrl
+      },
+      createdAt: (new Date()).toISOString()
+    })
+    this.following[testCitizen.userId] = testCitizen
   }
 
-  async unfollow (TestCitizen) {
+  async unfollow (testCitizen) {
     await this.login()
-    await this.inst.api.follows.unfollow(TestCitizen.userId)
-    delete this.following[TestCitizen.userId]
+    await this.inst.api.table.del(this.userId, 'ctzn.network/follow', testCitizen.userId)
+    delete this.following[testCitizen.userId]
   }
 
   async react ({subject, reaction}) {
     await this.login()
-    await this.inst.api.reactions.put({subject: {dbUrl: subject.url, authorId: subject.author.userId}, reaction})
+    await this.inst.api.table.insert(
+      this.userId,
+      'ctzn.network/reaction',
+      {
+        subject: {dbUrl: subject.url, authorId: subject.author.userId},
+        reaction,
+        createdAt: (new Date()).toISOString()
+      }
+    )
     this.reactions[subject.url] = this.reactions[subject.url] || {}
     this.reactions[subject.url][reaction] = true
   }
 
   async unreact ({subject, reaction}) {
     await this.login()
-    await this.inst.api.reactions.del(subject.url, reaction)
+    await this.inst.api.table.del(this.userId, 'ctzn.network/reaction', `${reaction}:${subject.url}`)
     delete this.reactions[subject.url][reaction]
   }
 }

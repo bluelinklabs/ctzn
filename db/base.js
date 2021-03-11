@@ -296,6 +296,7 @@ class Table {
     this.schema = schema
     this._onPutCbs = undefined
     this._onDelCbs = undefined
+    this.lock = (id) => this.db.lock(`${this.schema.id}:${id}`)
   }
 
   async get (key) {

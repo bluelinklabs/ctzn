@@ -4,17 +4,6 @@ import * as errors from '../lib/errors.js'
 import bytes from 'bytes'
 
 export function setup (wsServer, config) {
-  wsServer.register('profiles.put', async ([profile], client) => {
-    if (!client?.auth) throw new errors.SessionError()
-    const publicUserDb = publicUserDbs.get(client.auth.userId)
-    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
-
-    await publicUserDb.profile.put('self', profile)
-    
-    const url = constructUserUrl(client.auth.userId)
-    return {key: client.auth.userId, url}
-  })
-
   wsServer.register('profiles.putAvatar', async ([avatarBase64], client) => {
     if (!client?.auth) throw new errors.SessionError()
     const publicUserDb = publicUserDbs.get(client.auth.userId)

@@ -3,6 +3,7 @@
   "title": "Follow",
   "description": "A social subscription",
   "type": "json-table",
+  "keyTemplate": [{"type": "json-pointer", "value": "/subject/userId"}],
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
