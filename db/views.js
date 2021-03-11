@@ -1,3 +1,6 @@
+import * as path from 'path'
+import * as fs from 'fs'
+import { fileURLToPath } from 'url'
 import * as db from './index.js'
 import { constructUserUrl, isHyperUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
@@ -7,6 +10,9 @@ import * as errors from '../lib/errors.js'
 import { listHomeFeed } from './feed-getters.js'
 import { fetchNotications, countNotications, dbGet, fetchReactions } from './util.js'
 
+const DEFAULT_USER_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'static', 'img', 'default-user-avatar.jpg')
+const DEFAULT_COMMUNITY_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'static', 'img', 'default-community-avatar.jpg')
+
 // globals
 // =
 
@@ -14,6 +20,12 @@ const _views = new Map()
 
 // exported api
 // =
+
+export function getType (schemaId) {
+  const view = _views.get(schemaId)
+  if (!view) return undefined
+  return view.schema?.schemaObject?.type
+}
 
 export async function exec (schemaId, auth, ...args) {
   const view = _views.get(schemaId)
@@ -27,65 +39,50 @@ export async function exec (schemaId, auth, ...args) {
 }
 
 export function setup () {
-  define('ctzn.network/avatar-view', async (auth, params) => {
-    // TODO
+  define('ctzn.network/avatar-view', async (auth, userId) => {
     let userDb
     try {
-      const userId = await fetchUserId(req.params.username)
+      userId = await fetchUserId(userId)
       userDb = db.publicUserDbs.get(userId)
       if (!userDb) throw 'Not found'
       
       const ptr = await userDb.blobs.getPointer('avatar')
       if (!ptr) throw 'Not found'
 
-      const etag = `W/block-${ptr.start}`
-      if (req.headers['if-none-match'] === etag) {
-        return res.status(304).end()
+      return {
+        ptr,
+        etag: `W/block-${ptr.start}`,
+        createStream: () => userDb.blobs.createReadStreamFromPointer(ptr)
       }
-
-      res.setHeader('ETag', etag)
-      const s = await userDb.blobs.createReadStreamFromPointer(ptr)
-      s.pipe(res)
     } catch (e) {
       if (userDb?.dbType === 'ctzn.network/public-community-db') {
-        if (req.headers['if-none-match'] === `W/default-community-avatar`) {
-          return res.status(304).end()
-        } else {
-          res.setHeader('ETag', 'W/default-community-avatar')
-          return res.sendFile(DEFAULT_COMMUNITY_AVATAR_PATH)
+        return {
+          ptr: null,
+          etag: `W/default-community-avatar`,
+          createStream: () => fs.createReadStream(DEFAULT_COMMUNITY_AVATAR_PATH)
         }
       } else {
-        if (req.headers['if-none-match'] === `W/default-citizen-avatar`) {
-          return res.status(304).end()
-        } else {
-          res.setHeader('ETag', 'W/default-citizen-avatar')
-          return res.sendFile(DEFAULT_USER_AVATAR_PATH)
+        return {
+          ptr: null,
+          etag: `W/default-citizen-avatar`,
+          createStream: () => fs.createReadStream(DEFAULT_USER_AVATAR_PATH)
         }
       }
     }
   })
 
-  define('ctzn.network/blob-view', async (auth, params) => {
-    // TODO
-    let userDb
-    try {
-      const userId = await fetchUserId(req.params.username)
-      userDb = db.publicUserDbs.get(userId)
-      if (!userDb) return res.status(404).end()
-      
-      const ptr = await userDb.blobs.getPointer(req.params.blobname)
-      if (!ptr) return res.status(404).end()
+  define('ctzn.network/blob-view', async (auth, userId, blobname) => {
+    userId = await fetchUserId(userId)
+    const userDb = db.publicUserDbs.get(userId)
+    if (!userDb) throw 'Not found'
+    
+    const ptr = await userDb.blobs.getPointer(blobname)
+    if (!ptr) throw 'Not found'
 
-      const etag = `W/block-${ptr.start}`
-      if (req.headers['if-none-match'] === etag) {
-        return res.status(304).end()
-      }
-
-      res.setHeader('ETag', etag)
-      const s = await userDb.blobs.createReadStreamFromPointer(ptr)
-      s.pipe(res)
-    } catch (e) {
-      return res.status(404).end()
+    return {
+      ptr,
+      etag: `W/block-${ptr.start}`,
+      createStream: () => userDb.blobs.createReadStreamFromPointer(ptr)
     }
   })
 

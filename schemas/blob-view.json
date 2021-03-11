@@ -3,5 +3,14 @@
   "title": "Blob view",
   "description": "A generic binary-blob getter.",
   "type": "blob-view",
-  "parameters": {}
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "array",
+    "minItems": 2,
+    "additionalItems": false,
+    "items": [
+      {"type": "string"},
+      {"type": "string"}
+    ]
+  }
 }

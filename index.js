@@ -15,13 +15,10 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { fileURLToPath } from 'url'
 import * as os from 'os'
-import { setOrigin, getDomain, parseAcctUrl, usernameToUserId, constructUserUrl, DEBUG_MODE_PORTS_MAP } from './lib/strings.js'
-import * as dbGetters from './db/getters.js'
+import { setOrigin, getDomain, parseAcctUrl, usernameToUserId, DEBUG_MODE_PORTS_MAP } from './lib/strings.js'
 
 const PACKAGE_JSON_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'package.json')
 const PACKAGE_JSON = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, 'utf8'))
-const DEFAULT_USER_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'static', 'img', 'default-user-avatar.jpg')
-const DEFAULT_COMMUNITY_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'static', 'img', 'default-community-avatar.jpg')
 
 let app
 
@@ -109,7 +106,16 @@ export async function start (opts) {
       const schemaId = `${req.params.viewns}/${req.params.viewname}`
       const args = req.params[0] ? req.params[0].split('/').filter(Boolean) : []
       if (Object.keys(req.query).length) args.push(req.query)
-      res.status(200).json(await dbViews.exec(schemaId, undefined, ...args))
+      if (dbViews.getType(schemaId) === 'blob-view') {
+        const {etag, createStream} = await dbViews.exec(schemaId, undefined, ...args)
+          if (req.headers['if-none-match'] === etag) {
+          return res.status(304).end()
+        }
+        res.setHeader('ETag', etag)
+        ;(await createStream()).pipe(res)
+      } else {
+        res.status(200).json(await dbViews.exec(schemaId, undefined, ...args))
+      }
     } catch (e) {
       json404(res, e)
     }
@@ -148,66 +154,6 @@ export async function start (opts) {
       res.status(200).end(txt)
     } else {
       res.status(404).end()
-    }
-  })
-
-  app.get('/ctzn/avatar/:username([^\/]{3,})', async (req, res) => {
-    let userDb
-    try {
-      const userId = usernameToUserId(req.params.username)
-      userDb = db.publicUserDbs.get(userId)
-      if (!userDb) throw 'Not found'
-      
-      const ptr = await userDb.blobs.getPointer('avatar')
-      if (!ptr) throw 'Not found'
-
-      const etag = `W/block-${ptr.start}`
-      if (req.headers['if-none-match'] === etag) {
-        return res.status(304).end()
-      }
-
-      res.setHeader('ETag', etag)
-      const s = await userDb.blobs.createReadStreamFromPointer(ptr)
-      s.pipe(res)
-    } catch (e) {
-      if (userDb?.dbType === 'ctzn.network/public-community-db') {
-        if (req.headers['if-none-match'] === `W/default-community-avatar`) {
-          return res.status(304).end()
-        } else {
-          res.setHeader('ETag', 'W/default-community-avatar')
-          return res.sendFile(DEFAULT_COMMUNITY_AVATAR_PATH)
-        }
-      } else {
-        if (req.headers['if-none-match'] === `W/default-citizen-avatar`) {
-          return res.status(304).end()
-        } else {
-          res.setHeader('ETag', 'W/default-citizen-avatar')
-          return res.sendFile(DEFAULT_USER_AVATAR_PATH)
-        }
-      }
-    }
-  })
-
-  app.get('/ctzn/blobs/:username([^\/]{3,})/:blobname', async (req, res) => {
-    let userDb
-    try {
-      const userId = usernameToUserId(req.params.username)
-      userDb = db.publicUserDbs.get(userId)
-      if (!userDb) return res.status(404).end()
-      
-      const ptr = await userDb.blobs.getPointer(req.params.blobname)
-      if (!ptr) return res.status(404).end()
-
-      const etag = `W/block-${ptr.start}`
-      if (req.headers['if-none-match'] === etag) {
-        return res.status(304).end()
-      }
-
-      res.setHeader('ETag', etag)
-      const s = await userDb.blobs.createReadStreamFromPointer(ptr)
-      s.pipe(res)
-    } catch (e) {
-      return res.status(404).end()
     }
   })
 
