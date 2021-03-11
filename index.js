@@ -4,6 +4,7 @@ import { Server as WebSocketServer } from 'rpc-websockets'
 import cors from 'cors'
 import { Config } from './lib/config.js'
 import * as db from './db/index.js'
+import * as dbViews from './db/views.js'
 import * as api from './api/index.js'
 import * as perf from './lib/perf.js'
 import { NoTermsOfServiceIssue } from './lib/issues/no-terms-of-service.js'
@@ -68,6 +69,20 @@ export async function start (opts) {
       json404(res, e)
     }
   })
+
+  async function serveView (req, res) {
+    try {
+      const schemaId = `${req.params.viewns}/${req.params.viewname}`
+      const args = req.params[0] ? req.params[0].split('/').filter(Boolean) : []
+      if (Object.keys(req.query).length) args.push(req.query)
+      res.status(200).json(await dbViews.exec(schemaId, undefined, ...args))
+    } catch (e) {
+      json404(res, e)
+    }
+  }
+
+  app.get('/.view/:viewns/:viewname/*', (req, res) => serveView(req, res))
+  app.get('/.view/:viewns/:viewname', (req, res) => serveView(req, res))
 
   app.get('/ctzn/server-info', async (req, res) => {
     res.status(200).json({

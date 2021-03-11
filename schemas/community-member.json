@@ -2,7 +2,7 @@
   "id": "ctzn.network/community-member",
   "title": "Community member",
   "description": "Record of a user membership in a community.",
-  "type": "json",
+  "type": "json-table",
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",

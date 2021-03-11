@@ -2,7 +2,7 @@
   "id": "ctzn.network/community-role",
   "title": "Community role",
   "description": "Definition of a role in a community and of its permissions.",
-  "type": "json",
+  "type": "json-table",
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",

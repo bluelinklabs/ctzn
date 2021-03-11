@@ -1,8 +1,17 @@
 {
-  "id": "ctzn.network/reaction-idx",
-  "title": "Reaction Index",
-  "description": "Aggregated reaction counts on a piece of content",
-  "type": "json-table",
+  "id": "ctzn.network/reactions-to-view",
+  "title": "Reactions to view",
+  "description": "Get the reaction-records for a given subject.",
+  "type": "json-view",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "array",
+    "minItems": 1,
+    "additionalItems": false,
+    "items": [
+      {"type": "string", "format": "uri"}
+    ]
+  },
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
@@ -27,10 +36,7 @@
         "patternProperties": {
           ".*": {
             "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uri"
-            }
+            "items": {"type": "string", "pattern": ".+@.+"}
           }
         }
       }

@@ -28,35 +28,35 @@ test('membership', async t => {
   await carla.login()
   await api.communities.join(folks.userId)
 
-  let members1 = await api.communities.listMembers(folks.userId)
+  let members1 = (await api.views.get('ctzn.network/community-members-view', folks.userId)).members
   t.is(members1.length, 3)
   t.deepEqual(members1.find(m => m.value.user.userId === alice.userId).value.user.dbUrl, alice.profile.dbUrl)
   t.deepEqual(members1.find(m => m.value.user.userId === bob.userId).value.user.dbUrl, bob.profile.dbUrl)
   t.deepEqual(members1.find(m => m.value.user.userId === carla.userId).value.user.dbUrl, carla.profile.dbUrl)
   
-  let members2 = await api.communities.listMembers(ppl.userId)
+  let members2 = (await api.views.get('ctzn.network/community-members-view', ppl.userId)).members
   t.is(members2.length, 2)
   t.deepEqual(members2.find(m => m.value.user.userId === alice.userId).value.user.dbUrl, alice.profile.dbUrl)
   t.deepEqual(members2.find(m => m.value.user.userId === bob.userId).value.user.dbUrl, bob.profile.dbUrl)
 
-  let members3 = await api.communities.listMembers(folks.userId, {limit: 1})
+  let members3 = (await api.views.get('ctzn.network/community-members-view', folks.userId, {limit: 1})).members
   t.is(members3.length, 1)
 
-  let memberships1 = await api.communities.listMemberships(alice.userId)
+  let memberships1 = (await api.views.get('ctzn.network/community-memberships-view', alice.userId)).memberships
   t.is(memberships1.length, 2)
   t.deepEqual(memberships1.find(m => m.value.community.userId === folks.userId).value.community.dbUrl, folks.profile.dbUrl)
   t.deepEqual(memberships1.find(m => m.value.community.userId === ppl.userId).value.community.dbUrl, ppl.profile.dbUrl)
 
-  let memberships2 = await api.communities.listMemberships(bob.userId)
+  let memberships2 = (await api.views.get('ctzn.network/community-memberships-view', bob.userId)).memberships
   t.is(memberships2.length, 2)
   t.deepEqual(memberships2.find(m => m.value.community.userId === folks.userId).value.community.dbUrl, folks.profile.dbUrl)
   t.deepEqual(memberships2.find(m => m.value.community.userId === ppl.userId).value.community.dbUrl, ppl.profile.dbUrl)
 
-  let memberships3 = await api.communities.listMemberships(carla.userId)
+  let memberships3 = (await api.views.get('ctzn.network/community-memberships-view', carla.userId)).memberships
   t.is(memberships3.length, 1)
   t.deepEqual(memberships3.find(m => m.value.community.userId === folks.userId).value.community.dbUrl, folks.profile.dbUrl)
 
-  let memberships4 = await api.communities.listMemberships(alice.userId, {limit: 1})
+  let memberships4 = (await api.views.get('ctzn.network/community-memberships-view', alice.userId, {limit: 1})).memberships
   t.is(memberships4.length, 1)
 
   await alice.login()
@@ -65,22 +65,22 @@ test('membership', async t => {
   await api.communities.leave(folks.userId)
   await api.communities.leave(ppl.userId)
 
-  let members4 = await api.communities.listMembers(folks.userId)
+  let members4 = (await api.views.get('ctzn.network/community-members-view', folks.userId)).members
   t.is(members4.length, 2)
   t.deepEqual(members4.find(m => m.value.user.userId === alice.userId).value.user.dbUrl, alice.profile.dbUrl)
   t.deepEqual(members4.find(m => m.value.user.userId === carla.userId).value.user.dbUrl, carla.profile.dbUrl)
   
-  let members5 = await api.communities.listMembers(ppl.userId)
+  let members5 = (await api.views.get('ctzn.network/community-members-view', ppl.userId)).members
   t.is(members5.length, 0)
 
-  let memberships5 = await api.communities.listMemberships(alice.userId)
+  let memberships5 = (await api.views.get('ctzn.network/community-memberships-view', alice.userId)).memberships
   t.is(memberships5.length, 1)
   t.deepEqual(memberships5.find(m => m.value.community.userId === folks.userId).value.community.dbUrl, folks.profile.dbUrl)
 
-  let memberships6 = await api.communities.listMemberships(bob.userId)
+  let memberships6 = (await api.views.get('ctzn.network/community-memberships-view', bob.userId)).memberships
   t.is(memberships6.length, 0)
 
-  let memberships7 = await api.communities.listMemberships(carla.userId)
+  let memberships7 = (await api.views.get('ctzn.network/community-memberships-view', carla.userId)).memberships
   t.is(memberships7.length, 1)
   t.deepEqual(memberships7.find(m => m.value.community.userId === folks.userId).value.community.dbUrl, folks.profile.dbUrl)
 })
@@ -101,21 +101,21 @@ test('remote joining & leaving', async t => {
   await alice.login()
   await inst2.api.communities.join(folks.userId)
 
-  let members1 = await inst1.api.communities.listMembers(folks.userId)
+  let members1 = (await inst1.api.views.get('ctzn.network/community-members-view', folks.userId)).members
   t.is(members1.length, 2)
   t.deepEqual(members1.find(m => m.value.user.userId === alice.userId).value.user.dbUrl, alice.profile.dbUrl)
 
-  let memberships1 = await inst2.api.communities.listMemberships(alice.userId)
+  let memberships1 = (await inst2.api.views.get('ctzn.network/community-memberships-view', alice.userId)).memberships
   t.is(memberships1.length, 1)
   t.deepEqual(memberships1.find(m => m.value.community.userId === folks.userId).value.community.dbUrl, folks.profile.dbUrl)
 
   await alice.login()
   await inst2.api.communities.leave(folks.userId)
 
-  let members2 = await inst1.api.communities.listMembers(folks.userId)
+  let members2 = (await inst1.api.views.get('ctzn.network/community-members-view', folks.userId)).members
   t.is(members2.length, 1)
 
-  let memberships2 = await inst2.api.communities.listMemberships(alice.userId)
+  let memberships2 = (await inst2.api.views.get('ctzn.network/community-memberships-view', alice.userId)).memberships
   t.is(memberships2.length, 0)
 })
 
@@ -130,7 +130,7 @@ test('roles', async t => {
   await sim.createCommunity(inst, 'folks')
   const {alice, folks} = sim.users
 
-  let roles1 = await api.communities.listRoles(folks.userId)
+  let roles1 = (await api.views.get('ctzn.network/community-roles-view', folks.userId)).roles
   t.is(roles1.length, 1)
   t.is(roles1[0].value.roleId, 'moderator')
   t.is(roles1[0].value.permissions.length, 3)
@@ -147,7 +147,7 @@ test('roles', async t => {
       {permId: 'ctzn.network/perm-community-edit-profile'}
     ]
   })
-  let roles2 = await api.communities.listRoles(folks.userId)
+  let roles2 = (await api.views.get('ctzn.network/community-roles-view', folks.userId)).roles
   t.is(roles2.length, 2)
   let role1 = await api.communities.getRole(folks.userId, 'super-moderator')
   t.is(role1.value.roleId, 'super-moderator')
@@ -171,7 +171,7 @@ test('roles', async t => {
   t.truthy(role2.value.permissions.find(p => p.permId === 'ctzn.network/perm-community-edit-profile'))
 
   await api.communities.deleteRole(folks.userId, 'super-moderator')
-  let roles3 = await api.communities.listRoles(folks.userId)
+  let roles3 = (await api.views.get('ctzn.network/community-roles-view', folks.userId)).roles
   t.is(roles3.length, 1)
   t.is(roles3[0].value.roleId, 'moderator')
   let member2 = await api.communities.getMember(folks.userId, alice.userId)
@@ -209,7 +209,7 @@ test('permissions', async t => {
       {permId: 'ctzn.network/perm-community-assign-roles'}
     ]
   })
-  let roles2 = await api.communities.listRoles(folks.userId)
+  let roles2 = (await api.views.get('ctzn.network/community-roles-view', folks.userId)).roles
   t.is(roles2.length, 2)
   let role1 = await api.communities.getRole(folks.userId, 'super-moderator')
   t.is(role1.value.roleId, 'super-moderator')
@@ -228,11 +228,11 @@ test('permissions', async t => {
   let member2 = await api.communities.getMember(folks.userId, carla.userId)
   t.deepEqual(member2.value.roles, ['moderator'])
 
-  let perms1 = await api.communities.listUserPermissions(folks.userId, alice.userId)
+  let perms1 = (await api.views.get('ctzn.network/community-user-permissions-view', folks.userId, alice.userId)).permissions
   t.is(perms1.length, 1)
   t.truthy(perms1.find(p => p.permId === 'ctzn.network/perm-admin'))
 
-  let perms2 = await api.communities.listUserPermissions(folks.userId, bob.userId)
+  let perms2 = (await api.views.get('ctzn.network/community-user-permissions-view', folks.userId, bob.userId)).permissions
   t.is(perms2.length, 5)
   t.truthy(perms2.find(p => p.permId === 'ctzn.network/perm-community-ban'))
   t.truthy(perms2.find(p => p.permId === 'ctzn.network/perm-community-remove-post'))
@@ -240,28 +240,28 @@ test('permissions', async t => {
   t.truthy(perms2.find(p => p.permId === 'ctzn.network/perm-community-manage-roles'))
   t.truthy(perms2.find(p => p.permId === 'ctzn.network/perm-community-assign-roles'))
 
-  let perms3 = await api.communities.listUserPermissions(folks.userId, carla.userId)
+  let perms3 = (await api.views.get('ctzn.network/community-user-permissions-view', folks.userId, carla.userId)).permissions
   t.is(perms3.length, 3)
   t.truthy(perms3.find(p => p.permId === 'ctzn.network/perm-community-ban'))
   t.truthy(perms3.find(p => p.permId === 'ctzn.network/perm-community-remove-post'))
   t.truthy(perms3.find(p => p.permId === 'ctzn.network/perm-community-remove-comment'))
 
-  let perm1 = await api.communities.getUserPermission(folks.userId, alice.userId, 'ctzn.network/perm-community-ban')
+  let perm1 = await api.views.get('ctzn.network/community-user-permission-view', folks.userId, alice.userId, 'ctzn.network/perm-community-ban')
   t.truthy(perm1.permId, 'ctzn.network/perm-admin')
 
-  let perm2 = await api.communities.getUserPermission(folks.userId, carla.userId, 'ctzn.network/perm-community-ban')
+  let perm2 = await api.views.get('ctzn.network/community-user-permission-view', folks.userId, carla.userId, 'ctzn.network/perm-community-ban')
   t.truthy(perm2.permId, 'ctzn.network/perm-community-ban')
 
-  let perm3 = await api.communities.getUserPermission(folks.userId, carla.userId, 'ctzn.network/perm-manage-roles')
+  let perm3 = await api.views.get('ctzn.network/community-user-permission-view', folks.userId, carla.userId, 'ctzn.network/perm-manage-roles')
   t.falsy(perm3)
 
   /// ctzn.network/perm-community-edit-profile
   await alice.login()
   await api.communities.putProfile(folks.userId, {displayName: 'Folks 1'})
-  t.is((await api.profiles.get(folks.userId)).value.displayName, 'Folks 1')
+  t.is((await api.views.get('ctzn.network/profile-view', folks.userId)).value.displayName, 'Folks 1')
   await bob.login()
   await api.communities.putProfile(folks.userId, {displayName: 'Folks 2'})
-  t.is((await api.profiles.get(folks.userId)).value.displayName, 'Folks 2')
+  t.is((await api.views.get('ctzn.network/profile-view', folks.userId)).value.displayName, 'Folks 2')
   await carla.login()
   await t.throwsAsync(() => api.communities.putProfile(folks.userId, {displayName: 'Folks 3'}))
   await doug.login()
@@ -383,13 +383,13 @@ test('post and comment removal', async t => {
 
   await alice.login()
 
-  let posts1 = await api.posts.listUserFeed(folks.userId)
+  let posts1 = (await api.views.get('ctzn.network/posts-view', folks.userId)).posts
   sim.testFeed(t, posts1, [
     [bob, 'Post 1'],
     [bob, 'Post 2'],
     [bob, 'Post 3']
   ])
-  let thread1 = await api.comments.getThread(bob.posts[0].url)
+  let thread1 = (await api.views.get('ctzn.network/thread-view', bob.posts[0].url)).comments
   sim.testThread(t, thread1, [
     [bob, 'Test 1', [
       [bob, 'Test 2']
@@ -398,7 +398,7 @@ test('post and comment removal', async t => {
   ])
 
   await api.communities.removePost(folks.userId, bob.posts[1].url)
-  let posts2 = await api.posts.listUserFeed(folks.userId)
+  let posts2 = (await api.views.get('ctzn.network/posts-view', folks.userId)).posts
   sim.testFeed(t, posts2, [
     [bob, 'Post 1'],
     [bob, 'Post 3']

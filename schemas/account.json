@@ -2,7 +2,7 @@
   "id": "ctzn.network/account",
   "title": "Account",
   "description": "Internal record of user account registrations.",
-  "type": "json",
+  "type": "json-table",
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",

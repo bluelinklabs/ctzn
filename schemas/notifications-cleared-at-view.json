@@ -1,0 +1,14 @@
+{
+  "id": "ctzn.network/notifications-cleared-at-view",
+  "title": "Notifications cleared at view",
+  "description": "Get the \"notifications cleared at\" timestap record of auser.",
+  "type": "json-view",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["notificationsClearedAt"],
+    "properties": {
+      "notificationsClearedAt": {"type": "string", "format": "date-time"}
+    }
+  }
+}

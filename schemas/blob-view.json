@@ -1,0 +1,7 @@
+{
+  "id": "ctzn.network/blob-view",
+  "title": "Blob view",
+  "description": "A generic binary-blob getter.",
+  "type": "blob-view",
+  "parameters": {}
+}

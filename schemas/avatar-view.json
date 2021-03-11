@@ -1,0 +1,7 @@
+{
+  "id": "ctzn.network/avatar-view",
+  "title": "Avatar view",
+  "description": "The avatar image of a given user.",
+  "type": "blob-view",
+  "parameters": {}
+}

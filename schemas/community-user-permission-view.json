@@ -1,0 +1,25 @@
+{
+  "id": "ctzn.network/community-user-permission-view",
+  "title": "Community user permission view",
+  "description": "Get a user's permission in a community.",
+  "type": "json-view",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "array",
+    "minItems": 3,
+    "additionalItems": false,
+    "items": [
+      {"type": "string"},
+      {"type": "string"},
+      {"type": "string"}
+    ]
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["permId"],
+    "properties": {
+      "permId": {"type": "string"}
+    }
+  }
+}

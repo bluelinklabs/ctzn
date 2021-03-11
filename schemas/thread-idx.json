@@ -2,7 +2,7 @@
   "id": "ctzn.network/thread-idx",
   "title": "Thread Index",
   "description": "Threaded replies to a piece of content",
-  "type": "json",
+  "type": "json-table",
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",

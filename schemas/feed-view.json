@@ -1,0 +1,129 @@
+{
+  "id": "ctzn.network/feed-view",
+  "title": "Feed view",
+  "description": "Get the content in a user's feed.",
+  "type": "json-view",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "array",
+    "additionalItems": false,
+    "items": [
+      {
+        "type": "object",
+        "properties": {
+          "limit": {"type": "number"},
+          "lt": {"type": "string"}
+        }
+      }
+    ]
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["feed"],
+    "properties": {
+      "feed": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["author", "key", "seq", "url", "value"],
+          "properties": {
+            "author": {
+              "type": "object",
+              "properties": {
+                "userId": {"type": "string", "pattern": ".+@.+"},
+                "displayName": {"type": "string"}
+              }
+            },
+            "key": {"type": "string"},
+            "reactions": {
+              "type": "object",
+              "patternProperties": {
+                ".*": {
+                  "type": "array",
+                  "items": {"type": "string", "pattern": ".+@.+"}
+                }
+              }
+            },
+            "replyCount": {"type": "number"},
+            "seq": {"type": "number"},
+            "url": {"type": "string", "format": "uri"},
+            "value": {
+              "type": "object",
+              "required": ["text", "createdAt"],
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "maxLength": 256
+                },
+                "media": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["blobs"],
+                    "properties": {
+                      "caption": {
+                        "type": "string"
+                      },
+                      "blobs": {
+                        "type": "object",
+                        "required": ["original"],
+                        "properties": {
+                          "thumb": {
+                            "type": "object",
+                            "required": ["mimeType", "blobName"],
+                            "properties": {
+                              "mimeType": {
+                                "type": "string"
+                              },
+                              "blobName": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "original": {
+                            "type": "object",
+                            "required": ["mimeType", "blobName"],
+                            "properties": {
+                              "mimeType": {
+                                "type": "string"
+                              },
+                              "blobName": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "extendedText": {
+                  "type": "string"
+                },
+                "community": {
+                  "type": "object",
+                  "required": ["dbUrl", "userId"],
+                  "properties": {
+                    "dbUrl": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "pattern": ".+@.+"
+                    }
+                  }
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

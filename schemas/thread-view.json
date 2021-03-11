@@ -1,0 +1,118 @@
+{
+  "id": "ctzn.network/thread-view",
+  "title": "Thread view",
+  "description": "Get a post-record and any relevant comment records.",
+  "type": "json-view",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "array",
+    "minItems": 1,
+    "additionalItems": false,
+    "items": [
+      {"type": "string", "format": "uri"}
+    ]
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["comments"],
+    "properties": {
+      "comments": {
+        "type": "array",
+        "items": {"$ref": "#/definitions/comment"}
+      }
+    },
+    "definitions": {
+      "comment": {
+        "type": "object",
+        "required": ["author", "key", "seq", "url", "value"],
+        "properties": {
+          "author": {
+            "type": "object",
+            "properties": {
+              "userId": {"type": "string", "pattern": ".+@.+"},
+              "displayName": {"type": "string"}
+            }
+          },
+          "key": {"type": "string"},
+          "reactions": {
+            "type": "object",
+            "patternProperties": {
+              ".*": {
+                "type": "array",
+                "items": {"type": "string", "pattern": ".+@.+"}
+              }
+            }
+          },
+          "replyCount": {"type": "number"},
+          "replies": {
+            "type": "array",
+            "items": {"$ref": "#/definitions/comment"}
+          },
+          "seq": {"type": "number"},
+          "url": {"type": "string", "format": "uri"},
+          "value": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "community": {
+                "type": "object",
+                "required": ["dbUrl", "userId"],
+                "properties": {
+                  "dbUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "userId": {
+                    "type": "string",
+                    "pattern": ".+@.+"
+                  }
+                }
+              },
+              "reply": {
+                "type": "object",
+                "required": ["root"],
+                "properties": {
+                  "root": {
+                    "type": "object",
+                    "required": ["dbUrl", "authorId"],
+                    "properties": {
+                      "dbUrl": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "authorId": {
+                        "type": "string",
+                        "pattern": ".+@.+"
+                      }
+                    }
+                  },
+                  "parent": {
+                    "type": "object",
+                    "required": ["dbUrl", "authorId"],
+                    "properties": {
+                      "dbUrl": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "authorId": {
+                        "type": "string",
+                        "pattern": ".+@.+"
+                      }
+                    }
+                  }
+                }
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

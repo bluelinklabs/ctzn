@@ -2,7 +2,7 @@
   "id": "ctzn.network/post",
   "title": "Post",
   "description": "A top-level post",
-  "type": "json",
+  "type": "json-table",
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",

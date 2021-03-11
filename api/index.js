@@ -10,10 +10,10 @@ import * as notifications from './notifications.js'
 import * as reactions from './reactions.js'
 import * as server from './server.js'
 import * as users from './users.js'
+import * as views from './views.js'
 
 export function setup (wsServer, config) {
   wsServer.wss.on('connection', function connection(ws, req) {
-    const { headers } = req // { host: ctzn.politis.network, x-forwarded-for: 121.232.353.23, ... }
 
     // Save request headers onto the ws client for later
     ws.headers = req.headers
@@ -56,4 +56,5 @@ export function setup (wsServer, config) {
   reactions.setup(wsServer, config)
   server.setup(wsServer, config)
   users.setup(wsServer, config)
+  views.setup(wsServer, config)
 }

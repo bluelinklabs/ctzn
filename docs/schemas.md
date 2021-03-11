@@ -2,6 +2,21 @@
 
 A list of all schemas and how they're used.
 
+Schemas may have the following types, specified as the `"type"`:
+
+- `json-table` A table containing stored JSON entries.
+- `json-view` A view of JSON data which is generated at runtime.
+- `blob-view` A view of binary blobs which is generated at runtime.
+
+Schemas contain the following standard attributes:
+
+- `id` The ID of the schema (e.g. `"ctzn.network/post"`).
+- `title` A human-readable title for the schema.
+- `description` A human-readable description of the schema.
+- `type` A string identifying what type of information the schema represents.
+- `definition` An object defining the schema, used when `type` is `"json-table"` or `"json-view"`. In the case of `json-table`, defines the record schema. In the case of `json-view`, defines the schema of a view response. Is a [JSON Schema](https://json-schema.org/).
+- `parameters` An object defining call parameters, used when `type` is `"json-view"` or `"blob-view"`. Is a [JSON Schema](https://json-schema.org/).
+
 ## Public server db schemas
 
 - `ctzn.network/user` Record of a hosted user or community
@@ -42,3 +57,29 @@ A list of all schemas and how they're used.
 - `ctzn.network/thread-idx` Index of community reply-posts by community members
 - `ctzn.network/reaction-idx` Index of reactions by community members
 - `ctzn.network/notification-idx` Index of notification activity by community members
+
+## View schemas
+
+- `ctzn.network/avatar-view` The avatar image of a given user.
+- `ctzn.network/blob-view` A generic binary-blob getter.
+- `ctzn.network/comment-view` Get a comment-record.
+- `ctzn.network/community-ban-view` Get a ban-record in a community.
+- `ctzn.network/community-bans-view` Get multiple ban-records in a community.
+- `ctzn.network/community-member-view` Get a member-record in a community.
+- `ctzn.network/community-members-view` Get multiple member-records in a community.
+- `ctzn.network/community-memberships-view` Get multiple membership-records of a user.
+- `ctzn.network/community-roles-view` Get the role-records in a community.
+- `ctzn.network/community-user-permission-view` Get a user's permission in a community.
+- `ctzn.network/community-user-permissions-view` Get multiple of a user's permissions in a community.
+- `ctzn.network/feed-view` Get the content in a user's feed.
+- `ctzn.network/follow-view` Get an individual follow-record between two users.
+- `ctzn.network/followers-of-view` Get multiple known followers of a user.
+- `ctzn.network/follows-by-view` Get multiple follow-records of a user.
+- `ctzn.network/notifications-view` Get notification records of a user.
+- `ctzn.network/notifications-cleared-at-view` Get the "notifications cleared at" timestap record of auser.
+- `ctzn.network/notifications-count-view` Count the notification records of a user.
+- `ctzn.network/reactions-to-view` Get the reaction-records for a given subject.
+- `ctzn.network/post-view` Get a post-record.
+- `ctzn.network/posts-view` Get multiple post-records for a user.
+- `ctzn.network/profile-view` Get the profile-record of a user.
+- `ctzn.network/thread-view` Get a post-record and any relevant comment records.

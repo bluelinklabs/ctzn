@@ -2,7 +2,7 @@
   "id": "ctzn.network/notification-idx",
   "title": "Notifications Index",
   "description": "An index of activity relevant to a given user",
-  "type": "json",
+  "type": "json-table",
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",

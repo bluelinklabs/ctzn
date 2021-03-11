@@ -9,6 +9,7 @@ import { PublicServerDB, PrivateServerDB } from './server.js'
 import { PublicCitizenDB, PrivateCitizenDB } from './citizen.js'
 import { PublicCommunityDB } from './community.js'
 import * as schemas from '../lib/schemas.js'
+import * as views from './views.js'
 import { HYPER_KEY, hyperUrlToKey, constructUserId, getDomain } from '../lib/strings.js'
 import { fetchDbUrl } from '../lib/network.js'
 import { hashPassword } from '../lib/crypto.js'
@@ -49,6 +50,8 @@ export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simu
 
   await loadMemberUserDbs()
   await loadOrUnloadExternalUserDbs()
+
+  views.setup()
 }
 
 export async function createUser ({type, username, email, password, profile}) {
