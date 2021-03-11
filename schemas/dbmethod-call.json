@@ -1,0 +1,34 @@
+{
+  "id": "ctzn.network/dbmethod-call",
+  "title": "Database method call",
+  "description": "A method-call to be handled by some database",
+  "type": "json-table",
+  "keyTemplate": [{"type": "auto"}],
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["database", "method", "createdAt"],
+    "properties": {
+      "database": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "method": {"type": "string"},
+      "args": {"type": "object"},
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+}

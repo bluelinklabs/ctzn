@@ -10,6 +10,7 @@ import bytes from 'bytes'
 import lock from '../lib/lock.js'
 import * as perf from '../lib/perf.js'
 import * as issues from '../lib/issues.js'
+import { constructEntryUrl } from '../lib/strings.js'
 import { DbIndexingIssue } from '../lib/issues/db-indexing.js'
 
 const READ_TIMEOUT = 10e3
@@ -53,6 +54,7 @@ export class BaseHyperbeeDB extends EventEmitter {
     this.blobs = new Blobs(this, {isPrivate})
     this.tables = {}
     this.indexers = []
+    this.dbmethods = {}
     this.lock = (id) => lock(`${this.key.toString('hex')}:${id}`)
   }
 
@@ -101,6 +103,41 @@ export class BaseHyperbeeDB extends EventEmitter {
         blobsFeedKey: null
       }
     }
+
+    this.dbmethodCalls = this.getTable('ctzn.network/dbmethod-call')
+    this.dbmethodResults = this.getTable('ctzn.network/dbmethod-result')
+    this.createIndexer('ctzn.network/dbmethod-result', ['ctzn.network/dbmethod-call'], async (db, change) => {
+      if (!change.value) return // ignore deletes
+
+      const writeDbMethodResult = async (code, details) => {
+        const value = {
+          call: {
+            dbUrl: constructEntryUrl(db.url, change.keyParsed.schemaId, change.keyParsed.key),
+            authorId: db.userId
+          },
+          code,
+          details,
+          createdAt: (new Date()).toISOString()
+        }
+        const key = this.dbmethodResults.schema.generateKey(value)
+        return this.dbmethodResults.put(key, value)
+      }
+
+      const {database, method, args} = change.value
+      if (database.userId !== this.userId) {
+        return // not a call to this database
+      }
+      const methodFn = this.dbmethods[method]
+      if (!methodFn) {
+        return writeDbMethodResult('method-not-found')
+      }
+      try {
+        const res = await methodFn(db, args)
+        return await writeDbMethodResult('success', res)
+      } catch (e) {
+        return await writeDbMethodResult(e.code || 'error', {message: e.toString()})
+      }
+    })
   }
 
   async teardown () {
@@ -163,6 +200,10 @@ export class BaseHyperbeeDB extends EventEmitter {
 
   createIndexer (schemaId, targetSchemaIds, indexFn) {
     this.indexers.push(new Indexer(this, schemaId, targetSchemaIds, indexFn))
+  }
+
+  createDbMethod (methodId, fn) {
+    this.dbmethods[methodId] = fn
   }
 
   async updateIndexes ({changedDb, indexStates, changes, lowestStart}) {

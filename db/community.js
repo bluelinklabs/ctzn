@@ -37,6 +37,12 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
       this.emit('subscriptions-changed')
     })
 
+    this.createDbMethod('ctzn.network/ping-method', (db, args) => {
+      return {
+        message: args?.message || 'Pong'
+      }
+    })
+
     const NOTIFICATIONS_SCHEMAS = [
       'ctzn.network/follow',
       'ctzn.network/comment',

@@ -22,7 +22,9 @@ CTZN is still in development! If you decide to run a server or build against the
 - **Architecture**
     - [**Design overview**](./docs/design.md)
     - [**Roadmap**](./docs/roadmap.md)
+    - [**APIs**](./docs/apis.md)
     - [**Database schemas overview**](./docs/schemas.md)
+    - [**Database methods**](./docs/dbmethods.md)
     - [**Community roles system**](./docs/community-roles.md)
     - [**Community permissions system**](./docs/permissions.md)
 

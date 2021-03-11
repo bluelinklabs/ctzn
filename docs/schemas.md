@@ -47,6 +47,11 @@ The objects in a key template fit the following shape:
   - When `type = json-pointer`, a json-pointer to the record attribute which will be used as the key.
   - When `type = string`, a string which will always be inserted in that segment.
 
+## Universal db schemas
+
+- `ctzn.network/dbmethod-call` A method-call to be handled by some database
+- `ctzn.network/dbmethod-result` The result of a method-call which has been handled by some database
+
 ## Public server db schemas
 
 - `ctzn.network/user` Record of a hosted user or community
@@ -105,3 +110,11 @@ The objects in a key template fit the following shape:
 - `ctzn.network/profile-view` Get the profile-record of a user.
 - `ctzn.network/reactions-to-view` Get the reaction-records for a given subject.
 - `ctzn.network/thread-view` Get a post-record and any relevant comment records.
+
+## Permission schemas
+
+See the [permissions document](./permissions.md).
+
+## DbMethod schemas
+
+See the [dbmethods document](./dbmethods.md).

@@ -23,7 +23,7 @@ export function setup (wsServer) {
   })
 
   wsServer.register('table.insert', async ([databaseId, schemaId, value], client) => {
-    const {db, table} = await load(databaseId, schemaId)
+    const {db, table} = await load(databaseId, schemaId, {assertOwner: client.auth})
 
     const key = table.schema.generateKey(value)
     await table.put(key, value)
@@ -34,7 +34,7 @@ export function setup (wsServer) {
   })
 
   wsServer.register('table.update', async ([databaseId, schemaId, key, value], client) => {
-    const {db, table} = await load(databaseId, schemaId)
+    const {db, table} = await load(databaseId, schemaId, {assertOwner: client.auth})
     
     const release = await table.lock(key)
     try {
@@ -54,7 +54,7 @@ export function setup (wsServer) {
   })
 
   wsServer.register('table.del', async ([databaseId, schemaId, key], client) => {
-    const {db, table} = await load(databaseId, schemaId)
+    const {db, table} = await load(databaseId, schemaId, {assertOwner: client.auth})
 
     const release = await table.lock(key)
     try {
@@ -66,11 +66,16 @@ export function setup (wsServer) {
   })
 }
 
-async function load (databaseId, schemaId) {
+async function load (databaseId, schemaId, authSettings = undefined) {
   databaseId = await fetchUserId(databaseId)
   const db = getDb(databaseId)
   const table = db.tables[schemaId]
   if (!table) throw new Error(`Table "${schemaId}" not found`)
+  if (authSettings) {
+    if (databaseId !== authSettings.assertOwner.userId) {
+      throw new errors.PermissionsError()
+    }
+  }
   return {db, table, databaseId}
 }
 

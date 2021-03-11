@@ -1,6 +1,7 @@
 import * as accounts from './accounts.js'
 import * as blobs from './blobs.js'
 import * as communities from './communities.js'
+import * as dbmethod from './dbmethod.js'
 import * as debug from './debug.js'
 import * as profiles from './profiles.js'
 import * as notifications from './notifications.js'
@@ -44,6 +45,7 @@ export function setup (wsServer, config) {
   accounts.setup(wsServer, config)
   blobs.setup(wsServer, config)
   communities.setup(wsServer, config)
+  dbmethod.setup(wsServer, config)
   if (config.debugMode) debug.setup(wsServer, config)
   profiles.setup(wsServer, config)
   notifications.setup(wsServer, config)
