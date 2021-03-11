@@ -1,26 +1,9 @@
 import { publicUserDbs } from '../db/index.js'
 import { constructUserUrl } from '../lib/strings.js'
-import { fetchUserId } from '../lib/network.js'
 import * as errors from '../lib/errors.js'
 import bytes from 'bytes'
 
 export function setup (wsServer, config) {
-  wsServer.register('profiles.get', async ([userId]) => {
-    userId = await fetchUserId(userId)
-    const publicUserDb = publicUserDbs.get(userId)
-    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
-
-    const profileEntry = await publicUserDb.profile.get('self')
-    if (!profileEntry) {
-      throw new errors.NotFoundError('User profile not found')
-    }
-    profileEntry.url = constructUserUrl(userId)
-    profileEntry.userId = userId
-    profileEntry.dbUrl = publicUserDb.url
-    profileEntry.dbType = publicUserDb.dbType
-    return profileEntry
-  })
-
   wsServer.register('profiles.put', async ([profile], client) => {
     if (!client?.auth) throw new errors.SessionError()
     const publicUserDb = publicUserDbs.get(client.auth.userId)

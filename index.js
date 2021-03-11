@@ -73,6 +73,37 @@ export async function start (opts) {
     }
   })
 
+  app.get('/.table/:username([^\/]{3,})/:schemaNs/:schemaName', async (req, res) => {
+    try {
+      const db = getDb(req.params.username)
+      const schemaId = `${req.params.schemaNs}/${req.params.schemaName}`
+      const table = db.tables[schemaId]
+      if (!table) throw new Error('Table not found')
+      const entries = await table.list(getListOpts(req))
+      for (let entry of entries) {
+        entry.url = constructEntryUrl(db.url, schemaId, entry.key)
+      }
+      res.status(200).json({entries})
+    } catch (e) {
+      json404(res, e)
+    }
+  })
+
+  app.get('/.table/:username([^\/]{3,})/:schemaNs/:schemaName/:key', async (req, res) => {
+    try {
+      const db = getDb(req.params.username)
+      const table = db.tables[`${req.params.schemaNs}/${req.params.schemaName}`]
+      if (!table) throw new Error('Table not found')
+      const entry = await table.get(req.params.key)
+      if (entry) {
+        entry.url = constructEntryUrl(db.url, schemaId, entry.key)
+      }
+      res.status(200).json(entry)
+    } catch (e) {
+      json404(res, e)
+    }
+  })
+
   async function serveView (req, res) {
     try {
       const schemaId = `${req.params.viewns}/${req.params.viewname}`
@@ -83,7 +114,6 @@ export async function start (opts) {
       json404(res, e)
     }
   }
-
   app.get('/.view/:viewns/:viewname/*', (req, res) => serveView(req, res))
   app.get('/.view/:viewns/:viewname', (req, res) => serveView(req, res))
 
@@ -118,26 +148,6 @@ export async function start (opts) {
       res.status(200).end(txt)
     } else {
       res.status(404).end()
-    }
-  })
-
-  app.get('/ctzn/profile/:username([^\/]{3,})', async (req, res) => {
-    try {
-      const userId = usernameToUserId(req.params.username)
-      const db = getDb(req.params.username)
-      const profileEntry = await db.profile.get('self')
-      if (!profileEntry) {
-        throw new Error('User profile not found')
-      }
-      res.status(200).json({
-        url: constructUserUrl(userId),
-        userId: userId,
-        dbUrl: db.url,
-        dbType: db.dbType,
-        value: profileEntry.value
-      })
-    } catch (e) {
-      json404(res, e)
     }
   })
 
@@ -198,125 +208,6 @@ export async function start (opts) {
       s.pipe(res)
     } catch (e) {
       return res.status(404).end()
-    }
-  })
-
-  app.get('/ctzn/followers/:username', async (req, res) => {
-    try {
-      res.status(200).json(await dbGetters.listFollowers(usernameToUserId(req.params.username)))
-    } catch (e) {
-      json404(res, e)
-    }
-  })
-
-  app.get('/ctzn/follows/:username', async (req, res) => {
-    try {
-      const db = getDb(req.params.username)
-      res.status(200).json(await dbGetters.listFollows(db, getListOpts(req)))
-    } catch (e) {
-      json404(res, e)
-    }
-  })
-
-  app.get('/ctzn/members/:username', async (req, res) => {
-    try {
-      const db = getDb(req.params.username)
-      res.status(200).json(await dbGetters.listCommunityMembers(db, getListOpts(req)))
-    } catch (e) {
-      json404(res, e)
-    }
-  })
-
-  app.get('/ctzn/memberships/:username', async (req, res) => {
-    try {
-      const db = getDb(req.params.username)
-      res.status(200).json(await dbGetters.listCommunityMemberships(db, getListOpts(req)))
-    } catch (e) {
-      json404(res, e)
-    }
-  })
-
-  app.get('/ctzn/roles/:username', async (req, res) => {
-    try {
-      const db = getDb(req.params.username)
-      res.status(200).json(await dbGetters.listCommunityRoles(db, getListOpts(req)))
-    } catch (e) {
-      json404(res, e)
-    }
-  })
-
-  app.get('/ctzn/bans/:username', async (req, res) => {
-    try {
-      const db = getDb(req.params.username)
-      res.status(200).json(await dbGetters.listCommunityBans(db, getListOpts(req)))
-    } catch (e) {
-      json404(res, e)
-    }
-  })
-
-  app.get('/ctzn/post/:username([^\/]{3,})/:key', async (req, res) => {
-    try {
-      const db = getDb(req.params.username)
-      res.status(200).json(await dbGetters.getPost(db, req.params.key, usernameToUserId(req.params.username)))
-    } catch (e) {
-      json404(res, e)
-    }
-  })
-
-  app.get('/ctzn/posts/:username([^\/]{3,})', async (req, res) => {
-    try {
-      const db = getDb(req.params.username)
-      res.status(200).json(await dbGetters.listPosts(db, getListOpts(req), usernameToUserId(req.params.username)))
-    } catch (e) {
-      json404(res, e)
-    }
-  })
-
-  app.get('/ctzn/thread/:url', async (req, res) => {
-    try {
-      res.status(200).json(await dbGetters.getThread(req.params.url))
-    } catch (e) {
-      json404(res, e)
-    }
-  })
-
-  app.get('/ctzn/comment/:username([^\/]{3,})/:key', async (req, res) => {
-    try {
-      const db = getDb(req.params.username)
-      res.status(200).json(await dbGetters.getComment(db, req.params.key, usernameToUserId(req.params.username)))
-    } catch (e) {
-      json404(res, e)
-    }
-  })
-
-  app.get('/hyper/:username([^\/]{3,})/:schemaNs/:schemaName', async (req, res) => {
-    try {
-      const db = getDb(req.params.username)
-      const schemaId = `${req.params.schemaNs}/${req.params.schemaName}`
-      const table = db.tables[schemaId]
-      if (!table) throw new Error('Table not found')
-      const entries = await table.list(getListOpts(req))
-      for (let entry of entries) {
-        entry.url = constructEntryUrl(db.url, schemaId, entry.key)
-      }
-      res.status(200).json({entries})
-    } catch (e) {
-      json404(res, e)
-    }
-  })
-
-  app.get('/hyper/:username([^\/]{3,})/:schemaNs/:schemaName/:key', async (req, res) => {
-    try {
-      const db = getDb(req.params.username)
-      const table = db.tables[`${req.params.schemaNs}/${req.params.schemaName}`]
-      if (!table) throw new Error('Table not found')
-      const entry = await table.get(req.params.key)
-      if (entry) {
-        entry.url = constructEntryUrl(db.url, schemaId, entry.key)
-      }
-      res.status(200).json(entry)
-    } catch (e) {
-      json404(res, e)
     }
   })
 

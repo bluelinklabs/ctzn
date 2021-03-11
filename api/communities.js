@@ -1,9 +1,8 @@
 import { publicUserDbs, createUser, catchupIndexes } from '../db/index.js'
-import { isHyperUrl, constructEntryUrl, parseUserId } from '../lib/strings.js'
+import { constructEntryUrl, parseUserId } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
-import { fetchUserId, fetchUserInfo, reverseDns, connectWs } from '../lib/network.js'
+import { fetchUserInfo, reverseDns, connectWs } from '../lib/network.js'
 import * as errors from '../lib/errors.js'
-import { listCommunityMembers, listCommunityMemberships, listCommunityRoles, listCommunityBans } from '../db/getters.js'
 import bytes from 'bytes'
 
 const createParam = createValidator({
@@ -88,44 +87,6 @@ export function setup (wsServer, config) {
     /* dont await */ catchupIndexes(communityUser.publicUserDb)
 
     return communityInfo
-  })
-
-  wsServer.register('communities.getMember', async ([communityUserId, memberUserId], client) => {
-    if (isHyperUrl(communityUserId)) {
-      communityUserId = await fetchUserId(communityUserId)
-    }
-    const publicCommunityDb = publicUserDbs.get(communityUserId)
-    if (!publicCommunityDb) throw new errors.NotFoundError('Community database not found')
-
-    return publicCommunityDb.members.get(memberUserId)
-  })
-
-  wsServer.register('communities.listMembers', async ([communityUserId, opts], client) => {
-    if (isHyperUrl(communityUserId)) {
-      communityUserId = await fetchUserId(communityUserId)
-    }
-    const publicCommunityDb = publicUserDbs.get(communityUserId)
-    if (!publicCommunityDb) throw new errors.NotFoundError('Community database not found')
-
-    if (opts) listParam.assert(opts)
-    opts = opts || {}
-    opts.limit = opts.limit && typeof opts.limit === 'number' ? opts.limit : 100
-    opts.limit = Math.max(Math.min(opts.limit, 100), 1)
-    return listCommunityMembers(publicCommunityDb, opts)
-  })
-
-  wsServer.register('communities.listMemberships', async ([citizenUserId, opts], client) => {
-    if (isHyperUrl(citizenUserId)) {
-      citizenUserId = await fetchUserId(citizenUserId)
-    }
-    const publicCitizenDb = publicUserDbs.get(citizenUserId)
-    if (!publicCitizenDb) throw new errors.NotFoundError('Citizen database not found')
-
-    if (opts) listParam.assert(opts)
-    opts = opts || {}
-    opts.limit = opts.limit && typeof opts.limit === 'number' ? opts.limit : 100
-    opts.limit = Math.max(Math.min(opts.limit, 100), 1)
-    return listCommunityMemberships(publicCitizenDb, opts)
   })
 
   wsServer.register('communities.join', async ([community], client) => {
@@ -374,25 +335,6 @@ export function setup (wsServer, config) {
     }
   })
 
-  wsServer.register('communities.listRoles', async ([communityUserId, opts], client) => {
-    if (isHyperUrl(communityUserId)) {
-      communityUserId = await fetchUserId(communityUserId)
-    }
-    const publicCommunityDb = publicUserDbs.get(communityUserId)
-    if (!publicCommunityDb) throw new errors.NotFoundError('Community database not found')
-
-    if (opts) listParam.assert(opts)
-    opts = opts || {}
-    opts.limit = opts.limit && typeof opts.limit === 'number' ? opts.limit : 100
-    opts.limit = Math.max(Math.min(opts.limit, 100), 1)
-    return listCommunityRoles(publicCommunityDb, opts)
-  })
-
-  wsServer.register('communities.getRole', async ([community, roleId], client) => {
-    const {publicCommunityDb} = await lookupCommunity(community)
-    return publicCommunityDb.roles.get(roleId)
-  })
-
   wsServer.register('communities.createRole', async ([community, role], client) => {
     if (role?.roleId === 'admin') throw new errors.PermissionsError('Cannot edit the admin role')
     const authedUser = await lookupAuthedUser(client)
@@ -459,32 +401,6 @@ export function setup (wsServer, config) {
     }
   })
 
-  wsServer.register('communities.listUserPermissions', async ([community, memberId], client) => {
-    const {publicCommunityDb} = await lookupCommunity(community)
-    const memberRecord = await publicCommunityDb.members.get(memberId)
-    if (!memberRecord) return []
-    if (memberRecord.value.roles?.includes('admin')) {
-      return [{permId: 'ctzn.network/perm-admin'}]
-    }
-    const roleRecords = await Promise.all(memberRecord.value.roles?.map(roleId => publicCommunityDb.roles.get(roleId)) || [])
-    return roleRecords.map(roleRecord => roleRecord.value.permissions || []).flat()
-  })
-
-  wsServer.register('communities.getUserPermission', async ([community, memberId, permId], client) => {
-    const {publicCommunityDb} = await lookupCommunity(community)
-    const memberRecord = await publicCommunityDb.members.get(memberId)
-    if (!memberRecord) return false
-    if (memberRecord.value.roles?.includes('admin')) {
-      return {permId: 'ctzn.network/perm-admin'}
-    }
-    const roleRecords = await Promise.all(memberRecord.value.roles?.map(roleId => publicCommunityDb.roles.get(roleId)) || [])
-    for (let roleRecord of roleRecords) {
-      const perm = roleRecord.value.permissions?.find(p => p.permId === permId)
-      if (perm) return perm
-    }
-    return false
-  })
-
   wsServer.register('communities.removePost', async ([community, postUrl], client) => {
     const authedUser = await lookupAuthedUser(client)
     const {publicCommunityDb} = await lookupCommunity(community)
@@ -511,20 +427,6 @@ export function setup (wsServer, config) {
       threadIdxEntry.value.items.splice(commentIndex, 1)
       await publicCommunityDb.threadIdx.put(threadIdxEntry.key, threadIdxEntry.value)
     }
-  })
-
-  wsServer.register('communities.listBans', async ([community, opts], client) => {
-    const {publicCommunityDb} = await lookupCommunity(community)
-    if (opts) listParam.assert(opts)
-    opts = opts || {}
-    opts.limit = opts.limit && typeof opts.limit === 'number' ? opts.limit : 100
-    opts.limit = Math.max(Math.min(opts.limit, 100), 1)
-    return listCommunityBans(publicCommunityDb, opts)
-  })
-
-  wsServer.register('communities.getBan', async ([community, userId], client) => {
-    const {publicCommunityDb} = await lookupCommunity(community)
-    return publicCommunityDb.bans.get(userId)
   })
 
   wsServer.register('communities.putBan', async ([community, userId, ban], client) => {
