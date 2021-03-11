@@ -54,32 +54,32 @@ test('basic CRUD', async t => {
   await new Promise(r => setTimeout(r, 5e3))
   await api.debug.whenAllSynced()
 
-  let follow1 = await api.follows.get(bob.userId, alice.userId)
+  let follow1 = await api.table.get(bob.userId, 'ctzn.network/follow', alice.userId)
   t.is(follow1.value.subject.dbUrl, alice.profile.dbUrl)
   t.is(follow1.value.subject.userId, alice.userId)
 
-  let follow2 = await api.follows.get(bob.userId, carla.userId)
+  let follow2 = await api.table.get(bob.userId, 'ctzn.network/follow', carla.userId)
   t.is(follow2.value.subject.dbUrl, carla.profile.dbUrl)
   t.is(follow2.value.subject.userId, carla.userId)
 
-  let follows1 = await api.follows.listFollows(bob.userId)
+  let follows1 = (await api.table.list(bob.userId, 'ctzn.network/follow')).entries
   sim.testFollows(t, follows1, [alice, carla])
 
-  let follows2 = await api.follows.listFollows(alice.userId)
+  let follows2 = (await api.table.list(alice.userId, 'ctzn.network/follow')).entries
   sim.testFollows(t, follows2, [bob, carla])
 
-  let follows3 = await api.follows.listFollows(carla.userId)
+  let follows3 = (await api.table.list(carla.userId, 'ctzn.network/follow')).entries
   sim.testFollows(t, follows3, [alice, bob])
 
-  let follows4 = await api.follows.listFollows(dan.userId)
+  let follows4 = (await api.table.list(dan.userId, 'ctzn.network/follow')).entries
   sim.testFollows(t, follows4, [alice, bob, carla])
 
-  let follows5 = await api.follows.listFollows(bob.userId, {limit: 1})
+  let follows5 = (await api.table.list(bob.userId, 'ctzn.network/follow', {limit: 1})).entries
   t.is(follows5.length, 1)
 
   // alice viewing self
   await alice.login()
-  var followers = await api.views.get('ctzn.network/followers-view', alice.userId)
+  var followers = await api.view.get('ctzn.network/followers-view', alice.userId)
   t.is(followers.myFollowed.length, 2)
   t.truthy(followers.myFollowed.includes(bob.userId))
   t.truthy(followers.myFollowed.includes(carla.userId))
@@ -92,7 +92,7 @@ test('basic CRUD', async t => {
 
   // bob viewing alice
   await bob.login()
-  var followers = await api.views.get('ctzn.network/followers-view', alice.userId)
+  var followers = await api.view.get('ctzn.network/followers-view', alice.userId)
   t.is(followers.myFollowed.length, 2)
   t.truthy(followers.myFollowed.includes(bob.userId))
   t.truthy(followers.myFollowed.includes(carla.userId))
@@ -105,7 +105,7 @@ test('basic CRUD', async t => {
 
   // carla viewing alice
   await carla.login()
-  var followers = await api.views.get('ctzn.network/followers-view', alice.userId)
+  var followers = await api.view.get('ctzn.network/followers-view', alice.userId)
   t.is(followers.myFollowed.length, 2)
   t.truthy(followers.myFollowed.includes(bob.userId))
   t.truthy(followers.myFollowed.includes(carla.userId))
@@ -116,7 +116,7 @@ test('basic CRUD', async t => {
 
   // dan viewing alice
   await dan.login()
-  var followers = await api.views.get('ctzn.network/followers-view', alice.userId)
+  var followers = await api.view.get('ctzn.network/followers-view', alice.userId)
   t.is(followers.myFollowed.length, 3)
   t.truthy(followers.myFollowed.includes(bob.userId))
   t.truthy(followers.myFollowed.includes(carla.userId))
@@ -135,7 +135,7 @@ test('basic CRUD', async t => {
 
   // alice viewing self
   await alice.login()
-  var followers = await api.views.get('ctzn.network/followers-view', alice.userId)
+  var followers = await api.view.get('ctzn.network/followers-view', alice.userId)
   t.is(followers.myFollowed.length, 1)
   t.truthy(followers.myFollowed.includes(carla.userId))
   t.is(followers.myCommunity.length, 1)
@@ -145,7 +145,7 @@ test('basic CRUD', async t => {
 
   // bob viewing alice
   await bob.login()
-  var followers = await api.views.get('ctzn.network/followers-view', alice.userId)
+  var followers = await api.view.get('ctzn.network/followers-view', alice.userId)
   t.is(followers.myFollowed.length, 1)
   t.truthy(followers.myFollowed.includes(carla.userId))
   t.is(followers.myCommunity.length, 1)
@@ -155,7 +155,7 @@ test('basic CRUD', async t => {
 
   // carla viewing alice
   await carla.login()
-  var followers = await api.views.get('ctzn.network/followers-view', alice.userId)
+  var followers = await api.view.get('ctzn.network/followers-view', alice.userId)
   t.is(followers.myFollowed.length, 1)
   t.truthy(followers.myFollowed.includes(carla.userId))
   t.is(followers.myCommunity.length, 0)
@@ -164,7 +164,7 @@ test('basic CRUD', async t => {
 
   // dan viewing alice
   await dan.login()
-  var followers = await api.views.get('ctzn.network/followers-view', alice.userId)
+  var followers = await api.view.get('ctzn.network/followers-view', alice.userId)
   t.is(followers.myFollowed.length, 2)
   t.truthy(followers.myFollowed.includes(carla.userId))
   t.truthy(followers.myFollowed.includes(dan.userId))

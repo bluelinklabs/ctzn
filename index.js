@@ -25,6 +25,9 @@ const DEFAULT_COMMUNITY_AVATAR_PATH = path.join(path.dirname(fileURLToPath(impor
 
 let app
 
+let _serverReadyCb
+export const whenServerReady = new Promise(r => {_serverReadyCb = r})
+
 export async function start (opts) {
   opts.configDir = opts.configDir || path.join(os.homedir(), '.ctzn')
   let config = new Config(opts)
@@ -289,9 +292,14 @@ export async function start (opts) {
   app.get('/hyper/:username([^\/]{3,})/:schemaNs/:schemaName', async (req, res) => {
     try {
       const db = getDb(req.params.username)
-      const table = db.tables[`${req.params.schemaNs}/${req.params.schemaName}`]
-      if (!table) throw new Error('User table not found')     
-      res.status(200).json(await table.list(getListOpts(req)))
+      const schemaId = `${req.params.schemaNs}/${req.params.schemaName}`
+      const table = db.tables[schemaId]
+      if (!table) throw new Error('Table not found')
+      const entries = await table.list(getListOpts(req))
+      for (let entry of entries) {
+        entry.url = constructEntryUrl(db.url, schemaId, entry.key)
+      }
+      res.status(200).json({entries})
     } catch (e) {
       json404(res, e)
     }
@@ -301,8 +309,12 @@ export async function start (opts) {
     try {
       const db = getDb(req.params.username)
       const table = db.tables[`${req.params.schemaNs}/${req.params.schemaName}`]
-      if (!table) throw new Error('User table not found')
-      res.status(200).json(await table.get(req.params.key))
+      if (!table) throw new Error('Table not found')
+      const entry = await table.get(req.params.key)
+      if (entry) {
+        entry.url = constructEntryUrl(db.url, schemaId, entry.key)
+      }
+      res.status(200).json(entry)
     } catch (e) {
       json404(res, e)
     }
@@ -336,6 +348,7 @@ export async function start (opts) {
   //   server.close()
   // }
 
+  _serverReadyCb()
   return {
     server,
     db,

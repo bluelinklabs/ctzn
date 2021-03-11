@@ -1,5 +1,6 @@
 import * as db from './index.js'
-import { usernameToUserId, constructUserUrl, constructEntryUrl } from '../lib/strings.js'
+import { constructUserUrl, isHyperUrl, parseEntryUrl } from '../lib/strings.js'
+import { fetchUserId } from '../lib/network.js'
 import * as dbGetters from './getters.js'
 import * as schemas from '../lib/schemas.js'
 import * as errors from '../lib/errors.js'
@@ -30,7 +31,7 @@ export function setup () {
     // TODO
     let userDb
     try {
-      const userId = usernameToUserId(req.params.username)
+      const userId = await fetchUserId(req.params.username)
       userDb = db.publicUserDbs.get(userId)
       if (!userDb) throw 'Not found'
       
@@ -68,7 +69,7 @@ export function setup () {
     // TODO
     let userDb
     try {
-      const userId = usernameToUserId(req.params.username)
+      const userId = await fetchUserId(req.params.username)
       userDb = db.publicUserDbs.get(userId)
       if (!userDb) return res.status(404).end()
       
@@ -89,49 +90,23 @@ export function setup () {
   })
 
   define('ctzn.network/comment-view', async (auth, userId, commentKey) => {
-    userId = usernameToUserId(userId)
+    if (!commentKey && isHyperUrl(userId)) {
+      let {origin, schemaId, key} = parseEntryUrl(userId)
+      if (schemaId !== 'ctzn.network/comment') {
+        return undefined
+      }
+      userId = await fetchUserId(origin)
+      commentKey = key
+    } else {
+      userId = await fetchUserId(userId)
+    }
     const db = getDb(userId)
-    return dbGetters.getComment(db, commentKey, userId)
-  })
-
-  // define('ctzn.network/community-ban-view', async (communityId, citizenId) => {
-  //   communityId = usernameToUserId(communityId)
-  //   citizenId = usernameToUserId(citizenId)
-  //   const db = getDb(communityId)
-  //   const entry = await db.bans.get(citizenId)
-  //   if (entry) {
-  //     entry.url = constructEntryUrl(db.url, 'ctzn.network/community-ban', entry.key)
-  //   }
-  //   return entry
-  // })
-
-  // define('ctzn.network/community-bans-view', async (communityId, opts) => {
-  //   communityId = usernameToUserId(communityId)
-  //   const db = getDb(communityId)
-  //   return {bans: await dbGetters.listCommunityBans(db, getListOpts(opts))}
-  // })
-
-  define('ctzn.network/community-members-view', async (auth, communityId, opts) => {
-    communityId = usernameToUserId(communityId)
-    const db = getDb(communityId)
-    return {members: await dbGetters.listCommunityMembers(db, getListOpts(opts))}
-  })
-
-  define('ctzn.network/community-memberships-view', async (auth, citizenId, opts) => {
-    citizenId = usernameToUserId(citizenId)
-    const db = getDb(citizenId)
-    return {memberships: await dbGetters.listCommunityMemberships(db, getListOpts(opts))}
-  })
-
-  define('ctzn.network/community-roles-view', async (auth, communityId, opts) => {
-    communityId = usernameToUserId(communityId)
-    const db = getDb(communityId)
-    return {roles: await dbGetters.listCommunityRoles(db, getListOpts(opts))}
+    return dbGetters.getComment(db, commentKey, userId, auth)
   })
 
   define('ctzn.network/community-user-permission-view', async (auth, communityId, citizenId, permId) => {
-    communityId = usernameToUserId(communityId)
-    citizenId = usernameToUserId(citizenId)
+    communityId = await fetchUserId(communityId)
+    citizenId = await fetchUserId(citizenId)
     const db = getDb(communityId)
     const memberRecord = await db.members.get(citizenId)
     if (!memberRecord) return undefined
@@ -147,8 +122,8 @@ export function setup () {
   })
 
   define('ctzn.network/community-user-permissions-view', async (auth, communityId, citizenId) => {
-    communityId = usernameToUserId(communityId)
-    citizenId = usernameToUserId(citizenId)
+    communityId = await fetchUserId(communityId)
+    citizenId = await fetchUserId(citizenId)
     const db = getDb(communityId)
     const memberRecord = await db.members.get(citizenId)
     if (!memberRecord) return {permissions: []}
@@ -163,27 +138,10 @@ export function setup () {
     return {feed: await listHomeFeed(opts, auth)}
   })
 
-  // define('ctzn.network/follow-view', async (fromUserId, toUserId) => {
-  //   fromUserId = usernameToUserId(fromUserId)
-  //   toUserId = usernameToUserId(toUserId)
-  //   const db = getDb(fromUserId)
-  //   const entry = await db.follows.get(subjectId)
-  //   if (entry) {
-  //     entry.url = constructEntryUrl(db.url, 'ctzn.network/follow', entry.key)
-  //   }
-  //   return entry
-  // })
-
   define('ctzn.network/followers-view', async (auth, userId) => {
-    userId = usernameToUserId(userId)
+    userId = await fetchUserId(userId)
     return dbGetters.listFollowers(userId, auth)
   })
-
-  // define('ctzn.network/follows-by-view', async (userId, opts) => {
-  //   userId = usernameToUserId(userId)
-  //   const db = getDb(userId)
-  //   return {follows: await dbGetters.listFollows(db, getListOpts(opts))}
-  // })
 
   define('ctzn.network/notifications-view', async (auth, opts) => {
     if (!auth) throw new errors.SessionError()
@@ -214,19 +172,28 @@ export function setup () {
   })
 
   define('ctzn.network/post-view', async (auth, userId, postKey) => {
-    userId = usernameToUserId(userId)
+    if (!postKey && isHyperUrl(userId)) {
+      let {origin, schemaId, key} = parseEntryUrl(userId)
+      if (schemaId !== 'ctzn.network/post') {
+        return undefined
+      }
+      userId = await fetchUserId(origin)
+      postKey = key
+    } else {
+      userId = await fetchUserId(userId)
+    }
     const db = getDb(userId)
-    return dbGetters.getPost(db, postKey, userId)
+    return dbGetters.getPost(db, postKey, userId, auth)
   })
 
   define('ctzn.network/posts-view', async (auth, userId, opts) => {
-    userId = usernameToUserId(userId)
+    userId = await fetchUserId(userId)
     const db = getDb(userId)
-    return {posts: await dbGetters.listPosts(db, getListOpts(opts), userId)}
+    return {posts: await dbGetters.listPosts(db, getListOpts(opts), userId, auth)}
   })
 
   define('ctzn.network/profile-view', async (auth, userId) => {
-    userId = usernameToUserId(userId)
+    userId = await fetchUserId(userId)
     const db = getDb(userId)
     const profileEntry = await db.profile.get('self')
     if (!profileEntry) {
@@ -241,7 +208,7 @@ export function setup () {
     }
   })
 
-  define('ctzn.network/thread-view', async (url, auth) => {
+  define('ctzn.network/thread-view', async (auth, url) => {
     return {comments: await dbGetters.getThread(url, auth)}
   })
 }

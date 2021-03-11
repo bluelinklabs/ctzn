@@ -52,28 +52,28 @@ test('self indexes', async t => {
 
   // see all reactions by users followed by authed
   await bob.login()
-  let res = await api.views.get('ctzn.network/reactions-to-view', bob.posts[0].url)
+  let res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[0].url)
   t.is(res.subject.dbUrl, bob.posts[0].url)
   t.is(res.reactions.like.length, 2)
   t.is(res.reactions.woah.length, 1)
 
   // see all reactions by users followed by authed
   await bob.login()
-  res = await api.views.get('ctzn.network/reactions-to-view', bob.posts[1].url)
+  res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[1].url)
   t.is(res.subject.dbUrl, bob.posts[1].url)
   t.is(res.reactions.like.length, 1)
   t.is(res.reactions.woah.length, 2)
 
   // see all reactions by users followed by author
   await carla.login()
-  res = await api.views.get('ctzn.network/reactions-to-view', bob.posts[0].url)
+  res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[0].url)
   t.is(res.subject.dbUrl, bob.posts[0].url)
   t.is(res.reactions.like.length, 2)
   t.is(res.reactions.woah.length, 1)
 
   // dont see bob's reaction because he's not followed by authed or author
   await carla.login()
-  res = await api.views.get('ctzn.network/reactions-to-view', alice.posts[0].url)
+  res = await api.view.get('ctzn.network/reactions-to-view', alice.posts[0].url)
   t.is(res.subject.dbUrl, alice.posts[0].url)
   t.is(res.reactions.like.length, 1)
   t.is(res.reactions.woah.length, 1)
@@ -83,25 +83,25 @@ test('self indexes', async t => {
   await bob.login()
   await bob.unreact({subject: bob.posts[0], reaction: 'like'})
   await bob.react({subject: bob.posts[0], reaction: 'woah'})
-  res = await api.views.get('ctzn.network/reactions-to-view', bob.posts[0].url)
+  res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[0].url)
   t.is(res.subject.dbUrl, bob.posts[0].url)
   t.is(res.reactions.like.length, 1)
   t.is(res.reactions.woah.length, 2)
 
   await bob.unreact({subject: bob.posts[0], reaction: 'woah'})
-  res = await api.views.get('ctzn.network/reactions-to-view', bob.posts[0].url)
+  res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[0].url)
   t.is(res.subject.dbUrl, bob.posts[0].url)
   t.is(res.reactions.like.length, 1)
   t.is(res.reactions.woah.length, 1)
 
   await alice.unreact({subject: bob.posts[0], reaction: 'like'})
-  res = await api.views.get('ctzn.network/reactions-to-view', bob.posts[0].url)
+  res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[0].url)
   t.is(res.subject.dbUrl, bob.posts[0].url)
   t.falsy(res.reactions.like)
   t.is(res.reactions.woah.length, 1)
 
   await carla.unreact({subject: bob.posts[0], reaction: 'woah'})
-  res = await api.views.get('ctzn.network/reactions-to-view', bob.posts[0].url)
+  res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[0].url)
   t.is(res.subject.dbUrl, bob.posts[0].url)
   t.falsy(res.reactions.like)
   t.falsy(res.reactions.woah)
@@ -119,14 +119,14 @@ test('community indexes', async t => {
 
   // see only community member reactions no matter who is authed
   await bob.login()
-  let res = await api.views.get('ctzn.network/reactions-to-view', bob.posts[2].url)
+  let res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[2].url)
   t.is(res.subject.dbUrl, bob.posts[2].url)
   t.is(res.reactions.like.length, 2)
   t.is(res.reactions.woah.length, 1)
 
   // see only community member votes no matter who is authed
   await carla.login()
-  res = await api.views.get('ctzn.network/reactions-to-view', bob.posts[2].url)
+  res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[2].url)
   t.is(res.subject.dbUrl, bob.posts[2].url)
   t.is(res.reactions.like.length, 2)
   t.is(res.reactions.woah.length, 1)
@@ -137,7 +137,7 @@ test('community indexes', async t => {
   await bob.unreact({subject: bob.posts[2], reaction: 'like'})
   await new Promise(r => setTimeout(r, 5e3))
   await api.debug.whenAllSynced()
-  res = await api.views.get('ctzn.network/reactions-to-view', bob.posts[2].url)
+  res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[2].url)
   t.is(res.subject.dbUrl, bob.posts[2].url)
   t.is(res.reactions.like.length, 1)
   t.is(res.reactions.woah.length, 1)

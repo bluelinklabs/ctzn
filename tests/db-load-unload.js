@@ -33,15 +33,14 @@ test('external citizen databases are loaded and unloaded by follows', async t =>
   }
 
   // test that inst2 now does have inst1's user loaded
-  console.log((await inst2.api.views.get('ctzn.network/posts-view', user(0).userId)).posts)
-  t.truthy((await inst2.api.views.get('ctzn.network/posts-view', user(0).userId)).posts)
+  t.truthy((await inst2.api.view.get('ctzn.network/posts-view', user(0).userId)).posts)
 
   // unfollow
   await user(1).unfollow(user(0))
 
   // test that inst2 again doesnt have inst1's user loaded
   await new Promise(r => setTimeout(r, 500))
-  await t.throwsAsync(() => inst2.api.views.get('ctzn.network/posts-view', user(0).userId))
+  await t.throwsAsync(() => inst2.api.view.get('ctzn.network/posts-view', user(0).userId))
 })
 
 test.skip('external community databases are loaded and unloaded by community joins', async t => {

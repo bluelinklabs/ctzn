@@ -26,6 +26,7 @@ export async function createServer () {
 
   const client = new WsClient(`ws://localhost:${port}/`)
   const api = await createRpcApi(client)
+  await api.debug.whenServerReady()
 
   return {
     url: `http://localhost:${port}/`,
@@ -181,7 +182,7 @@ export class TestFramework {
     if (Array.isArray(inst)) {
       inst = inst[randRange(0, inst.length - 1)]
     }
-    let comments = flattenThread(await inst.api.comments.getThread(post.url))
+    let comments = flattenThread((await inst.api.view.get('ctzn.network/thread-view', post.url)).comments)
     return comments[randRange(0, comments.length - 1)]
   }
   
@@ -271,7 +272,7 @@ class TestCitizen {
       }
     })
     this.userId = userId
-    this.profile = await this.inst.api.profiles.get(userId)
+    this.profile = await this.inst.api.view.get('ctzn.network/profile-view', userId)
   }
 
   async login () {
@@ -281,7 +282,7 @@ class TestCitizen {
   async createPost ({text, extendedText, community}) {
     await this.login()
     const {url} = await this.inst.api.posts.create({text, extendedText, community})
-    this.posts.push(await this.inst.api.posts.get(url))
+    this.posts.push(await this.inst.api.view.get('ctzn.network/post-view', url))
     return this.posts[this.posts.length - 1]
   }
 
@@ -294,7 +295,7 @@ class TestCitizen {
       }
     }
     const {url} = await this.inst.api.comments.create({text, community, reply})
-    this.comments.push(await this.inst.api.comments.get(url))
+    this.comments.push(await this.inst.api.view.get('ctzn.network/comment-view', url))
     return this.comments[this.comments.length - 1]
   }
 
@@ -338,7 +339,7 @@ class TestCommunity {
       displayName: this.username.slice(0, 1).toUpperCase() + this.username.slice(1)
     })
     this.userId = userId
-    this.profile = await this.inst.api.profiles.get(userId)
+    this.profile = await this.inst.api.view.get('ctzn.network/profile-view', userId)
   }
 }
 

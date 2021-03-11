@@ -39,33 +39,33 @@ test('single user posting to self', async t => {
   await bob.createPost({text: '2'})
   await bob.createPost({text: '3'})
 
-  let postEntries = (await api.views.get('ctzn.network/posts-view', bob.userId)).posts
+  let postEntries = (await api.view.get('ctzn.network/posts-view', bob.userId)).posts
   sim.testFeed(t, postEntries, [
     [bob, '1'],
     [bob, '2'],
     [bob, '3']
   ])
 
-  postEntries = (await api.views.get('ctzn.network/posts-view', bob.userId, {reverse: true})).posts
+  postEntries = (await api.view.get('ctzn.network/posts-view', bob.userId, {reverse: true})).posts
   sim.testFeed(t, postEntries, [
     [bob, '3'],
     [bob, '2'],
     [bob, '1']
   ])
 
-  postEntries = (await api.views.get('ctzn.network/posts-view', bob.userId, {limit: 2})).posts
+  postEntries = (await api.view.get('ctzn.network/posts-view', bob.userId, {limit: 2})).posts
   sim.testFeed(t, postEntries, [
     [bob, '1'],
     [bob, '2']
   ])
 
   await api.posts.edit(bob.posts[0].key, {text: '1234'})
-  let editedPost = await api.views.get('ctzn.network/post-view', bob.userId, bob.posts[0].key)
+  let editedPost = await api.view.get('ctzn.network/post-view', bob.userId, bob.posts[0].key)
   sim.testPost(t, editedPost, [bob, '1234'])
 
   await api.posts.del(bob.posts[0].key)
-  await t.throwsAsync(() => api.views.get('ctzn.network/post-view', bob.userId, bob.posts[0].key))
-  postEntries = (await api.views.get('ctzn.network/posts-view', bob.userId, {limit: 2})).posts
+  await t.throwsAsync(() => api.view.get('ctzn.network/post-view', bob.userId, bob.posts[0].key))
+  postEntries = (await api.view.get('ctzn.network/posts-view', bob.userId, {limit: 2})).posts
   sim.testFeed(t, postEntries, [
     [bob, '2'],
     [bob, '3']
@@ -81,48 +81,48 @@ test('multiple users posting to community', async t => {
   await bob.createPost({text: '5', community: {userId: ppl.userId, dbUrl: ppl.profile.dbUrl}})
   await carla.createPost({text: '6', community: {userId: ppl.userId, dbUrl: ppl.profile.dbUrl}})
 
-  let postEntries = (await api.views.get('ctzn.network/posts-view', folks.userId)).posts
+  let postEntries = (await api.view.get('ctzn.network/posts-view', folks.userId)).posts
   sim.testFeed(t, postEntries, [
     [alice, '1'],
     [bob, '2'],
     [carla, '3']
   ])
 
-  postEntries = (await api.views.get('ctzn.network/posts-view', folks.userId, {reverse: true})).posts
+  postEntries = (await api.view.get('ctzn.network/posts-view', folks.userId, {reverse: true})).posts
   sim.testFeed(t, postEntries, [
     [carla, '3'],
     [bob, '2'],
     [alice, '1']
   ])
 
-  postEntries = (await api.views.get('ctzn.network/posts-view', folks.userId, {limit: 2})).posts
+  postEntries = (await api.view.get('ctzn.network/posts-view', folks.userId, {limit: 2})).posts
   sim.testFeed(t, postEntries, [
     [alice, '1'],
     [bob, '2']
   ])
 
-  postEntries = (await api.views.get('ctzn.network/posts-view', ppl.userId)).posts
+  postEntries = (await api.view.get('ctzn.network/posts-view', ppl.userId)).posts
   sim.testFeed(t, postEntries, [
     [alice, '4'],
     [bob, '5'],
     [carla, '6']
   ])
 
-  postEntries = (await api.views.get('ctzn.network/posts-view', ppl.userId, {reverse: true})).posts
+  postEntries = (await api.view.get('ctzn.network/posts-view', ppl.userId, {reverse: true})).posts
   sim.testFeed(t, postEntries, [
     [carla, '6'],
     [bob, '5'],
     [alice, '4']
   ])
 
-  postEntries = (await api.views.get('ctzn.network/posts-view', ppl.userId, {limit: 2})).posts
+  postEntries = (await api.view.get('ctzn.network/posts-view', ppl.userId, {limit: 2})).posts
   sim.testFeed(t, postEntries, [
     [alice, '4'],
     [bob, '5']
   ])
 
   await bob.login()
-  postEntries = (await api.views.get('ctzn.network/feed-view')).feed
+  postEntries = (await api.view.get('ctzn.network/feed-view')).feed
   sim.testFeed(t, postEntries, [
     [carla, '6'],
     [bob, '5'],
@@ -133,19 +133,19 @@ test('multiple users posting to community', async t => {
     [bob, '3'],
     [bob, '2']
   ])
-  postEntries = (await api.views.get('ctzn.network/feed-view', {limit: 2})).feed
+  postEntries = (await api.view.get('ctzn.network/feed-view', {limit: 2})).feed
   sim.testFeed(t, postEntries, [
     [carla, '6'],
     [bob, '5']
   ])
-  postEntries = (await api.views.get('ctzn.network/feed-view', {lt: bob.posts[2].key})).feed
+  postEntries = (await api.view.get('ctzn.network/feed-view', {lt: bob.posts[2].key})).feed
   sim.testFeed(t, postEntries, [
     [bob, '2']
   ])
 
   await alice.login()
   await api.posts.edit(alice.posts[0].key, {text: '1234'})
-  postEntries = (await api.views.get('ctzn.network/posts-view', folks.userId)).posts
+  postEntries = (await api.view.get('ctzn.network/posts-view', folks.userId)).posts
   sim.testFeed(t, postEntries, [
     [alice, '1234'],
     [bob, '2'],
@@ -154,9 +154,9 @@ test('multiple users posting to community', async t => {
 
   await alice.login()
   await api.posts.del(alice.posts[0].key)
-  await t.throwsAsync(() => api.views.get('ctzn.network/post-view', alice.userId, alice.posts[0].key))
+  await t.throwsAsync(() => api.view.get('ctzn.network/post-view', alice.userId, alice.posts[0].key))
 
-  postEntries = (await api.views.get('ctzn.network/posts-view', folks.userId)).posts
+  postEntries = (await api.view.get('ctzn.network/posts-view', folks.userId)).posts
   sim.testFeed(t, postEntries, [
     [bob, '2'],
     [carla, '3']
@@ -166,7 +166,7 @@ test('multiple users posting to community', async t => {
 test('extended text', async t => {
   const bob = sim.users.bob
   let post = await bob.createPost({text: 'the limited text', extendedText: 'the unlimited text'})
-  let postRecord = await api.views.get('ctzn.network/post-view', bob.userId, post.key)
+  let postRecord = await api.view.get('ctzn.network/post-view', bob.userId, post.key)
   t.is(postRecord.value.text, 'the limited text')
   t.is(postRecord.value.extendedText, 'the unlimited text')
 })

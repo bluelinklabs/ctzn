@@ -63,23 +63,15 @@ Schemas contain the following standard attributes:
 - `ctzn.network/avatar-view` The avatar image of a given user.
 - `ctzn.network/blob-view` A generic binary-blob getter.
 - `ctzn.network/comment-view` Get a comment-record.
-- `ctzn.network/community-ban-view` Get a ban-record in a community.
-- `ctzn.network/community-bans-view` Get multiple ban-records in a community.
-- `ctzn.network/community-member-view` Get a member-record in a community.
-- `ctzn.network/community-members-view` Get multiple member-records in a community.
-- `ctzn.network/community-memberships-view` Get multiple membership-records of a user.
-- `ctzn.network/community-roles-view` Get the role-records in a community.
 - `ctzn.network/community-user-permission-view` Get a user's permission in a community.
 - `ctzn.network/community-user-permissions-view` Get multiple of a user's permissions in a community.
 - `ctzn.network/feed-view` Get the content in a user's feed.
-- `ctzn.network/follow-view` Get an individual follow-record between two users.
-- `ctzn.network/followers-of-view` Get multiple known followers of a user.
-- `ctzn.network/follows-by-view` Get multiple follow-records of a user.
+- `ctzn.network/followers-view` Get multiple known followers of a user.
 - `ctzn.network/notifications-view` Get notification records of a user.
 - `ctzn.network/notifications-cleared-at-view` Get the "notifications cleared at" timestap record of auser.
 - `ctzn.network/notifications-count-view` Count the notification records of a user.
-- `ctzn.network/reactions-to-view` Get the reaction-records for a given subject.
 - `ctzn.network/post-view` Get a post-record.
 - `ctzn.network/posts-view` Get multiple post-records for a user.
 - `ctzn.network/profile-view` Get the profile-record of a user.
+- `ctzn.network/reactions-to-view` Get the reaction-records for a given subject.
 - `ctzn.network/thread-view` Get a post-record and any relevant comment records.

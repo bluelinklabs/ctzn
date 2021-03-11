@@ -30,7 +30,7 @@ test('basic CRUD', async t => {
     homepageUrl: 'http://example.com'
   })
 
-  let profile1 = await inst.api.views.get('ctzn.network/profile-view', `bobo@${inst.domain}`)
+  let profile1 = await inst.api.view.get('ctzn.network/profile-view', `bobo@${inst.domain}`)
   t.is(profile1.userId, `bobo@${inst.domain}`)
   t.truthy(/^hyper:\/\/([0-9a-f]{64})\/$/.test(profile1.dbUrl))
   t.is(profile1.value.displayName, 'Bobo Roberts')
@@ -42,7 +42,7 @@ test('basic CRUD', async t => {
 })
 
 test('webfinger', async t => {
-  const profile = await inst.api.views.get('ctzn.network/profile-view', `bobo@${inst.domain}`)
+  const profile = await inst.api.view.get('ctzn.network/profile-view', `bobo@${inst.domain}`)
   const jrd = await (await fetch(`${inst.url}.well-known/webfinger?resource=acct:bobo@${inst.domain}`)).json()
   t.deepEqual(jrd, {
     subject: `acct:bobo@${inst.domain}`,
