@@ -79,7 +79,7 @@ export async function start (opts) {
       if (!table) throw new Error('Table not found')
       const entries = await table.list(getListOpts(req))
       for (let entry of entries) {
-        entry.url = constructEntryUrl(db.url, schemaId, entry.key)
+        entry.url = table.constructEntryUrl(entry.key)
       }
       res.status(200).json({entries})
     } catch (e) {
@@ -94,7 +94,7 @@ export async function start (opts) {
       if (!table) throw new Error('Table not found')
       const entry = await table.get(req.params.key)
       if (entry) {
-        entry.url = constructEntryUrl(db.url, schemaId, entry.key)
+        entry.url = table.constructEntryUrl(entry.key)
       }
       res.status(200).json(entry)
     } catch (e) {
