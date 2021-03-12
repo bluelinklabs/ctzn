@@ -106,7 +106,7 @@ export async function start (opts) {
     try {
       const schemaId = `${req.params.viewns}/${req.params.viewname}`
       const args = req.params[0] ? req.params[0].split('/').filter(Boolean) : []
-      if (Object.keys(req.query).length) args.push(req.query)
+      if (Object.keys(req.query).length) args.push(getListOpts(req))
       if (dbViews.getType(schemaId) === 'blob-view') {
         const {etag, createStream} = await dbViews.exec(schemaId, undefined, ...args)
           if (req.headers['if-none-match'] === etag) {
@@ -204,7 +204,7 @@ function json404 (res, e) {
 
 function getListOpts (req) {
   const opts = {}
-  if (req.query.limit) opts.limit = req.query.limit
+  if (req.query.limit) opts.limit = Number(req.query.limit)
   if (req.query.lt) opts.lt = req.query.lt
   if (req.query.lte) opts.lte = req.query.lte
   if (req.query.gt) opts.gt = req.query.gt
