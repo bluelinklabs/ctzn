@@ -1,5 +1,4 @@
 import { publicUserDbs } from '../db/index.js'
-import { constructUserUrl } from '../lib/strings.js'
 import * as errors from '../lib/errors.js'
 import bytes from 'bytes'
 

@@ -3,7 +3,6 @@ import { constructEntryUrl, parseUserId } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
 import { fetchUserInfo, reverseDns, connectWs } from '../lib/network.js'
 import * as errors from '../lib/errors.js'
-import bytes from 'bytes'
 
 const createParam = createValidator({
   type: 'object',
@@ -237,36 +236,4 @@ export function setup (wsServer, config) {
       release()
     }
   })
-}
-
-async function lookupAuthedUser (client) {
-  if (!client?.auth) throw new errors.SessionError()
-  const publicCitizenDb = publicUserDbs.get(client.auth.userId)
-  if (!publicCitizenDb) throw new errors.NotFoundError('User database not found')
-  return {citizenInfo: client.auth, publicCitizenDb}
-}
-
-async function lookupCommunity (community) {
-  const communityInfo = await fetchUserInfo(community)
-  const publicCommunityDb = publicUserDbs.get(communityInfo.userId)
-  if (!publicCommunityDb?.writable) {
-    throw new errors.NotFoundError('Community not hosted here')
-  }
-  return {communityInfo, publicCommunityDb}
-}
-
-async function assertUserPermission (publicCommunityDb, userId, permId) {
-  const memberRecord = await publicCommunityDb.members.get(userId)
-  if (!memberRecord?.value?.roles?.length) throw new errors.PermissionsError(`Permission denied: ${permId}`)
-  const roles = memberRecord.value.roles
-  if (roles.includes('admin')) {
-    return true
-  }
-  let roleRecords = (await publicCommunityDb.roles.list()).filter(r => roles.includes(r.value.roleId))
-  for (let roleRecord of roleRecords) {
-    if (roleRecord.value.permissions?.find(p => p.permId === permId)) {
-      return true
-    }
-  }
-  throw new errors.PermissionsError(`Permission denied: ${permId}`)
 }

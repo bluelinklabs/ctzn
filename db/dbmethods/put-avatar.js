@@ -2,6 +2,7 @@ import { assertUserPermission } from './_util.js'
 import { blobGet } from '../util.js'
 import * as errors from '../../lib/errors.js'
 import { Config } from '../../lib/config.js'
+import bytes from 'bytes'
 
 export default async function (db, caller, args) {
   await assertUserPermission(db, caller.userId, 'ctzn.network/perm-community-edit-profile')
