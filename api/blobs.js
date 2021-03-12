@@ -20,6 +20,14 @@ export function setup (wsServer, config) {
     return {name}
   })
 
+  wsServer.register('blobs.get', async ([userId, name], client) => {
+    if (!client?.auth) throw new errors.SessionError()
+    const publicUserDb = publicUserDbs.get(userId)
+    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
+
+    return publicUserDb.blobs.get(name, 'base64')
+  })
+
   wsServer.register('blobs.delete', async ([name], client) => {
     if (!client?.auth) throw new errors.SessionError()
     const publicUserDb = publicUserDbs.get(client.auth.userId)
