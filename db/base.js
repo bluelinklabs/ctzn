@@ -1,5 +1,3 @@
-import * as path from 'path'
-import { fileURLToPath } from 'url'
 import EventEmitter from 'events'
 import _debounce from 'lodash.debounce'
 import { client } from './hyperspace.js'
@@ -9,6 +7,7 @@ import pump from 'pump'
 import concat from 'concat-stream'
 import through2 from 'through2'
 import bytes from 'bytes'
+import dbmethods from './dbmethods.js'
 import lock from '../lib/lock.js'
 import * as perf from '../lib/perf.js'
 import * as issues from '../lib/issues.js'
@@ -112,10 +111,8 @@ export class BaseHyperbeeDB extends EventEmitter {
       }
     }
 
-    const basePath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'dbmethods')
     for (let method of this.supportedMethods) {
-      let module = await import(path.join(basePath, `${method}.js`))
-      this.createDbMethod(`ctzn.network/${method}-method`, module.default)
+      this.createDbMethod(`ctzn.network/${method}-method`, dbmethods[method])
     }
 
     this.dbmethodCalls = this.getTable('ctzn.network/dbmethod-call')
@@ -326,6 +323,19 @@ class Blobs {
       start: pointer.value.start,
       end: pointer.value.end,
       timeout: READ_TIMEOUT
+    })
+  }
+
+  async get (key, encoding = undefined) {
+    const stream = await this.createReadStream(key)
+    return new Promise((resolve, reject) => {
+      pump(
+        stream,
+        concat({encoding: 'buffer'}, buf => {
+          resolve(encoding && encoding !== 'buffer' ? buf.toString(encoding) : buf)
+        }),
+        reject
+      )
     })
   }
 

@@ -238,25 +238,6 @@ export function setup (wsServer, config) {
     }
   })
 
-  wsServer.register('communities.putProfile', async ([community, profile], client) => {
-    const authedUser = await lookupAuthedUser(client)
-    const {publicCommunityDb} = await lookupCommunity(community)
-    await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-edit-profile')
-    await publicCommunityDb.profile.put('self', profile)
-  })
-
-  wsServer.register('communities.putAvatar', async ([community, avatarBase64], client) => {
-    const authedUser = await lookupAuthedUser(client)
-    const {publicCommunityDb} = await lookupCommunity(community)
-    await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-edit-profile')
-
-    if ((avatarBase64.length / 1.33) > config.avatarSizeLimit) {
-      throw new errors.ValidationError(`Your avatar image is too big! It must be smaller than ${bytes(config.avatarSizeLimit)}.`)
-    }
-
-    await publicCommunityDb.blobs.put('avatar', Buffer.from(avatarBase64, 'base64'))
-  })
-
   wsServer.register('communities.assignRole', async ([community, memberUserId, roleId], client) => {
     const authedUser = await lookupAuthedUser(client)
     const {publicCommunityDb} = await lookupCommunity(community)

@@ -93,6 +93,14 @@ export class TestFramework {
     return user
   }
 
+  async dbmethod (inst, database, method, args) {
+    var res = await inst.api.dbmethod.call({database, method, args})
+    if (res.result.code !== 'success') {
+      throw new Error(res.result.details?.message || res.result.code)
+    }
+    return res
+  }
+
   testFeed (t, entries, desc) {
     t.is(entries.length, desc.length)
     for (let i = 0; i < desc.length; i++) {

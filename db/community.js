@@ -26,8 +26,8 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
       'community-put-ban',
       'community-put-role',
       'ping',
-      'update-avatar',
-      'update-profile'
+      'put-avatar',
+      'put-profile'
     ]
   }
 

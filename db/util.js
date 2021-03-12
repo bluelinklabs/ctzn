@@ -9,7 +9,7 @@ export async function dbGet (dbUrl) {
   const urlp = new URL(dbUrl)
   const userId = await fetchUserId(`hyper://${urlp.hostname}/`)
   const db = publicUserDbs.get(userId)
-  if (!db) throw new Error('User database not found')
+  if (!db) throw new Error(`User database "${userId}" not found`)
   const pathParts = urlp.pathname.split('/').filter(Boolean)
   let bee = db.bee
   for (let i = 0; i < pathParts.length - 1; i++) {
@@ -19,6 +19,14 @@ export async function dbGet (dbUrl) {
     db,
     entry: await bee.get(decodeURIComponent(pathParts[pathParts.length - 1]))
   }
+}
+
+export async function blobGet (dbId, blobName, encoding = undefined) {
+  if (!blobName) throw new Error('Must specify a blob name')
+  dbId = await fetchUserId(dbId)
+  const db = publicUserDbs.get(dbId)
+  if (!db) throw new Error(`User database "${dbId}" not found`)
+  return db.blobs.get(blobName, encoding)
 }
 
 export async function fetchAuthor (authorId, cache = undefined) {

@@ -1,5 +1,10 @@
 import test from 'ava'
+import fs from 'fs'
+import * as path from 'path'
+import { fileURLToPath } from 'url'
 import { createServer, TestFramework } from './_util.js'
+
+const TEST_IMAGE_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-img.jpg')
 
 let instances = []
 
@@ -257,15 +262,34 @@ test('permissions', async t => {
 
   /// ctzn.network/perm-community-edit-profile
   await alice.login()
-  await api.communities.putProfile(folks.userId, {displayName: 'Folks 1'})
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-profile-method', {displayName: 'Folks 1'})
   t.is((await api.view.get('ctzn.network/profile-view', folks.userId)).value.displayName, 'Folks 1')
+  const testImgBase64 = fs.readFileSync(TEST_IMAGE_PATH, 'base64')
+  const blobsRes1 = await api.blobs.create(testImgBase64)
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-avatar-method', {
+    blobSource: {userId: alice.userId, dbUrl: alice.dbUrl},
+    blobName: blobsRes1.name
+  })
+  await t.is(await api.blobs.get(folks.userId, 'avatar'), testImgBase64)
   await bob.login()
-  await api.communities.putProfile(folks.userId, {displayName: 'Folks 2'})
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-profile-method', {displayName: 'Folks 2'})
   t.is((await api.view.get('ctzn.network/profile-view', folks.userId)).value.displayName, 'Folks 2')
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-avatar-method', {
+    blobSource: {userId: alice.userId, dbUrl: alice.dbUrl},
+    blobName: blobsRes1.name
+  })
   await carla.login()
-  await t.throwsAsync(() => api.communities.putProfile(folks.userId, {displayName: 'Folks 3'}))
+  await t.throwsAsync(() => sim.dbmethod(inst, folks.userId, 'ctzn.network/put-profile-method', {displayName: 'Folks 3'}))
+  await t.throwsAsync(() => sim.dbmethod(inst, folks.userId, 'ctzn.network/put-avatar-method', {
+    blobSource: {userId: alice.userId, dbUrl: alice.dbUrl},
+    blobName: blobsRes1.name
+  }))
   await doug.login()
-  await t.throwsAsync(() => api.communities.putProfile(folks.userId, {displayName: 'Folks 3'}))
+  await t.throwsAsync(() => sim.dbmethod(inst, folks.userId, 'ctzn.network/put-profile-method', {displayName: 'Folks 3'}))
+  await t.throwsAsync(() => sim.dbmethod(inst, folks.userId, 'ctzn.network/put-avatar-method', {
+    blobSource: {userId: alice.userId, dbUrl: alice.dbUrl},
+    blobName: blobsRes1.name
+  }))
 
   /// ctzn.network/perm-community-assign-roles
   await alice.login()
