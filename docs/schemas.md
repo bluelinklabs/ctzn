@@ -7,6 +7,7 @@ Schemas may have the following types, specified as the `"type"`:
 - `json-table` A table containing stored JSON entries.
 - `json-view` A view of JSON data which is generated at runtime.
 - `blob-view` A view of binary blobs which is generated at runtime.
+- `dbmethod` A callable method defined on a database.
 
 Schemas contain the following standard attributes:
 
@@ -15,8 +16,8 @@ Schemas contain the following standard attributes:
 - `description` A human-readable description of the schema.
 - `type` A string identifying what type of information the schema represents.
 - `keyTemplate` An array defining how to generate keys in the table, used when `type` is `"json-table"`. See "Key Templates" below.
-- `definition` An object defining the schema, used when `type` is `"json-table"` or `"json-view"`. In the case of `json-table`, defines the record schema. In the case of `json-view`, defines the schema of a view response. Is a [JSON Schema](https://json-schema.org/).
-- `parameters` An object defining call parameters, used when `type` is `"json-view"` or `"blob-view"`. Is a [JSON Schema](https://json-schema.org/).
+- `definition` An object defining the schema, used when `type` is `"json-table"`, `"json-view"`, or `"dbmethod"`. In the case of `json-table`, defines the record schema. In the case of `json-view` and `dbmethod`, defines the schema of a response. Is a [JSON Schema](https://json-schema.org/).
+- `parameters` An object defining call parameters, used when `type` is `"json-view"`, `"blob-view"`, or `"dbmethod"`. Is a [JSON Schema](https://json-schema.org/).
 
 ## Key templates
 

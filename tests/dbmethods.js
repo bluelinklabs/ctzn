@@ -48,4 +48,12 @@ test('ping method', async t => {
   const res2 = await api.dbmethod.getResult({call: res1.key})
   t.is(res2.value.code, 'success')
   t.is(res2.value.details.message, 'Ping?')
+
+  const res3 = await api.dbmethod.call({
+    database: folks.userId,
+    method: 'ctzn.network/ping-method',
+    args: {message: 1234}
+  })
+  t.is(res3.result.code, 'validation-failed')
+  t.is(typeof res3.result.details.message, 'string')
 })

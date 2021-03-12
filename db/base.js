@@ -10,8 +10,10 @@ import bytes from 'bytes'
 import lock from '../lib/lock.js'
 import * as perf from '../lib/perf.js'
 import * as issues from '../lib/issues.js'
+import { ValidationError } from '../lib/errors.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import { DbIndexingIssue } from '../lib/issues/db-indexing.js'
+import { DbmethodBadResponse } from '../lib/issues/dbmethod-bad-response.js'
 
 const READ_TIMEOUT = 10e3
 const BACKGROUND_INDEXING_DELAY = 5e3 // how much time is allowed to pass before globally indexing an update
@@ -127,12 +129,14 @@ export class BaseHyperbeeDB extends EventEmitter {
       if (database.userId !== this.userId) {
         return // not a call to this database
       }
-      const methodFn = this.dbmethods[method]
-      if (!methodFn) {
+      const methodDefinition = this.dbmethods[method]
+      if (!methodDefinition) {
         return writeDbMethodResult('method-not-found')
       }
       try {
-        const res = await methodFn(db, args)
+        methodDefinition.validateCallArgs(args)
+        const res = await methodDefinition.handler(db, args)
+        methodDefinition.validateResponse(res)
         return await writeDbMethodResult('success', res)
       } catch (e) {
         return await writeDbMethodResult(e.code || 'error', {message: e.toString()})
@@ -202,8 +206,9 @@ export class BaseHyperbeeDB extends EventEmitter {
     this.indexers.push(new Indexer(this, schemaId, targetSchemaIds, indexFn))
   }
 
-  createDbMethod (methodId, fn) {
-    this.dbmethods[methodId] = fn
+  createDbMethod (methodId, handler) {
+    let schema = schemas.get(methodId)
+    this.dbmethods[methodId] = new DbMethod(this, methodId, schema, handler)
   }
 
   async updateIndexes ({changedDb, indexStates, changes, lowestStart}) {
@@ -446,6 +451,37 @@ class Table {
   onDel (cb) {
     this._onDelCbs = this._onDelCbs || []
     this._onDelCbs.push(cb)
+  }
+}
+
+class DbMethod {
+  constructor (db, methodId, schema, handler) {
+    this.db = db
+    this.methodId = methodId
+    this.schema = schema
+    this.handler = handler
+  }
+
+  validateCallArgs (args) {
+    if (this.schema.validateParams) {
+      const valid = this.schema.validateParams(args)
+      if (!valid) {
+        throw new ValidationError(this.schema.validateParams.errors[0])
+      }
+    }
+  }
+
+  validateResponse (res) {
+    if (this.schema.validate) {
+      const valid = this.schema.validate(res)
+      if (!valid) {
+        issues.add(new DbmethodBadResponse({
+          error: JSON.stringify(this.schema.validate.errors[0], null, 2),
+          handlingDb: this.db,
+          method: this.methodId
+        }))
+      }
+    }
   }
 }
 
