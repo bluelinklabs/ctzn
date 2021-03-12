@@ -176,7 +176,7 @@ test('roles', async t => {
   t.is(role2.value.permissions.length, 1)
   t.truthy(role2.value.permissions.find(p => p.permId === 'ctzn.network/perm-community-edit-profile'))
 
-  await api.communities.deleteRole(folks.userId, 'super-moderator')
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-delete-role-method', {roleId: 'super-moderator'})
   let roles3 = (await api.table.list(folks.userId, 'ctzn.network/community-role')).entries
   t.is(roles3.length, 1)
   t.is(roles3[0].value.roleId, 'moderator')

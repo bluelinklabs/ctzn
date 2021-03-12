@@ -303,35 +303,6 @@ export function setup (wsServer, config) {
     }
   })
 
-  wsServer.register('communities.deleteRole', async ([community, roleId], client) => {
-    if (roleId === 'admin') throw new errors.PermissionsError('Cannot edit the admin role')
-    const authedUser = await lookupAuthedUser(client)
-    const {publicCommunityDb} = await lookupCommunity(community)
-    await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-manage-roles')
-
-    const release = await publicCommunityDb.lock('roles')
-    try {
-      const release2 = await publicCommunityDb.lock('members')
-      try {
-        // remove role from all members
-        const memberRecords = await publicCommunityDb.members.list()
-        for (let memberRecord of memberRecords) {
-          if (memberRecord.value.roles?.includes(roleId)) {
-            memberRecord.value.roles = memberRecord.value.roles.filter(r => r !== roleId)
-            await publicCommunityDb.members.put(memberRecord.key, memberRecord.value)
-          }
-        }
-      } finally {
-        release2()
-      }
-
-      // delete role record
-      await publicCommunityDb.roles.del(roleId)
-    } finally {
-      release()
-    }
-  })
-
   wsServer.register('communities.removePost', async ([community, postUrl], client) => {
     const authedUser = await lookupAuthedUser(client)
     const {publicCommunityDb} = await lookupCommunity(community)
