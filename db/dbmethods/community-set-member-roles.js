@@ -1,8 +1,6 @@
 import { assertUserPermission } from './_util.js'
-import * as errors from '../../lib/errors.js'
 
 export default async function (db, caller, args) {
-  if (args.roleId === 'admin') throw new errors.PermissionsError('Cannot edit the admin role')
   await assertUserPermission(db, caller.userId, 'ctzn.network/perm-community-assign-roles')
 
   const release = await db.lock('members')

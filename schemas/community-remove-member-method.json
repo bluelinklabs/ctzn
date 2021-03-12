@@ -6,9 +6,9 @@
   "parameters": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["removedUser"],
+    "required": ["member"],
     "properties": {
-      "removedUser": {
+      "member": {
         "type": "object",
         "required": ["dbUrl", "userId"],
         "properties": {
@@ -29,10 +29,15 @@
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["key", "url"],
     "properties": {
-      "key": {"type": "string"},
-      "url": {"type": "string", "format": "uri"}
+      "banRecord": {
+        "type": "object",
+        "required": ["key", "url"],
+        "properties": {
+          "key": {"type": "string"},
+          "url": {"type": "string", "format": "uri"}
+        }
+      }
     }
   }
 }

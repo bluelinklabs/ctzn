@@ -238,31 +238,6 @@ export function setup (wsServer, config) {
     }
   })
 
-  wsServer.register('communities.removeMember', async ([community, memberUserId, opts], client) => {
-    const authedUser = await lookupAuthedUser(client)
-    const {publicCommunityDb} = await lookupCommunity(community)
-    await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-ban')
-
-    // (optionally) create ban record
-    if (opts?.ban) {
-      let bannedUserInfo = await fetchUserInfo(memberUserId)
-      await publicCommunityDb.bans.put(bannedUserInfo.userId, {
-        bannedUser: bannedUserInfo,
-        createdBy: {userId: authedUser.citizenInfo.userId, dbUrl: authedUser.publicCitizenDb.url},
-        reason: opts.banReason,
-        createdAt: (new Date()).toISOString()
-      })
-    }
-
-    const release = await publicCommunityDb.lock('members')
-    try {
-      // delete member record
-      await publicCommunityDb.members.del(memberUserId)
-    } finally {
-      release()
-    }
-  })
-
   wsServer.register('communities.removePost', async ([community, postUrl], client) => {
     const authedUser = await lookupAuthedUser(client)
     const {publicCommunityDb} = await lookupCommunity(community)
