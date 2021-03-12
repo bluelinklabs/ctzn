@@ -476,14 +476,14 @@ test('post and comment removal', async t => {
     [bob, 'Test 3']
   ])
 
-  await api.communities.removePost(folks.userId, bob.posts[1].url)
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-remove-content-method', {contentUrl: bob.posts[1].url})
   let posts2 = (await api.view.get('ctzn.network/posts-view', folks.userId)).posts
   sim.testFeed(t, posts2, [
     [bob, 'Post 1'],
     [bob, 'Post 3']
   ])
 
-  await api.communities.removeComment(folks.userId, bob.posts[0].url, bob.comments[1].url)
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-remove-content-method', {contentUrl: bob.comments[1].url})
   sim.testThread(t, thread1, [
     [bob, 'Test 1'],
     [bob, 'Test 3']

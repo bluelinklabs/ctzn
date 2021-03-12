@@ -237,34 +237,6 @@ export function setup (wsServer, config) {
       release()
     }
   })
-
-  wsServer.register('communities.removePost', async ([community, postUrl], client) => {
-    const authedUser = await lookupAuthedUser(client)
-    const {publicCommunityDb} = await lookupCommunity(community)
-    await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-remove-post')
-
-    // lookup the post in the feed
-    const feedIdxEntry = await publicCommunityDb.feedIdx.scanFind({reverse: true}, entry => (
-      entry.value.item.dbUrl === postUrl
-    ))
-
-    if (feedIdxEntry) {
-      await publicCommunityDb.feedIdx.del(feedIdxEntry.key)
-    }
-  })
-
-  wsServer.register('communities.removeComment', async ([community, postUrl, commentUrl], client) => {
-    const authedUser = await lookupAuthedUser(client)
-    const {publicCommunityDb} = await lookupCommunity(community)
-    await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-remove-comment')
-
-    const threadIdxEntry = await publicCommunityDb.threadIdx.get(postUrl)
-    let commentIndex = threadIdxEntry.value.items?.findIndex(c => c.dbUrl === commentUrl)
-    if (commentIndex !== -1) {
-      threadIdxEntry.value.items.splice(commentIndex, 1)
-      await publicCommunityDb.threadIdx.put(threadIdxEntry.key, threadIdxEntry.value)
-    }
-  })
 }
 
 async function lookupAuthedUser (client) {
