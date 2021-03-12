@@ -28,6 +28,7 @@ export const whenServerReady = new Promise(r => {_serverReadyCb = r})
 export async function start (opts) {
   opts.configDir = opts.configDir || path.join(os.homedir(), '.ctzn')
   let config = new Config(opts)
+  Config.setActiveConfig(config)
   if (config.benchmarkMode) {
     perf.enable()
   }
