@@ -1,0 +1,38 @@
+{
+  "id": "ctzn.network/community-remove-member-method",
+  "title": "Remove member method",
+  "description": "Remove a member from a community.",
+  "type": "dbmethod",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["removedUser"],
+    "properties": {
+      "removedUser": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "ban": {"type": "boolean"},
+      "banReason": {"type": "string"}
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["key", "url"],
+    "properties": {
+      "key": {"type": "string"},
+      "url": {"type": "string", "format": "uri"}
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "id": "ctzn.network/put-profile-method",
+  "title": "Put profile method",
+  "description": "Update the profile record of the database.",
+  "type": "dbmethod",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["displayName"],
+    "properties": {
+      "displayName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "description": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "homepageUrl": {
+        "type": "string",
+        "format": "uri"
+      }
+    }
+  }
+}

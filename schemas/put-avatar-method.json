@@ -1,0 +1,30 @@
+{
+  "id": "ctzn.network/put-avatar-method",
+  "title": "Put avatar method",
+  "description": "Update the avatar blob of the database.",
+  "type": "dbmethod",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["blobSource", "blobName"],
+    "properties": {
+      "blobSource": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "blobName": {
+        "type": "string"
+      }
+    }
+  }
+}

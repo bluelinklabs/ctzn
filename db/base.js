@@ -1,3 +1,5 @@
+import * as path from 'path'
+import { fileURLToPath } from 'url'
 import EventEmitter from 'events'
 import _debounce from 'lodash.debounce'
 import { client } from './hyperspace.js'
@@ -64,6 +66,10 @@ export class BaseHyperbeeDB extends EventEmitter {
     throw new Error('Must be overridden')
   }
 
+  get supportedMethods () {
+    return []
+  }
+
   get writable () {
     return this.bee?.feed?.writable
   }
@@ -106,6 +112,12 @@ export class BaseHyperbeeDB extends EventEmitter {
       }
     }
 
+    const basePath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'dbmethods')
+    for (let method of this.supportedMethods) {
+      let module = await import(path.join(basePath, `${method}.js`))
+      this.createDbMethod(`ctzn.network/${method}-method`, module.default)
+    }
+
     this.dbmethodCalls = this.getTable('ctzn.network/dbmethod-call')
     this.dbmethodResults = this.getTable('ctzn.network/dbmethod-result')
     this.createIndexer('ctzn.network/dbmethod-result', ['ctzn.network/dbmethod-call'], async (db, change) => {
@@ -135,7 +147,7 @@ export class BaseHyperbeeDB extends EventEmitter {
       }
       try {
         methodDefinition.validateCallArgs(args)
-        const res = await methodDefinition.handler(db, args)
+        const res = await methodDefinition.handler(this, db, args)
         methodDefinition.validateResponse(res)
         return await writeDbMethodResult('success', res)
       } catch (e) {

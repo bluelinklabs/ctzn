@@ -1,0 +1,36 @@
+{
+  "id": "ctzn.network/community-put-ban-method",
+  "title": "Put ban method",
+  "description": "Write a ban-record to a community.",
+  "type": "dbmethod",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "bannedUser": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "reason": {"type": "string"}
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["key", "url"],
+    "properties": {
+      "key": {"type": "string"},
+      "url": {"type": "string", "format": "uri"}
+    }
+  }
+}

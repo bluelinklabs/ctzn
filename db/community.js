@@ -16,6 +16,21 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
     return 'ctzn.network/public-community-db'
   }
 
+  get supportedMethods () {
+    return [
+      'community-delete-ban',
+      'community-delete-role',
+      'community-remove-content',
+      'community-remove-member',
+      'community-set-member-roles',
+      'community-put-ban',
+      'community-put-role',
+      'ping',
+      'update-avatar',
+      'update-profile'
+    ]
+  }
+
   async setup () {
     await super.setup()
     await this.blobs.setup()
@@ -35,12 +50,6 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
     })
     this.members.onDel(() => {
       this.emit('subscriptions-changed')
-    })
-
-    this.createDbMethod('ctzn.network/ping-method', (db, args) => {
-      return {
-        message: args?.message || 'Pong'
-      }
     })
 
     const NOTIFICATIONS_SCHEMAS = [
