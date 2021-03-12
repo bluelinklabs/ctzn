@@ -238,46 +238,6 @@ export function setup (wsServer, config) {
     }
   })
 
-  wsServer.register('communities.assignRole', async ([community, memberUserId, roleId], client) => {
-    const authedUser = await lookupAuthedUser(client)
-    const {publicCommunityDb} = await lookupCommunity(community)
-    await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-assign-roles')
-
-    const release = await publicCommunityDb.lock('members')
-    try {
-      // update member record
-      let memberRecord = await publicCommunityDb.members.get(memberUserId)
-      if (!memberRecord) throw new Error(`${memberUserId} is not a member of this group`)
-      memberRecord.value.roles = memberRecord.value.roles || []
-      if (!memberRecord.value.roles.includes(roleId)) {
-        memberRecord.value.roles.push(roleId)
-      }
-      await publicCommunityDb.members.put(memberUserId, memberRecord.value)
-    } finally {
-      release()
-    }
-  })
-
-  wsServer.register('communities.unassignRole', async ([community, memberUserId, roleId], client) => {
-    const authedUser = await lookupAuthedUser(client)
-    const {publicCommunityDb} = await lookupCommunity(community)
-    await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-assign-roles')
-
-    const release = await publicCommunityDb.lock('members')
-    try {
-      // update member record
-      let memberRecord = await publicCommunityDb.members.get(memberUserId)
-      if (!memberRecord) throw new Error(`${memberUserId} is not a member of this group`)
-      memberRecord.value.roles = memberRecord.value.roles || []
-      if (memberRecord.value.roles.includes(roleId)) {
-        memberRecord.value.roles = memberRecord.value.roles.filter(r => r !== roleId)
-      }
-      await publicCommunityDb.members.put(memberUserId, memberRecord.value)
-    } finally {
-      release()
-    }
-  })
-
   wsServer.register('communities.removeMember', async ([community, memberUserId, opts], client) => {
     const authedUser = await lookupAuthedUser(client)
     const {publicCommunityDb} = await lookupCommunity(community)

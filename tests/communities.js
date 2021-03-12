@@ -161,7 +161,10 @@ test('roles', async t => {
   t.truthy(role1.value.permissions.find(p => p.permId === 'ctzn.network/perm-community-remove-post'))
   t.truthy(role1.value.permissions.find(p => p.permId === 'ctzn.network/perm-community-edit-profile'))
 
-  await api.communities.assignRole(folks.userId, alice.userId, 'super-moderator')
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-set-member-roles-method', {
+    member: {userId: alice.userId, dbUrl: alice.dbUrl},
+    roles: ['admin', 'super-moderator']
+  })
   let member1 = await api.table.get(folks.userId, 'ctzn.network/community-member', alice.userId)
   t.deepEqual(member1.value.roles, ['admin', 'super-moderator'])
 
@@ -226,11 +229,17 @@ test('permissions', async t => {
   t.truthy(role1.value.permissions.find(p => p.permId === 'ctzn.network/perm-community-manage-roles'))
   t.truthy(role1.value.permissions.find(p => p.permId === 'ctzn.network/perm-community-assign-roles'))
 
-  await api.communities.assignRole(folks.userId, bob.userId, 'super-moderator')
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-set-member-roles-method', {
+    member: {userId: bob.userId, dbUrl: bob.dbUrl},
+    roles: ['super-moderator']
+  })
   let member1 = await api.table.get(folks.userId, 'ctzn.network/community-member', bob.userId)
   t.deepEqual(member1.value.roles, ['super-moderator'])
 
-  await api.communities.assignRole(folks.userId, carla.userId, 'moderator')
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-set-member-roles-method', {
+    member: {userId: carla.userId, dbUrl: carla.dbUrl},
+    roles: ['moderator']
+  })
   let member2 = await api.table.get(folks.userId, 'ctzn.network/community-member', carla.userId)
   t.deepEqual(member2.value.roles, ['moderator'])
 
@@ -296,17 +305,25 @@ test('permissions', async t => {
   await alice.login()
   await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-put-role-method', {roleId: 'debug'})
   await alice.login()
-  await api.communities.assignRole(folks.userId, doug.userId, 'debug')
-  await api.communities.unassignRole(folks.userId, doug.userId, 'debug')
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-set-member-roles-method', {
+    member: {userId: doug.userId, dbUrl: doug.dbUrl},
+    roles: ['debug']
+  })
   await bob.login()
-  await api.communities.assignRole(folks.userId, doug.userId, 'debug')
-  await api.communities.unassignRole(folks.userId, doug.userId, 'debug')
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-set-member-roles-method', {
+    member: {userId: doug.userId, dbUrl: doug.dbUrl},
+    roles: ['debug']
+  })
   await carla.login()
-  await t.throwsAsync(() => api.communities.assignRole(folks.userId, doug.userId, 'debug'))
-  await t.throwsAsync(() => api.communities.unassignRole(folks.userId, doug.userId, 'debug'))
+  await t.throwsAsync(() => sim.dbmethod(inst, folks.userId, 'ctzn.network/community-set-member-roles-method', {
+    member: {userId: doug.userId, dbUrl: doug.dbUrl},
+    roles: ['debug']
+  }))
   await doug.login()
-  await t.throwsAsync(() => api.communities.assignRole(folks.userId, doug.userId, 'debug'))
-  await t.throwsAsync(() => api.communities.unassignRole(folks.userId, doug.userId, 'debug'))
+  await t.throwsAsync(() => sim.dbmethod(inst, folks.userId, 'ctzn.network/community-set-member-roles-method', {
+    member: {userId: doug.userId, dbUrl: doug.dbUrl},
+    roles: ['debug']
+  }))
 
   /// ctzn.network/perm-community-manage-roles
   await alice.login()
