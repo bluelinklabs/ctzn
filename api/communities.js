@@ -265,40 +265,6 @@ export function setup (wsServer, config) {
       await publicCommunityDb.threadIdx.put(threadIdxEntry.key, threadIdxEntry.value)
     }
   })
-
-  wsServer.register('communities.putBan', async ([community, userId, ban], client) => {
-    const authedUser = await lookupAuthedUser(client)
-    const {publicCommunityDb} = await lookupCommunity(community)
-    await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-ban')
-    
-    const banRecord = await publicCommunityDb.bans.get(userId)
-    const bannedUserInfo = await fetchUserInfo(userId)
-    if (banRecord) {
-      // update
-      await publicCommunityDb.bans.put(userId, {
-        bannedUser: bannedUserInfo,
-        createdBy: banRecord.value.createdBy || {userId: authedUser.citizenInfo.userId, dbUrl: authedUser.publicCitizenDb.url},
-        reason: ban?.reason || banRecord.value.reason,
-        createdAt: banRecord.value.createdAt || (new Date()).toISOString()
-      })
-    } else {
-      // create
-      await publicCommunityDb.bans.put(userId, {
-        bannedUser: bannedUserInfo,
-        createdBy: {userId: authedUser.citizenInfo.userId, dbUrl: authedUser.publicCitizenDb.url},
-        reason: ban?.reason,
-        createdAt: (new Date()).toISOString()
-      })
-    }
-  })
-
-  wsServer.register('communities.deleteBan', async ([community, userId], client) => {
-    const authedUser = await lookupAuthedUser(client)
-    const {publicCommunityDb} = await lookupCommunity(community)
-    await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-ban')
-
-    await publicCommunityDb.bans.del(userId)
-  })
 }
 
 async function lookupAuthedUser (client) {

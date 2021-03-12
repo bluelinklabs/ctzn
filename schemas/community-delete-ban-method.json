@@ -6,9 +6,22 @@
   "parameters": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["banUrl"],
+    "required": ["bannedUser"],
     "properties": {
-      "banUrl": {"type": "string", "format": "uri"}
+      "bannedUser": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      }
     }
   }
 }

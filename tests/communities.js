@@ -341,8 +341,13 @@ test('permissions', async t => {
     member: {userId: doug.userId, dbUrl: doug.dbUrl},
     ban: true
   }) // so long, new doug
-  await api.communities.putBan(folks.userId, doug.userId, {reason: 'Jerk!'})
-  await api.communities.deleteBan(folks.userId, doug.userId)
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-put-ban-method', {
+    bannedUser: {userId: doug.userId, dbUrl: doug.dbUrl},
+    reason: 'Jerk!'
+  })
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-delete-ban-method', {
+    bannedUser: {userId: doug.userId, dbUrl: doug.dbUrl},
+  })
   await doug.login()
   await api.communities.join(folks.userId)
   await bob.login()
@@ -350,8 +355,13 @@ test('permissions', async t => {
     member: {userId: doug.userId, dbUrl: doug.dbUrl},
     ban: true
   })
-  await api.communities.putBan(folks.userId, doug.userId, {reason: 'Jerk!'})
-  await api.communities.deleteBan(folks.userId, doug.userId)
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-put-ban-method', {
+    bannedUser: {userId: doug.userId, dbUrl: doug.dbUrl},
+    reason: 'Jerk!'
+  })
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-delete-ban-method', {
+    bannedUser: {userId: doug.userId, dbUrl: doug.dbUrl},
+  })
   await doug.login()
   await api.communities.join(folks.userId)
   await carla.login()
@@ -359,8 +369,13 @@ test('permissions', async t => {
     member: {userId: doug.userId, dbUrl: doug.dbUrl},
     ban: true
   })
-  await api.communities.putBan(folks.userId, doug.userId, {reason: 'Jerk!'})
-  await api.communities.deleteBan(folks.userId, doug.userId)
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-put-ban-method', {
+    bannedUser: {userId: doug.userId, dbUrl: doug.dbUrl},
+    reason: 'Jerk!'
+  })
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-delete-ban-method', {
+    bannedUser: {userId: doug.userId, dbUrl: doug.dbUrl},
+  })
   await doug.login()
   await api.communities.join(folks.userId)
   await t.throwsAsync(() => sim.dbmethod(inst, folks.userId, 'ctzn.network/community-remove-member-method', {
@@ -392,14 +407,19 @@ test('bans', async t => {
   t.is((await api.table.get(folks.userId, 'ctzn.network/community-ban', bob.userId)).value.reason, 'Jerk!')
   t.falsy(await api.table.get(folks.userId, 'ctzn.network/community-member', bob.userId))
 
-  await api.communities.putBan(folks.userId, bob.userId, {reason: 'Jerk!!'})
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-put-ban-method', {
+    bannedUser: {userId: bob.userId, dbUrl: bob.dbUrl},
+    reason: 'Jerk!!'
+  })
   t.is((await api.table.get(folks.userId, 'ctzn.network/community-ban', bob.userId)).value.reason, 'Jerk!!')
 
   await bob.login()
   await t.throwsAsync(() => api.communities.join(folks.userId))
 
   await alice.login()
-  await api.communities.deleteBan(folks.userId, bob.userId)
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-delete-ban-method', {
+    bannedUser: {userId: bob.userId, dbUrl: bob.dbUrl}
+  })
   t.falsy(await api.table.get(folks.userId, 'ctzn.network/community-ban', bob.userId))
   await bob.login()
   await api.communities.join(folks.userId)
