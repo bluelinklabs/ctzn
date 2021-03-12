@@ -367,6 +367,10 @@ class Table {
     this.lock = (id) => this.db.lock(`${this.schema.id}:${id}`)
   }
 
+  constructEntryUrl (key) {
+    return constructEntryUrl(this.db.url, this.schema.id, key)
+  }
+
   async get (key) {
     const pend = perf.measure('table.get')
     let entry = await this.bee.get(String(key), {timeout: READ_TIMEOUT})

@@ -303,43 +303,6 @@ export function setup (wsServer, config) {
     }
   })
 
-  wsServer.register('communities.createRole', async ([community, role], client) => {
-    if (role?.roleId === 'admin') throw new errors.PermissionsError('Cannot edit the admin role')
-    const authedUser = await lookupAuthedUser(client)
-    const {publicCommunityDb} = await lookupCommunity(community)
-    await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-manage-roles')
-
-    const release = await publicCommunityDb.lock('roles')
-    try {
-      if (await publicCommunityDb.roles.get(role.roleId)) {
-        throw new Error(`Role "${role.roleId}" already exists`)
-      }
-      await publicCommunityDb.roles.put(role.roleId, {
-        roleId: role.roleId,
-        permissions: role.permissions,
-        createdAt: (new Date()).toISOString()
-      })
-    } finally {
-      release()
-    }
-  })
-
-  wsServer.register('communities.editRole', async ([community, roleId, role], client) => {
-    if (roleId === 'admin') throw new errors.PermissionsError('Cannot edit the admin role')
-    const authedUser = await lookupAuthedUser(client)
-    const {publicCommunityDb} = await lookupCommunity(community)
-    await assertUserPermission(publicCommunityDb, authedUser.citizenInfo.userId, 'ctzn.network/perm-community-manage-roles')
-    const release = await publicCommunityDb.lock('roles')
-    try {
-      let roleRecord = await publicCommunityDb.roles.get(roleId)
-      if (!roleRecord) throw new Error(`Role "${roleId}" does not exist`)
-      roleRecord.value.permissions = role?.permissions
-      await publicCommunityDb.roles.put(roleId, roleRecord.value)
-    } finally {
-      release()
-    }
-  })
-
   wsServer.register('communities.deleteRole', async ([community, roleId], client) => {
     if (roleId === 'admin') throw new errors.PermissionsError('Cannot edit the admin role')
     const authedUser = await lookupAuthedUser(client)

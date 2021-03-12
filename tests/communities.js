@@ -144,7 +144,7 @@ test('roles', async t => {
   t.truthy(roles1[0].value.permissions.find(p => p.permId === 'ctzn.network/perm-community-remove-comment'))
 
   await alice.login()
-  await api.communities.createRole(folks.userId, {
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-put-role-method', {
     roleId: 'super-moderator',
     permissions: [
       {permId: 'ctzn.network/perm-community-ban'},
@@ -165,7 +165,8 @@ test('roles', async t => {
   let member1 = await api.table.get(folks.userId, 'ctzn.network/community-member', alice.userId)
   t.deepEqual(member1.value.roles, ['admin', 'super-moderator'])
 
-  await api.communities.editRole(folks.userId, 'super-moderator', {
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-put-role-method', {
+    roleId: 'super-moderator',
     permissions: [
       {permId: 'ctzn.network/perm-community-edit-profile'}
     ]
@@ -204,7 +205,7 @@ test('permissions', async t => {
   await api.communities.join(folks.userId)
 
   await alice.login()
-  await api.communities.createRole(folks.userId, {
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-put-role-method', {
     roleId: 'super-moderator',
     permissions: [
       {permId: 'ctzn.network/perm-community-ban'},
@@ -293,7 +294,7 @@ test('permissions', async t => {
 
   /// ctzn.network/perm-community-assign-roles
   await alice.login()
-  await api.communities.createRole(folks.userId, {roleId: 'debug'})
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-put-role-method', {roleId: 'debug'})
   await alice.login()
   await api.communities.assignRole(folks.userId, doug.userId, 'debug')
   await api.communities.unassignRole(folks.userId, doug.userId, 'debug')
@@ -309,13 +310,13 @@ test('permissions', async t => {
 
   /// ctzn.network/perm-community-manage-roles
   await alice.login()
-  await api.communities.createRole(folks.userId, {roleId: 'role1'})
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-put-role-method', {roleId: 'role1'})
   await bob.login()
-  await api.communities.createRole(folks.userId, {roleId: 'role2'})
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/community-put-role-method', {roleId: 'role2'})
   await carla.login()
-  await t.throwsAsync(() => api.communities.createRole(folks.userId, {roleId: 'role3'}))
+  await t.throwsAsync(() => sim.dbmethod(inst, folks.userId, 'ctzn.network/community-put-role-method', {roleId: 'role3'}))
   await doug.login()
-  await t.throwsAsync(() => api.communities.createRole(folks.userId, {roleId: 'role4'}))
+  await t.throwsAsync(() => sim.dbmethod(inst, folks.userId, 'ctzn.network/community-put-role-method', {roleId: 'role4'}))
 
   /// ctzn.network/perm-community-ban
   await alice.login()
