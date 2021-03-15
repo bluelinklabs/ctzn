@@ -311,7 +311,7 @@ class TestCitizen {
     const {url} = await this.inst.api.table.create(
       this.userId,
       'ctzn.network/comment',
-      {text, community, reply, createdAt: (new Date()).toISOString()}
+      {text, community, reply}
     )
     this.comments.push(await this.inst.api.view.get('ctzn.network/comment-view', url))
     return this.comments[this.comments.length - 1]
@@ -323,8 +323,7 @@ class TestCitizen {
       subject: {
         userId: testCitizen.userId,
         dbUrl: testCitizen.dbUrl
-      },
-      createdAt: (new Date()).toISOString()
+      }
     })
     this.following[testCitizen.userId] = testCitizen
   }
@@ -342,8 +341,7 @@ class TestCitizen {
       'ctzn.network/reaction',
       {
         subject: {dbUrl: subject.url, authorId: subject.author.userId},
-        reaction,
-        createdAt: (new Date()).toISOString()
+        reaction
       }
     )
     this.reactions[subject.url] = this.reactions[subject.url] || {}

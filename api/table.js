@@ -26,6 +26,9 @@ export function setup (wsServer) {
     const {db, table} = await load(databaseId, schemaId, {assertOwner: client.auth})
 
     const key = table.schema.generateKey(value)
+    if (!value?.createdAt && table.schema.hasCreatedAt) {
+      value.createdAt = (new Date()).toISOString()
+    }
     await table.put(key, value)
     await onDatabaseChange(db)
 
