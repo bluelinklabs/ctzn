@@ -201,6 +201,7 @@ export class BaseHyperbeeDB extends EventEmitter {
   getTable (schemaId) {
     if (this.tables[schemaId]) return this.tables[schemaId]
     let schema = schemas.get(schemaId)
+    if (!schema) throw new Error(`Unsupported table schema: ${schemaId}`)
     this.tables[schemaId] = new Table(this, schema)
     return this.tables[schemaId]
   }

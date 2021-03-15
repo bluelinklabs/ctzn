@@ -219,7 +219,9 @@ async function fetchNotification (notificationEntry) {
   const db = userId ? publicUserDbs.get(userId) : undefined
   let item
   if (db) {
-    item = await db.getTable(itemUrlp.schemaId).get(itemUrlp.key)
+    try {
+      item = await db.getTable(itemUrlp.schemaId).get(itemUrlp.key)
+    } catch (e) {}
   }
   return {
     key: notificationEntry.key.includes(':') ? notificationEntry.key.split(':')[1] : notificationEntry.key,
