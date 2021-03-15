@@ -84,12 +84,12 @@ async function load (databaseId, schemaId, authSettings = undefined) {
 
 function getListOpts (listOpts = {}) {
   const opts = {}
-  if (typeof listOpts.limit === 'number') opts.limit = listOpts.limit
-  if (typeof listOpts.lt === 'string') opts.lt = listOpts.lt
-  if (typeof listOpts.lte === 'string') opts.lte = listOpts.lte
-  if (typeof listOpts.gt === 'string') opts.gt = listOpts.gt
-  if (typeof listOpts.gte === 'string') opts.gte = listOpts.gte
-  if (listOpts.reverse) opts.reverse = true
+  if (typeof listOpts?.limit === 'number') opts.limit = listOpts.limit
+  if (typeof listOpts?.lt === 'string') opts.lt = listOpts.lt
+  if (typeof listOpts?.lte === 'string') opts.lte = listOpts.lte
+  if (typeof listOpts?.gt === 'string') opts.gt = listOpts.gt
+  if (typeof listOpts?.gte === 'string') opts.gte = listOpts.gte
+  if (listOpts?.reverse) opts.reverse = true
   return opts
 }
 
