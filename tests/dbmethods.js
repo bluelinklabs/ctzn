@@ -51,6 +51,14 @@ test('ping method', async t => {
   t.is(res4.calls[1].value.method, 'ctzn.network/ping-method')
   t.is(res4.calls[1].value.args.message, 1234)
   t.is(res4.calls[1].result.value.code, 'validation-failed')
+
+  const res5 = await api.view.get('ctzn.network/dbmethod-results-view', folks.userId)
+  t.is(res5.results[0].call.value.method, 'ctzn.network/ping-method')
+  t.is(res5.results[0].call.value.args.message, 'Ping?')
+  t.is(res5.results[0].value.code, 'success')
+  t.is(res5.results[1].call.value.method, 'ctzn.network/ping-method')
+  t.is(res5.results[1].call.value.args.message, 1234)
+  t.is(res5.results[1].value.code, 'validation-failed')
 })
 
 test('remote handling', async t => {

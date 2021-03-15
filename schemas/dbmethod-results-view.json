@@ -1,7 +1,7 @@
 {
-  "id": "ctzn.network/dbmethod-calls-view",
-  "title": "DBMethod calls view",
-  "description": "List dbmethod calls and their results for a given database.",
+  "id": "ctzn.network/dbmethod-results-view",
+  "title": "DBMethod results view",
+  "description": "List dbmethod results and their calls for a given database.",
   "type": "json-view",
   "parameters": {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -22,9 +22,9 @@
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["calls"],
+    "required": ["results"],
     "properties": {
-      "calls": {
+      "results": {
         "type": "array",
         "items": {
           "type": "object",
@@ -35,31 +35,33 @@
             "url": {"type": "string", "format": "uri"},
             "value": {
               "type": "object",
-              "required": ["database", "method", "createdAt"],
+              "required": ["call", "code", "createdAt"],
               "properties": {
-                "database": {
+                "call": {
                   "type": "object",
-                  "required": ["dbUrl", "userId"],
+                  "required": ["dbUrl", "authorId"],
                   "properties": {
                     "dbUrl": {
                       "type": "string",
                       "format": "uri"
                     },
-                    "userId": {
+                    "authorId": {
                       "type": "string",
                       "pattern": ".+@.+"
                     }
                   }
                 },
-                "method": {"type": "string"},
-                "args": {"type": "object"},
+                "code": {
+                  "type": "string"
+                },
+                "details": {"type": "object"},
                 "createdAt": {
                   "type": "string",
                   "format": "date-time"
                 }
               }
             },
-            "result": {
+            "call": {
               "type": "object",
               "required": ["seq", "key", "url", "value"],
               "properties": {
@@ -68,26 +70,24 @@
                 "url": {"type": "string", "format": "uri"},
                 "value": {
                   "type": "object",
-                  "required": ["call", "code", "createdAt"],
+                  "required": ["database", "method", "createdAt"],
                   "properties": {
-                    "call": {
+                    "database": {
                       "type": "object",
-                      "required": ["dbUrl", "authorId"],
+                      "required": ["dbUrl", "userId"],
                       "properties": {
                         "dbUrl": {
                           "type": "string",
                           "format": "uri"
                         },
-                        "authorId": {
+                        "userId": {
                           "type": "string",
                           "pattern": ".+@.+"
                         }
                       }
                     },
-                    "code": {
-                      "type": "string"
-                    },
-                    "details": {"type": "object"},
+                    "method": {"type": "string"},
+                    "args": {"type": "object"},
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"

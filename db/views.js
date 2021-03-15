@@ -147,6 +147,21 @@ export function setup () {
     return {calls: entries}
   })
 
+  define('ctzn.network/dbmethod-results-view', async (auth, databaseId, opts) => {
+    databaseId = await fetchUserId(databaseId)
+    const db = getDb(databaseId)
+    const table = db.getTable('ctzn.network/dbmethod-result')
+    const entries = await table.list(getListOpts(opts))
+    for (let entry of entries) {
+      entry.url = table.constructEntryUrl(entry.key)
+      entry.call = (await dbGet(entry.value.call.dbUrl))?.entry
+      if (entry.call) {
+        entry.call.url = entry.value.call.dbUrl
+      }
+    }
+    return {results: entries}
+  })
+
   define('ctzn.network/feed-view', async (auth, opts) => {
     return {feed: await listHomeFeed(opts, auth)}
   })
