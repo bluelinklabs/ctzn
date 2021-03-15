@@ -135,7 +135,7 @@ export class BaseHyperbeeDB extends EventEmitter {
       }
 
       const {database, method, args} = change.value
-      if (database.userId !== this.userId) {
+      if (database.dbUrl !== this.url) {
         return // not a call to this database
       }
       const methodDefinition = this.dbmethods[method]

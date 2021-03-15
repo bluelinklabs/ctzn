@@ -256,9 +256,6 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
         }
   
         await this.reactionsIdx.put(reactionsIdxEntry.key, reactionsIdxEntry.value)
-      } catch (e) {
-        console.log(e)
-        throw e
       } finally {
         release()
         pend()

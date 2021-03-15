@@ -390,7 +390,7 @@ async function loadDbByType (userId, dbUrl) {
   await bee.ready()
   client.replicate(bee.feed)
 
-  const dbDesc = await bee.get('_db')
+  const dbDesc = await bee.get('_db', {wait: true, timeout: 60e3})
   if (!dbDesc) throw new Error('Failed to load database description')
   if (dbDesc.value?.dbType === 'ctzn.network/public-citizen-db') {
     return new PublicCitizenDB(userId, key) 
@@ -432,7 +432,19 @@ async function getAllExternalDbIds () {
   return Array.from(ids)
 }
 
+let _loadExternalDbPromises = {}
 export async function loadExternalDb (userId) {
+  if (_loadExternalDbPromises[userId]) {
+    return _loadExternalDbPromises[userId]
+  }
+  const done = () => {
+    delete _loadExternalDbPromises[userId]
+  }
+  _loadExternalDbPromises[userId] = loadExternalDbInner(userId)
+  _loadExternalDbPromises[userId].then(done, done)
+  return _loadExternalDbPromises[userId]
+}
+async function loadExternalDbInner (userId) {
   let dbUrl, publicUserDb
   try {
     dbUrl = await fetchDbUrl(userId)

@@ -1,12 +1,12 @@
-import { publicUserDbs, onDatabaseChange } from '../db/index.js'
-import { constructEntryUrl } from '../lib/strings.js'
-import { fetchUserInfo } from '../lib/network.js'
+import { publicUserDbs, onDatabaseChange, loadExternalDb } from '../db/index.js'
+import { constructEntryUrl, isUserIdOurs, parseUserId } from '../lib/strings.js'
+import { fetchUserInfo, reverseDns, connectWs } from '../lib/network.js'
 import * as errors from '../lib/errors.js'
 import _pick from 'lodash.pick'
 
 const RESULT_CHECK_INTERVAL = 5e3
 
-export function setup (wsServer) {
+export function setup (wsServer, config) {
   wsServer.register('dbmethod.call', async ([opts], client) => {
     if (!client?.auth?.userId) {
       throw new errors.SessionError()
@@ -24,11 +24,13 @@ export function setup (wsServer) {
     const table = userDb.getTable('ctzn.network/dbmethod-call')
     const key = table.schema.generateKey(value)
     await table.put(key, value)
-    await onDatabaseChange(userDb)
+    if (isUserIdOurs(value.database.userId) && getDb(value.database.userId)) {
+      await onDatabaseChange(userDb, [getDb(value.database.userId)])
+    }
 
     // wait for a result
     const callUrl = constructEntryUrl(userDb.url, 'ctzn.network/dbmethod-call', key)
-    const result = await getResult(value.database.userId, callUrl, opts)
+    const result = await getResult(value.database.userId, callUrl, userDb, opts)
 
     return {
       key,
@@ -46,15 +48,47 @@ export function setup (wsServer) {
     const userDb = getDb(client.auth.userId)
     const callTable = userDb.getTable('ctzn.network/dbmethod-call')
     const callEntry = await callTable.get(opts.call)
-    if (!callEntry) throw new errors.NotFoundError()
+    if (!callEntry) {
+      throw new errors.NotFoundError()
+    }
     const callUrl = constructEntryUrl(userDb.url, 'ctzn.network/dbmethod-call', opts.call)
 
-    return getResult(callEntry.value.database.userId, callUrl, opts)
+    return getResult(callEntry.value.database.userId, callUrl, userDb, opts)
+  })
+
+  wsServer.register('dbmethod.remoteHandle', async ([opts], client) => {
+    opts = opts && typeof opts === 'object' ? opts : {}
+
+    // validate the server making the request is the home of the calling user
+    const clientDomain = await reverseDns(client, (config.debugMode) ? () => {
+      return parseUserId(opts.caller.userId).domain
+    } : undefined)
+    if (!opts.caller.userId.endsWith(`@${clientDomain}`)) {
+      throw new Error(`Calling user's ID (${opts.caller.userId}) does not match client domain (${clientDomain})`)
+    }
+
+    const dbInfo = await fetchUserInfo(opts.database)
+    const db = publicUserDbs.get(dbInfo.userId)
+    if (!db?.writable) {
+      throw new errors.NotFoundError('Database not hosted here')
+    }
+    const callerInfo = await fetchUserInfo(opts.caller)
+    const callerDb = await getOrLoadDb(callerInfo.userId)
+    if (!callerDb) {
+      throw new errors.NotFoundError('Caller not hosted here')
+    }
+
+    await onDatabaseChange(callerDb, [db])
   })
 }
 
-async function getResult (databaseUserId, callUrl, opts) {
-  const targetDb = getDb(databaseUserId)
+async function getResult (databaseUserId, callUrl, callerDb, opts) {
+  // call remoteHandle if not local
+  if (!isUserIdOurs(databaseUserId)) {
+    await callRemoteHandle(databaseUserId, {dbUrl: callerDb.url, userId: callerDb.userId}, callUrl)
+  }
+
+  const targetDb = await getOrLoadDb(databaseUserId)
   const resultTable = targetDb.getTable('ctzn.network/dbmethod-result')
 
   const resultEntry = await resultTable.get(callUrl)
@@ -69,6 +103,11 @@ async function getResult (databaseUserId, callUrl, opts) {
       // wait a moment before trying again
       await new Promise(r => setTimeout(r, RESULT_CHECK_INTERVAL))
 
+      // call remoteHandle if not local
+      if (!isUserIdOurs(databaseUserId)) {
+        await callRemoteHandle(databaseUserId, {dbUrl: callerDb.url, userId: callerDb.userId}, callUrl)
+      }
+
       const resultEntry = await resultTable.get(callUrl)
       if (resultEntry) return resultEntry
     }
@@ -77,8 +116,29 @@ async function getResult (databaseUserId, callUrl, opts) {
   return undefined
 }
 
+async function callRemoteHandle (databaseUserId, caller, callUrl) {
+  const ws = await connectWs(parseUserId(databaseUserId).domain)
+  const remoteHandleOpts = {
+    database: databaseUserId,
+    caller,
+    call: callUrl
+  }
+  await ws.call('dbmethod.remoteHandle', [remoteHandleOpts])
+}
+
 function getDb (userId) {
   const publicUserDb = publicUserDbs.get(userId)
   if (!publicUserDb) throw new Error(`User database "${userId}" not found`)
+  return publicUserDb
+}
+
+async function getOrLoadDb (userId) {
+  let publicUserDb = publicUserDbs.get(userId)
+  if (!publicUserDb && await loadExternalDb(userId)) {
+    publicUserDb = publicUserDbs.get(userId)
+  }
+  if (!publicUserDb) {
+    throw new Error(`User database "${userId}" not found`)
+  }
   return publicUserDb
 }
