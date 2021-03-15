@@ -43,6 +43,14 @@ test('ping method', async t => {
   })
   t.is(res3.result.code, 'validation-failed')
   t.is(typeof res3.result.details.message, 'string')
+
+  const res4 = await api.view.get('ctzn.network/dbmethod-calls-view', alice.userId)
+  t.is(res4.calls[0].value.method, 'ctzn.network/ping-method')
+  t.is(res4.calls[0].value.args.message, 'Ping?')
+  t.is(res4.calls[0].result.value.code, 'success')
+  t.is(res4.calls[1].value.method, 'ctzn.network/ping-method')
+  t.is(res4.calls[1].value.args.message, 1234)
+  t.is(res4.calls[1].result.value.code, 'validation-failed')
 })
 
 test('remote handling', async t => {
@@ -60,9 +68,6 @@ test('remote handling', async t => {
 
   await alice.login()
   await inst2.api.communities.join(folks.userId)
-
-  // await new Promise(r => setTimeout(r, 5e3))
-  // await inst2.api.debug.whenAllSynced()
 
   const res1 = await inst2.api.dbmethod.call({
     database: folks.userId,

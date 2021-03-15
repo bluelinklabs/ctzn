@@ -2,7 +2,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { fileURLToPath } from 'url'
 import * as db from './index.js'
-import { constructUserUrl, isHyperUrl, parseEntryUrl } from '../lib/strings.js'
+import { constructUserUrl, constructEntryUrl, isHyperUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 import * as dbGetters from './getters.js'
 import * as schemas from '../lib/schemas.js'
@@ -129,6 +129,22 @@ export function setup () {
     }
     const roleRecords = await Promise.all(memberRecord.value.roles?.map(roleId => db.roles.get(roleId)) || [])
     return {permissions: roleRecords.map(roleRecord => roleRecord.value.permissions || []).flat()}
+  })
+
+  define('ctzn.network/dbmethod-calls-view', async (auth, databaseId, opts) => {
+    databaseId = await fetchUserId(databaseId)
+    const db = getDb(databaseId)
+    const table = db.getTable('ctzn.network/dbmethod-call')
+    const entries = await table.list(getListOpts(opts))
+    for (let entry of entries) {
+      entry.url = table.constructEntryUrl(entry.key)
+      let resultUrl = constructEntryUrl(entry.value.database.dbUrl, 'ctzn.network/dbmethod-result', entry.url)
+      entry.result = (await dbGet(resultUrl))?.entry
+      if (entry.result) {
+        entry.result.url = resultUrl
+      }
+    }
+    return {calls: entries}
   })
 
   define('ctzn.network/feed-view', async (auth, opts) => {
