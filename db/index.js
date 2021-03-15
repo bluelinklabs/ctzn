@@ -39,10 +39,8 @@ export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simu
   publicServerDb = new PublicServerDB(config.publicServer)
   await publicServerDb.setup()
   publicServerDb.watch(onDatabaseChange)
-  await catchupIndexes(publicServerDb)
   privateServerDb = new PrivateServerDB(config.privateServer, publicServerDb)
   await privateServerDb.setup()
-  await catchupIndexes(privateServerDb)
 
   config.publicServer = publicServerDb.key.toString('hex')
   config.privateServer = privateServerDb.key.toString('hex')
@@ -50,6 +48,7 @@ export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simu
 
   await loadMemberUserDbs()
   await loadOrUnloadExternalUserDbs()
+  /* dont await */ catchupAllIndexes()
 
   views.setup()
 }
@@ -199,14 +198,12 @@ async function loadMemberUserDbs () {
       publicUserDbs.set(userId, publicUserDb)
       publicUserDb.watch(onDatabaseChange)
       publicUserDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
-      await catchupIndexes(publicUserDb)
 
       let accountEntry = await privateServerDb.accounts.get(user.value.username)
       let privateUserDb = new PrivateCitizenDB(userId, hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicUserDb)
       await privateUserDb.setup()
       privateUserDbs.set(userId, privateUserDb)
       privateUserDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
-      await catchupIndexes(privateUserDb)
 
       numLoaded++
     } else if (user.value.type === 'community') {
@@ -220,7 +217,6 @@ async function loadMemberUserDbs () {
       publicUserDbs.set(userId, publicUserDb)
       publicUserDb.watch(onDatabaseChange)
       publicUserDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
-      await catchupIndexes(publicUserDb)
       numLoaded++
     } else {
       issues.add(new UnknownUserTypeIssue(user))
@@ -307,6 +303,17 @@ export async function onDatabaseChange (changedDb, indexingDbsToUpdate = undefin
     }
   }
   pend()
+}
+
+export async function catchupAllIndexes () {
+  await catchupIndexes(publicServerDb)
+  await catchupIndexes(privateServerDb)
+  for (let db of publicUserDbs) {
+    await catchupIndexes(db[1])
+  }
+  for (let db of privateUserDbs) {
+    await catchupIndexes(db[1])
+  }
 }
 
 export async function catchupIndexes (indexingDb, dbsToCatchup = undefined) {
