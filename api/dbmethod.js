@@ -64,7 +64,7 @@ export function setup (wsServer, config) {
       return parseUserId(opts.caller.userId).domain
     } : undefined)
     if (!opts.caller.userId.endsWith(`@${clientDomain}`)) {
-      throw new Error(`Calling user's ID (${opts.caller.userId}) does not match client domain (${clientDomain})`)
+      throw new errors.ConfigurationError(`Calling user's ID (${opts.caller.userId}) does not match client domain (${clientDomain})`)
     }
 
     const dbInfo = await fetchUserInfo(opts.database)

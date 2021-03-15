@@ -157,7 +157,7 @@ export function setup (wsServer, config) {
       return parseUserId(opts.user.userId).domain
     } : undefined)
     if (!opts.user.userId.endsWith(`@${clientDomain}`)) {
-      throw new Error(`Joining user's ID (${opts.user.userId}) does not match client domain (${clientDomain})`)
+      throw new errors.ConfigurationError(`Joining user's ID (${opts.user.userId}) does not match client domain (${clientDomain})`)
     }
 
     // check for a ban
@@ -226,7 +226,7 @@ export function setup (wsServer, config) {
       return parseUserId(opts.user.userId).domain
     } : undefined)
     if (!opts.user.userId.endsWith(`@${clientDomain}`)) {
-      throw new Error(`Leaving user's ID (${opts.user.userId}) does not match client domain (${clientDomain})`)
+      throw new errors.ConfigurationError(`Leaving user's ID (${opts.user.userId}) does not match client domain (${clientDomain})`)
     }
 
     const release = await publicCommunityDb.lock('members')
