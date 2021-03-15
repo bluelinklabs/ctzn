@@ -24,7 +24,7 @@ test.after.always(async t => {
 })
 
 test('basic CRUD', async t => {
-  await inst.api.table.insert(
+  await inst.api.table.create(
     `bobo@${inst.domain}`,
     'ctzn.network/profile',
     {

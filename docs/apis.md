@@ -30,7 +30,7 @@ TODO
 
 TODO
 
-#### `table.insert(databaseId, tableSchemaId, value)`
+#### `table.create(databaseId, tableSchemaId, value)`
 
 TODO
 
@@ -38,7 +38,7 @@ TODO
 
 TODO
 
-#### `table.del(databaseId, tableSchemaId, key)`
+#### `table.delete(databaseId, tableSchemaId, key)`
 
 TODO
 
@@ -53,6 +53,20 @@ TODO
 ### blob
 
 Blobs are binary buffers stored in a database.
+
+#### `blob.get(databaseId, key)`
+
+TODO
+
+#### `blob.create(base64buf)`
+
+TODO
+
+#### `blob.update(key, base64buf)`
+
+TODO
+
+#### `blob.delete(key)`
 
 TODO
 

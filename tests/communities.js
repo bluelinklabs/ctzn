@@ -275,12 +275,12 @@ test('permissions', async t => {
   await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-profile-method', {displayName: 'Folks 1'})
   t.is((await api.view.get('ctzn.network/profile-view', folks.userId)).value.displayName, 'Folks 1')
   const testImgBase64 = fs.readFileSync(TEST_IMAGE_PATH, 'base64')
-  const blobsRes1 = await api.blobs.create(testImgBase64)
+  const blobsRes1 = await api.blob.create(testImgBase64)
   await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-avatar-method', {
     blobSource: {userId: alice.userId, dbUrl: alice.dbUrl},
     blobName: blobsRes1.name
   })
-  await t.is(await api.blobs.get(folks.userId, 'avatar'), testImgBase64)
+  await t.is(await api.blob.get(folks.userId, 'avatar'), testImgBase64)
   await bob.login()
   await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-profile-method', {displayName: 'Folks 2'})
   t.is((await api.view.get('ctzn.network/profile-view', folks.userId)).value.displayName, 'Folks 2')

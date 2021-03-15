@@ -68,7 +68,7 @@ test('single user posting to self', async t => {
   let editedPost = await api.view.get('ctzn.network/post-view', bob.userId, bob.posts[0].key)
   sim.testPost(t, editedPost, [bob, '1234'])
 
-  await api.table.del(bob.userId, 'ctzn.network/post', bob.posts[0].key)
+  await api.table.delete(bob.userId, 'ctzn.network/post', bob.posts[0].key)
   await t.throwsAsync(() => api.view.get('ctzn.network/post-view', bob.userId, bob.posts[0].key))
   postEntries = (await api.view.get('ctzn.network/posts-view', bob.userId, {limit: 2})).posts
   sim.testFeed(t, postEntries, [
@@ -163,7 +163,7 @@ test('multiple users posting to community', async t => {
   ])
 
   await alice.login()
-  await api.table.del(alice.userId, 'ctzn.network/post', alice.posts[0].key)
+  await api.table.delete(alice.userId, 'ctzn.network/post', alice.posts[0].key)
   await t.throwsAsync(() => api.view.get('ctzn.network/post-view', alice.userId, alice.posts[0].key))
 
   postEntries = (await api.view.get('ctzn.network/posts-view', folks.userId)).posts

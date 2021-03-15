@@ -210,7 +210,7 @@ test('community', async t => {
 test('missing parent comments', async t => {
   const {alice, bob, carla} = sim.users
   await bob.login()
-  await api.table.del(bob.userId, 'ctzn.network/comment', bob.comments[0].key)
+  await api.table.delete(bob.userId, 'ctzn.network/comment', bob.comments[0].key)
   await t.throwsAsync(() => api.view.get('ctzn.network/comment-view', bob.userId, bob.comments[0].key))
   let thread2 = (await api.view.get('ctzn.network/thread-view', bob.posts[0].url)).comments
   sim.testThread(t, thread2, [

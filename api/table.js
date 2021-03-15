@@ -22,7 +22,7 @@ export function setup (wsServer) {
     return entry
   })
 
-  wsServer.register('table.insert', async ([databaseId, schemaId, value], client) => {
+  wsServer.register('table.create', async ([databaseId, schemaId, value], client) => {
     const {db, table} = await load(databaseId, schemaId, {assertOwner: client.auth})
 
     const key = table.schema.generateKey(value)
@@ -53,7 +53,7 @@ export function setup (wsServer) {
     }
   })
 
-  wsServer.register('table.del', async ([databaseId, schemaId, key], client) => {
+  wsServer.register('table.delete', async ([databaseId, schemaId, key], client) => {
     const {db, table} = await load(databaseId, schemaId, {assertOwner: client.auth})
 
     const release = await table.lock(key)
