@@ -105,7 +105,7 @@ export async function start (opts) {
   async function serveView (req, res) {
     try {
       const schemaId = `${req.params.viewns}/${req.params.viewname}`
-      const args = req.params[0] ? req.params[0].split('/').filter(Boolean) : []
+      const args = req.url.split('/').filter(Boolean).slice(3).map(v => decodeURIComponent(v))
       if (Object.keys(req.query).length) args.push(getListOpts(req))
       if (dbViews.getType(schemaId) === 'blob-view') {
         const {etag, createStream} = await dbViews.exec(schemaId, undefined, ...args)
