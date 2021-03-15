@@ -123,7 +123,11 @@ async function callRemoteHandle (databaseUserId, caller, callUrl) {
     caller,
     call: callUrl
   }
-  await ws.call('dbmethod.remoteHandle', [remoteHandleOpts])
+  try {
+    await ws.call('dbmethod.remoteHandle', [remoteHandleOpts])
+  } catch (e) {
+    // ignore
+  }
 }
 
 function getDb (userId) {
