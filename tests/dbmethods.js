@@ -10,7 +10,6 @@ test.after.always(async t => {
   instances = []
 })
 
-
 test('ping method', async t => {
   let sim = new TestFramework()
   let inst = await createServer()

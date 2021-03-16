@@ -25,9 +25,14 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
       'community-set-member-roles',
       'community-put-ban',
       'community-put-role',
+      'create-item',
+      'delete-item-class',
+      'destroy-item',
       'ping',
       'put-avatar',
-      'put-profile'
+      'put-item-class',
+      'put-profile',
+      'transfer-item'
     ]
   }
 
@@ -38,6 +43,8 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
     this.members = this.getTable('ctzn.network/community-member')
     this.roles = this.getTable('ctzn.network/community-role')
     this.bans = this.getTable('ctzn.network/community-ban')
+    this.itemClasses = this.getTable('ctzn.network/item-class')
+    this.items = this.getTable('ctzn.network/item')
     this.indexState = this.getTable('ctzn.network/index-state')
     this.feedIdx = this.getTable('ctzn.network/feed-idx')
     this.threadIdx = this.getTable('ctzn.network/thread-idx')

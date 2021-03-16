@@ -31,3 +31,19 @@ A role with this permission can create, edit, and delete roles.
 ## `ctzn.network/perm-community-assign-roles`
 
 A role with this permission can assign roles to community members.
+
+## `ctzn.network/manage-item-classes`
+
+A role with this permission can write and delete item class records.
+
+## `ctzn.network/perm-create-item`
+
+A role with this permission can create new items.
+
+## `ctzn.network/perm-transfer-unowned-item`
+
+A role with this permission can transfer ownership of items they do not own.
+
+## `ctzn.network/perm-destroy-unowned-item`
+
+A role with this permission can destroy items they do not own.

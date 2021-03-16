@@ -1,0 +1,51 @@
+{
+  "id": "ctzn.network/item",
+  "title": "Item",
+  "description": "A thing which can be owned and have ownership transfered.",
+  "type": "json-table",
+  "keyTemplate": [{"type": "auto"}],
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["classId", "qty", "owner", "createdAt"],
+    "properties": {
+      "classId": {"type": "string"},
+      "qty": {"type": "integer", "minimum": 1},
+      "owner": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "properties": {
+        "type": "object"
+      },
+      "createdBy": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+}

@@ -74,7 +74,7 @@ export class BaseHyperbeeDB extends EventEmitter {
     this.tables = {}
     this.indexers = []
     this.dbmethods = {}
-    this.lock = (id) => lock(`${this.key.toString('hex')}:${id}`)
+    this.lock = (id = '') => lock(`${this.key.toString('hex')}:${id}`)
   }
 
   get dbType () {
@@ -381,7 +381,7 @@ class Table {
     this.schema = schema
     this._onPutCbs = undefined
     this._onDelCbs = undefined
-    this.lock = (id) => this.db.lock(`${this.schema.id}:${id}`)
+    this.lock = (id = '') => this.db.lock(`${this.schema.id}:${id}`)
   }
 
   constructEntryUrl (key) {

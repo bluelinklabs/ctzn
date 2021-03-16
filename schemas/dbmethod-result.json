@@ -30,6 +30,7 @@
           "method-not-found",
           "not-authorized",
           "validation-failed",
+          "not-found",
           "error"
         ]
       },

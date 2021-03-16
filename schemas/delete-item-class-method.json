@@ -1,0 +1,14 @@
+{
+  "id": "ctzn.network/delete-item-class-method",
+  "title": "Delete item class method",
+  "description": "Delete an item-class record.",
+  "type": "dbmethod",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["classId"],
+    "properties": {
+      "classId": {"type": "string"}
+    }
+  }
+}

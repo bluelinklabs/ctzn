@@ -1,0 +1,38 @@
+{
+  "id": "ctzn.network/transfer-item-method",
+  "title": "Transfer item method",
+  "description": "Change ownership of an item in a database.",
+  "type": "dbmethod",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["itemKey", "qty", "recp"],
+    "properties": {
+      "itemKey": {"type": "string"},
+      "qty": {"type": "integer", "minimum": 1},
+      "recp": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      }
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["key", "url"],
+    "properties": {
+      "key": {"type": "string"},
+      "url": {"type": "string", "format": "uri"}
+    }
+  }
+}

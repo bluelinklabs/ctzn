@@ -1,0 +1,41 @@
+{
+  "id": "ctzn.network/create-item-method",
+  "title": "Create item method",
+  "description": "Create a new item in the database.",
+  "type": "dbmethod",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["classId", "qty"],
+    "properties": {
+      "classId": {"type": "string"},
+      "qty": {"type": "integer", "minimum": 1},
+      "owner": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "properties": {
+        "type": "object"
+      }
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["key", "url"],
+    "properties": {
+      "key": {"type": "string"},
+      "url": {"type": "string", "format": "uri"}
+    }
+  }
+}
