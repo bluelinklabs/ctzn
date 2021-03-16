@@ -434,7 +434,7 @@ class Table {
     const pend = perf.measure('table.list')
     opts = opts || {}
     opts.timeout = READ_TIMEOUT
-    return new Promise((resolve, reject) => {
+    const res = beeHackWrap(this.db, `list(${JSON.stringify(opts)})`, new Promise((resolve, reject) => {
       pump(
         this.createReadStream(opts),
         concat(resolve),
@@ -443,7 +443,8 @@ class Table {
           if (err) reject(err)
         }
       )
-    })
+    }))
+    return res || []
   }
 
   scanFind (opts, fn) {
