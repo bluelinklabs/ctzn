@@ -15,6 +15,7 @@ import { ValidationError } from '../lib/errors.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import { DbIndexingIssue } from '../lib/issues/db-indexing.js'
 import { DbmethodBadResponse } from '../lib/issues/dbmethod-bad-response.js'
+import { HyperbeeStallIssue } from '../lib/issues/hyperbee-stall.js'
 
 const READ_TIMEOUT = 10e3
 const BACKGROUND_INDEXING_DELAY = 5e3 // how much time is allowed to pass before globally indexing an update
@@ -42,6 +43,21 @@ const blobPointer = schemas.createValidator({
     end: {type: 'number'}
   }
 })
+
+export async function beeHackGet (db, bee, key, ...args) {
+  let to
+  const toPromise = new Promise((resolve) => {
+    to = setTimeout(() => {
+      issues.add(new HyperbeeStallIssue({db, key}))
+      resolve(undefined)
+    }, READ_TIMEOUT + 500)
+    to.unref()
+  })
+  const clearTO = () => clearTimeout(to)
+  const res = Promise.race([bee.get(key, ...args), toPromise])
+  res.then(clearTO, clearTO)
+  return res
+}
 
 export class BaseHyperbeeDB extends EventEmitter {
   constructor (_ident, key, {isPrivate} = {isPrivate: false}) {
@@ -101,7 +117,7 @@ export class BaseHyperbeeDB extends EventEmitter {
       this.onDatabaseCreated()
     }
 
-    const desc = await this.bee.get('_db', {timeout: READ_TIMEOUT})
+    const desc = await beeHackGet(this, this.bee, '_db', {timeout: READ_TIMEOUT})
     if (desc) {
       dbDescription.assert(desc.value)
       this.desc = desc.value
@@ -310,14 +326,14 @@ class Blobs {
   }
 
   async getPointer (key) {
-    const pointer = await this.kv.get(key, {timeout: READ_TIMEOUT})
+    const pointer = await beeHackGet(this.db, this.kv, key, {timeout: READ_TIMEOUT})
     if (!pointer) throw new Error('Blob not found')
     blobPointer.assert(pointer.value)
     return pointer.value
   }
 
   async createReadStream (key) {
-    const pointer = await this.kv.get(key, {timeout: READ_TIMEOUT})
+    const pointer = await beeHackGet(this.db, this.kv, key, {timeout: READ_TIMEOUT})
     if (!pointer) throw new Error('Blob not found')
     blobPointer.assert(pointer.value)
     return this.feed.createReadStream({
@@ -374,7 +390,7 @@ class Table {
 
   async get (key) {
     const pend = perf.measure('table.get')
-    let entry = await this.bee.get(String(key), {timeout: READ_TIMEOUT})
+    let entry = await beeHackGet(this.db, this.bee, String(key), {timeout: READ_TIMEOUT})
     if (entry) {
       this.schema.assertValid(entry.value)
     }
