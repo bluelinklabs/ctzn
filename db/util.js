@@ -106,7 +106,7 @@ export async function fetchReactions (subject, userIdxId = undefined) {
     Object.entries(reactionsUrls).map(async ([reaction, urls]) => {
       return [
         reaction,
-        await Promise.all(urls.map(fetchUserId))
+        (await Promise.all(urls.map(fetchUserId))).filter(Boolean)
       ]
     })
   )
