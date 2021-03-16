@@ -62,6 +62,7 @@ export async function start (opts) {
       if (domain !== getDomain()) throw 'Not found'
       const profile = await db.publicServerDb.users.get(username)
       if (!profile || !profile.value.dbUrl) throw 'Not found'
+      res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
       res.status(200).json({
         subject: `acct:${username}@${domain}`,
         links: [{rel: 'self', href: profile.value.dbUrl}]
@@ -81,6 +82,7 @@ export async function start (opts) {
       for (let entry of entries) {
         entry.url = table.constructEntryUrl(entry.key)
       }
+      res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
       res.status(200).json({entries})
     } catch (e) {
       json404(res, e)
@@ -96,6 +98,7 @@ export async function start (opts) {
       if (entry) {
         entry.url = table.constructEntryUrl(entry.key)
       }
+      res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
       res.status(200).json(entry)
     } catch (e) {
       json404(res, e)
@@ -114,8 +117,10 @@ export async function start (opts) {
           return res.status(304).end()
         }
         res.setHeader('ETag', etag)
+        res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
         ;(await createStream()).pipe(res)
       } else {
+        res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
         res.status(200).json(await dbViews.exec(schemaId, undefined, ...args))
       }
     } catch (e) {
@@ -152,6 +157,7 @@ export async function start (opts) {
     } catch (e) {
       issues.add(new NoPrivacyPolicyIssue())
     }
+    res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
     if (txt) {
       res.status(200).end(txt)
     } else {
