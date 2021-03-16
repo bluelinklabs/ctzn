@@ -46,11 +46,10 @@ export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simu
   config.privateServer = privateServerDb.key.toString('hex')
   await saveDbConfig()
 
+  views.setup()
   await loadMemberUserDbs()
   await loadOrUnloadExternalUserDbs()
   /* dont await */ catchupAllIndexes()
-
-  views.setup()
 }
 
 export async function createUser ({type, username, email, password, profile}) {
@@ -186,12 +185,12 @@ async function saveDbConfig () {
 async function loadMemberUserDbs () {
   let numLoaded = 0
   let users = await publicServerDb.users.list()
-  for (let user of users) {
+  await Promise.allSettled(users.map(async (user) => {
     if (user.value.type === 'citizen') {
       const userId = constructUserId(user.key)
       if (publicUserDbs.has(userId)) {
         console.error('Skipping db load due to duplicate userId', userId)
-        continue
+        return
       }
       let publicUserDb = new PublicCitizenDB(userId, hyperUrlToKey(user.value.dbUrl))
       await publicUserDb.setup()
@@ -210,7 +209,7 @@ async function loadMemberUserDbs () {
       const userId = constructUserId(user.key)
       if (publicUserDbs.has(userId)) {
         console.error('Skipping db load due to duplicate userId', userId)
-        continue
+        return
       }
       let publicUserDb = new PublicCommunityDB(userId, hyperUrlToKey(user.value.dbUrl))
       await publicUserDb.setup()
@@ -221,7 +220,7 @@ async function loadMemberUserDbs () {
     } else {
       issues.add(new UnknownUserTypeIssue(user))
     }
-  }
+  }))
   console.log('Loaded', numLoaded, 'user DBs (from', users.length, 'member records)')
 }
 
