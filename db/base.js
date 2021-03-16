@@ -44,17 +44,17 @@ const blobPointer = schemas.createValidator({
   }
 })
 
-export async function beeHackGet (db, bee, key, ...args) {
+export async function beeHackWrap (db, method, promise) {
   let to
   const toPromise = new Promise((resolve) => {
     to = setTimeout(() => {
-      issues.add(new HyperbeeStallIssue({db, key}))
+      issues.add(new HyperbeeStallIssue({db, method}))
       resolve(undefined)
     }, READ_TIMEOUT + 500)
     to.unref()
   })
   const clearTO = () => clearTimeout(to)
-  const res = Promise.race([bee.get(key, ...args), toPromise])
+  const res = Promise.race([promise, toPromise])
   res.then(clearTO, clearTO)
   return res
 }
@@ -102,7 +102,7 @@ export class BaseHyperbeeDB extends EventEmitter {
       keyEncoding: 'utf8',
       valueEncoding: 'json'
     })
-    await this.bee.ready()
+    await beeHackWrap(this, 'ready()', this.bee.ready())
     if (!this.isPrivate) {
       client.replicate(this.bee.feed)
     }
@@ -117,7 +117,7 @@ export class BaseHyperbeeDB extends EventEmitter {
       this.onDatabaseCreated()
     }
 
-    const desc = await beeHackGet(this, this.bee, '_db', {timeout: READ_TIMEOUT})
+    const desc = await beeHackWrap(this, 'get(_db)', this.bee.get('_db', {timeout: READ_TIMEOUT}))
     if (desc) {
       dbDescription.assert(desc.value)
       this.desc = desc.value
@@ -326,14 +326,14 @@ class Blobs {
   }
 
   async getPointer (key) {
-    const pointer = await beeHackGet(this.db, this.kv, key, {timeout: READ_TIMEOUT})
+    const pointer = await beeHackWrap(this.db, `get(${key})`, this.kv.get(key, {timeout: READ_TIMEOUT}))
     if (!pointer) throw new Error('Blob not found')
     blobPointer.assert(pointer.value)
     return pointer.value
   }
 
   async createReadStream (key) {
-    const pointer = await beeHackGet(this.db, this.kv, key, {timeout: READ_TIMEOUT})
+    const pointer = await beeHackWrap(this.db, `get(${key})`, this.kv.get(key, {timeout: READ_TIMEOUT}))
     if (!pointer) throw new Error('Blob not found')
     blobPointer.assert(pointer.value)
     return this.feed.createReadStream({
@@ -390,7 +390,7 @@ class Table {
 
   async get (key) {
     const pend = perf.measure('table.get')
-    let entry = await beeHackGet(this.db, this.bee, String(key), {timeout: READ_TIMEOUT})
+    let entry = await beeHackWrap(this.db, `get(${String(key)})`, this.bee.get(String(key), {timeout: READ_TIMEOUT}))
     if (entry) {
       this.schema.assertValid(entry.value)
     }

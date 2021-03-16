@@ -1,5 +1,6 @@
 import lexint from 'lexicographic-integer-encoding'
 import { publicUserDbs, privateUserDbs } from '../db/index.js'
+import { beeHackWrap } from '../db/base.js'
 import { constructUserUrl, parseEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 
@@ -17,7 +18,7 @@ export async function dbGet (dbUrl) {
   }
   return {
     db,
-    entry: await bee.get(decodeURIComponent(pathParts[pathParts.length - 1]))
+    entry: await beeHackWrap({_ident: userId}, `get(${urlp.pathname})`, bee.get(decodeURIComponent(pathParts[pathParts.length - 1])))
   }
 }
 

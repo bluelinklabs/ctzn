@@ -5,6 +5,7 @@ import concat from 'concat-stream'
 import Hyperbee from 'hyperbee'
 import { client } from './hyperspace.js'
 import * as hyperspace from './hyperspace.js'
+import { beeHackWrap } from './base.js'
 import { PublicServerDB, PrivateServerDB } from './server.js'
 import { PublicCitizenDB, PrivateCitizenDB } from './citizen.js'
 import { PublicCommunityDB } from './community.js'
@@ -393,10 +394,10 @@ async function loadDbByType (userId, dbUrl) {
     keyEncoding: 'utf8',
     valueEncoding: 'json'
   })
-  await bee.ready()
+  await beeHackWrap({_ident: dbUrl}, 'ready()', bee.ready())
   client.replicate(bee.feed)
 
-  const dbDesc = await bee.get('_db', {wait: true, timeout: 60e3})
+  const dbDesc = await beeHackWrap({_ident: dbUrl}, `get(_db)`, bee.get('_db', {wait: true, timeout: 10e3}))
   if (!dbDesc) throw new Error('Failed to load database description')
   if (dbDesc.value?.dbType === 'ctzn.network/public-citizen-db') {
     return new PublicCitizenDB(userId, key) 
