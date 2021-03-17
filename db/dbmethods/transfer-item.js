@@ -70,7 +70,7 @@ export default async function (db, caller, args) {
         const destItemEntry = await db.items.get(destKey)
         if (destItemEntry) {
           // add to existing
-          destItemEntry.qty += args.qty
+          destItemEntry.value.qty += args.qty
           await db.items.put(destItemEntry.key, destItemEntry.value)
         } else {
           // new entry

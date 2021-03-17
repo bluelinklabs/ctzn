@@ -32,7 +32,7 @@ A role with this permission can create, edit, and delete roles.
 
 A role with this permission can assign roles to community members.
 
-## `ctzn.network/manage-item-classes`
+## `ctzn.network/perm-manage-item-classes`
 
 A role with this permission can write and delete item class records.
 

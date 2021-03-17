@@ -518,6 +518,23 @@ test('fungible items', async t => {
   t.is(getItemOf(items4, alice.userId).value.classId, 'paulbucks')
   t.is(getItemOf(items4, alice.userId).value.qty, 2)
   t.is(getItemOf(items4, alice.userId).value.createdBy.userId, alice.userId)
+
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/transfer-item-method', {
+    itemKey: getItemOf(items4, bob.userId).key,
+    qty: 2,
+    recp: {userId: alice.userId, dbUrl: alice.dbUrl}
+  })
+  const items5 = (await api.table.list(folks.userId, 'ctzn.network/item'))?.entries
+  t.is(items5.length, 3)
+  t.is(getItemOf(items5, folks.userId).value.classId, 'paulbucks')
+  t.is(getItemOf(items5, folks.userId).value.qty, 90)
+  t.is(getItemOf(items5, folks.userId).value.createdBy.userId, alice.userId)
+  t.is(getItemOf(items5, bob.userId).value.classId, 'paulbucks')
+  t.is(getItemOf(items5, bob.userId).value.qty, 6)
+  t.is(getItemOf(items5, bob.userId).value.createdBy.userId, alice.userId)
+  t.is(getItemOf(items5, alice.userId).value.classId, 'paulbucks')
+  t.is(getItemOf(items5, alice.userId).value.qty, 4)
+  t.is(getItemOf(items5, alice.userId).value.createdBy.userId, alice.userId)
 })
 
 test('destroying items', async t => {
@@ -764,7 +781,7 @@ test('managing item classes', async t => {
   }))
 })
 
-test.only('inventory view', async t => {
+test('inventory view', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
   instances = [inst]
