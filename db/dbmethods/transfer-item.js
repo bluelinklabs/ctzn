@@ -1,4 +1,5 @@
-import { assertUserPermission } from './_util.js'
+import { assertUserPermission, addOwnedItemsIdx, delOwnedItemsIdx } from './_util.js'
+import { onDatabaseChange } from '../index.js'
 import * as errors from '../../lib/errors.js'
 import { compileKeyGenerator } from '../../lib/schemas.js'
 
@@ -47,6 +48,12 @@ export default async function (db, caller, args) {
       // not a divisible item, just transfer ownership
       destValue.qty = sourceItemEntry.value.qty
       await db.items.put(destKey, destValue)
+      if (destValue.owner.dbUrl === db.url) {
+        await addOwnedItemsIdx(db, destKey, db.items.constructEntryUrl(destKey))
+      } else if (sourceItemEntry.value.owner.userId === db.url) {
+        await delOwnedItemsIdx(db, destKey)
+      }
+      await onDatabaseChange(db)
       return {
         key: destKey,
         url: db.items.constructEntryUrl(destKey)
@@ -62,11 +69,16 @@ export default async function (db, caller, args) {
       try {
         const destItemEntry = await db.items.get(destKey)
         if (destItemEntry) {
+          // add to existing
           destItemEntry.qty += args.qty
           await db.items.put(destItemEntry.key, destItemEntry.value)
         } else {
+          // new entry
           destValue.qty = args.qty
           await db.items.put(destKey, destValue)
+          if (destValue.owner.dbUrl === db.url) {
+            await addOwnedItemsIdx(db, destKey, db.items.constructEntryUrl(destKey))
+          }
         }
       } finally {
         release2()
@@ -78,8 +90,12 @@ export default async function (db, caller, args) {
         await db.items.put(sourceItemEntry.key, sourceItemEntry.value)
       } else {
         await db.items.del(sourceItemEntry.key)
+        if (sourceItemEntry.value.owner.dbUrl === db.url) {
+          await delOwnedItemsIdx(db, destKey)
+        }
       }
 
+      await onDatabaseChange(db)
       return {
         key: destKey,
         url: db.items.constructEntryUrl(destKey)

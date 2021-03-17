@@ -19,6 +19,7 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
   async setup () {
     await super.setup()
     await this.blobs.setup()
+    this.indexState = this.getTable('ctzn.network/index-state')
     this.dbmethodCalls = this.getTable('ctzn.network/dbmethod-call')
     this.profile = this.getTable('ctzn.network/profile')
     this.posts = this.getTable('ctzn.network/post')
@@ -26,6 +27,7 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
     this.reactions = this.getTable('ctzn.network/reaction')
     this.follows = this.getTable('ctzn.network/follow')
     this.memberships = this.getTable('ctzn.network/community-membership')
+    this.ownedItemsIndex = this.getTable('ctzn.network/owned-items-idx')
 
     this.memberships.onPut(() => {
       this.emit('subscriptions-changed')
@@ -33,6 +35,47 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
     this.memberships.onDel(() => {
       this.emit('subscriptions-changed')
     })
+
+    this.createIndexer('ctzn.network/owned-items-idx', ['ctzn.network/item'], async (db, change) => {
+      const pend = perf.measure(`publicUserDb:owned-items-indexer`)
+      
+      const newOwner = change.value?.owner
+      const oldEntry = await db.bee.checkout(change.seq).get(change.key, {timeout: 10e3})
+      const oldOwner = oldEntry?.value?.owner
+      if (newOwner?.dbUrl !== this.url && oldOwner?.dbUrl !== this.url) {
+        return // not our item
+      }
+      if (newOwner?.dbUrl === oldOwner?.dbUrl) {
+        return // no change in ownership, dont need to process it
+      }
+      const itemUrl = constructEntryUrl(db.url, change.keyParsed.schemaId, change.keyParsed.key)
+
+      const release = await this.lock(`owned-items-idx:${itemUrl}`)
+      try {
+        const key = `${db.userId}:${change.keyParsed.key}`
+        if (oldOwner?.dbUrl === this.url) {
+          // we're the old owner, item is now gone
+          await this.ownedItemsIndex.del(key)
+        } else if (newOwner?.dbUrl === this.url) {
+          // we're the new owner, item is added
+          await this.ownedItemsIndex.put(key, {
+            item: {
+              key: change.keyParsed.key,
+              userId: db.userId,
+              dbUrl: itemUrl
+            },
+            createdAt: (new Date()).toISOString()
+          })
+        }
+      } finally {
+        release()
+        pend()
+      }
+    })
+  }
+
+  async getSubscribedDbUrls () {
+    return (await this.memberships.list()).map(entry => entry.value.community.dbUrl)
   }
 }
 
@@ -100,7 +143,7 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
         }
         
         const createdAt = new Date()
-        await this.notificationsIdx.put(mlts(Math.min(createdAt, itemCreatedAt || createdAt)), {
+        await this.notificationsIdx.put(mlts(Math.min(+createdAt, (+itemCreatedAt) || (+createdAt))), {
           itemUrl: constructEntryUrl(db.url, change.keyParsed.schemaId, change.keyParsed.key),
           createdAt: createdAt.toISOString()
         })

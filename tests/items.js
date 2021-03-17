@@ -764,6 +764,81 @@ test('managing item classes', async t => {
   }))
 })
 
-test.skip('inventory view', async t => {
-  // TODO
+test('inventory view', async t => {
+  let sim = new TestFramework()
+  let inst = await createServer()
+  instances = [inst]
+  let api = inst.api
+
+  await sim.createCitizen(inst, 'alice')
+  await sim.createCitizen(inst, 'bob')
+  await sim.createCitizen(inst, 'carla')
+  await sim.users.alice.login()
+  await sim.createCommunity(inst, 'folks')
+
+  const {alice, bob, carla, folks} = sim.users
+  await bob.login()
+  await api.communities.join(folks.userId)
+  await carla.login()
+  await api.communities.join(folks.userId)
+
+  await alice.login()
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-item-class-method', {
+    classId: 'paulbucks',
+    keyTemplate: [
+      {type: 'json-pointer', value: '/owner/userId'}
+    ]
+  })
+  const folksBucks = await sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-method', {
+    classId: 'paulbucks',
+    qty: 100
+  })
+  const bobBucks = await sim.dbmethod(inst, folks.userId, 'ctzn.network/transfer-item-method', {
+    itemKey: folksBucks.result.details.key,
+    qty: 10,
+    recp: {userId: bob.userId, dbUrl: bob.dbUrl}
+  })
+  const carlaBucks = await sim.dbmethod(inst, folks.userId, 'ctzn.network/transfer-item-method', {
+    itemKey: bobBucks.result.details.key,
+    qty: 2,
+    recp: {userId: carla.userId, dbUrl: carla.dbUrl}
+  })
+  const idx1 = (await api.table.list(folks.userId, 'ctzn.network/owned-items-idx')).entries
+  t.is(idx1.length, 1)
+  t.is(idx1[0].value.item.key, folksBucks.result.details.key)
+  t.is(idx1[0].value.item.dbUrl, folksBucks.result.details.url)
+  t.is(idx1[0].value.item.userId, folks.userId)
+  const idx2 = (await api.table.list(bob.userId, 'ctzn.network/owned-items-idx')).entries
+  t.is(idx2.length, 1)
+  t.is(idx2[0].value.item.key, bobBucks.result.details.key)
+  t.is(idx2[0].value.item.dbUrl, bobBucks.result.details.url)
+  t.is(idx2[0].value.item.userId, folks.userId)
+  const idx3 = (await api.table.list(carla.userId, 'ctzn.network/owned-items-idx')).entries
+  t.is(idx3.length, 1)
+  t.is(idx3[0].value.item.key, carlaBucks.result.details.key)
+  t.is(idx3[0].value.item.dbUrl, carlaBucks.result.details.url)
+  t.is(idx3[0].value.item.userId, folks.userId)
+
+  const aliceBucks = await sim.dbmethod(inst, folks.userId, 'ctzn.network/transfer-item-method', {
+    itemKey: carlaBucks.result.details.key,
+    qty: 2,
+    recp: {userId: alice.userId, dbUrl: alice.dbUrl}
+  })
+  const idx4 = (await api.table.list(folks.userId, 'ctzn.network/owned-items-idx')).entries
+  t.is(idx4.length, 1)
+  t.is(idx4[0].value.item.key, folksBucks.result.details.key)
+  t.is(idx4[0].value.item.dbUrl, folksBucks.result.details.url)
+  t.is(idx4[0].value.item.userId, folks.userId)
+  const idx5 = (await api.table.list(bob.userId, 'ctzn.network/owned-items-idx')).entries
+  t.is(idx5.length, 1)
+  t.is(idx5[0].value.item.key, bobBucks.result.details.key)
+  t.is(idx5[0].value.item.dbUrl, bobBucks.result.details.url)
+  t.is(idx5[0].value.item.userId, folks.userId)
+  const idx6 = (await api.table.list(carla.userId, 'ctzn.network/owned-items-idx')).entries
+  t.is(idx6.length, 0)
+  const idx7 = (await api.table.list(alice.userId, 'ctzn.network/owned-items-idx')).entries
+  t.is(idx7.length, 1)
+  t.is(idx7[0].value.item.key, aliceBucks.result.details.key)
+  t.is(idx7[0].value.item.dbUrl, aliceBucks.result.details.url)
+  t.is(idx7[0].value.item.userId, folks.userId)
 })

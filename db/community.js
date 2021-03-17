@@ -45,6 +45,7 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
     this.bans = this.getTable('ctzn.network/community-ban')
     this.itemClasses = this.getTable('ctzn.network/item-class')
     this.items = this.getTable('ctzn.network/item')
+    this.ownedItemsIndex = this.getTable('ctzn.network/owned-items-idx')
     this.indexState = this.getTable('ctzn.network/index-state')
     this.feedIdx = this.getTable('ctzn.network/feed-idx')
     this.threadIdx = this.getTable('ctzn.network/thread-idx')
@@ -75,7 +76,7 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
         createdAt: createdAt.toISOString()
       }
       const createKey = (url, itemCreatedAt) => {
-        return `${hyperUrlToKeyStr(url)}:${mlts(Math.min(createdAt, itemCreatedAt || createdAt))}`
+        return `${hyperUrlToKeyStr(url)}:${mlts(Math.min(+createdAt, itemCreatedAt || createdAt))}`
       }
       try {
         switch (change.keyParsed.schemaId) {

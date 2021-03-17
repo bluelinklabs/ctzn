@@ -3,6 +3,11 @@
   "title": "Owned Items Index",
   "description": "An index of items owned by a user in other databases.",
   "type": "json-table",
+  "keyTemplate": [
+    {"type": "json-pointer", "value": "/item/userId"},
+    {"type": "string", "value": ":"},
+    {"type": "json-pointer", "value": "/item/key"}
+  ],
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
@@ -10,11 +15,14 @@
     "properties": {
       "item": {
         "type": "object",
-        "required": ["dbUrl", "userId"],
+        "required": ["dbUrl", "key", "userId"],
         "properties": {
           "dbUrl": {
             "type": "string",
             "format": "uri"
+          },
+          "key": {
+            "type": "string"
           },
           "userId": {
             "type": "string",

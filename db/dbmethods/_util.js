@@ -15,3 +15,20 @@ export async function assertUserPermission (publicCommunityDb, userId, permId) {
   }
   throw new errors.PermissionsError(`Permission denied: ${permId}`)
 }
+
+export async function addOwnedItemsIdx (db, itemKey, itemUrl) {
+  const key = `${db.userId}:${itemKey}`
+  await db.ownedItemsIndex.put(key, {
+    item: {
+      key: itemKey,
+      userId: db.userId,
+      dbUrl: itemUrl
+    },
+    createdAt: (new Date()).toISOString()
+  })
+}
+
+export async function delOwnedItemsIdx (db, itemKey) {
+  const key = `${db.userId}:${itemKey}`
+  await db.ownedItemsIndex.del(key)
+}

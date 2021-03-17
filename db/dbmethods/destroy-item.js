@@ -1,4 +1,5 @@
-import { assertUserPermission } from './_util.js'
+import { assertUserPermission, delOwnedItemsIdx } from './_util.js'
+import { onDatabaseChange } from '../index.js'
 import * as errors from '../../lib/errors.js'
 
 export default async function (db, caller, args) {
@@ -20,7 +21,11 @@ export default async function (db, caller, args) {
       await db.items.put(itemEntry.key, itemEntry.value)
     } else {
       await db.items.del(itemEntry.key)
+      if (itemEntry.value.owner.dbUrl === db.url) {
+        await delOwnedItemsIdx(db, itemEntry.key)
+      }
     }
+    await onDatabaseChange(db)
   } finally {
     release()
   }
