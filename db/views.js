@@ -190,6 +190,22 @@ export function setup () {
     return {count: await countNotications(auth, opts)}
   })
 
+  define('ctzn.network/owned-items-view', async (auth, userId, opts) => {
+    userId = await fetchUserId(userId)
+    const db = getDb(userId)
+    const table = db.getTable('ctzn.network/owned-items-idx')
+    const idxEntries = await table.list(getListOpts(opts))
+    const itemEntries = await Promise.all(idxEntries.map(async (idxEntry) => {
+      const itemEntry = (await dbGet(idxEntry.value.item.dbUrl))?.entry
+      if (itemEntry) {
+        itemEntry.databaseId = idxEntry.value.item.userId
+        itemEntry.url = idxEntry.value.item.dbUrl
+      }
+      return itemEntry
+    }))
+    return {items: itemEntries.filter(Boolean)}
+  })
+
   define('ctzn.network/reactions-to-view', async (auth, subjectUrl) => {
     const subject = await dbGet(subjectUrl).catch(e => undefined)
     const subjectEntry = subject ? subject.entry : {}

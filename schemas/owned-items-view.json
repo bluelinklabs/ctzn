@@ -32,7 +32,7 @@
         "type": "array",
         "items": {
           "type": "object",
-          "required": ["author", "key", "seq", "url", "value"],
+          "required": ["databaseId", "key", "seq", "url", "value"],
           "properties": {
             "seq": {"type": "number"},
             "key": {"type": "string"},
@@ -40,22 +40,9 @@
             "databaseId": {"type": "string", "pattern": ".+@.+"},
             "value": {
               "type": "object",
-              "required": ["class", "qty", "createdAt"],
+              "required": ["classId", "qty", "createdAt"],
               "properties": {
-                "class": {
-                  "type": "object",
-                  "required": ["dbUrl", "userId"],
-                  "properties": {
-                    "dbUrl": {
-                      "type": "string",
-                      "format": "uri"
-                    },
-                    "userId": {
-                      "type": "string",
-                      "pattern": ".+@.+"
-                    }
-                  }
-                },
+                "classId": {"type": "string"},
                 "qty": {"type": "integer"},
                 "owner": {
                   "type": "object",
@@ -73,6 +60,20 @@
                 },
                 "properties": {
                   "type": "object"
+                },
+                "createdBy": {
+                  "type": "object",
+                  "required": ["dbUrl", "userId"],
+                  "properties": {
+                    "dbUrl": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "pattern": ".+@.+"
+                    }
+                  }
                 },
                 "createdAt": {
                   "type": "string",

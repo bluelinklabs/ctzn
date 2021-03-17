@@ -764,7 +764,7 @@ test('managing item classes', async t => {
   }))
 })
 
-test('inventory view', async t => {
+test.only('inventory view', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
   instances = [inst]
@@ -818,6 +818,30 @@ test('inventory view', async t => {
   t.is(idx3[0].value.item.key, carlaBucks.result.details.key)
   t.is(idx3[0].value.item.dbUrl, carlaBucks.result.details.url)
   t.is(idx3[0].value.item.userId, folks.userId)
+  const view1 = (await api.view.get('ctzn.network/owned-items-view', folks.userId)).items
+  t.is(view1.length, 1)
+  t.is(view1[0].key, folksBucks.result.details.key)
+  t.is(view1[0].url, folksBucks.result.details.url)
+  t.is(view1[0].databaseId, folks.userId)
+  t.is(view1[0].value.classId, 'paulbucks')
+  t.is(view1[0].value.qty, 90)
+  t.is(view1[0].value.owner.userId, folks.userId)
+  const view2 = (await api.view.get('ctzn.network/owned-items-view', bob.userId)).items
+  t.is(view2.length, 1)
+  t.is(view2[0].key, bobBucks.result.details.key)
+  t.is(view2[0].url, bobBucks.result.details.url)
+  t.is(view2[0].databaseId, folks.userId)
+  t.is(view2[0].value.classId, 'paulbucks')
+  t.is(view2[0].value.qty, 8)
+  t.is(view2[0].value.owner.userId, bob.userId)
+  const view3 = (await api.view.get('ctzn.network/owned-items-view', carla.userId)).items
+  t.is(view3.length, 1)
+  t.is(view3[0].key, carlaBucks.result.details.key)
+  t.is(view3[0].url, carlaBucks.result.details.url)
+  t.is(view3[0].databaseId, folks.userId)
+  t.is(view3[0].value.classId, 'paulbucks')
+  t.is(view3[0].value.qty, 2)
+  t.is(view3[0].value.owner.userId, carla.userId)
 
   const aliceBucks = await sim.dbmethod(inst, folks.userId, 'ctzn.network/transfer-item-method', {
     itemKey: carlaBucks.result.details.key,
@@ -841,4 +865,30 @@ test('inventory view', async t => {
   t.is(idx7[0].value.item.key, aliceBucks.result.details.key)
   t.is(idx7[0].value.item.dbUrl, aliceBucks.result.details.url)
   t.is(idx7[0].value.item.userId, folks.userId)
+  const view4 = (await api.view.get('ctzn.network/owned-items-view', folks.userId)).items
+  t.is(view4.length, 1)
+  t.is(view4[0].key, folksBucks.result.details.key)
+  t.is(view4[0].url, folksBucks.result.details.url)
+  t.is(view4[0].databaseId, folks.userId)
+  t.is(view4[0].value.classId, 'paulbucks')
+  t.is(view4[0].value.qty, 90)
+  t.is(view4[0].value.owner.userId, folks.userId)
+  const view5 = (await api.view.get('ctzn.network/owned-items-view', bob.userId)).items
+  t.is(view5.length, 1)
+  t.is(view5[0].key, bobBucks.result.details.key)
+  t.is(view5[0].url, bobBucks.result.details.url)
+  t.is(view5[0].databaseId, folks.userId)
+  t.is(view5[0].value.classId, 'paulbucks')
+  t.is(view5[0].value.qty, 8)
+  t.is(view5[0].value.owner.userId, bob.userId)
+  const view6 = (await api.view.get('ctzn.network/owned-items-view', carla.userId)).items
+  t.is(view6.length, 0)
+  const view7 = (await api.view.get('ctzn.network/owned-items-view', alice.userId)).items
+  t.is(view7.length, 1)
+  t.is(view7[0].key, aliceBucks.result.details.key)
+  t.is(view7[0].url, aliceBucks.result.details.url)
+  t.is(view7[0].databaseId, folks.userId)
+  t.is(view7[0].value.classId, 'paulbucks')
+  t.is(view7[0].value.qty, 2)
+  t.is(view7[0].value.owner.userId, alice.userId)
 })
