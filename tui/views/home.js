@@ -50,12 +50,13 @@ export class HomeView extends BaseView {
       left: 2,
       height: 1,
       tags: true,
-      content: '{green-fg}{bold}[s]{/} {green-fg}Start Server{/}  {green-fg}{bold}[r]{/} {green-fg}Restart Server{/}  {green-fg}{bold}[k]{/} {green-fg}Stop Server{/}  {green-fg}{bold}[c]{/} {green-fg}Configure{/}'
+      content: '{green-fg}{bold}[s]{/} {green-fg}Start Server{/}  {green-fg}{bold}[r]{/} {green-fg}Restart Server{/}  {green-fg}{bold}[k]{/} {green-fg}Stop Server{/}  {green-fg}{bold}[c]{/} {green-fg}Configure{/}  {gray-fg}{bold}[p]{/} {gray-fg}Run CPU profiler{/}'
     })
     this.menu.key(['s'], () => this.onStartServer())
     this.menu.key(['r'], () => this.onRestartServer())
     this.menu.key(['k'], () => this.onStopServer())
     this.menu.key(['c'], () => this.onConfigure())
+    this.menu.key(['p'], () => this.onToggleCPUProfile())
     this.menu.key(['l'], () => this.screen.spawn('less', [OUT_LOG_PATH, '2>', '/dev/null']))
     this.menu.key(['e'], () => this.screen.spawn('less', [ERR_LOG_PATH, '2>', '/dev/null']))
     this.menu.key(['up'], () => { this.log.scroll(-20); this.screen.render() })
@@ -339,5 +340,18 @@ export class HomeView extends BaseView {
         this.updateStatus()
       })
     })
+  }
+
+  async onToggleCPUProfile () {
+    if (!(await this.ask(`Are you sure?`))) return
+    this.message(`Working...`)
+    const res = await this.api.call('server.toggleProfilingCPU', []).catch(e => ({error: e}))
+    if (res.isActive === true) {
+      this.message(`Profiler started...`)
+    } else if (res.isActive === false) {
+      this.message(`Profile written to ~/ctzn.cpuprofile`)
+    } else {
+      this.message(res.error.toString())
+    }
   }
 }

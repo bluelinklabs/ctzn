@@ -1,8 +1,50 @@
+import os from 'os'
+import path from 'path'
+import inspector from 'inspector'
+import { promises as fsp } from 'fs'
 import * as db from '../db/index.js'
 import * as issues from '../lib/issues.js'
 import { constructUserId } from '../lib/strings.js'
 
+let _inspectorSession
+let _inspectorTimeout
+
 export function setup (wsServer) {
+  const stopProfilingCPU = () =>new Promise((resolve, reject) => {
+    console.log('Stopping CPU profiler')
+    clearTimeout(_inspectorTimeout)
+    _inspectorSession.post('Profiler.stop', async (err, res) => {
+      _inspectorSession.disconnect()
+      _inspectorSession = undefined
+      if (err) {
+        console.error('Stopping CPU profiler failed', err)
+        reject(err)
+      } else {
+        await fsp.writeFile(path.join(os.homedir(), 'ctzn.cpuprofile'), JSON.stringify(res.profile));
+        console.log('Wrote CPU profile to ~/ctzn.cpuprofile')
+        resolve({isActive: false})
+      }
+    });
+  })
+
+  wsServer.registerLoopback('server.toggleProfilingCPU', async ([]) => {
+    if (_inspectorSession) {
+      return stopProfilingCPU()
+    } else {
+      _inspectorSession = new inspector.Session()
+      _inspectorSession.connect()
+      return new Promise(resolve => {
+        _inspectorSession.post('Profiler.enable', () => {
+          _inspectorSession.post('Profiler.start', () => {
+            console.log('Started CPU profiler')
+            _inspectorTimeout = setTimeout(stopProfilingCPU, 120e3)
+            resolve({isActive: true})
+          })
+        })
+      })
+    }
+  })
+
   wsServer.registerLoopback('server.listDatabases', async ([]) => {
     return (
       [db.publicServerDb, db.privateServerDb]
