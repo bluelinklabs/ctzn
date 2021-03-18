@@ -242,7 +242,7 @@ export class BaseHyperbeeDB extends EventEmitter {
         // console.log('Start:', start)
         // console.log('Current version:', changedDb.bee.version)
         const diffLists = await Promise.all(indexer.targetSchemaIds.map(schemaId =>
-          changedDb.getTable(schemaId).listDiff(start).catch(e => [])
+          changedDb.getTable(schemaId).listDiff(start)
         ))
 
         const diffs = []
@@ -522,8 +522,25 @@ class Table {
     const pend = perf.measure('table.listDiff')
     opts = opts || {}
     opts.timeout = READ_TIMEOUT
-    const co = this.db.bee.checkout(other).sub(this._schemaDomain).sub(this._schemaName)
-    return new Promise((resolve, reject) => {
+    /**
+     * HACK
+     * There's a bug in Hyperbee where createDiffStream() breaks on sub()s.
+     * We have to run it without using sub() and then filter the results.
+     * -prf
+     */
+    // const co = this.db.bee.checkout(other).sub(this._schemaDomain).sub(this._schemaName)
+    // return new Promise((resolve, reject) => {
+    //   pump(
+    //     co.createDiffStream(this.bee.version),
+    //     concat(resolve),
+    //     err => {
+    //       pend()
+    //       if (err) reject(err)
+    //     }
+    //   )
+    // })
+    const co = this.db.bee.checkout(other)
+    const diffs = await new Promise((resolve, reject) => {
       pump(
         co.createDiffStream(this.bee.version),
         concat(resolve),
@@ -532,6 +549,16 @@ class Table {
           if (err) reject(err)
         }
       )
+    })
+    const prefix = `${this._schemaDomain}\x00${this._schemaName}\x00`
+    return diffs.filter(diff => {
+      const key = (diff.right||diff.left).key
+      if (key.startsWith(prefix)) {
+        if (diff.left) diff.left.key = diff.left.key.slice(prefix.length)
+        if (diff.right) diff.right.key = diff.right.key.slice(prefix.length)
+        return true
+      }
+      return false
     })
   }
 }
