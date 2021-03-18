@@ -1,6 +1,7 @@
 import { assertUserPermission, addOwnedItemsIdx, delOwnedItemsIdx } from './_util.js'
-import { onDatabaseChange } from '../index.js'
+import { onDatabaseChange, publicUserDbs } from '../index.js'
 import * as errors from '../../lib/errors.js'
+import { isUserIdOurs } from '../../lib/strings.js'
 import { compileKeyGenerator } from '../../lib/schemas.js'
 
 export default async function (db, caller, args) {
@@ -53,7 +54,12 @@ export default async function (db, caller, args) {
       } else if (sourceItemEntry.value.owner.userId === db.url) {
         await delOwnedItemsIdx(db, destKey)
       }
-      await onDatabaseChange(db)
+      if (isUserIdOurs(sourceItemEntry.value.owner.userId) && publicUserDbs.get(sourceItemEntry.value.owner.userId)) {
+        await onDatabaseChange(db, [publicUserDbs.get(sourceItemEntry.value.owner.userId)])
+      }
+      if (isUserIdOurs(destValue.owner.userId) && publicUserDbs.get(destValue.owner.userId)) {
+        await onDatabaseChange(db, [publicUserDbs.get(destValue.owner.userId)])
+      }
       return {
         key: destKey,
         url: db.items.constructEntryUrl(destKey)
@@ -78,6 +84,8 @@ export default async function (db, caller, args) {
           await db.items.put(destKey, destValue)
           if (destValue.owner.dbUrl === db.url) {
             await addOwnedItemsIdx(db, destKey, db.items.constructEntryUrl(destKey))
+          } else if (isUserIdOurs(destValue.owner.userId) && publicUserDbs.get(destValue.owner.userId)) {
+            await onDatabaseChange(db, [publicUserDbs.get(destValue.owner.userId)])
           }
         }
       } finally {
@@ -92,10 +100,11 @@ export default async function (db, caller, args) {
         await db.items.del(sourceItemEntry.key)
         if (sourceItemEntry.value.owner.dbUrl === db.url) {
           await delOwnedItemsIdx(db, destKey)
+        } else if (isUserIdOurs(sourceItemEntry.value.owner.userId) && publicUserDbs.get(sourceItemEntry.value.owner.userId)) {
+          await onDatabaseChange(db, [publicUserDbs.get(sourceItemEntry.value.owner.userId)])
         }
       }
 
-      await onDatabaseChange(db)
       return {
         key: destKey,
         url: db.items.constructEntryUrl(destKey)

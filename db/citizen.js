@@ -36,23 +36,22 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
       this.emit('subscriptions-changed')
     })
 
-    /*this.createIndexer('ctzn.network/owned-items-idx', ['ctzn.network/item'], async (db, change) => {
+    this.createIndexer('ctzn.network/owned-items-idx', ['ctzn.network/item'], async (batch, db, diff) => {
       const pend = perf.measure(`publicUserDb:owned-items-indexer`)
       
-      const newOwner = change.value?.owner
-      const oldEntry = await db.bee.checkout(change.seq).get(change.key, {timeout: 10e3})
-      const oldOwner = oldEntry?.value?.owner
+      const newOwner = diff.right?.value?.owner
+      const oldOwner = diff.left?.value?.owner
       if (newOwner?.dbUrl !== this.url && oldOwner?.dbUrl !== this.url) {
         return // not our item
       }
       if (newOwner?.dbUrl === oldOwner?.dbUrl) {
         return // no change in ownership, dont need to process it
       }
-      const itemUrl = constructEntryUrl(db.url, change.keyParsed.schemaId, change.keyParsed.key)
+      const itemUrl = (diff.right || diff.left).url
 
       const release = await this.lock(`owned-items-idx:${itemUrl}`)
       try {
-        const key = `${db.userId}:${change.keyParsed.key}`
+        const key = `${db.userId}:${(diff.right || diff.left).key}`
         if (oldOwner?.dbUrl === this.url) {
           // we're the old owner, item is now gone
           await this.ownedItemsIndex.del(key)
@@ -60,7 +59,7 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
           // we're the new owner, item is added
           await this.ownedItemsIndex.put(key, {
             item: {
-              key: change.keyParsed.key,
+              key: diff.right.key,
               userId: db.userId,
               dbUrl: itemUrl
             },
@@ -71,12 +70,12 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
         release()
         pend()
       }
-    })*/
+    })
   }
 
-  // async getSubscribedDbUrls () {
-  //   return (await this.memberships.list()).map(entry => entry.value.community.dbUrl)
-  // }
+  async getSubscribedDbUrls () {
+    return (await this.memberships.list()).map(entry => entry.value.community.dbUrl)
+  }
 }
 
 export class PrivateCitizenDB extends BaseHyperbeeDB {

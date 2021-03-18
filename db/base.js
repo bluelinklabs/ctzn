@@ -271,11 +271,9 @@ export class BaseHyperbeeDB extends EventEmitter {
           continue
         }
 
-        let lastDiff
         for (let diff of diffs) {
           try {
             await indexer.index(batch, changedDb, diff)
-            lastDiff = diff
           } catch (e) {
             issues.add(new DbIndexingIssue({
               error: e,
@@ -286,9 +284,7 @@ export class BaseHyperbeeDB extends EventEmitter {
             }))
           }
         }
-        if (lastDiff) {
-          await indexer.updateState(batch, changedDb.url, changedDb.bee.version)
-        }
+        await indexer.updateState(batch, changedDb.url, changedDb.bee.version)
       }
       await batch.flush()
     } finally {

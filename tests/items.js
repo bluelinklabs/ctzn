@@ -781,7 +781,7 @@ test('managing item classes', async t => {
   }))
 })
 
-test.skip('inventory view', async t => {
+test('inventory view', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
   instances.push(inst)
@@ -820,6 +820,7 @@ test.skip('inventory view', async t => {
     qty: 2,
     recp: {userId: carla.userId, dbUrl: carla.dbUrl}
   })
+
   const idx1 = (await api.table.list(folks.userId, 'ctzn.network/owned-items-idx')).entries
   t.is(idx1.length, 1)
   t.is(idx1[0].value.item.key, folksBucks.result.details.key)
