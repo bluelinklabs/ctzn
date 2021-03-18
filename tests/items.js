@@ -781,7 +781,7 @@ test('managing item classes', async t => {
   }))
 })
 
-test('inventory view', async t => {
+test.skip('inventory view', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
   instances.push(inst)

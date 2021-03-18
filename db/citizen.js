@@ -36,7 +36,7 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
       this.emit('subscriptions-changed')
     })
 
-    this.createIndexer('ctzn.network/owned-items-idx', ['ctzn.network/item'], async (db, change) => {
+    /*this.createIndexer('ctzn.network/owned-items-idx', ['ctzn.network/item'], async (db, change) => {
       const pend = perf.measure(`publicUserDb:owned-items-indexer`)
       
       const newOwner = change.value?.owner
@@ -71,12 +71,12 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
         release()
         pend()
       }
-    })
+    })*/
   }
 
-  async getSubscribedDbUrls () {
-    return (await this.memberships.list()).map(entry => entry.value.community.dbUrl)
-  }
+  // async getSubscribedDbUrls () {
+  //   return (await this.memberships.list()).map(entry => entry.value.community.dbUrl)
+  // }
 }
 
 export class PrivateCitizenDB extends BaseHyperbeeDB {
@@ -104,47 +104,49 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
       'ctzn.network/comment',
       'ctzn.network/reaction'
     ]
-    this.createIndexer('ctzn.network/notification-idx', NOTIFICATIONS_SCHEMAS, async (db, change) => {
+    this.createIndexer('ctzn.network/notification-idx', NOTIFICATIONS_SCHEMAS, async (batch, db, diff) => {
+      if (!diff.right) return // ignore deletes
       const myUrl = this.publicUserDb.url
-      if (!change.value) return // ignore deletes
       if (db.url === myUrl) return // ignore self
       const pend = perf.measure(`privateUserDb:notifications-indexer`)
 
-      const release = await this.lock(`notifications-idx:${change.url}`)
+      const release = await this.lock(`notifications-idx:${diff.right.url}`)
       try {
         let itemCreatedAt
-        switch (change.keyParsed.schemaId) {
+        const value = diff.right.value
+        switch (diff.right.schemaId) {
           case 'ctzn.network/follow':
             // following me?
-            if (change.value.subject.dbUrl !== myUrl) {
+            if (value.subject.dbUrl !== myUrl) {
               return false
             }
-            itemCreatedAt = new Date(change.value.createdAt)
+            itemCreatedAt = new Date(value.createdAt)
             break
           case 'ctzn.network/comment': {
             // self-post reply on my content?
-            if (change.value.community) return false
-            if (!change.value.reply) return false
+            if (value.community) return false
+            if (!value.reply) return false
             const onMyPost = (
-              change.value.reply.root.dbUrl.startsWith(myUrl)
-              || change.value.reply.parent?.dbUrl.startsWith(myUrl)
+              value.reply.root.dbUrl.startsWith(myUrl)
+              || value.reply.parent?.dbUrl.startsWith(myUrl)
             )
             if (!onMyPost) return
-            itemCreatedAt = new Date(change.value.createdAt)
+            itemCreatedAt = new Date(value.createdAt)
             break
           }
           case 'ctzn.network/reaction':
             // reaction on my content?
-            if (!change.value.subject.dbUrl.startsWith(myUrl)) {
+            if (!value.subject.dbUrl.startsWith(myUrl)) {
               return false
             }
-            itemCreatedAt = new Date(change.value.createdAt)
+            itemCreatedAt = new Date(value.createdAt)
             break
         }
         
         const createdAt = new Date()
-        await this.notificationsIdx.put(mlts(Math.min(+createdAt, (+itemCreatedAt) || (+createdAt))), {
-          itemUrl: constructEntryUrl(db.url, change.keyParsed.schemaId, change.keyParsed.key),
+        const key = this.notificationsIdx.constructBeeKey(mlts(Math.min(+createdAt, (+itemCreatedAt) || (+createdAt))))
+        await batch.put(key, {
+          itemUrl: diff.right.url,
           createdAt: createdAt.toISOString()
         })
       } finally {
@@ -153,14 +155,9 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
       }
     })
 
-    this.createIndexer('ctzn.network/follow-idx', ['ctzn.network/follow'], async (db, change) => {
+    this.createIndexer('ctzn.network/follow-idx', ['ctzn.network/follow'], async (batch, db, diff) => {
       const pend = perf.measure(`privateUserDb:follows-indexer`)
-      let subject = change.value?.subject
-      if (!subject) {
-        const oldEntry = await db.bee.checkout(change.seq).get(change.key, {timeout: 10e3})
-        subject = oldEntry.value.subject
-      }
-
+      const subject = diff.right?.value?.subject || diff.left?.value?.subject
       const release = await this.lock(`follows-idx:${subject.userId}`)
       try {
         let followsIdxEntry = await this.followsIdx.get(subject.userId)
@@ -175,16 +172,16 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
         }
         const followerId = await fetchUserId(db.url)
         const followerIdIndex = followsIdxEntry.value.followerIds.indexOf(followerId)
-        if (change.value) {
+        if (diff.right) {
           if (followerIdIndex === -1) {
             followsIdxEntry.value.followerIds.push(followerId)
           }
-        } else {
+        } else if (diff.left) {
           if (followerIdIndex !== -1) {
             followsIdxEntry.value.followerIds.splice(followerIdIndex, 1)
           }
         }
-        await this.followsIdx.put(followsIdxEntry.key, followsIdxEntry.value)
+        await batch.put(this.followsIdx.constructBeeKey(followsIdxEntry.key), followsIdxEntry.value)
       } finally {
         release()
         pend()
@@ -194,21 +191,13 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
       }
     })
 
-    this.createIndexer('ctzn.network/thread-idx', ['ctzn.network/comment'], async (db, change) => {
+    this.createIndexer('ctzn.network/thread-idx', ['ctzn.network/comment'], async (batch, db, diff) => {
       const pend = perf.measure(`privateUserDb:thread-indexer`)
-      const commentUrl = constructEntryUrl(db.url, 'ctzn.network/comment', change.keyParsed.key)
-      let replyRoot = change.value?.reply?.root
-      let replyParent = change.value?.reply?.parent
-      let community = change.value?.community
-      if (!change.value) {
-        const oldEntry = await db.bee.checkout(change.seq).get(change.key, {timeout: 10e3})
-        replyRoot = oldEntry.value.reply?.root
-        replyParent = oldEntry.value.reply?.parent
-        community = oldEntry.value?.community
-      }
-      if (!replyRoot) {
-        return // not a reply, ignore
-      }
+      const commentUrl = diff.right?.url || diff.left?.url
+      const replyRoot = (diff.right || diff.left)?.value?.reply?.root
+      let replyParent = (diff.right || diff.left)?.value?.reply?.parent
+      const community = (diff.right || diff.left)?.value?.community
+
       if (!!community && db.url !== this.publicUserDb.url) {
         return // not a self post or by me, ignore
       }
@@ -232,16 +221,16 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
             }
           }
           let itemUrlIndex = threadIdxEntry.value.items.findIndex(c => c.dbUrl === commentUrl)
-          if (change.value) {
+          if (diff.right) {
             if (itemUrlIndex === -1) {
               const authorId = db.userId
               threadIdxEntry.value.items.push({dbUrl: commentUrl, authorId})
-              await this.threadIdx.put(threadIdxEntry.key, threadIdxEntry.value)
+              await batch.put(this.threadIdx.constructBeeKey(threadIdxEntry.key), threadIdxEntry.value)
             }
-          } else {
+          } else if (diff.left) {
             if (itemUrlIndex !== -1) {
               threadIdxEntry.value.items.splice(itemUrlIndex, 1)
-              await this.threadIdx.put(threadIdxEntry.key, threadIdxEntry.value)
+              await batch.put(this.threadIdx.constructBeeKey(threadIdxEntry.key), threadIdxEntry.value)
             }
           }
         } finally {
@@ -251,20 +240,14 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
       }
     })
 
-    this.createIndexer('ctzn.network/reaction-idx', ['ctzn.network/reaction'], async (db, change) => {
-      const idxKey = change.keyParsed.key.split(':').slice(1).join(':')
+    this.createIndexer('ctzn.network/reaction-idx', ['ctzn.network/reaction'], async (batch, db, diff) => {
+      const idxKey = (diff.right || diff.left).key.split(':').slice(1).join(':')
       
       const pend = perf.measure(`privateUserDb:reactions-indexer`)
       const release = await this.lock(`reactions-idx:${idxKey}`)
       try {
-        const reactionUrl = constructEntryUrl(db.url, 'ctzn.network/reaction', change.keyParsed.key)
-        let subject = change.value?.subject
-        let oldReaction
-        if (!subject) {
-          const oldEntry = await db.bee.checkout(change.seq).get(change.key, {timeout: 10e3})
-          subject = oldEntry.value.subject
-          oldReaction = oldEntry.value.reaction
-        }
+        const reactionUrl = (diff.right || diff.left).url
+        const subject = (diff.right || diff.left).value.subject
 
         let reactionsIdxEntry = await this.reactionsIdx.get(subject.dbUrl)
         if (!reactionsIdxEntry) {
@@ -277,28 +260,28 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
           }
         }
   
-        if (change.value?.reaction) {
+        if (diff.right) {
           let i = -1
-          if (reactionsIdxEntry.value.reactions[change.value.reaction]) {
-            i = reactionsIdxEntry.value.reactions[change.value.reaction].indexOf(reactionUrl)
+          if (reactionsIdxEntry.value.reactions[diff.right.value.reaction]) {
+            i = reactionsIdxEntry.value.reactions[diff.right.value.reaction].indexOf(reactionUrl)
           }
           if (i === -1) {
-            if (!reactionsIdxEntry.value.reactions[change.value.reaction]) {
-              reactionsIdxEntry.value.reactions[change.value.reaction] = []
+            if (!reactionsIdxEntry.value.reactions[diff.right.value.reaction]) {
+              reactionsIdxEntry.value.reactions[diff.right.value.reaction] = []
             }
-            reactionsIdxEntry.value.reactions[change.value.reaction].push(reactionUrl)
+            reactionsIdxEntry.value.reactions[diff.right.value.reaction].push(reactionUrl)
           }
-        } else if (oldReaction) {
-          let i = reactionsIdxEntry.value.reactions[oldReaction]?.indexOf(reactionUrl)
+        } else if (diff.left) {
+          let i = reactionsIdxEntry.value.reactions[diff.left.value.reaction]?.indexOf(reactionUrl)
           if (i !== -1) {
-            reactionsIdxEntry.value.reactions[oldReaction].splice(i, 1)
-            if (!reactionsIdxEntry.value.reactions[oldReaction].length) {
-              delete reactionsIdxEntry.value.reactions[oldReaction]
+            reactionsIdxEntry.value.reactions[diff.left.value.reaction].splice(i, 1)
+            if (!reactionsIdxEntry.value.reactions[diff.left.value.reaction].length) {
+              delete reactionsIdxEntry.value.reactions[diff.left.value.reaction]
             }
           }
         }
   
-        await this.reactionsIdx.put(reactionsIdxEntry.key, reactionsIdxEntry.value)
+        await batch.put(this.reactionsIdx.constructBeeKey(reactionsIdxEntry.key), reactionsIdxEntry.value)
       } finally {
         release()
         pend()

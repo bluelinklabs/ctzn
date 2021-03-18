@@ -103,7 +103,6 @@ export class CommunitiesView extends BaseView {
   }
 
   teardown () {
-    clearInterval(this.fetchLatestInterval)
     if (this.api?.socket) this.api?.close()
   }
 

@@ -2,10 +2,9 @@ import { promises as fsp } from 'fs'
 import * as path from 'path'
 import pump from 'pump'
 import concat from 'concat-stream'
-import Hyperbee from 'hyperbee'
 import { client } from './hyperspace.js'
+import Hyperbee from 'hyperbee'
 import * as hyperspace from './hyperspace.js'
-import { beeHackWrap } from './base.js'
 import { PublicServerDB, PrivateServerDB } from './server.js'
 import { PublicCitizenDB, PrivateCitizenDB } from './citizen.js'
 import { PublicCommunityDB } from './community.js'
@@ -253,55 +252,13 @@ var _didIndexRecently = false // NOTE used only for tests, see whenAllSynced
 export async function onDatabaseChange (changedDb, indexingDbsToUpdate = undefined) {
   const pend = perf.measure('onDatabaseChange')
   _didIndexRecently = true
-  let lowestStart = undefined
-  const dbIndexStates = {}
+
   for (let indexingDb of (indexingDbsToUpdate || getAllIndexingDbs())) {
     let subscribedUrls = await indexingDb.getSubscribedDbUrls()
-    if (subscribedUrls.includes(changedDb.url)) {
-      const indexStates = await Promise.all(
-        indexingDb.indexers.map(indexer => indexer.getState(changedDb.url))
-      )
-      dbIndexStates[indexingDb.url] = indexStates
-      
-      let indexLowestStart = indexStates.reduce((acc, state) => {
-        let start = state?.value?.subject?.lastIndexedSeq || 0
-        if (acc === undefined) return start
-        return Math.min(acc, start)
-      }, undefined)
-      lowestStart = lowestStart === undefined ? indexLowestStart : Math.min(lowestStart, indexLowestStart)
-    }
-  }
-  if (lowestStart === undefined) {
-    pend()
-    return
+    if (!subscribedUrls.includes(changedDb.url)) continue
+    await indexingDb.updateIndexes({changedDb})
   }
 
-  const pend2 = perf.measure('createHistoryStream')
-  let changes = await new Promise((resolve, reject) => {
-    pump(
-      changedDb.bee.createHistoryStream({gt: lowestStart}),
-      concat(resolve),
-      err => {
-        if (err) reject(err)
-      }
-    )
-  })
-  pend2()
-  if (changes.length === 0) {
-    pend()
-    return
-  }
-
-  for (let indexingDb of (indexingDbsToUpdate || getAllIndexingDbs())) {
-    if (dbIndexStates[indexingDb.url]) {
-      await indexingDb.updateIndexes({
-        changedDb,
-        indexStates: dbIndexStates[indexingDb.url],
-        changes,
-        lowestStart
-      })
-    }
-  }
   pend()
 }
 
@@ -328,39 +285,7 @@ export async function catchupIndexes (indexingDb, dbsToCatchup = undefined) {
     if (!subscribedUrls.includes(changedDb.url)) {
       continue
     }
-
-    const indexStates = await Promise.all(
-      indexingDb.indexers.map(indexer => indexer.getState(changedDb.url))
-    )
-        
-    const lowestStart = indexStates.reduce((acc, state) => {
-      let start = state?.value?.subject?.lastIndexedSeq || 0
-      if (acc === undefined) return start
-      return Math.min(acc, start)
-    }, undefined) || 0
-
-    await changedDb.whenSynced()
-    const pend2 = perf.measure('createHistoryStream')
-    let changes = await new Promise((resolve, reject) => {
-      pump(
-        changedDb.bee.createHistoryStream({gt: lowestStart}),
-        concat(resolve),
-        err => {
-          if (err) reject(err)
-        }
-      )
-    })
-    pend2()
-    if (changes.length === 0) {
-      continue
-    }
-
-    await indexingDb.updateIndexes({
-      changedDb,
-      indexStates,
-      changes,
-      lowestStart
-    })
+    await indexingDb.updateIndexes({changedDb})
   }
   pend()
 }
@@ -394,10 +319,10 @@ async function loadDbByType (userId, dbUrl) {
     keyEncoding: 'utf8',
     valueEncoding: 'json'
   })
-  await beeHackWrap({_ident: dbUrl}, 'ready()', bee.ready())
+  await bee.ready()
   client.replicate(bee.feed)
 
-  const dbDesc = await beeHackWrap({_ident: dbUrl}, `get(_db)`, bee.get('_db', {wait: true, timeout: 10e3}))
+  const dbDesc = await bee.get('_db', {wait: true, timeout: 10e3})
   if (!dbDesc) throw new Error('Failed to load database description')
   if (dbDesc.value?.dbType === 'ctzn.network/public-citizen-db') {
     return new PublicCitizenDB(userId, key) 

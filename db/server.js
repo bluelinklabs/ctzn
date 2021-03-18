@@ -38,18 +38,17 @@ export class PrivateServerDB extends BaseHyperbeeDB {
     this.accountSessions = this.getTable('ctzn.network/account-session')
     this.userDbIdx = this.getTable('ctzn.network/user-db-idx')
 
-    this.createIndexer('ctzn.network/user-db-idx', ['ctzn.network/user'], async (db, change) => {
+    this.createIndexer('ctzn.network/user-db-idx', ['ctzn.network/user'], async (batch, db, diff) => {
       const pend = perf.measure(`privateServerDb:user-db-indexer`)
       const release = await this.lock('user-db-idx')
       try {
-        let oldEntry = await db.bee.checkout(change.seq).get(change.key)
-        if (oldEntry?.value?.dbUrl) {
-          await this.userDbIdx.del(oldEntry.value.dbUrl)
+        if (diff.left?.value?.dbUrl) {
+          await batch.del(this.userDbIdx.constructBeeKey(diff.left?.value?.dbUrl))
         }
-        if (change.value) {
-          await this.userDbIdx.put(change.value.dbUrl, {
-            dbUrl: change.value.dbUrl,
-            userId: constructUserId(change.value.username)
+        if (diff.right?.value) {
+          await batch.put(this.userDbIdx.constructBeeKey(diff.right.value.dbUrl), {
+            dbUrl: diff.right.value.dbUrl,
+            userId: constructUserId(diff.right.value.username)
           })
         }
       } finally {

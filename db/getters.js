@@ -113,10 +113,14 @@ async function fetchIndexedPosts (postsFeedEntries, userIdxId = undefined, {incl
 
       const userId = await fetchUserId(origin)
       const publicUserDb = publicUserDbs.get(userId)
-      if (!publicUserDb) return undefined
+      if (!publicUserDb) {
+        return undefined
+      }
 
       const postEntry = await publicUserDb.posts.get(key)
-      if (!postEntry) return undefined
+      if (!postEntry) {
+        return undefined
+      }
       postEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', key)
       postEntry.author = await fetchAuthor(userId, authorsCache)
       postEntry.reactions = (await fetchReactions(postEntry, userIdxId)).reactions

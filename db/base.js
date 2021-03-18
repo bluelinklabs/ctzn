@@ -1,8 +1,8 @@
 import EventEmitter from 'events'
 import _debounce from 'lodash.debounce'
 import { client } from './hyperspace.js'
-import * as schemas from '../lib/schemas.js'
 import Hyperbee from 'hyperbee'
+import * as schemas from '../lib/schemas.js'
 import pump from 'pump'
 import concat from 'concat-stream'
 import through2 from 'through2'
@@ -15,8 +15,8 @@ import { ValidationError } from '../lib/errors.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import { DbIndexingIssue } from '../lib/issues/db-indexing.js'
 import { DbmethodBadResponse } from '../lib/issues/dbmethod-bad-response.js'
-import { HyperbeeStallIssue } from '../lib/issues/hyperbee-stall.js'
 
+const FIRST_HYPERBEE_BLOCK = 2
 const READ_TIMEOUT = 10e3
 const BACKGROUND_INDEXING_DELAY = 5e3 // how much time is allowed to pass before globally indexing an update
 const BLOB_CHUNK_SIZE = bytes('64kb')
@@ -43,21 +43,6 @@ const blobPointer = schemas.createValidator({
     end: {type: 'number'}
   }
 })
-
-export async function beeHackWrap (db, method, promise) {
-  let to
-  const toPromise = new Promise((resolve) => {
-    to = setTimeout(() => {
-      issues.add(new HyperbeeStallIssue({db, method}))
-      resolve(undefined)
-    }, READ_TIMEOUT + 500)
-    to.unref()
-  })
-  const clearTO = () => clearTimeout(to)
-  const res = Promise.race([promise, toPromise])
-  res.then(clearTO, clearTO)
-  return res
-}
 
 export class BaseHyperbeeDB extends EventEmitter {
   constructor (_ident, key, {isPrivate} = {isPrivate: false}) {
@@ -102,7 +87,7 @@ export class BaseHyperbeeDB extends EventEmitter {
       keyEncoding: 'utf8',
       valueEncoding: 'json'
     })
-    await beeHackWrap(this, 'ready()', this.bee.ready())
+    await this.bee.ready()
     if (!this.isPrivate) {
       client.replicate(this.bee.feed)
     }
@@ -117,7 +102,7 @@ export class BaseHyperbeeDB extends EventEmitter {
       this.onDatabaseCreated()
     }
 
-    const desc = await beeHackWrap(this, 'get(_db)', this.bee.get('_db', {timeout: READ_TIMEOUT}))
+    const desc = await this.bee.get('_db', {timeout: READ_TIMEOUT})
     if (desc) {
       dbDescription.assert(desc.value)
       this.desc = desc.value
@@ -133,24 +118,24 @@ export class BaseHyperbeeDB extends EventEmitter {
 
     this.dbmethodCalls = this.getTable('ctzn.network/dbmethod-call')
     this.dbmethodResults = this.getTable('ctzn.network/dbmethod-result')
-    this.createIndexer('ctzn.network/dbmethod-result', ['ctzn.network/dbmethod-call'], async (db, change) => {
-      if (!change.value) return // ignore deletes
+    this.createIndexer('ctzn.network/dbmethod-result', ['ctzn.network/dbmethod-call'], async (batch, db, diff) => {
+      if (!diff.right) return // ignore deletes
 
       const writeDbMethodResult = async (code, details) => {
         const value = {
           call: {
-            dbUrl: constructEntryUrl(db.url, change.keyParsed.schemaId, change.keyParsed.key),
+            dbUrl: diff.right.url,
             authorId: db.userId
           },
           code,
           details,
           createdAt: (new Date()).toISOString()
         }
-        const key = this.dbmethodResults.schema.generateKey(value)
-        return this.dbmethodResults.put(key, value)
+        const key = this.dbmethodResults.constructBeeKey(this.dbmethodResults.schema.generateKey(value))
+        return batch.put(key, value)
       }
 
-      const {database, method, args} = change.value
+      const {database, method, args} = diff.right.value
       if (database.dbUrl !== this.url) {
         return // not a call to this database
       }
@@ -237,44 +222,75 @@ export class BaseHyperbeeDB extends EventEmitter {
     this.dbmethods[methodId] = new DbMethod(this, methodId, schema, handler)
   }
 
-  async updateIndexes ({changedDb, indexStates, changes, lowestStart}) {
+  async updateIndexes ({changedDb}) {
     if (!this.key) return
     const release = await this.lock(`update-indexes`)
+
+    const batch = this.bee.batch()
     try {
+      const indexStates = await Promise.all(this.indexers.map(i => i.getState(changedDb.url)))
       for (let i = 0; i < this.indexers.length; i++) {
         const indexer = this.indexers[i]
         const indexState = indexStates[i]
-        
-        let start = indexState?.value?.subject?.lastIndexedSeq || 0
-        if (start === changedDb.bee.version - 1) continue
-        
-        let lastChange
-        for (let change of changes.slice(start - lowestStart)) {
-          lastChange = change
-          let keyParts = change.key.split('\x00')
-          change.keyParsed = {
-            schemaId: keyParts.slice(0, 2).join('/'),
-            key: keyParts[2]
-          }
-          if (indexer.isInterestedIn(change.keyParsed.schemaId)) {
-            try {
-              await indexer.index(changedDb, change)
-            } catch (e) {
-              issues.add(new DbIndexingIssue({
-                error: e,
-                changedDb,
-                change,
-                indexingDb: this,
-                indexer
-              }))
-              break
+        let start = indexState?.value?.subject?.lastIndexedSeq || FIRST_HYPERBEE_BLOCK
+        if (start === changedDb.bee.version) continue
+
+        // console.log('Calling diff for', indexer.schemaId)
+        // console.log('Indexing DB:', this._ident)
+        // console.log('Changed DB:', changedDb._ident)
+        // console.log('Tables:', indexer.targetSchemaIds)
+        // console.log('Start:', start)
+        // console.log('Current version:', changedDb.bee.version)
+        const diffLists = await Promise.all(indexer.targetSchemaIds.map(schemaId =>
+          changedDb.getTable(schemaId).listDiff(start).catch(e => [])
+        ))
+
+        const diffs = []
+        for (let j = 0; j < indexer.targetSchemaIds.length; j++) {
+          const tableSchemaId = indexer.targetSchemaIds[j]
+          for (let diff of diffLists[j]) {
+            if (diff.left) {
+              diff.left.schemaId = tableSchemaId
+              diff.left.url = constructEntryUrl(changedDb.url, tableSchemaId, diff.left.key)
             }
+            if (diff.right) {
+              diff.right.schemaId = tableSchemaId
+              diff.right.url = constructEntryUrl(changedDb.url, tableSchemaId, diff.right.key)
+            }
+            diffs.push(diff)
           }
         }
-        if (lastChange) {
-          indexer.updateState(changedDb.url, lastChange.seq)
+        diffs.sort((a, b) => {
+          let aSeq = a.right?.seq || a.left?.seq || FIRST_HYPERBEE_BLOCK
+          let bSeq = b.right?.seq || b.left?.seq || FIRST_HYPERBEE_BLOCK
+          return aSeq - bSeq
+        })
+        // console.log(diffs)
+
+        if (diffs.length === 0) {
+          continue
+        }
+
+        let lastDiff
+        for (let diff of diffs) {
+          try {
+            await indexer.index(batch, changedDb, diff)
+            lastDiff = diff
+          } catch (e) {
+            issues.add(new DbIndexingIssue({
+              error: e,
+              changedDb,
+              diff,
+              indexingDb: this,
+              indexer
+            }))
+          }
+        }
+        if (lastDiff) {
+          await indexer.updateState(batch, changedDb.url, changedDb.bee.version)
         }
       }
+      await batch.flush()
     } finally {
       release()
     }
@@ -326,14 +342,14 @@ class Blobs {
   }
 
   async getPointer (key) {
-    const pointer = await beeHackWrap(this.db, `get(${key})`, this.kv.get(key, {timeout: READ_TIMEOUT}))
+    const pointer = await this.kv.get(key, {timeout: READ_TIMEOUT})
     if (!pointer) throw new Error('Blob not found')
     blobPointer.assert(pointer.value)
     return pointer.value
   }
 
   async createReadStream (key) {
-    const pointer = await beeHackWrap(this.db, `get(${key})`, this.kv.get(key, {timeout: READ_TIMEOUT}))
+    const pointer = await this.kv.get(key, {timeout: READ_TIMEOUT})
     if (!pointer) throw new Error('Blob not found')
     blobPointer.assert(pointer.value)
     return this.feed.createReadStream({
@@ -379,9 +395,15 @@ class Table {
     this.db = db
     this.bee = this.db.bee.sub(domain).sub(name)
     this.schema = schema
+    this._schemaDomain = domain
+    this._schemaName = name
     this._onPutCbs = undefined
     this._onDelCbs = undefined
     this.lock = (id = '') => this.db.lock(`${this.schema.id}:${id}`)
+  }
+
+  constructBeeKey (key) {
+    return this.bee.keyEncoding.encode(key)
   }
 
   constructEntryUrl (key) {
@@ -390,7 +412,7 @@ class Table {
 
   async get (key) {
     const pend = perf.measure('table.get')
-    let entry = await beeHackWrap(this.db, `get(${String(key)})`, this.bee.get(String(key), {timeout: READ_TIMEOUT}))
+    let entry = await this.bee.get(String(key), {timeout: READ_TIMEOUT})
     if (entry) {
       this.schema.assertValid(entry.value)
     }
@@ -434,7 +456,7 @@ class Table {
     const pend = perf.measure('table.list')
     opts = opts || {}
     opts.timeout = READ_TIMEOUT
-    const res = beeHackWrap(this.db, `list(${JSON.stringify(opts)})`, new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       pump(
         this.createReadStream(opts),
         concat(resolve),
@@ -443,8 +465,7 @@ class Table {
           if (err) reject(err)
         }
       )
-    }))
-    return res || []
+    })
   }
 
   scanFind (opts, fn) {
@@ -496,6 +517,23 @@ class Table {
     this._onDelCbs = this._onDelCbs || []
     this._onDelCbs.push(cb)
   }
+
+  async listDiff (other, opts) {
+    const pend = perf.measure('table.listDiff')
+    opts = opts || {}
+    opts.timeout = READ_TIMEOUT
+    const co = this.db.bee.checkout(other).sub(this._schemaDomain).sub(this._schemaName)
+    return new Promise((resolve, reject) => {
+      pump(
+        co.createDiffStream(this.bee.version),
+        concat(resolve),
+        err => {
+          pend()
+          if (err) reject(err)
+        }
+      )
+    })
+  }
 }
 
 class DbMethod {
@@ -545,7 +583,7 @@ class Indexer {
     return this.indexStatesCache[url]
   }
 
-  updateState (url, seq) {
+  async updateState (batch, url, seq) {
     this.indexStatesCache[url] = {
       value: {
         schemaId: this.schemaId,
@@ -554,16 +592,10 @@ class Indexer {
       }
     }
     if (this.schemaId.startsWith('memory:')) return
-    const put = getDebouncedFn(
-      `${this.db.url}:${this.schemaId}:${url}`,
-      (k, v) => this.db.indexState.put(k, v).catch(e => {
-        console.error('Failed to update index state')
-        console.error(this.schemaId, url)
-        console.error(e)
-      }),
-      100
+    await batch.put(
+      this.db.indexState.constructBeeKey(`${this.schemaId}:${url}`),
+      this.indexStatesCache[url].value
     )
-    put(`${this.schemaId}:${url}`, this.indexStatesCache[url].value)
   }
 
   isInterestedIn (schemaId) {
