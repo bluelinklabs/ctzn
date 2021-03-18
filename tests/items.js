@@ -13,7 +13,7 @@ test.after.always(async t => {
 test('unique items (autokey)', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
-  instances = [inst]
+  instances.push(inst)
   let api = inst.api
 
   await sim.createCitizen(inst, 'alice')
@@ -129,7 +129,7 @@ test('unique items (autokey)', async t => {
 test('unique items (property id)', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
-  instances = [inst]
+  instances.push(inst)
   let api = inst.api
 
   await sim.createCitizen(inst, 'alice')
@@ -245,7 +245,7 @@ test('unique items (property id)', async t => {
 test('semi-fungible items', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
-  instances = [inst]
+  instances.push(inst)
   let api = inst.api
 
   await sim.createCitizen(inst, 'alice')
@@ -432,7 +432,7 @@ test('semi-fungible items', async t => {
 test('fungible items', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
-  instances = [inst]
+  instances.push(inst)
   let api = inst.api
 
   await sim.createCitizen(inst, 'alice')
@@ -540,7 +540,7 @@ test('fungible items', async t => {
 test('destroying items', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
-  instances = [inst]
+  instances.push(inst)
   let api = inst.api
 
   await sim.createCitizen(inst, 'alice')
@@ -593,7 +593,7 @@ test('destroying items', async t => {
 test('creating items with an owner that already possesses some of the item', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
-  instances = [inst]
+  instances.push(inst)
   let api = inst.api
 
   await sim.createCitizen(inst, 'alice')
@@ -637,7 +637,7 @@ test('creating items with an owner that already possesses some of the item', asy
 test('ownership permissions', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
-  instances = [inst]
+  instances.push(inst)
   let api = inst.api
 
   await sim.createCitizen(inst, 'alice')
@@ -691,7 +691,7 @@ test('ownership permissions', async t => {
 test('overspending', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
-  instances = [inst]
+  instances.push(inst)
   let api = inst.api
 
   await sim.createCitizen(inst, 'alice')
@@ -724,7 +724,7 @@ test('overspending', async t => {
 test('managing item classes', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
-  instances = [inst]
+  instances.push(inst)
   let api = inst.api
 
   await sim.createCitizen(inst, 'alice')
@@ -784,7 +784,7 @@ test('managing item classes', async t => {
 test('inventory view', async t => {
   let sim = new TestFramework()
   let inst = await createServer()
-  instances = [inst]
+  instances.push(inst)
   let api = inst.api
 
   await sim.createCitizen(inst, 'alice')
