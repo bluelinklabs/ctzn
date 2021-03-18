@@ -10,6 +10,7 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
   constructor (userId, key) {
     super(`public:${userId}`, key)
     this.userId = userId
+    this.cachedSubscriptions = []
   }
 
   get dbType () {
@@ -29,10 +30,13 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
     this.memberships = this.getTable('ctzn.network/community-membership')
     this.ownedItemsIndex = this.getTable('ctzn.network/owned-items-idx')
 
-    this.memberships.onPut(() => {
+    this.cachedSubscriptions = (await this.memberships.list()).map(entry => entry.value.community.dbUrl)
+    this.memberships.onPut(async () => {
+      this.cachedSubscriptions = (await this.memberships.list()).map(entry => entry.value.community.dbUrl)
       this.emit('subscriptions-changed')
     })
-    this.memberships.onDel(() => {
+    this.memberships.onDel(async () => {
+      this.cachedSubscriptions = (await this.memberships.list()).map(entry => entry.value.community.dbUrl)
       this.emit('subscriptions-changed')
     })
 
@@ -74,7 +78,7 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
   }
 
   async getSubscribedDbUrls () {
-    return (await this.memberships.list()).map(entry => entry.value.community.dbUrl)
+    return this.cachedSubscriptions
   }
 }
 
@@ -84,6 +88,7 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
     this.userId = userId
     this.publicServerDb = publicServerDb
     this.publicUserDb = publicUserDb
+    this.cachedSubscriptions = []
   }
 
   get dbType () {
@@ -97,6 +102,16 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
     this.followsIdx = this.getTable('ctzn.network/follow-idx')
     this.notificationsIdx = this.getTable('ctzn.network/notification-idx')
     this.reactionsIdx = this.getTable('ctzn.network/reaction-idx')
+
+    this.cachedSubscriptions = [this.publicUserDb.url].concat((await this.publicUserDb.follows.list()).map(entry => entry.value.subject.dbUrl))
+    this.publicUserDb.getTable('ctzn.network/follow').onPut(async () => {
+      this.cachedSubscriptions = [this.publicUserDb.url].concat((await this.publicUserDb.follows.list()).map(entry => entry.value.subject.dbUrl))
+      this.emit('subscriptions-changed')
+    })
+    this.publicUserDb.getTable('ctzn.network/follow').onDel(async () => {
+      this.cachedSubscriptions = [this.publicUserDb.url].concat((await this.publicUserDb.follows.list()).map(entry => entry.value.subject.dbUrl))
+      this.emit('subscriptions-changed')
+    })
 
     const NOTIFICATIONS_SCHEMAS = [
       'ctzn.network/follow',
@@ -184,9 +199,6 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
       } finally {
         release()
         pend()
-      }
-      if (db.url === this.publicUserDb.url) {
-        this.emit('subscriptions-changed', {userId: subject.userId})
       }
     })
 
@@ -289,6 +301,6 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
   }
 
   async getSubscribedDbUrls () {
-    return [this.publicUserDb.url].concat((await this.publicUserDb.follows.list()).map(entry => entry.value.subject.dbUrl))
+    return this.cachedSubscriptions
   }
 }

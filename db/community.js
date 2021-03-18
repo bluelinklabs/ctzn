@@ -10,6 +10,7 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
   constructor (userId, key) {
     super(`public:${userId}`, key)
     this.userId = userId
+    this.cachedSubscriptions = []
   }
 
   get dbType () {
@@ -53,10 +54,13 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
     this.notificationsIdx = this.getTable('ctzn.network/notification-idx')
     this.reactionsIdx = this.getTable('ctzn.network/reaction-idx')
 
-    this.members.onPut(() => {
+    this.cachedSubscriptions = (await this.members.list()).map(entry => entry.value.user.dbUrl)
+    this.members.onPut(async () => {
+      this.cachedSubscriptions = (await this.members.list()).map(entry => entry.value.user.dbUrl)
       this.emit('subscriptions-changed')
     })
-    this.members.onDel(() => {
+    this.members.onDel(async () => {
+      this.cachedSubscriptions = (await this.members.list()).map(entry => entry.value.user.dbUrl)
       this.emit('subscriptions-changed')
     })
 
@@ -291,6 +295,6 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
   }
 
   async getSubscribedDbUrls () {
-    return (await this.members.list()).map(entry => entry.value.user.dbUrl)
+    return this.cachedSubscriptions
   }
 }
