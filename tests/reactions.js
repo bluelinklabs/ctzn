@@ -47,35 +47,22 @@ test('self indexes', async t => {
   await carla.react({subject: bob.posts[1], reaction: 'woah'})
   await carla.react({subject: alice.posts[0], reaction: 'woah'})
 
-  await new Promise(r => setTimeout(r, 5e3))
-  await api.debug.whenAllSynced()
-
-  // see all reactions by users followed by authed
   await bob.login()
   let res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[0].url)
   t.is(res.subject.dbUrl, bob.posts[0].url)
   t.is(res.reactions.like.length, 2)
   t.is(res.reactions.woah.length, 1)
 
-  // see all reactions by users followed by authed
   await bob.login()
   res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[1].url)
   t.is(res.subject.dbUrl, bob.posts[1].url)
   t.is(res.reactions.like.length, 1)
   t.is(res.reactions.woah.length, 2)
 
-  // see all reactions by users followed by author
   await carla.login()
   res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[0].url)
   t.is(res.subject.dbUrl, bob.posts[0].url)
   t.is(res.reactions.like.length, 2)
-  t.is(res.reactions.woah.length, 1)
-
-  // dont see bob's reaction because he's not followed by authed or author
-  await carla.login()
-  res = await api.view.get('ctzn.network/reactions-to-view', alice.posts[0].url)
-  t.is(res.subject.dbUrl, alice.posts[0].url)
-  t.is(res.reactions.like.length, 1)
   t.is(res.reactions.woah.length, 1)
 
   // the rest are making sure changes are indexed
@@ -114,31 +101,22 @@ test('community indexes', async t => {
   await bob.react({subject: bob.posts[2], reaction: 'like'})
   await carla.react({subject: bob.posts[2], reaction: 'woah'})
 
-  await new Promise(r => setTimeout(r, 5e3))
-  await api.debug.whenAllSynced()
-
-  // see only community member reactions no matter who is authed
   await bob.login()
   let res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[2].url)
   t.is(res.subject.dbUrl, bob.posts[2].url)
   t.is(res.reactions.like.length, 2)
-  t.is(res.reactions.woah.length, 1)
+  t.falsy(res.reactions.woah?.length)
 
-  // see only community member votes no matter who is authed
   await carla.login()
   res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[2].url)
   t.is(res.subject.dbUrl, bob.posts[2].url)
   t.is(res.reactions.like.length, 2)
-  t.is(res.reactions.woah.length, 1)
-
-  // the rest are making sure changes are indexed
+  t.falsy(res.reactions.woah?.length)
 
   await bob.login()
   await bob.unreact({subject: bob.posts[2], reaction: 'like'})
-  await new Promise(r => setTimeout(r, 5e3))
-  await api.debug.whenAllSynced()
   res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[2].url)
   t.is(res.subject.dbUrl, bob.posts[2].url)
   t.is(res.reactions.like.length, 1)
-  t.is(res.reactions.woah.length, 1)
+  t.falsy(res.reactions.woah?.length)
 })

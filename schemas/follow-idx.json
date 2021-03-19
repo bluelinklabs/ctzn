@@ -3,6 +3,7 @@
   "title": "Follows Index",
   "description": "Aggregated follows for users on the server",
   "type": "json-table",
+  "keyTemplate": [{"type": "json-pointer", "value": "/subjectId"}],
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",

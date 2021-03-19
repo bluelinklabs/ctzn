@@ -238,14 +238,6 @@ export function* getAllDbs () {
 export function* getAllIndexingDbs () {
   if (publicServerDb) yield publicServerDb
   if (privateServerDb) yield privateServerDb
-  for (let db of privateUserDbs) {
-    yield db[1]
-  }
-  for (let db of publicUserDbs) {
-    if (db[1].writable) {
-      yield db[1]
-    }
-  }
 }
 
 var _didIndexRecently = false // NOTE used only for tests, see whenAllSynced
@@ -256,6 +248,7 @@ export async function onDatabaseChange (changedDb, indexingDbsToUpdate = undefin
   for (let indexingDb of (indexingDbsToUpdate || getAllIndexingDbs())) {
     let subscribedUrls = await indexingDb.getSubscribedDbUrls()
     if (!subscribedUrls.includes(changedDb.url)) continue
+    console.log('onDatabaseChange()', indexingDb._ident, 'for', changedDb._ident)
     await indexingDb.updateIndexes({changedDb})
   }
 
@@ -263,17 +256,13 @@ export async function onDatabaseChange (changedDb, indexingDbsToUpdate = undefin
 }
 
 export async function catchupAllIndexes () {
-  await catchupIndexes(publicServerDb)
-  await catchupIndexes(privateServerDb)
-  for (let db of publicUserDbs) {
-    await catchupIndexes(db[1])
-  }
-  for (let db of privateUserDbs) {
-    await catchupIndexes(db[1])
+  for (let indexingDb of getAllIndexingDbs()) {
+    await catchupIndexes(indexingDb)
   }
 }
 
 export async function catchupIndexes (indexingDb, dbsToCatchup = undefined) {
+  console.log('catchupIndexes()', indexingDb._ident)
   const pend = perf.measure('catchupIndexes')
   _didIndexRecently = true
   if (!Array.from(getAllIndexingDbs()).includes(indexingDb)) {

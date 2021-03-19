@@ -3,6 +3,7 @@
   "title": "Reaction Index",
   "description": "Aggregated reaction counts on a piece of content",
   "type": "json-table",
+  "keyTemplate": [{"type": "json-pointer", "value": "/subject/dbUrl"}],
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",

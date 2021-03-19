@@ -3,6 +3,7 @@
   "title": "Thread Index",
   "description": "Threaded replies to a piece of content",
   "type": "json-table",
+  "keyTemplate": [{"type": "json-pointer", "value": "/subject/dbUrl"}],
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",

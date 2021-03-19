@@ -64,9 +64,6 @@ test('user notifications index', async t => {
     await carla.react({subject: reply, reaction: 'woah'})
   }
 
-  await new Promise(r => setTimeout(r, 5e3))
-  await api.debug.whenAllSynced()
-
   await bob.login()
   var notifications = (await api.view.get('ctzn.network/notifications-view')).notifications
   notifications.sort((a, b) => new Date(b.item.createdAt) - new Date(a.item.createdAt))
@@ -80,8 +77,7 @@ test('user notifications index', async t => {
     [carla, 'comment', {text: 'Comment 2', reply: {root: bob.posts[0]}}],
     [carla, 'comment', {text: 'Reply 1', reply: {root: bob.posts[0], parent: alice.replies[0]}}],
     [alice, 'comment', {text: 'Comment 1', reply: {root: bob.posts[0]}}],
-    [carla, 'follow', bob],
-    [alice, 'follow', bob],
+    [carla, 'follow', bob]
   ])
 
   let notes1 = (await api.view.get('ctzn.network/notifications-view', {limit: 2})).notifications
@@ -161,16 +157,13 @@ test('user & community notifications index', async t => {
     await carla.react({subject: reply, reaction: 'woah'})
   }
 
-  await new Promise(r => setTimeout(r, 5e3))
-  await api.debug.whenAllSynced()
-
   await bob.login()
   var notifications = (await api.view.get('ctzn.network/notifications-view')).notifications
   notifications.sort((a, b) => new Date(b.item.createdAt) - new Date(a.item.createdAt))
   sim.testNotifications(t, notifications, [
     [carla, 'reaction', bob.replies[0], 'woah'],
     [carla, 'reaction', bob.posts[1], 'woah'],
-    // bob does not follow carla so he does not receive [carla, 'reaction', bob.posts[0], 'woah'],
+    [carla, 'reaction', bob.posts[0], 'woah'],
     [alice, 'reaction', bob.replies[0], 'like'],
     [alice, 'reaction', bob.posts[1], 'like'],
     [alice, 'reaction', bob.posts[0], 'like'],

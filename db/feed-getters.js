@@ -1,8 +1,8 @@
 import lexint from 'lexicographic-integer-encoding'
-import { publicUserDbs } from './index.js'
+import { publicServerDb, publicUserDbs } from './index.js'
 import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
-import { fetchAuthor, fetchReactions, fetchReplyCount } from './util.js'
+import { fetchAuthor, fetchReactions, fetchReplyCount, addPrefixToRangeOpts } from './util.js'
 import * as errors from '../lib/errors.js'
 
 const lexintEncoder = lexint('hex')
@@ -42,7 +42,10 @@ export async function listHomeFeed (opts, auth) {
       if (db.dbType === 'ctzn.network/public-citizen-db') {
         return db.posts.cursorRead({lt: opts?.lt, reverse: true})
       } else if (db.dbType === 'ctzn.network/public-community-db') {
-        return db.feedIdx.cursorRead({lt: opts?.lt, reverse: true})
+        // TODO fetch the correct home server DB for the community
+        const cursor = publicServerDb.feedIdx.cursorRead(addPrefixToRangeOpts(db.userId, {lt: opts?.lt, reverse: true}))
+        cursor.prefixLength = db.userId.length + 1
+        return cursor
       }
     })
 
@@ -56,6 +59,11 @@ export async function listHomeFeed (opts, auth) {
           if (!cursorResults[i]?.length) {
             whereIWas = `calling cursor.next for ${cursors[i].db._ident}`
             cursorResults[i] = await cursors[i].next(10)
+            if (cursorResults[i]?.length && cursors[i].prefixLength) {
+              for (let res of cursorResults[i]) {
+                res.key = res.key.slice(cursors[i].prefixLength)
+              }
+            }
           }
           if (cursorResults[i]?.length) {
             if (bestI === -1) {
@@ -79,7 +87,7 @@ export async function listHomeFeed (opts, auth) {
     const mergedCursor = mergeCursors(cursors)
     whereIWas = 'starting the for await'
     for await (let [db, entry] of mergedCursor) {
-      if (db.dbType === 'ctzn.network/public-community-db') {
+      if (db.dbType === 'ctzn.network/public-server-db') {
         const {origin, key} = parseEntryUrl(entry.value.item.dbUrl)
         
         whereIWas = `fetching the userId for ${origin}`
@@ -100,9 +108,9 @@ export async function listHomeFeed (opts, auth) {
       whereIWas = `fetching the author ${db.userId}`
       entry.author = await fetchAuthor(db.userId, authorsCache)
       whereIWas = `fetching the reactions for ${entry.url}`
-      entry.reactions = (await fetchReactions(entry, auth?.userId)).reactions
+      entry.reactions = (await fetchReactions(entry)).reactions
       whereIWas = `fetching the reply count for ${entry.url}`
-      entry.replyCount = await fetchReplyCount(entry, auth?.userId)
+      entry.replyCount = await fetchReplyCount(entry)
       postEntries.push(entry)
       if (postEntries.length >= limit) {
         break

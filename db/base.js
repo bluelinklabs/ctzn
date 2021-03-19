@@ -112,46 +112,11 @@ export class BaseHyperbeeDB extends EventEmitter {
       }
     }
 
+    this.dbmethodCalls = this.getTable('ctzn.network/dbmethod-call')
+    this.dbmethodResults = this.getTable('ctzn.network/dbmethod-result')
     for (let method of this.supportedMethods) {
       this.createDbMethod(`ctzn.network/${method}-method`, dbmethods[method])
     }
-
-    this.dbmethodCalls = this.getTable('ctzn.network/dbmethod-call')
-    this.dbmethodResults = this.getTable('ctzn.network/dbmethod-result')
-    this.createIndexer('ctzn.network/dbmethod-result', ['ctzn.network/dbmethod-call'], async (batch, db, diff) => {
-      if (!diff.right) return // ignore deletes
-
-      const writeDbMethodResult = async (code, details) => {
-        const value = {
-          call: {
-            dbUrl: diff.right.url,
-            authorId: db.userId
-          },
-          code,
-          details,
-          createdAt: (new Date()).toISOString()
-        }
-        const key = this.dbmethodResults.constructBeeKey(this.dbmethodResults.schema.generateKey(value))
-        return batch.put(key, value)
-      }
-
-      const {database, method, args} = diff.right.value
-      if (database.dbUrl !== this.url) {
-        return // not a call to this database
-      }
-      const methodDefinition = this.dbmethods[method]
-      if (!methodDefinition) {
-        return writeDbMethodResult('method-not-found')
-      }
-      try {
-        methodDefinition.validateCallArgs(args)
-        const res = await methodDefinition.handler(this, db, args)
-        methodDefinition.validateResponse(res)
-        return await writeDbMethodResult('success', res)
-      } catch (e) {
-        return await writeDbMethodResult(e.code || 'error', {message: e.toString()})
-      }
-    })
   }
 
   async teardown () {
@@ -190,7 +155,6 @@ export class BaseHyperbeeDB extends EventEmitter {
   watch (_cb) {
     const cb = _debounce(() => _cb(this), BACKGROUND_INDEXING_DELAY, {trailing: true})
     this.bee.feed.on('append', () => cb())
-    cb() // trigger immediately to update indexes from any previously synced changes that the indexer hasnt hit
   }
 
   async _eagerUpdate () {
@@ -487,13 +451,13 @@ class Table {
 
   cursorRead (opts = {}) {
     let lt = opts.lt
-    const reverse = opts.reverse
     let atEnd = false
     return {
+      opts,
       db: this.db,
       next: async (n) => {
         if (atEnd) return null
-        let res = await this.list({lt, reverse, limit: n})
+        let res = await this.list(Object.assign({}, opts, {lt, limit: n}))
         if (res.length === 0) {
           atEnd = true
           return null

@@ -821,21 +821,9 @@ test('inventory view', async t => {
     recp: {userId: carla.userId, dbUrl: carla.dbUrl}
   })
 
-  const idx1 = (await api.table.list(folks.userId, 'ctzn.network/owned-items-idx')).entries
-  t.is(idx1.length, 1)
-  t.is(idx1[0].value.item.key, folksBucks.result.details.key)
-  t.is(idx1[0].value.item.dbUrl, folksBucks.result.details.url)
-  t.is(idx1[0].value.item.userId, folks.userId)
-  const idx2 = (await api.table.list(bob.userId, 'ctzn.network/owned-items-idx')).entries
-  t.is(idx2.length, 1)
-  t.is(idx2[0].value.item.key, bobBucks.result.details.key)
-  t.is(idx2[0].value.item.dbUrl, bobBucks.result.details.url)
-  t.is(idx2[0].value.item.userId, folks.userId)
-  const idx3 = (await api.table.list(carla.userId, 'ctzn.network/owned-items-idx')).entries
-  t.is(idx3.length, 1)
-  t.is(idx3[0].value.item.key, carlaBucks.result.details.key)
-  t.is(idx3[0].value.item.dbUrl, carlaBucks.result.details.url)
-  t.is(idx3[0].value.item.userId, folks.userId)
+  await new Promise(r => setTimeout(r, 5e3))
+  await api.debug.whenAllSynced()
+
   const view1 = (await api.view.get('ctzn.network/owned-items-view', folks.userId)).items
   t.is(view1.length, 1)
   t.is(view1[0].key, folksBucks.result.details.key)
@@ -866,23 +854,8 @@ test('inventory view', async t => {
     qty: 2,
     recp: {userId: alice.userId, dbUrl: alice.dbUrl}
   })
-  const idx4 = (await api.table.list(folks.userId, 'ctzn.network/owned-items-idx')).entries
-  t.is(idx4.length, 1)
-  t.is(idx4[0].value.item.key, folksBucks.result.details.key)
-  t.is(idx4[0].value.item.dbUrl, folksBucks.result.details.url)
-  t.is(idx4[0].value.item.userId, folks.userId)
-  const idx5 = (await api.table.list(bob.userId, 'ctzn.network/owned-items-idx')).entries
-  t.is(idx5.length, 1)
-  t.is(idx5[0].value.item.key, bobBucks.result.details.key)
-  t.is(idx5[0].value.item.dbUrl, bobBucks.result.details.url)
-  t.is(idx5[0].value.item.userId, folks.userId)
-  const idx6 = (await api.table.list(carla.userId, 'ctzn.network/owned-items-idx')).entries
-  t.is(idx6.length, 0)
-  const idx7 = (await api.table.list(alice.userId, 'ctzn.network/owned-items-idx')).entries
-  t.is(idx7.length, 1)
-  t.is(idx7[0].value.item.key, aliceBucks.result.details.key)
-  t.is(idx7[0].value.item.dbUrl, aliceBucks.result.details.url)
-  t.is(idx7[0].value.item.userId, folks.userId)
+  await new Promise(r => setTimeout(r, 5e3))
+  await api.debug.whenAllSynced()
   const view4 = (await api.view.get('ctzn.network/owned-items-view', folks.userId)).items
   t.is(view4.length, 1)
   t.is(view4[0].key, folksBucks.result.details.key)

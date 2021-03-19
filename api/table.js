@@ -72,7 +72,7 @@ export function setup (wsServer) {
 async function load (databaseId, schemaId, authSettings = undefined) {
   databaseId = await fetchUserId(databaseId)
   const db = getDb(databaseId)
-  const table = db.tables[schemaId]
+  const table = db.getTable(schemaId)
   if (!table) throw new Error(`Table "${schemaId}" not found`)
   if (authSettings) {
     if (databaseId !== authSettings.assertOwner.userId) {

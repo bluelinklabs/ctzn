@@ -109,10 +109,6 @@ test('multiple users w/follows', async t => {
     text: 'Test 3'
   })
 
-  await new Promise(r => setTimeout(r, 5e3))
-  await api.debug.whenAllSynced()
-
-  // bob sees everyone's replies because he follows everybody
   await bob.login()
   let thread1 = (await api.view.get('ctzn.network/thread-view', bob.posts[0].url)).comments
   sim.testThread(t, thread1, [
@@ -127,7 +123,6 @@ test('multiple users w/follows', async t => {
     [carla, 'Carla Comment 2']
   ])
 
-  // alice sees everyone's replies because the author (bob) follows everybody
   await alice.login()
   let thread2 = (await api.view.get('ctzn.network/thread-view', bob.posts[0].url)).comments
   sim.testThread(t, thread2, [
@@ -142,7 +137,6 @@ test('multiple users w/follows', async t => {
     [carla, 'Carla Comment 2']
   ])
 
-  // bob sees everyone's replies because he follows everybody
   await bob.login()
   let thread3 = (await api.view.get('ctzn.network/thread-view', alice.posts[0].url)).comments
   sim.testThread(t, thread3, [
@@ -151,11 +145,12 @@ test('multiple users w/follows', async t => {
     [carla, 'Test 3']
   ])
 
-  // alice only sees her own replies because she follows nobody
   await alice.login()
   let thread4 = (await api.view.get('ctzn.network/thread-view', alice.posts[0].url)).comments
   sim.testThread(t, thread4, [
-    [alice, 'Test 1']
+    [alice, 'Test 1'],
+    [bob, 'Test 2'],
+    [carla, 'Test 3']
   ])
 })
 
@@ -172,6 +167,7 @@ test('community', async t => {
     text: 'Alice Reply 1'
   })
   await alice.createComment({
+    // community isnt included but indexer still works
     reply: {root: bob.posts[2]},
     text: 'Alice Comment 2'
   })
@@ -186,23 +182,23 @@ test('community', async t => {
     text: 'Carla Comment 1'
   })
 
-  // shows the community member comments no matter who is logged in
   await bob.login()
   let thread1 = (await api.view.get('ctzn.network/thread-view', bob.posts[2].url)).comments
   sim.testThread(t, thread1, [
     [alice, 'Alice Comment 1', [
       [alice, 'Alice Reply 1'],
     ]],
+    [alice, 'Alice Comment 2'],
     [bob, 'Bob Comment 1']
   ])
 
-  // shows the community member comments no matter who is logged in
   await carla.login()
   let thread2 = (await api.view.get('ctzn.network/thread-view', bob.posts[2].url)).comments
   sim.testThread(t, thread2, [
     [alice, 'Alice Comment 1', [
       [alice, 'Alice Reply 1'],
     ]],
+    [alice, 'Alice Comment 2'],
     [bob, 'Bob Comment 1']
   ])
 })

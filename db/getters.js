@@ -1,7 +1,15 @@
-import { publicUserDbs } from '../db/index.js'
+import { publicServerDb, publicUserDbs } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId, fetchUserInfo } from '../lib/network.js'
-import { dbGet, fetchAuthor, fetchReactions, fetchReplyCount, fetchReplies, fetchSelfIndexFollowerIds, fetchCommunityIndexesFollowerIds } from './util.js'
+import {
+  dbGet,
+  fetchAuthor,
+  fetchReactions,
+  fetchReplyCount,
+  fetchReplies,
+  fetchIndexedFollowerIds,
+  addPrefixToRangeOpts
+} from './util.js'
 
 export async function getPost (db, key, authorId, auth = undefined) {
   const postEntry = await db.posts.get(key)
@@ -10,8 +18,8 @@ export async function getPost (db, key, authorId, auth = undefined) {
   }
   postEntry.url = constructEntryUrl(db.url, 'ctzn.network/post', postEntry.key)
   postEntry.author = await fetchAuthor(authorId)
-  postEntry.reactions = (await fetchReactions(postEntry, auth?.userId)).reactions
-  postEntry.replyCount = await fetchReplyCount(postEntry, auth?.userId)
+  postEntry.reactions = (await fetchReactions(postEntry)).reactions
+  postEntry.replyCount = await fetchReplyCount(postEntry)
   return postEntry
 }
 
@@ -22,13 +30,13 @@ export async function listPosts (db, opts, authorId, auth = undefined) {
     for (let entry of entries) {
       entry.url = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
       entry.author = await fetchAuthor(authorId, authorsCache)
-      entry.reactions = (await fetchReactions(entry, auth?.userId)).reactions
-      entry.replyCount = await fetchReplyCount(entry, auth?.userId)
+      entry.reactions = (await fetchReactions(entry)).reactions
+      entry.replyCount = await fetchReplyCount(entry)
     }
     return entries
   } else if (db.dbType === 'ctzn.network/public-community-db') {
-    const entries = await db.feedIdx.list(opts)
-    return fetchIndexedPosts(entries, auth?.userId, {includeReplyCount: true})
+    const entries = await publicServerDb.feedIdx.list(addPrefixToRangeOpts(db.userId, opts))
+    return fetchIndexedPosts(entries, {includeReplyCount: true})
   }
 }
 
@@ -39,8 +47,8 @@ export async function getComment (db, key, authorId, auth = undefined) {
   }
   commentEntry.url = constructEntryUrl(db.url, 'ctzn.network/comment', commentEntry.key)
   commentEntry.author = await fetchAuthor(authorId)
-  commentEntry.reactions = (await fetchReactions(commentEntry, auth?.userId)).reactions
-  commentEntry.replyCount = await fetchReplyCount(commentEntry, auth?.userId)
+  commentEntry.reactions = (await fetchReactions(commentEntry)).reactions
+  commentEntry.replyCount = await fetchReplyCount(commentEntry)
   return commentEntry
 }
 
@@ -49,8 +57,8 @@ export async function getThread (subjectUrl, auth = undefined) {
   if (!subject?.entry) throw new Error('Thread subject not found')
   subject.entry.url = subjectUrl
   subject.entry.author = {userId: subject.db.userId, dbUrl: subject.db.url}
-  const replies = await fetchReplies(subject.entry, auth?.userId)
-  const commentEntries = await fetchIndexedComments(replies, auth?.userId)
+  const replies = await fetchReplies(subject.entry)
+  const commentEntries = await fetchIndexedComments(replies)
   return commentEntriesToThread(commentEntries)
 }
 
@@ -58,9 +66,7 @@ export async function listFollowers (userId, auth = undefined) {
   const userInfo = await fetchUserInfo(userId)
   return {
     subject: userInfo,
-    myFollowed: auth ? await fetchSelfIndexFollowerIds(userId, auth.userId) : undefined,
-    myCommunity: auth ? await fetchCommunityIndexesFollowerIds(userId, auth.userId) : undefined,
-    community: await fetchCommunityIndexesFollowerIds(userId, userId)
+    followers: await fetchIndexedFollowerIds(userId)
   }
 }
 
@@ -104,7 +110,7 @@ export async function listCommunityBans (db, opts) {
   return entries
 }
 
-async function fetchIndexedPosts (postsFeedEntries, userIdxId = undefined, {includeReplyCount} = {includeReplyCount: false}) {
+async function fetchIndexedPosts (postsFeedEntries, {includeReplyCount} = {includeReplyCount: false}) {
   const authorsCache = {}
   const postEntries = await Promise.all(postsFeedEntries.map(async (postFeedEntry) => {
     try {
@@ -123,8 +129,8 @@ async function fetchIndexedPosts (postsFeedEntries, userIdxId = undefined, {incl
       }
       postEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', key)
       postEntry.author = await fetchAuthor(userId, authorsCache)
-      postEntry.reactions = (await fetchReactions(postEntry, userIdxId)).reactions
-      if (includeReplyCount) postEntry.replyCount = await fetchReplyCount(postEntry, userIdxId)
+      postEntry.reactions = (await fetchReactions(postEntry)).reactions
+      if (includeReplyCount) postEntry.replyCount = await fetchReplyCount(postEntry)
       return postEntry
     } catch (e) {
       console.log(e)
@@ -134,7 +140,7 @@ async function fetchIndexedPosts (postsFeedEntries, userIdxId = undefined, {incl
   return postEntries.filter(Boolean)
 }
 
-async function fetchIndexedComments (comments, userIdxId = undefined, {includeReplyCount} = {includeReplyCount: false}) {
+async function fetchIndexedComments (comments, {includeReplyCount} = {includeReplyCount: false}) {
   const authorsCache = {}
   const commentEntries = await Promise.all(comments.map(async (post) => {
     try {
@@ -148,8 +154,8 @@ async function fetchIndexedComments (comments, userIdxId = undefined, {includeRe
       if (!commentEntry) return undefined
       commentEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
       commentEntry.author = await fetchAuthor(userId, authorsCache)
-      commentEntry.reactions = (await fetchReactions(commentEntry, userIdxId)).reactions
-      if (includeReplyCount) commentEntry.replyCount = await fetchReplyCount(commentEntry, userIdxId)
+      commentEntry.reactions = (await fetchReactions(commentEntry)).reactions
+      if (includeReplyCount) commentEntry.replyCount = await fetchReplyCount(commentEntry)
       return commentEntry
     } catch (e) {
       console.log(e)

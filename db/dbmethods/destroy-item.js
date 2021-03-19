@@ -1,7 +1,5 @@
-import { assertUserPermission, delOwnedItemsIdx } from './_util.js'
-import { onDatabaseChange, publicUserDbs } from '../index.js'
+import { assertUserPermission } from './_util.js'
 import * as errors from '../../lib/errors.js'
-import { isUserIdOurs } from '../../lib/strings.js'
 
 export default async function (db, caller, args) {
   const release = await db.items.lock(args.itemKey)
@@ -22,12 +20,6 @@ export default async function (db, caller, args) {
       await db.items.put(itemEntry.key, itemEntry.value)
     } else {
       await db.items.del(itemEntry.key)
-      if (itemEntry.value.owner.dbUrl === db.url) {
-        await delOwnedItemsIdx(db, itemEntry.key)
-      }
-    }
-    if (isUserIdOurs(itemEntry.value.owner.userId) && publicUserDbs.get(itemEntry.value.owner.userId)) {
-      await onDatabaseChange(db, [publicUserDbs.get(itemEntry.value.owner.userId)])
     }
   } finally {
     release()

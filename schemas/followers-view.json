@@ -31,15 +31,7 @@
           }
         }
       },
-      "myFollowed": {
-        "type": "array",
-        "items": {"type": "string", "pattern": ".+@.+"}
-      },
-      "myCommunity": {
-        "type": "array",
-        "items": {"type": "string", "pattern": ".+@.+"}
-      },
-      "community": {
+      "followers": {
         "type": "array",
         "items": {"type": "string", "pattern": ".+@.+"}
       }

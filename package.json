@@ -36,6 +36,7 @@
     "lodash.debounce": "^4.0.8",
     "lodash.get": "^4.4.2",
     "lodash.groupby": "^4.6.0",
+    "lodash.intersectionby": "^4.7.0",
     "lodash.pick": "^4.4.0",
     "lodash.set": "^4.3.2",
     "monotonic-lexicographic-timestamp": "^1.0.0",

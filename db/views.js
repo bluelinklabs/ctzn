@@ -8,7 +8,7 @@ import * as dbGetters from './getters.js'
 import * as schemas from '../lib/schemas.js'
 import * as errors from '../lib/errors.js'
 import { listHomeFeed } from './feed-getters.js'
-import { fetchNotications, countNotications, dbGet, fetchReactions } from './util.js'
+import { fetchNotications, countNotications, dbGet, fetchReactions, addPrefixToRangeOpts } from './util.js'
 
 const DEFAULT_USER_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'static', 'img', 'default-user-avatar.jpg')
 const DEFAULT_COMMUNITY_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'static', 'img', 'default-community-avatar.jpg')
@@ -192,9 +192,8 @@ export function setup () {
 
   define('ctzn.network/owned-items-view', async (auth, userId, opts) => {
     userId = await fetchUserId(userId)
-    const db = getDb(userId)
-    const table = db.getTable('ctzn.network/owned-items-idx')
-    const idxEntries = await table.list(getListOpts(opts))
+    const table = db.publicServerDb.getTable('ctzn.network/owned-items-idx')
+    const idxEntries = await table.list(addPrefixToRangeOpts(userId, getListOpts(opts)))
     const itemEntries = await Promise.all(idxEntries.map(async (idxEntry) => {
       const itemEntry = (await dbGet(idxEntry.value.item.dbUrl))?.entry
       if (itemEntry) {

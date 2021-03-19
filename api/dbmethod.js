@@ -25,7 +25,7 @@ export function setup (wsServer, config) {
     const key = table.schema.generateKey(value)
     await table.put(key, value)
     if (isUserIdOurs(value.database.userId) && getDb(value.database.userId)) {
-      await onDatabaseChange(userDb, [getDb(value.database.userId)])
+      await onDatabaseChange(userDb)
     }
 
     // wait for a result
@@ -78,7 +78,7 @@ export function setup (wsServer, config) {
       throw new errors.NotFoundError('Caller not hosted here')
     }
 
-    await onDatabaseChange(callerDb, [db])
+    await onDatabaseChange(callerDb)
   })
 }
 

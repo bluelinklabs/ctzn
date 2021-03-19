@@ -1,7 +1,5 @@
-import { assertUserPermission, addOwnedItemsIdx } from './_util.js'
-import { onDatabaseChange, publicUserDbs } from '../index.js'
+import { assertUserPermission } from './_util.js'
 import * as errors from '../../lib/errors.js'
-import { isUserIdOurs } from '../../lib/strings.js'
 import { compileKeyGenerator } from '../../lib/schemas.js'
 
 export default async function (db, caller, args) {
@@ -48,15 +46,9 @@ export default async function (db, caller, args) {
     release()
   }
 
-  const res ={
+
+  return {
     key,
     url: db.items.constructEntryUrl(key)
   }
-  if (value.owner.dbUrl === db.url) {
-    await addOwnedItemsIdx(db, key, res.url)
-  } else if (isUserIdOurs(value.owner.userId) && publicUserDbs.get(value.owner.userId)) {
-    await onDatabaseChange(db, [publicUserDbs.get(value.owner.userId)])
-  }
-
-  return res
 }
