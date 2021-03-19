@@ -188,7 +188,7 @@ export class BaseHyperbeeDB extends EventEmitter {
 
   async updateIndexes ({changedDb}) {
     if (!this.key) return
-    const release = await this.lock(`update-indexes`)
+    const release = await this.lock(`update-indexes:${changedDb.url}`)
 
     const batch = this.bee.batch()
     try {
