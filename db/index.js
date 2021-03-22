@@ -252,7 +252,6 @@ export async function onDatabaseChange (changedDb, indexingDbsToUpdate = undefin
   for (let indexingDb of (indexingDbsToUpdate || getAllIndexingDbs())) {
     let subscribedUrls = await indexingDb.getSubscribedDbUrls()
     if (!subscribedUrls.includes(changedDb.url)) continue
-    console.log('onDatabaseChange()', indexingDb._ident, 'for', changedDb._ident)
     await indexingDb.updateIndexes({changedDb})
   }
 
@@ -266,7 +265,6 @@ export async function catchupAllIndexes () {
 }
 
 export async function catchupIndexes (indexingDb, dbsToCatchup = undefined) {
-  console.log('catchupIndexes()', indexingDb._ident)
   const pend = perf.measure('catchupIndexes')
   _didIndexRecently = true
   if (!Array.from(getAllIndexingDbs()).includes(indexingDb)) {
