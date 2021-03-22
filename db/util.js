@@ -1,15 +1,27 @@
 import lexint from 'lexicographic-integer-encoding'
-import { publicServerDb, publicDbs } from '../db/index.js'
+import { publicServerDb, publicDbs, loadExternalDb } from '../db/index.js'
 import { constructUserUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 
 const lexintEncoder = lexint('hex')
 
-export async function dbGet (dbUrl) {
+export async function dbGet (dbUrl, opts = undefined) {
   const urlp = new URL(dbUrl)
-  const userId = await fetchUserId(`hyper://${urlp.hostname}/`)
-  const db = publicDbs.get(userId)
-  if (!db) throw new Error(`User database "${userId}" not found`)
+  const origin = `hyper://${urlp.hostname}/`
+  let userId = await fetchUserId(origin)
+  let db = userId ? publicDbs.get(userId) : undefined
+  if (!db) {
+    if (!opts.userId) {
+      throw new Error(`Unable to load ${dbUrl}, user ID not known`)
+    }
+    if (opts?.noLoadExternal) {
+      throw new Error(`Database "${userId}" not found`)
+    }
+    db = await loadExternalDb(opts.userId)
+    if (!db) {
+      throw new Error(`Database "${opts.userId}" not found`)
+    }
+  }
   const pathParts = urlp.pathname.split('/').filter(Boolean)
   let bee = db.bee
   for (let i = 0; i < pathParts.length - 1; i++) {
@@ -21,12 +33,20 @@ export async function dbGet (dbUrl) {
   }
 }
 
-export async function blobGet (dbId, blobName, encoding = undefined) {
+export async function blobGet (dbId, blobName, opts = undefined) {
+  if (typeof opts === 'string') {
+    opts = {encoding: opts}
+  }
   if (!blobName) throw new Error('Must specify a blob name')
   dbId = await fetchUserId(dbId)
-  const db = publicDbs.get(dbId)
-  if (!db) throw new Error(`User database "${dbId}" not found`)
-  return db.blobs.get(blobName, encoding)
+  let db = publicDbs.get(dbId)
+  if (!db) {
+    if (opts?.noLoadExternal) {
+      throw new Error(`Database "${dbId}" not found`)
+    }
+    db = await loadExternalDb(dbId)
+  }
+  return db.blobs.get(blobName, opts?.encoding)
 }
 
 export async function fetchAuthor (authorId, cache = undefined) {

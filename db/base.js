@@ -115,8 +115,10 @@ export class BaseHyperbeeDB extends EventEmitter {
 
     this.dbmethodCalls = this.getTable('ctzn.network/dbmethod-call')
     this.dbmethodResults = this.getTable('ctzn.network/dbmethod-result')
-    for (let method of this.supportedMethods) {
-      this.createDbMethod(`ctzn.network/${method}-method`, dbmethods[method])
+    if (this.writable) {
+      for (let method of this.supportedMethods) {
+        this.createDbMethod(`ctzn.network/${method}-method`, dbmethods[method])
+      }
     }
   }
 
@@ -179,10 +181,12 @@ export class BaseHyperbeeDB extends EventEmitter {
   }
 
   createIndexer (schemaId, targetSchemaIds, indexFn) {
+    if (!this.writable) return
     this.indexers.push(new Indexer(this, schemaId, targetSchemaIds, indexFn))
   }
 
   createDbMethod (methodId, handler) {
+    if (!this.writable) return
     let schema = schemas.get(methodId)
     this.dbmethods[methodId] = new DbMethod(this, methodId, schema, handler)
   }
@@ -195,7 +199,7 @@ export class BaseHyperbeeDB extends EventEmitter {
   }
 
   async rebuildIndexes (indexIds = undefined) {
-    if (!this.key) return
+    if (!this.key || !this.writable) return
     console.log('Rebuilding', indexIds ? `indexes: ${indexIds.join(', ')}` : 'all indexes of', this._ident)
     const release = await this.lockAllIndexes()
     try {
@@ -222,7 +226,7 @@ export class BaseHyperbeeDB extends EventEmitter {
   }
 
   async updateIndexes ({changedDb}) {
-    if (!this.key) return
+    if (!this.key || !this.writable) return
     const release = await this.lock(`update-indexes:${changedDb.url}`)
 
     const batch = this.bee.batch()

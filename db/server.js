@@ -13,9 +13,9 @@ const INDEXED_DB_TYPES = [
 ]
 
 export class PublicServerDB extends BaseHyperbeeDB {
-  constructor (key) {
+  constructor (userId, key) {
     super('public:server', key)
-    this.userId = constructUserId('server')
+    this.userId = userId
   }
 
   get dbType () {
@@ -32,6 +32,10 @@ export class PublicServerDB extends BaseHyperbeeDB {
     this.notificationsIdx = this.getTable('ctzn.network/notification-idx')
     this.reactionsIdx = this.getTable('ctzn.network/reaction-idx')
     this.feedIdx = this.getTable('ctzn.network/feed-idx')
+
+    if (!this.writable) {
+      return
+    }
 
     this.createIndexer('ctzn.network/dbmethod-result', ['ctzn.network/dbmethod-call'], async (batch, db, diff) => {
       if (!diff.right) return // ignore deletes

@@ -1,8 +1,8 @@
 import lexint from 'lexicographic-integer-encoding'
-import { publicServerDb, publicDbs } from './index.js'
-import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
+import { publicDbs } from './index.js'
+import { constructEntryUrl, parseEntryUrl, getServerIdForUserId } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
-import { fetchAuthor, fetchReactions, fetchReplyCount, addPrefixToRangeOpts } from './util.js'
+import { dbGet, fetchAuthor, fetchReactions, fetchReplyCount, addPrefixToRangeOpts } from './util.js'
 import * as errors from '../lib/errors.js'
 
 const lexintEncoder = lexint('hex')
@@ -32,19 +32,24 @@ export async function listHomeFeed (opts, auth) {
     const membershipEntries = await publicDb.memberships.list()
     whereIWas = 'getting databases'
     const sourceDbs = [
-      ...followEntries.map(f => publicDbs.get(f.value.subject.userId)),
-      ...membershipEntries.map(m => publicDbs.get(m.value.community.userId))
+      ...followEntries.map(f => ({db: publicDbs.get(f.value.subject.userId)})),
+      ...membershipEntries.map(m => {
+        const serverId = getServerIdForUserId(m.value.community.userId)
+        return {
+          communityId: m.value.community.userId,
+          db: publicDbs.get(serverId)
+        }
+      })
     ]
     
     whereIWas = 'initializing cursors'
-    const cursors = sourceDbs.map(db => {
+    const cursors = sourceDbs.map(({db, communityId}) => {
       if (!db) return undefined
       if (db.dbType === 'ctzn.network/public-citizen-db') {
         return db.posts.cursorRead({lt: opts?.lt, reverse: true})
-      } else if (db.dbType === 'ctzn.network/public-community-db') {
-        // TODO fetch the correct home server DB for the community
-        const cursor = publicServerDb.feedIdx.cursorRead(addPrefixToRangeOpts(db.userId, {lt: opts?.lt, reverse: true}))
-        cursor.prefixLength = db.userId.length + 1
+      } else if (communityId) {
+        const cursor = db.feedIdx.cursorRead(addPrefixToRangeOpts(communityId, {lt: opts?.lt, reverse: true}))
+        cursor.prefixLength = communityId.length + 1
         return cursor
       }
     })
@@ -88,17 +93,11 @@ export async function listHomeFeed (opts, auth) {
     whereIWas = 'starting the for await'
     for await (let [db, entry] of mergedCursor) {
       if (db.dbType === 'ctzn.network/public-server-db') {
-        const {origin, key} = parseEntryUrl(entry.value.item.dbUrl)
-        
-        whereIWas = `fetching the userId for ${origin}`
-        const userId = await fetchUserId(origin)
-        const publicDb = publicDbs.get(userId)
-        if (!publicDb) continue
-
-        whereIWas = `getting the post ${key}`
-        entry = await publicDb.posts.get(key)
-        if (!entry) continue
-        db = publicDb
+        whereIWas = `getting the post for the feed-idx ${entry.value.item.dbUrl}`
+        const res = await dbGet(entry.value.item.dbUrl, {userId: entry.value.item.authorId})
+        if (!res) continue
+        entry = res.entry
+        db = res.db
       } else {
         if (entry.value.community) {
           continue // filter out community posts by followed users

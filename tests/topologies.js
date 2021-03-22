@@ -9,6 +9,60 @@ test.after.always(async t => {
   }
 })
 
+test('remote community feed', async t => {
+  let sim = new TestFramework()
+  let inst1 = await createServer()
+  let inst2 = await createServer()
+  instances.push(inst1)
+  instances.push(inst2)
+  
+  await sim.createCitizen(inst1, 'bob')
+  await sim.users.bob.login()
+  await sim.createCommunity(inst1, 'folks')
+  await sim.createCitizen(inst2, 'alice')
+  const {alice, bob, folks} = sim.users
+
+  await new Promise(r => setTimeout(r, 3e3))
+
+  await alice.login()
+  await inst2.api.communities.join(folks.userId)
+
+  let members1 = (await inst1.api.table.list(folks.userId, 'ctzn.network/community-member')).entries
+  t.is(members1.length, 2)
+  t.deepEqual(members1.find(m => m.value.user.userId === alice.userId).value.user.dbUrl, alice.profile.dbUrl)
+
+  let memberships1 = (await inst2.api.table.list(alice.userId, 'ctzn.network/community-membership')).entries
+  t.is(memberships1.length, 1)
+  t.deepEqual(memberships1.find(m => m.value.community.userId === folks.userId).value.community.dbUrl, folks.profile.dbUrl)
+
+  await alice.createPost({text: '1', community: {userId: folks.userId, dbUrl: folks.profile.dbUrl}})
+  await bob.createPost({text: '2', community: {userId: folks.userId, dbUrl: folks.profile.dbUrl}})
+  await alice.createPost({text: '3', community: {userId: folks.userId, dbUrl: folks.profile.dbUrl}})
+  await bob.createPost({text: '4', community: {userId: folks.userId, dbUrl: folks.profile.dbUrl}})
+
+  await new Promise(r => setTimeout(r, 5e3))
+  await inst1.api.debug.whenAllSynced()
+  await inst2.api.debug.whenAllSynced()
+
+  await bob.login()
+  const feed1 = (await inst1.api.view.get('ctzn.network/feed-view')).feed
+  sim.testFeed(t, feed1, [
+    [bob, '4'],
+    [alice, '3'],
+    [bob, '2'],
+    [alice, '1']
+  ])
+
+  await alice.login()
+  const feed2 = (await inst2.api.view.get('ctzn.network/feed-view')).feed
+  sim.testFeed(t, feed2, [
+    [bob, '4'],
+    [alice, '3'],
+    [bob, '2'],
+    [alice, '1']
+  ])
+})
+
 test.skip('1 server', async t => {
   const NUM_USERS = 5
   const NUM_POSTS = 5

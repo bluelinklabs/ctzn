@@ -8,7 +8,7 @@ import { PublicCitizenDB, PrivateCitizenDB } from './citizen.js'
 import { PublicCommunityDB } from './community.js'
 import * as schemas from '../lib/schemas.js'
 import * as views from './views.js'
-import { RESERVED_USERNAMES, HYPER_KEY, hyperUrlToKey, constructUserId, getDomain } from '../lib/strings.js'
+import { RESERVED_USERNAMES, HYPER_KEY, hyperUrlToKey, constructUserId, getDomain, getServerIdForUserId } from '../lib/strings.js'
 import { fetchDbUrl } from '../lib/network.js'
 import { hashPassword } from '../lib/crypto.js'
 import * as perf from '../lib/perf.js'
@@ -34,7 +34,7 @@ export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simu
   configPath = path.join(configDir, 'dbconfig.json')
   await readDbConfig()
 
-  publicServerDb = new PublicServerDB(config.publicServer)
+  publicServerDb = new PublicServerDB(constructUserId('server'), config.publicServer)
   await publicServerDb.setup()
   publicDbs.set(publicServerDb.userId, publicServerDb)
   publicServerDb.watch(onDatabaseChange)
@@ -315,12 +315,14 @@ async function loadDbByType (userId, dbUrl) {
   await bee.ready()
   client.replicate(bee.feed)
 
-  const dbDesc = await bee.get('_db', {wait: true, timeout: 10e3})
+  const dbDesc = await bee.get('_db', {wait: true, timeout: 60e3})
   if (!dbDesc) throw new Error('Failed to load database description')
   if (dbDesc.value?.dbType === 'ctzn.network/public-citizen-db') {
     return new PublicCitizenDB(userId, key) 
   } else if (dbDesc.value?.dbType === 'ctzn.network/public-community-db') {
     return new PublicCommunityDB(userId, key) 
+  } else if (dbDesc.value?.dbType === 'ctzn.network/public-server-db') {
+    return new PublicServerDB(userId, key)
   }
   throw new Error(`Unknown database type: ${dbDesc.value?.dbType}`)
 }
@@ -337,11 +339,13 @@ async function getAllExternalDbIds () {
       ])
       for (let follow of follows) {
         if (!follow.value.subject.userId.endsWith(userIdEnding)) {
+          ids.add(getServerIdForUserId(follow.value.subject.userId))
           ids.add(follow.value.subject.userId)
         }
       }
       for (let membership of memberships) {
         if (!membership.value.community.userId.endsWith(userIdEnding)) {
+          ids.add(getServerIdForUserId(membership.value.community.userId))
           ids.add(membership.value.community.userId)
         }
       }
@@ -349,6 +353,7 @@ async function getAllExternalDbIds () {
       const members = await db.members.list()
       for (let member of members) {
         if (!member.value.user.userId.endsWith(userIdEnding)) {
+          ids.add(getServerIdForUserId(member.value.user.userId))
           ids.add(member.value.user.userId)
         }
       }
@@ -394,7 +399,7 @@ async function loadExternalDbInner (userId) {
     return false    
   }
 
-  return true
+  return publicDb
 }
 
 async function loadOrUnloadExternalUserDbs () {

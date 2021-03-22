@@ -60,7 +60,12 @@ export async function start (opts) {
       if (!req.query.resource) throw new Error('?resource is required')
       const {username, domain} = parseAcctUrl(req.query.resource)
       if (domain !== getDomain()) throw 'Not found'
-      const profile = await db.publicServerDb.users.get(username)
+      let profile = undefined
+      if (username === 'server') {
+        profile = {value: {dbUrl: db.publicServerDb.url}}
+      } else {
+        profile = await db.publicServerDb.users.get(username)
+      }
       if (!profile || !profile.value.dbUrl) throw 'Not found'
       res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
       res.status(200).json({
