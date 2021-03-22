@@ -1,4 +1,4 @@
-import { publicServerDb, publicUserDbs } from '../db/index.js'
+import { publicServerDb, publicDbs } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId, fetchUserInfo } from '../lib/network.js'
 import {
@@ -118,16 +118,16 @@ async function fetchIndexedPosts (postsFeedEntries, {includeReplyCount} = {inclu
       const {origin, key} = parseEntryUrl(post.dbUrl)
 
       const userId = await fetchUserId(origin)
-      const publicUserDb = publicUserDbs.get(userId)
-      if (!publicUserDb) {
+      const publicDb = publicDbs.get(userId)
+      if (!publicDb) {
         return undefined
       }
 
-      const postEntry = await publicUserDb.posts.get(key)
+      const postEntry = await publicDb.posts.get(key)
       if (!postEntry) {
         return undefined
       }
-      postEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/post', key)
+      postEntry.url = constructEntryUrl(publicDb.url, 'ctzn.network/post', key)
       postEntry.author = await fetchAuthor(userId, authorsCache)
       postEntry.reactions = (await fetchReactions(postEntry)).reactions
       if (includeReplyCount) postEntry.replyCount = await fetchReplyCount(postEntry)
@@ -147,12 +147,12 @@ async function fetchIndexedComments (comments, {includeReplyCount} = {includeRep
       const {origin, key} = parseEntryUrl(post.dbUrl)
 
       const userId = await fetchUserId(origin)
-      const publicUserDb = publicUserDbs.get(userId)
-      if (!publicUserDb) return undefined
+      const publicDb = publicDbs.get(userId)
+      if (!publicDb) return undefined
 
-      const commentEntry = await publicUserDb.comments.get(key)
+      const commentEntry = await publicDb.comments.get(key)
       if (!commentEntry) return undefined
-      commentEntry.url = constructEntryUrl(publicUserDb.url, 'ctzn.network/comment', key)
+      commentEntry.url = constructEntryUrl(publicDb.url, 'ctzn.network/comment', key)
       commentEntry.author = await fetchAuthor(userId, authorsCache)
       commentEntry.reactions = (await fetchReactions(commentEntry)).reactions
       if (includeReplyCount) commentEntry.replyCount = await fetchReplyCount(commentEntry)

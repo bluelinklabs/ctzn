@@ -1,4 +1,4 @@
-import { publicUserDbs, createUser, catchupIndexes } from '../db/index.js'
+import { publicDbs, createUser, catchupIndexes } from '../db/index.js'
 import { constructEntryUrl, parseUserId } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
 import { fetchUserInfo, reverseDns, connectWs } from '../lib/network.js'
@@ -29,7 +29,7 @@ export function setup (wsServer, config) {
   wsServer.register('communities.create', async ([info], client) => {
     if (!client?.auth) throw new errors.SessionError()
 
-    const publicCitizenDb = publicUserDbs.get(client.auth.userId)
+    const publicCitizenDb = publicDbs.get(client.auth.userId)
     if (!publicCitizenDb) throw new errors.NotFoundError('User database not found')
     
     info = info || {}
@@ -46,12 +46,12 @@ export function setup (wsServer, config) {
     })
     const communityInfo = {
       userId: communityUser.userId,
-      dbUrl: communityUser.publicUserDb.url
+      dbUrl: communityUser.publicDb.url
     }
     const ts = (new Date()).toISOString()
 
     // create default roles
-    await communityUser.publicUserDb.roles.put('moderator', {
+    await communityUser.publicDb.roles.put('moderator', {
       roleId: 'moderator',
       permissions: [
         {permId: 'ctzn.network/perm-community-ban'},
@@ -69,8 +69,8 @@ export function setup (wsServer, config) {
       joinDate: ts
     }
     await publicCitizenDb.memberships.put(communityInfo.userId, membershipValue)
-    await communityUser.publicUserDb.members.put(client.auth.userId, memberValue)
-    /* dont await */ catchupIndexes(communityUser.publicUserDb)
+    await communityUser.publicDb.members.put(client.auth.userId, memberValue)
+    /* dont await */ catchupIndexes(communityUser.publicDb)
 
     return communityInfo
   })
@@ -78,11 +78,11 @@ export function setup (wsServer, config) {
   wsServer.register('communities.join', async ([community], client) => {
     if (!client?.auth) throw new errors.SessionError()
 
-    const publicCitizenDb = publicUserDbs.get(client.auth.userId)
+    const publicCitizenDb = publicDbs.get(client.auth.userId)
     if (!publicCitizenDb) throw new errors.NotFoundError('User database not found')
 
     const communityInfo = await fetchUserInfo(community)
-    const publicCommunityDb = publicUserDbs.get(communityInfo.userId)
+    const publicCommunityDb = publicDbs.get(communityInfo.userId)
     if (!publicCommunityDb || !publicCommunityDb.writable) {
       // remote join
       const ws = await connectWs(parseUserId(communityInfo.userId).domain)
@@ -147,7 +147,7 @@ export function setup (wsServer, config) {
     userInfoParam.assert(opts.user)
 
     const communityInfo = await fetchUserInfo(opts.community)
-    const publicCommunityDb = publicUserDbs.get(communityInfo.userId)
+    const publicCommunityDb = publicDbs.get(communityInfo.userId)
     if (!publicCommunityDb?.writable) {
       throw new errors.NotFoundError('Community not hosted here')
     }
@@ -183,11 +183,11 @@ export function setup (wsServer, config) {
   wsServer.register('communities.leave', async ([community], client) => {
     if (!client?.auth) throw new errors.SessionError()
 
-    const publicCitizenDb = publicUserDbs.get(client.auth.userId)
+    const publicCitizenDb = publicDbs.get(client.auth.userId)
     if (!publicCitizenDb) throw new errors.NotFoundError('User database not found')
     
     const communityInfo = await fetchUserInfo(community)
-    const publicCommunityDb = publicUserDbs.get(communityInfo.userId)
+    const publicCommunityDb = publicDbs.get(communityInfo.userId)
     if (!publicCommunityDb || !publicCommunityDb.writable) {
       // remote leave
       const ws = await connectWs(parseUserId(communityInfo.userId).domain)
@@ -216,7 +216,7 @@ export function setup (wsServer, config) {
     userInfoParam.assert(opts.user)
 
     const communityInfo = await fetchUserInfo(opts.community)
-    const publicCommunityDb = publicUserDbs.get(communityInfo.userId)
+    const publicCommunityDb = publicDbs.get(communityInfo.userId)
     if (!publicCommunityDb?.writable) {
       throw new errors.NotFoundError('Community not hosted here')
     }

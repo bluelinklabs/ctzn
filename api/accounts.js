@@ -130,7 +130,7 @@ export function setup (wsServer, config) {
 
     const username = info.username
     const userId = constructUserId(username)
-    const dbUrl = citizenUser.publicUserDb.url
+    const dbUrl = citizenUser.publicDb.url
     const sess = await createSession(client, {username, userId, dbUrl})
     return {
       userId,

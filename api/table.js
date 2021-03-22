@@ -1,4 +1,4 @@
-import { publicUserDbs, onDatabaseChange } from '../db/index.js'
+import { publicDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 import * as errors from '../lib/errors.js'
@@ -94,7 +94,7 @@ function getListOpts (listOpts = {}) {
 }
 
 function getDb (userId) {
-  const publicUserDb = publicUserDbs.get(userId)
-  if (!publicUserDb) throw new Error(`User database "${userId}" not found`)
-  return publicUserDb
+  const publicDb = publicDbs.get(userId)
+  if (!publicDb) throw new Error(`User database "${userId}" not found`)
+  return publicDb
 }

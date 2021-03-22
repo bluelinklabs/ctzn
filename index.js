@@ -225,7 +225,7 @@ function getDb (username) {
     return db.publicServerDb
   }
   const userId = usernameToUserId(username)
-  const publicUserDb = db.publicUserDbs.get(userId)
-  if (!publicUserDb) throw new Error('User database not found')
-  return publicUserDb
+  const publicDb = db.publicDbs.get(userId)
+  if (!publicDb) throw new Error('User database not found')
+  return publicDb
 }

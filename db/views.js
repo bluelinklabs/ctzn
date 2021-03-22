@@ -43,7 +43,7 @@ export function setup () {
     let userDb
     try {
       userId = await fetchUserId(userId)
-      userDb = db.publicUserDbs.get(userId)
+      userDb = db.publicDbs.get(userId)
       if (!userDb) throw 'Not found'
       
       const ptr = await userDb.blobs.getPointer('avatar')
@@ -73,7 +73,7 @@ export function setup () {
 
   define('ctzn.network/blob-view', async (auth, userId, blobname) => {
     userId = await fetchUserId(userId)
-    const userDb = db.publicUserDbs.get(userId)
+    const userDb = db.publicDbs.get(userId)
     if (!userDb) throw 'Not found'
     
     const ptr = await userDb.blobs.getPointer(blobname)
@@ -185,8 +185,8 @@ export function setup () {
 
   define('ctzn.network/notifications-count-view', async (auth, opts) => {
     if (!auth) throw new errors.SessionError()
-    const privateUserDb = db.privateUserDbs.get(auth.userId)
-    if (!privateUserDb) throw new errors.NotFoundError('User database not found')
+    const privateDb = db.privateDbs.get(auth.userId)
+    if (!privateDb) throw new errors.NotFoundError('User database not found')
     return {count: await countNotications(auth, opts)}
   })
 
@@ -293,9 +293,9 @@ function getListOpts (listOpts = {}) {
 }
 
 function getDb (userId) {
-  const publicUserDb = db.publicUserDbs.get(userId)
-  if (!publicUserDb) throw new Error('User database not found')
-  return publicUserDb
+  const publicDb = db.publicDbs.get(userId)
+  if (!publicDb) throw new Error('User database not found')
+  return publicDb
 }
 
 function noop () {}

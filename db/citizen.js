@@ -31,11 +31,11 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
 }
 
 export class PrivateCitizenDB extends BaseHyperbeeDB {
-  constructor (userId, key, publicServerDb, publicUserDb) {
+  constructor (userId, key, publicServerDb, publicDb) {
     super(`private:${userId}`, key, {isPrivate: true})
     this.userId = userId
     this.publicServerDb = publicServerDb
-    this.publicUserDb = publicUserDb
+    this.publicDb = publicDb
   }
 
   get dbType () {

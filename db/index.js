@@ -1,7 +1,5 @@
 import { promises as fsp } from 'fs'
 import * as path from 'path'
-import pump from 'pump'
-import concat from 'concat-stream'
 import { client } from './hyperspace.js'
 import Hyperbee from 'hyperbee'
 import * as hyperspace from './hyperspace.js'
@@ -10,7 +8,7 @@ import { PublicCitizenDB, PrivateCitizenDB } from './citizen.js'
 import { PublicCommunityDB } from './community.js'
 import * as schemas from '../lib/schemas.js'
 import * as views from './views.js'
-import { HYPER_KEY, hyperUrlToKey, constructUserId, getDomain } from '../lib/strings.js'
+import { RESERVED_USERNAMES, HYPER_KEY, hyperUrlToKey, constructUserId, getDomain } from '../lib/strings.js'
 import { fetchDbUrl } from '../lib/network.js'
 import { hashPassword } from '../lib/crypto.js'
 import * as perf from '../lib/perf.js'
@@ -25,8 +23,8 @@ export let configPath = undefined
 export let config = undefined
 export let publicServerDb = undefined
 export let privateServerDb = undefined
-export let publicUserDbs = new CaseInsensitiveMap()
-export let privateUserDbs = new CaseInsensitiveMap()
+export let publicDbs = new CaseInsensitiveMap()
+export let privateDbs = new CaseInsensitiveMap()
 
 export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simulateHyperspace}) {
   await hyperspace.setup({hyperspaceHost, hyperspaceStorage, simulateHyperspace})
@@ -38,9 +36,11 @@ export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simu
 
   publicServerDb = new PublicServerDB(config.publicServer)
   await publicServerDb.setup()
+  publicDbs.set(publicServerDb.userId, publicServerDb)
   publicServerDb.watch(onDatabaseChange)
   privateServerDb = new PrivateServerDB(config.privateServer, publicServerDb)
   await privateServerDb.setup()
+  privateDbs.set(publicServerDb.userId, privateServerDb)
 
   config.publicServer = publicServerDb.key.toString('hex')
   config.privateServer = privateServerDb.key.toString('hex')
@@ -55,6 +55,9 @@ export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simu
 export async function createUser ({type, username, email, password, profile}) {
   if (type !== 'citizen' && type !== 'community') {
     throw new Error(`Invalid type "${type}": must be 'citizen' or 'community'`)
+  }
+  if (RESERVED_USERNAMES.includes(username)) {
+    throw new Error(`Username is reserved: ${username}`)
   }
 
   let release = await lock(`create-user:${username}`)
@@ -76,43 +79,43 @@ export async function createUser ({type, username, email, password, profile}) {
     if (type === 'citizen') schemas.get('ctzn.network/account').assertValid(account)
     schemas.get('ctzn.network/user').assertValid(user)
 
-    if (publicUserDbs.has(userId)) {
+    if (publicDbs.has(userId)) {
       throw new Error('Username already in use.')
     }
 
-    let publicUserDb
-    let privateUserDb
+    let publicDb
+    let privateDb
     if (type === 'citizen') {
-      publicUserDb = new PublicCitizenDB(userId, null)
-      await publicUserDb.setup()
-      publicUserDb.watch(onDatabaseChange)
-      publicUserDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
-      await catchupIndexes(publicUserDb)
-      user.dbUrl = publicUserDb.url
+      publicDb = new PublicCitizenDB(userId, null)
+      await publicDb.setup()
+      publicDb.watch(onDatabaseChange)
+      publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+      await catchupIndexes(publicDb)
+      user.dbUrl = publicDb.url
 
-      privateUserDb = new PrivateCitizenDB(userId, null, publicServerDb, publicUserDb)
-      await privateUserDb.setup()
-      await catchupIndexes(privateUserDb)
-      account.privateDbUrl = privateUserDb.url
+      privateDb = new PrivateCitizenDB(userId, null, publicServerDb, publicDb)
+      await privateDb.setup()
+      await catchupIndexes(privateDb)
+      account.privateDbUrl = privateDb.url
     } else if (type === 'community') {
-      publicUserDb = new PublicCommunityDB(userId, null)
-      await publicUserDb.setup()
-      publicUserDb.watch(onDatabaseChange)
-      publicUserDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
-      user.dbUrl = publicUserDb.url
+      publicDb = new PublicCommunityDB(userId, null)
+      await publicDb.setup()
+      publicDb.watch(onDatabaseChange)
+      publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+      user.dbUrl = publicDb.url
     }
 
-    await publicUserDb.profile.put('self', profile)
+    await publicDb.profile.put('self', profile)
     await publicServerDb.users.put(username, user)
     if (type === 'citizen') await privateServerDb.accounts.put(username, account)
     await onDatabaseChange(publicServerDb, [privateServerDb])
     
-    publicUserDbs.set(userId, publicUserDb)
-    if (privateUserDb) {
-      privateUserDbs.set(userId, privateUserDb)
-      privateUserDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+    publicDbs.set(userId, publicDb)
+    if (privateDb) {
+      privateDbs.set(userId, privateDb)
+      privateDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
     }
-    return {privateUserDb, publicUserDb, userId}
+    return {privateDb, publicDb, userId}
   } finally {
     release()
   }
@@ -122,13 +125,16 @@ export async function deleteUser (username) {
   console.log('Deleting user:', username)
   try {
     const userId = constructUserId(username)
-    if (publicUserDbs.has(userId)) {
-      await publicUserDbs.get(userId).teardown()
-      publicUserDbs.delete(userId)
+    if (publicDbs.has(userId)) {
+      if (publicDbs.get(userId).dbType === 'ctzn.network/public-server-db') {
+        throw new Error('Cannot delete server database')
+      }
+      await publicDbs.get(userId).teardown()
+      publicDbs.delete(userId)
     }
-    if (privateUserDbs.has(userId)) {
-      await privateUserDbs.get(userId).teardown()
-      privateUserDbs.delete(userId)
+    if (privateDbs.has(userId)) {
+      await privateDbs.get(userId).teardown()
+      privateDbs.delete(userId)
     }
     await publicServerDb.users.del(username)
     await privateServerDb.accounts.del(username)
@@ -188,34 +194,34 @@ async function loadMemberUserDbs () {
   await Promise.allSettled(users.map(async (user) => {
     if (user.value.type === 'citizen') {
       const userId = constructUserId(user.key)
-      if (publicUserDbs.has(userId)) {
+      if (publicDbs.has(userId)) {
         console.error('Skipping db load due to duplicate userId', userId)
         return
       }
-      let publicUserDb = new PublicCitizenDB(userId, hyperUrlToKey(user.value.dbUrl))
-      await publicUserDb.setup()
-      publicUserDbs.set(userId, publicUserDb)
-      publicUserDb.watch(onDatabaseChange)
-      publicUserDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+      let publicDb = new PublicCitizenDB(userId, hyperUrlToKey(user.value.dbUrl))
+      await publicDb.setup()
+      publicDbs.set(userId, publicDb)
+      publicDb.watch(onDatabaseChange)
+      publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
 
       let accountEntry = await privateServerDb.accounts.get(user.value.username)
-      let privateUserDb = new PrivateCitizenDB(userId, hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicUserDb)
-      await privateUserDb.setup()
-      privateUserDbs.set(userId, privateUserDb)
-      privateUserDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+      let privateDb = new PrivateCitizenDB(userId, hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicDb)
+      await privateDb.setup()
+      privateDbs.set(userId, privateDb)
+      privateDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
 
       numLoaded++
     } else if (user.value.type === 'community') {
       const userId = constructUserId(user.key)
-      if (publicUserDbs.has(userId)) {
+      if (publicDbs.has(userId)) {
         console.error('Skipping db load due to duplicate userId', userId)
         return
       }
-      let publicUserDb = new PublicCommunityDB(userId, hyperUrlToKey(user.value.dbUrl))
-      await publicUserDb.setup()
-      publicUserDbs.set(userId, publicUserDb)
-      publicUserDb.watch(onDatabaseChange)
-      publicUserDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+      let publicDb = new PublicCommunityDB(userId, hyperUrlToKey(user.value.dbUrl))
+      await publicDb.setup()
+      publicDbs.set(userId, publicDb)
+      publicDb.watch(onDatabaseChange)
+      publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
       numLoaded++
     } else {
       issues.add(new UnknownUserTypeIssue(user))
@@ -225,12 +231,10 @@ async function loadMemberUserDbs () {
 }
 
 export function* getAllDbs () {
-  if (publicServerDb) yield publicServerDb
-  if (privateServerDb) yield privateServerDb
-  for (let db of publicUserDbs) {
+  for (let db of publicDbs) {
     yield db[1]
   }
-  for (let db of privateUserDbs) {
+  for (let db of privateDbs) {
     yield db[1]
   }
 }
@@ -294,10 +298,10 @@ export async function whenAllSynced () {
 export function getDbByUrl (url) {
   if (publicServerDb.url === url) return publicServerDb
   if (privateServerDb.url === url) return privateServerDb
-  for (let db of publicUserDbs.values()) {
+  for (let db of publicDbs.values()) {
     if (db.url === url) return db
   }
-  for (let db of privateUserDbs.values()) {
+  for (let db of privateDbs.values()) {
     if (db.url === url) return db
   }
 }
@@ -324,7 +328,7 @@ async function loadDbByType (userId, dbUrl) {
 async function getAllExternalDbIds () {
   const userIdEnding = `@${getDomain()}`
   const ids = new Set()
-  for (let db of publicUserDbs.values()) {
+  for (let db of publicDbs.values()) {
     if (!db.writable) continue
     if (db.dbType === 'ctzn.network/public-citizen-db') {
       const [follows, memberships] = await Promise.all([
@@ -366,7 +370,7 @@ export async function loadExternalDb (userId) {
   return _loadExternalDbPromises[userId]
 }
 async function loadExternalDbInner (userId) {
-  let dbUrl, publicUserDb
+  let dbUrl, publicDb
   try {
     dbUrl = await fetchDbUrl(userId)
   } catch (e) {
@@ -374,10 +378,10 @@ async function loadExternalDbInner (userId) {
     return false
   }
   try {
-    publicUserDb = await loadDbByType(userId, dbUrl)
-    await publicUserDb.setup()
-    publicUserDbs.set(userId, publicUserDb)
-    publicUserDb.watch(onDatabaseChange)
+    publicDb = await loadDbByType(userId, dbUrl)
+    await publicDb.setup()
+    publicDbs.set(userId, publicDb)
+    publicDb.watch(onDatabaseChange)
   } catch (e) {
     issues.add(new LoadExternalUserDbIssue({userId, cause: 'Failed to load the database', error: e}))
     return false
@@ -397,17 +401,17 @@ async function loadOrUnloadExternalUserDbs () {
   // load any new follows
   const externalUserIds = await getAllExternalDbIds()
   for (let userId of externalUserIds) {
-    if (!publicUserDbs.has(userId)) {
+    if (!publicDbs.has(userId)) {
       /* dont await */ loadExternalDb(userId)
     }
   }
   // unload any unfollowed
-  for (let value of publicUserDbs.values()) {
+  for (let value of publicDbs.values()) {
     const {userId} = value
     if (userId.endsWith(getDomain()) || externalUserIds.includes(userId)) {
       continue
     }
-    publicUserDbs.get(userId).teardown()
-    publicUserDbs.delete(userId)
+    publicDbs.get(userId).teardown()
+    publicDbs.delete(userId)
   }
 }

@@ -48,8 +48,8 @@ export function setup (wsServer) {
   wsServer.registerLoopback('server.listDatabases', async ([]) => {
     return (
       [db.publicServerDb, db.privateServerDb]
-      .concat(Array.from(db.publicUserDbs.values()))
-      .concat(Array.from(db.privateUserDbs.values()))
+      .concat(Array.from(db.publicDbs.values()))
+      .concat(Array.from(db.privateDbs.values()))
     ).map(db => ({
       dbType: db.dbType,
       writable: db.writable,
@@ -68,7 +68,7 @@ export function setup (wsServer) {
   })
 
   wsServer.registerLoopback('server.rebuildDatabaseIndexes', async ([userId, indexIds]) => {
-    let targetDb = db.publicUserDbs.get(userId)
+    let targetDb = db.publicDbs.get(userId)
     if (!targetDb && userId === db.publicServerDb.userId) {
       targetDb = db.publicServerDb
     }
@@ -105,8 +105,8 @@ export function setup (wsServer) {
     let userRecords = await db.publicServerDb.users.list()
     return await Promise.all(userRecords.map(async userRecord => {
       const userId = constructUserId(userRecord.key)
-      const publicUserDb = db.publicUserDbs.get(userId)
-      const profile = publicUserDb ? await publicUserDb.profile.get('self') : undefined
+      const publicDb = db.publicDbs.get(userId)
+      const profile = publicDb ? await publicDb.profile.get('self') : undefined
       return {
         userId,
         type: userRecord.value.type,
@@ -116,7 +116,7 @@ export function setup (wsServer) {
   })
 
   wsServer.registerLoopback('server.listCommunities', async ([]) => {
-    let communityDbs = Array.from(db.publicUserDbs.values()).filter(db => db.dbType === 'ctzn.network/public-community-db')
+    let communityDbs = Array.from(db.publicDbs.values()).filter(db => db.dbType === 'ctzn.network/public-community-db')
     return Promise.all(communityDbs.map(async db => {
       let profile = await db.profile.get('self')
       let members = await db.members.list()
@@ -153,8 +153,8 @@ export function setup (wsServer) {
 }
 
 async function updateCommunityMemberRole (communityUserId, memberUserId, fn) {
-  const publicCommunityDb = db.publicUserDbs.get(communityUserId)
-  const publicCitizenDb = db.publicUserDbs.get(memberUserId)
+  const publicCommunityDb = db.publicDbs.get(communityUserId)
+  const publicCitizenDb = db.publicDbs.get(memberUserId)
 
   if (!publicCommunityDb) throw new Error('Community DB not found')
   if (!publicCitizenDb) throw new Error('Citizen DB not found')

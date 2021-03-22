@@ -125,12 +125,12 @@ async function inProcessBench ({numUsers, numPosts, numComments}) {
       for (let k = 0; k < 1; k++) {
         const pend = perf.measure('follows.follow')
         const value = {
-          subject: {userId: users[j].userId, dbUrl: users[j].publicUserDb.url},
+          subject: {userId: users[j].userId, dbUrl: users[j].publicDb.url},
           createdAt: (new Date()).toISOString()
         }
-        await user.publicUserDb.follows.put(users[j].userId, value)
-        await inst.db.onDatabaseChange(user.publicUserDb, [inst.db.publicServerDb])
-        inst.db.catchupIndexes(user.privateUserDb, [inst.db.publicUserDbs.get(users[j].userId)])
+        await user.publicDb.follows.put(users[j].userId, value)
+        await inst.db.onDatabaseChange(user.publicDb, [inst.db.publicServerDb])
+        inst.db.catchupIndexes(user.privateDb, [inst.db.publicDbs.get(users[j].userId)])
         pend()
       }
     }
@@ -150,8 +150,8 @@ async function inProcessBench ({numUsers, numPosts, numComments}) {
         text: `Post ${x++}`,
         createdAt: (new Date()).toISOString()
       }
-      await user.publicUserDb.posts.put(key, post)
-      posts.push({url: constructEntryUrl(user.publicUserDb.url, 'ctzn.network/post', key)})
+      await user.publicDb.posts.put(key, post)
+      posts.push({url: constructEntryUrl(user.publicDb.url, 'ctzn.network/post', key)})
       pend()
     }
   }
@@ -165,12 +165,12 @@ async function inProcessBench ({numUsers, numPosts, numComments}) {
     for (let j = 0; j < numComments; j++) {
       const pend = perf.measure('comments.create')
       const key = mlts()
-      await user.publicUserDb.comments.put(key, {
+      await user.publicDb.comments.put(key, {
         subjectUrl: getRandomSubject(),
         text: `Comment ${x++}`,
         createdAt: (new Date()).toISOString()
       })
-      await inst.db.onDatabaseChange(user.publicUserDb, [inst.db.publicServerDb])
+      await inst.db.onDatabaseChange(user.publicDb, [inst.db.publicServerDb])
       pend()
     }
   }

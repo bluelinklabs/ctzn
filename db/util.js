@@ -1,5 +1,5 @@
 import lexint from 'lexicographic-integer-encoding'
-import { publicServerDb, publicUserDbs } from '../db/index.js'
+import { publicServerDb, publicDbs } from '../db/index.js'
 import { constructUserUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 
@@ -8,7 +8,7 @@ const lexintEncoder = lexint('hex')
 export async function dbGet (dbUrl) {
   const urlp = new URL(dbUrl)
   const userId = await fetchUserId(`hyper://${urlp.hostname}/`)
-  const db = publicUserDbs.get(userId)
+  const db = publicDbs.get(userId)
   if (!db) throw new Error(`User database "${userId}" not found`)
   const pathParts = urlp.pathname.split('/').filter(Boolean)
   let bee = db.bee
@@ -24,7 +24,7 @@ export async function dbGet (dbUrl) {
 export async function blobGet (dbId, blobName, encoding = undefined) {
   if (!blobName) throw new Error('Must specify a blob name')
   dbId = await fetchUserId(dbId)
-  const db = publicUserDbs.get(dbId)
+  const db = publicDbs.get(dbId)
   if (!db) throw new Error(`User database "${dbId}" not found`)
   return db.blobs.get(blobName, encoding)
 }
@@ -33,9 +33,9 @@ export async function fetchAuthor (authorId, cache = undefined) {
   if (cache && cache[authorId]) {
     return cache[authorId]
   } else {
-    let publicUserDb = publicUserDbs.get(authorId)
+    let publicDb = publicDbs.get(authorId)
     let profileEntry
-    if (publicUserDb) profileEntry = await publicUserDb.profile.get('self')
+    if (publicDb) profileEntry = await publicDb.profile.get('self')
     let author = {
       url: constructUserUrl(authorId),
       userId: authorId,
@@ -130,7 +130,7 @@ async function fetchNotification (notificationEntry) {
   const itemUrlp = parseEntryUrl(notificationEntry.value.itemUrl)
   const userId = await fetchUserId(itemUrlp.origin).catch(e => undefined)
   if (!userId) return undefined
-  const db = userId ? publicUserDbs.get(userId) : undefined
+  const db = userId ? publicDbs.get(userId) : undefined
   let item
   if (db) {
     try {

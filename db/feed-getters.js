@@ -1,5 +1,5 @@
 import lexint from 'lexicographic-integer-encoding'
-import { publicServerDb, publicUserDbs } from './index.js'
+import { publicServerDb, publicDbs } from './index.js'
 import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 import { fetchAuthor, fetchReactions, fetchReplyCount, addPrefixToRangeOpts } from './util.js'
@@ -22,18 +22,18 @@ export async function listHomeFeed (opts, auth) {
     opts.lt = opts.lt && typeof opts.lt === 'string' ? opts.lt : lexintEncoder.encode(Date.now())
 
     if (!auth) throw new errors.SessionError()
-    const publicUserDb = publicUserDbs.get(auth.userId)
-    if (!publicUserDb) throw new errors.NotFoundError('User database not found')
+    const publicDb = publicDbs.get(auth.userId)
+    if (!publicDb) throw new errors.NotFoundError('User database not found')
 
     whereIWas = 'listing follows'
-    const followEntries = await publicUserDb.follows.list()
+    const followEntries = await publicDb.follows.list()
     followEntries.unshift({value: {subject: auth}})
     whereIWas = 'listing memberships'
-    const membershipEntries = await publicUserDb.memberships.list()
+    const membershipEntries = await publicDb.memberships.list()
     whereIWas = 'getting databases'
     const sourceDbs = [
-      ...followEntries.map(f => publicUserDbs.get(f.value.subject.userId)),
-      ...membershipEntries.map(m => publicUserDbs.get(m.value.community.userId))
+      ...followEntries.map(f => publicDbs.get(f.value.subject.userId)),
+      ...membershipEntries.map(m => publicDbs.get(m.value.community.userId))
     ]
     
     whereIWas = 'initializing cursors'
@@ -92,13 +92,13 @@ export async function listHomeFeed (opts, auth) {
         
         whereIWas = `fetching the userId for ${origin}`
         const userId = await fetchUserId(origin)
-        const publicUserDb = publicUserDbs.get(userId)
-        if (!publicUserDb) continue
+        const publicDb = publicDbs.get(userId)
+        if (!publicDb) continue
 
         whereIWas = `getting the post ${key}`
-        entry = await publicUserDb.posts.get(key)
+        entry = await publicDb.posts.get(key)
         if (!entry) continue
-        db = publicUserDb
+        db = publicDb
       } else {
         if (entry.value.community) {
           continue // filter out community posts by followed users

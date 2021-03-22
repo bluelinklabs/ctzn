@@ -31,6 +31,7 @@ export async function createServer () {
   return {
     url: `http://localhost:${port}/`,
     domain,
+    serverUserId: `server@${domain}`,
     client,
     api,
     process: serverProcess,

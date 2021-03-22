@@ -1,17 +1,21 @@
 import createMlts from 'monotonic-lexicographic-timestamp'
 import { BaseHyperbeeDB } from './base.js'
-import { publicUserDbs } from './index.js'
+import { publicDbs } from './index.js'
 import { dbGet } from './util.js'
-import { constructUserId, constructEntryUrl, getDomain } from '../lib/strings.js'
+import { constructUserId, constructEntryUrl } from '../lib/strings.js'
 import * as perf from '../lib/perf.js'
 import _intersectionBy from 'lodash.intersectionby'
 
 const mlts = createMlts()
+const INDEXED_DB_TYPES = [
+  'ctzn.network/public-citizen-db',
+  'ctzn.network/public-community-db'
+]
 
 export class PublicServerDB extends BaseHyperbeeDB {
   constructor (key) {
     super('public:server', key)
-    this.userId = getDomain()
+    this.userId = constructUserId('server')
   }
 
   get dbType () {
@@ -33,7 +37,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
       if (!diff.right) return // ignore deletes
 
       const {database, method, args} = diff.right.value
-      const handlerDb = publicUserDbs.get(database.userId)
+      const handlerDb = publicDbs.get(database.userId)
       if (!handlerDb) return // not one of our databases
 
       const writeDbMethodResult = async (code, details) => {
@@ -84,7 +88,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
         case 'ctzn.network/reaction':
         case 'ctzn.network/follow': {
           const subjectUserId = value.subject.userId || value.subject.authorId
-          const subjectDb = publicUserDbs.get(subjectUserId)
+          const subjectDb = publicDbs.get(subjectUserId)
           if (!subjectDb) return // not one of our users
 
           if (subjectUserId === db.userId) {
@@ -114,8 +118,8 @@ export class PublicServerDB extends BaseHyperbeeDB {
           break
         }
         case 'ctzn.network/comment': {
-          const rootSubjectDb = value.reply.root ? publicUserDbs.get(value.reply.root.authorId) : undefined
-          const parentSubjectDb = value.reply.parent ? publicUserDbs.get(value.reply.parent.authorId) : undefined
+          const rootSubjectDb = value.reply.root ? publicDbs.get(value.reply.root.authorId) : undefined
+          const parentSubjectDb = value.reply.parent ? publicDbs.get(value.reply.parent.authorId) : undefined
           if (!rootSubjectDb && !parentSubjectDb) return // not one of our users
           if (value.community) {
             // comment on a community
@@ -236,7 +240,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
       if (!diff.right.value.community) {
         return // only index community posts
       }
-      const communityDb = publicUserDbs.get(diff.right.value.community.userId)
+      const communityDb = publicDbs.get(diff.right.value.community.userId)
       if (!communityDb || !communityDb.writable) {
         return // only index communities we run
       }
@@ -345,7 +349,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
     })
 
     this.createIndexer('ctzn.network/owned-items-idx', ['ctzn.network/item'], async (batch, db, diff) => {
-      const pend = perf.measure(`publicUserDb:owned-items-indexer`)
+      const pend = perf.measure(`publicDb:owned-items-indexer`)
       
       const newOwner = diff.right?.value?.owner
       const oldOwner = diff.left?.value?.owner
@@ -384,9 +388,11 @@ export class PublicServerDB extends BaseHyperbeeDB {
   }
 
   async getSubscribedDbUrls () {
-    return Array.from(publicUserDbs.values(), db => db.url)
+    return Array.from(publicDbs.values())
+      .filter(db => INDEXED_DB_TYPES.includes(db.dbType))
+      .map(db => db.url)
   }
-}
+} 
 
 export class PrivateServerDB extends BaseHyperbeeDB {
   constructor (key, publicServerDb) {

@@ -1,4 +1,4 @@
-import { publicUserDbs, onDatabaseChange, loadExternalDb } from '../db/index.js'
+import { publicDbs, onDatabaseChange, loadExternalDb } from '../db/index.js'
 import { constructEntryUrl, isUserIdOurs, parseUserId } from '../lib/strings.js'
 import { fetchUserInfo, reverseDns, connectWs } from '../lib/network.js'
 import * as errors from '../lib/errors.js'
@@ -68,7 +68,7 @@ export function setup (wsServer, config) {
     }
 
     const dbInfo = await fetchUserInfo(opts.database)
-    const db = publicUserDbs.get(dbInfo.userId)
+    const db = publicDbs.get(dbInfo.userId)
     if (!db?.writable) {
       throw new errors.NotFoundError('Database not hosted here')
     }
@@ -131,18 +131,18 @@ async function callRemoteHandle (databaseUserId, caller, callUrl) {
 }
 
 function getDb (userId) {
-  const publicUserDb = publicUserDbs.get(userId)
-  if (!publicUserDb) throw new Error(`User database "${userId}" not found`)
-  return publicUserDb
+  const publicDb = publicDbs.get(userId)
+  if (!publicDb) throw new Error(`User database "${userId}" not found`)
+  return publicDb
 }
 
 async function getOrLoadDb (userId) {
-  let publicUserDb = publicUserDbs.get(userId)
-  if (!publicUserDb && await loadExternalDb(userId)) {
-    publicUserDb = publicUserDbs.get(userId)
+  let publicDb = publicDbs.get(userId)
+  if (!publicDb && await loadExternalDb(userId)) {
+    publicDb = publicDbs.get(userId)
   }
-  if (!publicUserDb) {
+  if (!publicDb) {
     throw new Error(`User database "${userId}" not found`)
   }
-  return publicUserDb
+  return publicDb
 }
