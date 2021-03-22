@@ -236,7 +236,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
         return // only index community posts
       }
       const communityDb = publicUserDbs.get(diff.right.value.community.userId)
-      if (!communityDb && !communityDb.writable) {
+      if (!communityDb || !communityDb.writable) {
         return // only index communities we run
       }
 
@@ -244,14 +244,17 @@ export class PublicServerDB extends BaseHyperbeeDB {
         throw new Error(`Author of ${diff.right.url} is not a member of the "${diff.right.value.community.userId}" community`)
       }
 
+      const itemCreatedAt = new Date(diff.right.value.createdAt)
+      const indexCreatedAt = new Date()
+      const idxkey = mlts(Math.min(+indexCreatedAt, (+itemCreatedAt) || (+indexCreatedAt)))
       const value = {
         feedUserId: diff.right.value.community.userId,
-        idxkey: mlts(),
+        idxkey,
         item: {
           dbUrl: diff.right.url,
           authorId: db.userId
         },
-        createdAt: (new Date()).toISOString()
+        createdAt: indexCreatedAt
       }
       await batch.put(this.feedIdx.constructBeeKey(`${value.feedUserId}:${value.idxkey}`), value)
     })
