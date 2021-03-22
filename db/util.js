@@ -1,6 +1,6 @@
 import lexint from 'lexicographic-integer-encoding'
-import { publicServerDb, publicUserDbs, privateUserDbs } from '../db/index.js'
-import { constructUserUrl, parseEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
+import { publicServerDb, publicUserDbs } from '../db/index.js'
+import { constructUserUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 
 const lexintEncoder = lexint('hex')

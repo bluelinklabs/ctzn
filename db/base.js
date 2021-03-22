@@ -7,6 +7,7 @@ import pump from 'pump'
 import concat from 'concat-stream'
 import through2 from 'through2'
 import bytes from 'bytes'
+import { catchupIndexes, getAllDbs } from './index.js'
 import dbmethods from './dbmethods.js'
 import lock from '../lib/lock.js'
 import * as perf from '../lib/perf.js'
@@ -184,6 +185,40 @@ export class BaseHyperbeeDB extends EventEmitter {
   createDbMethod (methodId, handler) {
     let schema = schemas.get(methodId)
     this.dbmethods[methodId] = new DbMethod(this, methodId, schema, handler)
+  }
+
+  async lockAllIndexes () {
+    const releases = await Promise.all(Array.from(getAllDbs(), db => this.lock(`update-indexes:${db.url}`)))
+    return () => {
+      releases.forEach(release => release())
+    }
+  }
+
+  async rebuildIndexes (indexIds = undefined) {
+    if (!this.key) return
+    console.log('Rebuilding', indexIds ? `indexes: ${indexIds.join(', ')}` : 'all indexes of', this._ident)
+    const release = await this.lockAllIndexes()
+    try {
+      for (let indexer of this.indexers) {
+        if (indexIds && !indexIds.includes(indexer.schemaId)) {
+          continue
+        }
+        const idxTable = this.getTable(indexer.schemaId)
+        const entries = await idxTable.list()
+        for (let entry of entries) {
+          await idxTable.del(entry.key)
+        }
+        await indexer.clearAllState()
+      }
+      console.log('Cleared indexes of', this._ident, '- now triggering rebuild')
+    } catch (e) {
+      console.error('Failed to rebuild indexes of', this._ident)
+      console.error(e)
+      throw e
+    } finally {
+      release()
+    }
+    catchupIndexes(this)
   }
 
   async updateIndexes ({changedDb}) {
@@ -583,6 +618,19 @@ class Indexer {
       this.db.indexState.constructBeeKey(`${this.schemaId}:${url}`),
       this.indexStatesCache[url].value
     )
+  }
+
+  async clearAllState () {
+    if (!this.schemaId.startsWith('memory:')) {
+      const states = await this.db.indexState.list({
+        gte: `${this.schemaId}:\x00`,
+        lte: `${this.schemaId}:\xff`
+      })
+      for (let state of states) {
+        await this.db.indexState.del(state.key)
+      }
+    }
+    this.indexStatesCache = {}
   }
 
   isInterestedIn (schemaId) {

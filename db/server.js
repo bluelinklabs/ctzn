@@ -2,7 +2,7 @@ import createMlts from 'monotonic-lexicographic-timestamp'
 import { BaseHyperbeeDB } from './base.js'
 import { publicUserDbs } from './index.js'
 import { dbGet } from './util.js'
-import { constructUserId, constructEntryUrl } from '../lib/strings.js'
+import { constructUserId, constructEntryUrl, getDomain } from '../lib/strings.js'
 import * as perf from '../lib/perf.js'
 import _intersectionBy from 'lodash.intersectionby'
 
@@ -11,6 +11,7 @@ const mlts = createMlts()
 export class PublicServerDB extends BaseHyperbeeDB {
   constructor (key) {
     super('public:server', key)
+    this.userId = getDomain()
   }
 
   get dbType () {

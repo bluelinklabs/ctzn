@@ -57,6 +57,7 @@ export function setup (wsServer) {
       userId: db.userId,
       isPrivate: db.isPrivate,
       peerCount: db.peers?.length || 0,
+      indexers: db.indexers?.map(i => i.schemaId) || [],
       blobs: db.blobs.feed ? {
         key: db.blobs.feed.key.toString('hex'),
         writable: db.blobs.writable,
@@ -66,6 +67,18 @@ export function setup (wsServer) {
     }))
   })
 
+  wsServer.registerLoopback('server.rebuildDatabaseIndexes', async ([userId, indexIds]) => {
+    let targetDb = db.publicUserDbs.get(userId)
+    if (!targetDb && userId === db.publicServerDb.userId) {
+      targetDb = db.publicServerDb
+    }
+    if (!targetDb) {
+      console.error('Unable to rebuild indexes for', userId, '- database not found')
+      return []
+    }
+    return targetDb.rebuildIndexes(indexIds)
+  })
+  
   wsServer.registerLoopback('server.listIssues', () => {
     return Object.entries(issues.getAll()).map(([id, entries]) => {
       return {

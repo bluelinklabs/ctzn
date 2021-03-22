@@ -8,8 +8,13 @@ const IS_UNREACHABLE = db => !db.isPrivate && !db.writable && db.peerCount === 0
 const HAS_ISSUE = db => IS_UNREACHABLE(db)
 
 export class HyperspaceView extends BaseView {
+  render () {
+    if (!this.isInFlow) this.screen.render()
+  }
+
   async setup () {
     const {screen} = this
+    this.isInFlow = false
 
     try {
       this.api = await this.connectLoopback()
@@ -21,7 +26,7 @@ export class HyperspaceView extends BaseView {
         style: {fg: 'red'},
         border: {type: 'line', fg: 'red'}
       }))
-      screen.render()
+      this.render()
       return
     }
 
@@ -80,8 +85,10 @@ export class HyperspaceView extends BaseView {
     })
     
     this.listing.focus()
+    this.listing.key(['r'], this.onRebuildIndexes.bind(this))
+
     await this.fetchLatest()
-    screen.render()
+    this.render()
 
     this.fetchLatestInterval = setInterval(() => this.fetchLatest(), FETCH_LATEST_INTERVAL)
   }
@@ -117,7 +124,7 @@ export class HyperspaceView extends BaseView {
     ])
     if (selected) this.listing.select(selected)
     this.updateInfoPane()
-    this.screen.render()
+    this.render()
   }
 
   updateInfoPane () {
@@ -269,6 +276,127 @@ export class HyperspaceView extends BaseView {
           top += 2
         }
       }
+      if (pub.indexers?.length) {
+        this.infopane.append(blessed.text({
+          top,
+          left: 0,
+          width: '100%',
+          height: 3,
+          border: {type: 'line'},
+          padding: {left: 1},
+          tags: true,
+          content: '{green-fg}{bold}[r]{/} {green-fg}Rebuild indexes{/}'
+        }))
+        top += 2
+      }
     }
+  }
+
+  // events
+  // =
+
+  onRebuildIndexes () {
+    this.isInFlow = true
+    const db = this.databases.find(db => db.key === this.selection)
+
+    var form = blessed.form({
+      top: '0%+1',
+      left: '0%',
+      width: '100%',
+      height: '100%-1',
+      scrollable: true,
+      tags: true,
+      border: {type: 'line'},
+      style: {bg: 'black', fg: 'white'}
+    })
+    this.screen.append(form)
+
+    form.append(blessed.text({
+      top: 0,
+      left: 1,
+      content: '(Escape) Close'
+    }))
+    form.append(blessed.text({
+      top: 0,
+      left: 18,
+      content: '(Up/Down) Navigate'
+    }))
+
+    let offset = 1
+    const header = ({label}) => {
+      form.append(blessed.text({
+        top: `0%+${offset+1}`,
+        left: 1,
+        width: '100%-5',
+        content: label,
+        style: {underline: true}
+      }))
+      offset += 3
+    }
+    let inputs = []
+    const checkbox = ({label, key}) => {
+      let myIndex = inputs.length
+      form.append(blessed.text({
+        top: offset,
+        left: 5,
+        width: `100%-5`,
+        content: label
+      }))
+      let checkbox = blessed.checkbox({
+        name: key,
+        top: offset,
+        left: 1,
+        width: 4,
+        height: 3,
+        interactive: true,
+        keys: true,
+        inputOnFocus: true
+      })
+      // checkbox.on('blur', () => form.focus())
+      checkbox.key(['up'], () => inputs[myIndex - 1]?.focus())
+      checkbox.key(['down', 'enter'], () => inputs[myIndex + 1]?.focus())
+      checkbox.key(['escape'], () => askFinished())
+      form.append(checkbox)
+      inputs.push(checkbox)
+      offset += 2
+    }
+
+    header({label: `Select indexes to rebuild for ${db.userId}`})
+    for (let indexId of db.indexers) {
+      checkbox({label: indexId, key: indexId})
+    }
+
+    inputs[0].focus()
+    this.screen.saveFocus()
+    this.screen.render()
+
+    const askFinished = async () => {
+      var res = await this.ask('Trigger rebuilds?')
+      if (res) {
+        form.submit()
+      } else {
+        teardown()
+      }
+    }
+
+    const teardown = () => {
+      this.screen.remove(form)
+      this.screen.restoreFocus()
+      this.screen.render()
+      this.isInFlow = false
+      this.fetchLatest()
+    }
+    // form.key(['up', 'down'], () => inputs[0].focus())
+    form.key(['escape'], () => askFinished())
+    form.on('submit', async (kvs) => {
+      const indexesToRebuild = []
+      for (let indexId in kvs) {
+        if (kvs[indexId]) {
+          indexesToRebuild.push(indexId)
+        }
+      }
+      await this.api.call('server.rebuildDatabaseIndexes', [db.userId, indexesToRebuild]).catch(e => [])
+      teardown()
+    })
   }
 }
