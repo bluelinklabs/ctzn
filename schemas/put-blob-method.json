@@ -1,0 +1,39 @@
+{
+  "id": "ctzn.network/put-blob-method",
+  "title": "Put blob method",
+  "description": "Update a blob of the database.",
+  "type": "dbmethod",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["source", "target"],
+    "properties": {
+      "source": {
+        "type": "object",
+        "required": ["dbUrl", "userId", "blobName"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          },
+          "blobName": {
+            "type": "string"
+          }
+        }
+      },
+      "target": {
+        "type": "object",
+        "required": ["blobName"],
+        "properties": {
+          "blobName": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

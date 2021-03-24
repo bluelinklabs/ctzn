@@ -10,6 +10,7 @@ import deleteItemClass from './dbmethods/delete-item-class.js'
 import destroyItem from './dbmethods/destroy-item.js'
 import ping from './dbmethods/ping.js'
 import putAvatar from './dbmethods/put-avatar.js'
+import putBlob from './dbmethods/put-blob.js'
 import putItemClass from './dbmethods/put-item-class.js'
 import putProfile from './dbmethods/put-profile.js'
 import transferItem from './dbmethods/transfer-item.js'
@@ -27,6 +28,7 @@ const dbmethods = {
   'destroy-item': destroyItem,
   'ping': ping,
   'put-avatar': putAvatar,
+  'put-blob': putBlob,
   'put-item-class': putItemClass,
   'put-profile': putProfile,
   'transfer-item': transferItem

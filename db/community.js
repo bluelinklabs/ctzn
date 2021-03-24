@@ -24,6 +24,7 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
       'destroy-item',
       'ping',
       'put-avatar',
+      'put-blob',
       'put-item-class',
       'put-profile',
       'transfer-item'
