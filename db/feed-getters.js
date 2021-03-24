@@ -103,6 +103,9 @@ export async function listHomeFeed (opts, auth) {
           continue // filter out community posts by followed users
         }
       }
+      if (!entry) {
+        continue // entry not found
+      }
       entry.url = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
       whereIWas = `fetching the author ${db.userId}`
       entry.author = await fetchAuthor(db.userId, authorsCache)
