@@ -141,7 +141,8 @@ export async function listDbmethodFeed (opts, auth) {
       call.url = constructEntryUrl(db.url, 'ctzn.network/dbmethod-call', entry.key)
       const resultUrl = constructEntryUrl(entry.value.database.dbUrl, 'ctzn.network/dbmethod-result', entry.url)
       const result = (await dbGet(resultUrl, {wait: false}))?.entry
-      if (result) result.url = resultUrl
+      if (!result) continue
+      result.url = resultUrl
       feedEntries.push({
         key: entry.key,
         caller: {dbUrl: db.url, userId: db.userId},

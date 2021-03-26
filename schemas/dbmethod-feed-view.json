@@ -26,7 +26,7 @@
         "type": "array",
         "items": {
           "type": "object",
-          "required": ["key", "caller", "call"],
+          "required": ["key", "caller", "call", "result"],
           "properties": {
             "key": {"type": "string"},
             "caller": {
