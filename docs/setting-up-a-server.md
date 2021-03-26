@@ -18,7 +18,7 @@ Required settings:
 
 Once the VM is active:
 
-- Install NVM and then install Node 14 or higher.
+- [Install NVM](http://nvm.sh) and then install Node 14 or higher.
 - Install nginx `sudo apt-get install nginx`
 - Install CTZN `npm install -g ctzn`
 - Install PM2 `npm install -g pm2`
