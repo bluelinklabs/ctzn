@@ -46,7 +46,7 @@ export async function listHomeFeed (opts, auth) {
     const cursors = sourceDbs.map(({db, communityId}) => {
       if (!db) return undefined
       if (db.dbType === 'ctzn.network/public-citizen-db') {
-        return db.posts.cursorRead({lt: opts?.lt, reverse: true})
+        return db.posts.cursorRead({lt: opts?.lt, reverse: true, wait: false})
       } else if (communityId) {
         const cursor = db.feedIdx.cursorRead(addPrefixToRangeOpts(communityId, {lt: opts?.lt, reverse: true}))
         cursor.prefixLength = communityId.length + 1
@@ -94,7 +94,10 @@ export async function listHomeFeed (opts, auth) {
     for await (let [db, entry] of mergedCursor) {
       if (db.dbType === 'ctzn.network/public-server-db') {
         whereIWas = `getting the post for the feed-idx ${entry.value.item.dbUrl}`
-        const res = await dbGet(entry.value.item.dbUrl, {userId: entry.value.item.authorId})
+        const res = await dbGet(entry.value.item.dbUrl, {
+          noLoadExternal: true,
+          wait: false
+        }).catch(e => undefined)
         if (!res) continue
         entry = res.entry
         db = res.db

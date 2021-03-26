@@ -6,6 +6,7 @@ import { fetchUserId } from '../lib/network.js'
 const lexintEncoder = lexint('hex')
 
 export async function dbGet (dbUrl, opts = undefined) {
+  const wait = typeof opts?.wait === 'boolean' ? opts.wait : true
   const urlp = new URL(dbUrl)
   const origin = `hyper://${urlp.hostname}/`
   let userId = await fetchUserId(origin)
@@ -29,7 +30,7 @@ export async function dbGet (dbUrl, opts = undefined) {
   }
   return {
     db,
-    entry: await bee.get(decodeURIComponent(pathParts[pathParts.length - 1]))
+    entry: await bee.get(decodeURIComponent(pathParts[pathParts.length - 1]), {wait})
   }
 }
 
