@@ -115,6 +115,7 @@ export class BaseHyperbeeDB extends EventEmitter {
 
     this.dbmethodCalls = this.getTable('ctzn.network/dbmethod-call')
     this.dbmethodResults = this.getTable('ctzn.network/dbmethod-result')
+    this.dbmethodResultsChronIdx = this.getTable('ctzn.network/dbmethod-result-chron-idx')
     if (this.writable) {
       for (let method of this.supportedMethods) {
         this.createDbMethod(`ctzn.network/${method}-method`, dbmethods[method])

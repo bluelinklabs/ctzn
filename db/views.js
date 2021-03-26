@@ -97,20 +97,20 @@ export function setup () {
     } else {
       userId = await fetchUserId(userId)
     }
-    const db = getDb(userId)
-    return dbGetters.getComment(db, commentKey, userId, auth)
+    const commentDb = getDb(userId)
+    return dbGetters.getComment(commentDb, commentKey, userId, auth)
   })
 
   define('ctzn.network/community-user-permission-view', async (auth, communityId, citizenId, permId) => {
     communityId = await fetchUserId(communityId)
     citizenId = await fetchUserId(citizenId)
-    const db = getDb(communityId)
-    const memberRecord = await db.members.get(citizenId)
+    const communityDb = getDb(communityId)
+    const memberRecord = await communityDb.members.get(citizenId)
     if (!memberRecord) return undefined
     if (memberRecord.value.roles?.includes('admin')) {
       return {permId: 'ctzn.network/perm-admin'}
     }
-    const roleRecords = await Promise.all(memberRecord.value.roles?.map(roleId => db.roles.get(roleId)) || [])
+    const roleRecords = await Promise.all(memberRecord.value.roles?.map(roleId => communityDb.roles.get(roleId)) || [])
     for (let roleRecord of roleRecords) {
       const perm = roleRecord.value.permissions?.find(p => p.permId === permId)
       if (perm) return perm
@@ -121,20 +121,20 @@ export function setup () {
   define('ctzn.network/community-user-permissions-view', async (auth, communityId, citizenId) => {
     communityId = await fetchUserId(communityId)
     citizenId = await fetchUserId(citizenId)
-    const db = getDb(communityId)
-    const memberRecord = await db.members.get(citizenId)
+    const communityDb = getDb(communityId)
+    const memberRecord = await communityDb.members.get(citizenId)
     if (!memberRecord) return {permissions: []}
     if (memberRecord.value.roles?.includes('admin')) {
       return {permissions: [{permId: 'ctzn.network/perm-admin'}]}
     }
-    const roleRecords = await Promise.all(memberRecord.value.roles?.map(roleId => db.roles.get(roleId)) || [])
+    const roleRecords = await Promise.all(memberRecord.value.roles?.map(roleId => communityDb.roles.get(roleId)) || [])
     return {permissions: roleRecords.map(roleRecord => roleRecord.value.permissions || []).flat()}
   })
 
   define('ctzn.network/dbmethod-calls-view', async (auth, databaseId, opts) => {
     databaseId = await fetchUserId(databaseId)
-    const db = getDb(databaseId)
-    const table = db.getTable('ctzn.network/dbmethod-call')
+    const callsDb = getDb(databaseId)
+    const table = callsDb.getTable('ctzn.network/dbmethod-call')
     const entries = await table.list(getListOpts(opts))
     for (let entry of entries) {
       entry.url = table.constructEntryUrl(entry.key)
@@ -149,17 +149,23 @@ export function setup () {
 
   define('ctzn.network/dbmethod-results-view', async (auth, databaseId, opts) => {
     databaseId = await fetchUserId(databaseId)
-    const db = getDb(databaseId)
-    const table = db.getTable('ctzn.network/dbmethod-result')
-    const entries = await table.list(getListOpts(opts))
-    for (let entry of entries) {
-      entry.url = table.constructEntryUrl(entry.key)
-      entry.call = (await dbGet(entry.value.call.dbUrl))?.entry
-      if (entry.call) {
-        entry.call.url = entry.value.call.dbUrl
-      }
+    const resultsDb = getDb(databaseId)
+    const resultsIdx = db.publicServerDb.getTable('ctzn.network/dbmethod-result-chron-idx')
+    const resultsTable = resultsDb.getTable('ctzn.network/dbmethod-result')
+    const idxEntries = await resultsIdx.list(addPrefixToRangeOpts(databaseId, getListOpts(opts)))
+    return {
+      results: await Promise.all(idxEntries.map(async (idxEntry) => {
+        const resultEntry = await resultsTable.get(idxEntry.value.resultKey)
+        if (!resultEntry) return undefined
+        resultEntry.key = idxEntry.value.idxkey
+        resultEntry.url = resultsTable.constructEntryUrl(resultEntry.key)
+        resultEntry.call = (await dbGet(resultEntry.value.call.dbUrl))?.entry
+        if (resultEntry.call) {
+          resultEntry.call.url = resultEntry.value.call.dbUrl
+        }
+        return resultEntry
+      }))
     }
-    return {results: entries}
   })
 
   define('ctzn.network/feed-view', async (auth, opts) => {
@@ -210,7 +216,7 @@ export function setup () {
     const subjectEntry = subject ? subject.entry : {}
     if (subject) subjectEntry.author = {userId: subject.db.userId, dbUrl: subject.db.url}
     subjectEntry.url = subjectUrl
-    const res = await fetchReactions(subjectEntry, auth?.userId)
+    const res = await fetchReactions(subjectEntry)
     return {subject: res.subject, reactions: res.reactions}
   })
 
@@ -225,28 +231,26 @@ export function setup () {
     } else {
       userId = await fetchUserId(userId)
     }
-    const db = getDb(userId)
-    return dbGetters.getPost(db, postKey, userId, auth)
+    return dbGetters.getPost(getDb(userId), postKey, userId, auth)
   })
 
   define('ctzn.network/posts-view', async (auth, userId, opts) => {
     userId = await fetchUserId(userId)
-    const db = getDb(userId)
-    return {posts: await dbGetters.listPosts(db, getListOpts(opts), userId, auth)}
+    return {posts: await dbGetters.listPosts(getDb(userId), getListOpts(opts), userId, auth)}
   })
 
   define('ctzn.network/profile-view', async (auth, userId) => {
     userId = await fetchUserId(userId)
-    const db = getDb(userId)
-    const profileEntry = await db.profile.get('self')
+    const profileDb = getDb(userId)
+    const profileEntry = await profileDb.profile.get('self')
     if (!profileEntry) {
       throw new Error('User profile not found')
     }
     return {
       url: constructUserUrl(userId),
       userId: userId,
-      dbUrl: db.url,
-      dbType: db.dbType,
+      dbUrl: profileDb.url,
+      dbType: profileDb.dbType,
       value: profileEntry.value
     }
   })

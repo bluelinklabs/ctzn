@@ -51,6 +51,9 @@ test('ping method', async t => {
   t.is(res4.calls[1].value.args.message, 1234)
   t.is(res4.calls[1].result.value.code, 'validation-failed')
 
+  await new Promise(r => setTimeout(r, 5e3))
+  await api.debug.whenAllSynced()
+
   const res5 = await api.view.get('ctzn.network/dbmethod-results-view', folks.userId)
   t.is(res5.results[0].call.value.method, 'ctzn.network/ping-method')
   t.is(res5.results[0].call.value.args.message, 'Ping?')

@@ -6,7 +6,7 @@
   "keyTemplate": [
     {"type": "json-pointer", "value": "/feedUserId"},
     {"type": "string", "value": ":"},
-    {"type": "json-pointer", "value": "/autokey"}
+    {"type": "json-pointer", "value": "/idxkey"}
   ],
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",

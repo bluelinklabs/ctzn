@@ -1,0 +1,38 @@
+{
+  "id": "ctzn.network/dbmethod-result-chron-idx",
+  "title": "Database method call result index",
+  "description": "Database method results ordered by chronology (execution order)",
+  "type": "json-table",
+  "keyTemplate": [
+    {"type": "json-pointer", "value": "/database/userId"},
+    {"type": "string", "value": ":"},
+    {"type": "json-pointer", "value": "/idxkey"}
+  ],
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["database", "idxkey", "resultKey"],
+    "properties": {
+      "database": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "idxkey": {
+        "type": "string"
+      },
+      "resultKey": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -6,11 +6,11 @@ import { constructUserId, constructEntryUrl } from '../lib/strings.js'
 import * as perf from '../lib/perf.js'
 import _intersectionBy from 'lodash.intersectionby'
 
-const mlts = createMlts()
 const INDEXED_DB_TYPES = [
   'ctzn.network/public-citizen-db',
   'ctzn.network/public-community-db'
 ]
+const mlts = createMlts()
 
 export class PublicServerDB extends BaseHyperbeeDB {
   constructor (userId, key) {
@@ -70,6 +70,22 @@ export class PublicServerDB extends BaseHyperbeeDB {
       } catch (e) {
         return await writeDbMethodResult(e.code || 'error', {message: e.toString()})
       }
+    })
+
+    this.createIndexer('ctzn.network/dbmethod-result-chron-idx', ['ctzn.network/dbmethod-result'], async (batch, db, diff) => {
+      if (!diff.right) return // ignore deletes
+      if (diff.left && diff.right) return // ignore updates
+
+      const value = {
+        database: {
+          userId: db.userId,
+          dbUrl: db.url
+        },
+        idxkey: mlts(),
+        resultKey: diff.right.key
+      }
+      const key = this.dbmethodResultsChronIdx.schema.generateKey(value)
+      return this.dbmethodResultsChronIdx.put(key, value)
     })
 
     const NOTIFICATIONS_SCHEMAS = [
@@ -395,6 +411,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
     return Array.from(publicDbs.values())
       .filter(db => INDEXED_DB_TYPES.includes(db.dbType))
       .map(db => db.url)
+      .concat([this.url]) // index self
   }
 } 
 
