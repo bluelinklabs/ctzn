@@ -45,17 +45,10 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
     this.members.onPut(() => this.emit('subscriptions-changed'))
     this.members.onDel(() => this.emit('subscriptions-changed'))
 
-    // setup any plugins here:
-    // - call #setupCommunityDb on each plugin
-    // - expose required internal methods:
-    //    - this
-    // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
-    // - Note: Likely only for advanced cases.
     if (this.extensions) {
-      const publicCommunityDbExtensions = Array.from(this.extensions).map((extension) => Object.values(extension.default.publicCommunityDbExtensions)).flat().filter(Boolean)
-      for (let dbExtension of publicCommunityDbExtensions) {
-        //TODO: extensions.setupPublicCommunity(this)
-        dbExtension(this)
+      const publicCommunityDbExtensions = Array.from(this.extensions).map((extension) => extension.default.publicCommunityDbExtensions).flat().filter(Boolean)
+      for (let extension of publicCommunityDbExtensions) {
+        extension.setup(this)
       }
     }
   }

@@ -182,10 +182,9 @@ export async function start (opts) {
   })
 
   if (extensionModules) {
-    const appExtensions = Array.from(extensionModules).map((extensionModule) => Object.values(extensionModule.default.appExtensions)).flat().filter(Boolean)
-    for (let appExtension of appExtensions) {
-      // TODO: appExtension.setup(app)
-      appExtension(app)
+    const appExtensions = Array.from(extensionModules).map((extensionModule) => extensionModule.default.appExtensions).flat().filter(Boolean)
+    for (let extension of appExtensions) {
+      extension.setup(app)
     }
   }
 

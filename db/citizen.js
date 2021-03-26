@@ -1,7 +1,6 @@
 import { BaseHyperbeeDB } from './base.js'
 import * as perf from '../lib/perf.js'
 
-
 export class PublicCitizenDB extends BaseHyperbeeDB {
   constructor (userId, key, extensions) {
     super(`public:${userId}`, key)
@@ -29,17 +28,10 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
     this.follows.onPut(() => this.emit('subscriptions-changed'))
     this.follows.onDel(() => this.emit('subscriptions-changed'))
 
-  // setup any plugins here:
-  // - call #setupPublicCitizenDb on each plugin
-  // - expose required internal methods:
-  //    - this
-  // - expose db, dbGetters, errors, util.js, perf.js, strings.js, network.js from ctzn package
-  // - Note: Likely only for advanced cases.
     if (this.extensions) {
-      const publicCitizenDbExtensions = Array.from(this.extensions).map((extension) => Object.values(extension.default.publicCitizenDbExtensions)).flat().filter(Boolean)
-      for (let dbExtension of publicCitizenDbExtensions) {
-        //TODO: extensions.setupPublicCitizenDb(this)
-        dbExtension(this)
+      const publicCitizenDbExtensions = Array.from(this.extensions).map((extension) => extension.default.publicCitizenDbExtensions).flat().filter(Boolean)
+      for (let extension of publicCitizenDbExtensions) {
+        extension.setup(this)
       }
     }
   }
@@ -61,17 +53,10 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
   async setup () {
     await super.setup()
 
-  // setup any plugins here:
-  // - call #setupPrivateCitizenDb on each plugin
-  // - expose required internal methods:
-  //    - this
-  // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
-  // - Note: Likely only for advanced cases.
     if (this.extensions) {
-      const privateCitizenDbExtensions = Array.from(this.extensions).map((extension) => Object.values(extension.default.privateCitizenDbExtensions)).flat().filter(Boolean)
-      for (let dbExtension of privateCitizenDbExtensions) {
-        //TODO: extensions.setupPrivateCitizenDb(this)
-        dbExtension(this, { perf })
+      const privateCitizenDbExtensions = Array.from(this.extensions).map((extension) => extension.default.privateCitizenDbExtensions).flat().filter(Boolean)
+      for (let extension of privateCitizenDbExtensions) {
+        extension.setup(this, { perf })
       }
     }
   }

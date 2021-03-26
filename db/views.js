@@ -263,19 +263,10 @@ export function setup (extensions) {
     return {comments: await dbGetters.getThread(url, auth)}
   })
 
-  // setup any plugins here:
-  // - call #setupViews on each plugin
-  // - expose required internal methods:
-  //    - define
-  //    - getDb
-  //    - getListOpts
-  // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
-
   if (extensions) {
-    const dbViewExtensions = Array.from(extensions).map((extension) => Object.values(extension.default.dbViewExtensions)).flat().filter(Boolean)
-    for (let dbViewExtension of dbViewExtensions) {
-      //TODO: extensions.setupDbView({define, getDb, getListOpts})
-      dbViewExtension({define, getDb, getListOpts});
+    const dbViewExtensions = Array.from(extensions).map((extension) => extension.default.dbViewExtensions).flat().filter(Boolean)
+    for (let extension of dbViewExtensions) {
+      extension.setup({define, getDb, getListOpts});
     }
   }
 }

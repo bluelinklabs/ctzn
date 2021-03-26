@@ -52,19 +52,10 @@ export function setup (wsServer, config, extensions) {
   users.setup(wsServer, config)
   view.setup(wsServer, config)
 
-  // setup any plugins here:
-  // - call #setupApi on each plugin
-  // - expose:
-  //    - wsServer
-  //    - config
-  // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
-  // - *Note*: With dbMethods, views and schemas, will likely not need this for normal
-  //           plugins but may be needed for advanced ones.
   if (extensions) {
-    const apiExtensions = Array.from(extensions).map((extension) => Object.values(extension.default.apiExtensions)).flat().filter(Boolean)
-    for (let apiExtension of apiExtensions) {
-      //TODO: extensions.setupApi(wsServer, config)
-      apiExtension(wsServer, config)
+    const apiExtensions = Array.from(extensions).map((extension) => extension.default.apiExtensions).flat().filter(Boolean)
+    for (let extension of apiExtensions) {
+      extension.setup(wsServer, config)
     }
   }
 }

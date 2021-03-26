@@ -403,18 +403,10 @@ export class PublicServerDB extends BaseHyperbeeDB {
       }
     })
 
-
-    // setup any plugins here:
-    // - call #setupPublicServerDb on each plugin
-    // - expose required internal methods:
-    //    - this
-    // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
-    // - Note: Likely only for advanced plugins
     if (this.extensions) {
-      const publicServerDbExtensions = Array.from(this.extensions).map((extension) => Object.values(extension.default.publicCommunityDbExtensions)).flat().filter(Boolean)
-      for (let dbExtension of publicServerDbExtensions) {
-        //TODO: extensions.setupPublicServerDb(this)
-        dbExtension(this, { dbGet, constructEntryUrl, perf, mlts })
+      const publicServerDbExtensions = Array.from(this.extensions).map((extension) => extension.default.publicServerDbExtensions).flat().filter(Boolean)
+      for (let extension of publicServerDbExtensions) {
+        extension.setup(this, { dbGet, constructEntryUrl, perf, mlts })
       }
     }
   }
@@ -468,17 +460,10 @@ export class PrivateServerDB extends BaseHyperbeeDB {
       }
     })
 
-    // setup any plugins here:
-    // - call #setupPublicServerDb on each plugin
-    // - expose required internal methods:
-    //    - this
-    // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
-    // - Note: Likely only for advanced plugins
     if (this.extensions) {
-      const privateServerDbExtensions = Array.from(this.extensions).map((extension) => Object.values(extension.default.publicCommunityDbExtensions)).flat().filter(Boolean)
-      for (let dbExtension of privateServerDbExtensions) {
-        //TODO: extensions.setupPrivateServerDb(this)
-        dbExtension(this, { dbGet, constructEntryUrl, perf, mlts })
+      const privateServerDbExtensions = Array.from(this.extensions).map((extension) => extension.default.privateServerDbExtensions).flat().filter(Boolean)
+      for (let extension of privateServerDbExtensions) {
+        extension.setup(this, { dbGet, constructEntryUrl, perf, mlts })
       }
     }
   }
