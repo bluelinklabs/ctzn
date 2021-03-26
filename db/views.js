@@ -38,7 +38,7 @@ export async function exec (schemaId, auth, ...args) {
   return res
 }
 
-export function setup () {
+export function setup (extensions) {
   define('ctzn.network/avatar-view', async (auth, userId) => {
     let userDb
     try {
@@ -270,6 +270,14 @@ export function setup () {
   //    - getDb
   //    - getListOpts
   // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
+
+  if (extensions) {
+    const dbViewExtensions = Array.from(extensions).map((extension) => Object.values(extension.default.dbViewExtensions)).flat().filter(Boolean)
+    for (let dbViewExtension of dbViewExtensions) {
+      //TODO: extensions.setupDbView({define, getDb, getListOpts})
+      dbViewExtension({define, getDb, getListOpts});
+    }
+  }
 }
 
 // internal methods
