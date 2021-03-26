@@ -27,6 +27,13 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
     this.memberships.onDel(() => this.emit('subscriptions-changed'))
     this.follows.onPut(() => this.emit('subscriptions-changed'))
     this.follows.onDel(() => this.emit('subscriptions-changed'))
+
+  // setup any plugins here:
+  // - call #setupPublicCitizenDb on each plugin
+  // - expose required internal methods:
+  //    - this
+  // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
+  // - Note: Likely only for advanced cases.
   }
 }
 
@@ -44,5 +51,12 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
 
   async setup () {
     await super.setup()
+
+  // setup any plugins here:
+  // - call #setupPrivateCitizenDb on each plugin
+  // - expose required internal methods:
+  //    - this
+  // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
+  // - Note: Likely only for advanced cases.
   }
 }

@@ -254,7 +254,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
         }
       }
     })
-    
+
     this.createIndexer('ctzn.network/feed-idx', ['ctzn.network/post'], async (batch, db, diff) => {
       if (diff.left || !diff.right) return // ignore edits and deletes
       if (!diff.right.value.community) {
@@ -340,7 +340,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
             }
           }
         }
-  
+
         if (diff.right) {
           let i = -1
           if (reactionsIdxEntry.value.reactions[diff.right.value.reaction]) {
@@ -361,7 +361,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
             }
           }
         }
-  
+
         await batch.put(this.reactionsIdx.constructBeeKey(reactionsIdxEntry.key), reactionsIdxEntry.value)
       } finally {
         release()
@@ -370,7 +370,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
 
     this.createIndexer('ctzn.network/owned-items-idx', ['ctzn.network/item'], async (batch, db, diff) => {
       const pend = perf.measure(`publicDb:owned-items-indexer`)
-      
+
       const newOwner = diff.right?.value?.owner
       const oldOwner = diff.left?.value?.owner
       if (newOwner?.dbUrl === oldOwner?.dbUrl) {
@@ -401,6 +401,15 @@ export class PublicServerDB extends BaseHyperbeeDB {
         pend()
       }
     })
+
+
+  // setup any plugins here:
+  // - call #setupPublicServerDb on each plugin
+  // - expose required internal methods:
+  //    - this
+  // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
+  // - Note: Likely only for advanced plugins
+
   }
 
   async onDatabaseCreated () {
@@ -413,7 +422,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
       .map(db => db.url)
       .concat([this.url]) // index self
   }
-} 
+}
 
 export class PrivateServerDB extends BaseHyperbeeDB {
   constructor (key, publicServerDb) {
@@ -451,13 +460,18 @@ export class PrivateServerDB extends BaseHyperbeeDB {
       }
     })
 
-    
+    // setup any plugins here:
+    // - call #setupPublicServerDb on each plugin
+    // - expose required internal methods:
+    //    - this
+    // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
+    // - Note: Likely only for advanced plugins
   }
 
   async getSubscribedDbUrls () {
     return [this.publicServerDb.url]
   }
-  
+
   async onDatabaseCreated () {
     console.log('New private server database created, key:', this.key.toString('hex'))
   }

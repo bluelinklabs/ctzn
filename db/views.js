@@ -45,7 +45,7 @@ export function setup () {
       userId = await fetchUserId(userId)
       userDb = db.publicDbs.get(userId)
       if (!userDb) throw 'Not found'
-      
+
       const ptr = await userDb.blobs.getPointer('avatar')
       if (!ptr) throw 'Not found'
 
@@ -75,7 +75,7 @@ export function setup () {
     userId = await fetchUserId(userId)
     const userDb = db.publicDbs.get(userId)
     if (!userDb) throw 'Not found'
-    
+
     const ptr = await userDb.blobs.getPointer(blobname)
     if (!ptr) throw 'Not found'
 
@@ -262,6 +262,14 @@ export function setup () {
   define('ctzn.network/thread-view', async (auth, url) => {
     return {comments: await dbGetters.getThread(url, auth)}
   })
+
+  // setup any plugins here:
+  // - call #setupViews on each plugin
+  // - expose required internal methods:
+  //    - define
+  //    - getDb
+  //    - getListOpts
+  // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
 }
 
 // internal methods

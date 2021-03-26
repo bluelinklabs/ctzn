@@ -28,8 +28,9 @@ export let privateDbs = new CaseInsensitiveMap()
 
 export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simulateHyperspace}) {
   await hyperspace.setup({hyperspaceHost, hyperspaceStorage, simulateHyperspace})
+  // add included server plugins
   await schemas.setup()
-  
+
   _configDir = configDir
   configPath = path.join(configDir, 'dbconfig.json')
   await readDbConfig()
@@ -46,6 +47,7 @@ export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simu
   config.privateServer = privateServerDb.key.toString('hex')
   await saveDbConfig()
 
+  // add included server plugins
   views.setup()
   await loadMemberUserDbs()
   await loadOrUnloadExternalUserDbs()
@@ -109,7 +111,7 @@ export async function createUser ({type, username, email, password, profile}) {
     await publicServerDb.users.put(username, user)
     if (type === 'citizen') await privateServerDb.accounts.put(username, account)
     await onDatabaseChange(publicServerDb, [privateServerDb])
-    
+
     publicDbs.set(userId, publicDb)
     if (privateDb) {
       privateDbs.set(userId, privateDb)
@@ -316,9 +318,9 @@ async function loadDbByType (userId, dbUrl) {
   const dbDesc = await bee.get('_db', {wait: true, timeout: 60e3})
   if (!dbDesc) throw new Error('Failed to load database description')
   if (dbDesc.value?.dbType === 'ctzn.network/public-citizen-db') {
-    return new PublicCitizenDB(userId, key) 
+    return new PublicCitizenDB(userId, key)
   } else if (dbDesc.value?.dbType === 'ctzn.network/public-community-db') {
-    return new PublicCommunityDB(userId, key) 
+    return new PublicCommunityDB(userId, key)
   } else if (dbDesc.value?.dbType === 'ctzn.network/public-server-db') {
     return new PublicServerDB(userId, key)
   }
@@ -394,7 +396,7 @@ async function loadExternalDbInner (userId) {
     await privateServerDb.userDbIdx.put(dbUrl, {dbUrl, userId})
   } catch (e) {
     issues.add(new LoadExternalUserDbIssue({userId, cause: 'Failed to update our DNS-ID -> URL database', error: e}))
-    return false    
+    return false
   }
 
   return publicDb
