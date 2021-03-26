@@ -1,9 +1,10 @@
 import { BaseHyperbeeDB } from './base.js'
 
 export class PublicCommunityDB extends BaseHyperbeeDB {
-  constructor (userId, key) {
+  constructor (userId, key, extensions) {
     super(`public:${userId}`, key)
     this.userId = userId
+    this.extensions = extensions
   }
 
   get dbType () {
@@ -50,5 +51,12 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
     //    - this
     // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
     // - Note: Likely only for advanced cases.
+    if (this.extensions) {
+      const publicCommunityDbExtensions = Array.from(this.extensions).map((extension) => Object.values(extension.default.publicCommunityDbExtensions)).flat().filter(Boolean)
+      for (let dbExtension of publicCommunityDbExtensions) {
+        //TODO: extensions.setupPublicCommunity(this)
+        dbExtension(this)
+      }
+    }
   }
 }

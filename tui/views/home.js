@@ -264,6 +264,7 @@ export class HomeView extends BaseView {
     header({label: 'Advanced'})
     input({label: 'Hyperspace Host', key: 'hyperspaceHost'})
     input({label: 'Hyperspace Storage Dir', key: 'hyperspaceStorage'})
+    input({label: 'Extensions', key: 'extensions'})
 
     inputs[0].focus()
     this.screen.saveFocus()

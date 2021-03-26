@@ -3,9 +3,10 @@ import * as perf from '../lib/perf.js'
 
 
 export class PublicCitizenDB extends BaseHyperbeeDB {
-  constructor (userId, key) {
+  constructor (userId, key, extensions) {
     super(`public:${userId}`, key)
     this.userId = userId
+    this.extensions = extensions
   }
 
   get dbType () {
@@ -32,17 +33,25 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
   // - call #setupPublicCitizenDb on each plugin
   // - expose required internal methods:
   //    - this
-  // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
+  // - expose db, dbGetters, errors, util.js, perf.js, strings.js, network.js from ctzn package
   // - Note: Likely only for advanced cases.
+    if (this.extensions) {
+      const publicCitizenDbExtensions = Array.from(this.extensions).map((extension) => Object.values(extension.default.publicCitizenDbExtensions)).flat().filter(Boolean)
+      for (let dbExtension of publicCitizenDbExtensions) {
+        //TODO: extensions.setupPublicCitizenDb(this)
+        dbExtension(this)
+      }
+    }
   }
 }
 
 export class PrivateCitizenDB extends BaseHyperbeeDB {
-  constructor (userId, key, publicServerDb, publicDb) {
+  constructor (userId, key, publicServerDb, publicDb, extensions) {
     super(`private:${userId}`, key, {isPrivate: true})
     this.userId = userId
     this.publicServerDb = publicServerDb
     this.publicDb = publicDb
+    this.extensions = extensions
   }
 
   get dbType () {
@@ -58,5 +67,12 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
   //    - this
   // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
   // - Note: Likely only for advanced cases.
+    if (this.extensions) {
+      const privateCitizenDbExtensions = Array.from(this.extensions).map((extension) => Object.values(extension.default.privateCitizenDbExtensions)).flat().filter(Boolean)
+      for (let dbExtension of privateCitizenDbExtensions) {
+        //TODO: extensions.setupPrivateCitizenDb(this)
+        dbExtension(this, { perf })
+      }
+    }
   }
 }

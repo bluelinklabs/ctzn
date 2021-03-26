@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url'
 const INSPECTOR_ENABLED = false
 
 let nServer = 1
-export async function createServer () {
+export async function createServer (extensions = '') {
   const tmpdir = await tmp.dir({unsafeCleanup: true})
   const domain = `dev${nServer++}.localhost`
   const port = DEBUG_MODE_PORTS_MAP[domain]
@@ -17,7 +17,7 @@ export async function createServer () {
   const binPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'bin.js')
   const serverProcess = spawn(
     'node',
-    [binPath, 'start-test', '--configDir', tmpdir.path, '--domain', domain],
+    [binPath, 'start-test', '--configDir', tmpdir.path, '--domain', domain, '--extensions', extensions || ''],
     {
       stdio: [process.stdin, process.stdout, process.stderr],
       env: INSPECTOR_ENABLED ? Object.assign({}, process.env, {NODE_OPTIONS: `--inspect=localhost:${5555+nServer}`}) : undefined
@@ -185,7 +185,7 @@ export class TestFramework {
     const posts = this.allPosts
     return posts[randRange(0, posts.length - 1)]
   }
-  
+
   async getRandomParentFor (inst, post) {
     if (randRange(0, 1) === 0) return undefined // 1/2 chance of no parent
     if (Array.isArray(inst)) {
@@ -194,14 +194,14 @@ export class TestFramework {
     let comments = flattenThread((await inst.api.view.get('ctzn.network/thread-view', post.url)).comments)
     return comments[randRange(0, comments.length - 1)]
   }
-  
+
   getExpectedHomeFeedUrls (user) {
     let users = [user].concat(Object.values(user.following))
     let posts = users.map(user => user.posts).flat()
     posts.sort((a, b) => (new Date(b.value.createdAt)) - (new Date(a.value.createdAt)))
     return posts.map(p => p.url)
   }
-  
+
   getExpectedUserFeedUrls (user) {
     return user.posts.slice().map(p => p.url)
   }
@@ -230,7 +230,7 @@ export class TestFramework {
       const entry = entries[i]
       const desc = descs[i]
       t.is(entry.author.userId, desc[0].userId, itemDesc)
-      
+
       const {schemaId} = parseEntryUrl(entry.itemUrl)
       switch (desc[1]) {
         case 'follow':

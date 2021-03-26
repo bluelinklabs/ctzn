@@ -9,7 +9,7 @@ import * as table from './table.js'
 import * as users from './users.js'
 import * as view from './view.js'
 
-export function setup (wsServer, config) {
+export function setup (wsServer, config, extensions) {
   wsServer.wss.on('connection', function connection(ws, req) {
 
     // Save request headers onto the ws client for later
@@ -60,4 +60,11 @@ export function setup (wsServer, config) {
   // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
   // - *Note*: With dbMethods, views and schemas, will likely not need this for normal
   //           plugins but may be needed for advanced ones.
+  if (extensions) {
+    const apiExtensions = Array.from(extensions).map((extension) => Object.values(extension.default.apiExtensions)).flat().filter(Boolean)
+    for (let apiExtension of apiExtensions) {
+      //TODO: extensions.setupApi(wsServer, config)
+      apiExtension(wsServer, config)
+    }
+  }
 }

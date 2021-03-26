@@ -13,9 +13,10 @@ const INDEXED_DB_TYPES = [
 const mlts = createMlts()
 
 export class PublicServerDB extends BaseHyperbeeDB {
-  constructor (userId, key) {
+  constructor (userId, key, extensions) {
     super('public:server', key)
     this.userId = userId
+    this.extensions = extensions
   }
 
   get dbType () {
@@ -403,13 +404,19 @@ export class PublicServerDB extends BaseHyperbeeDB {
     })
 
 
-  // setup any plugins here:
-  // - call #setupPublicServerDb on each plugin
-  // - expose required internal methods:
-  //    - this
-  // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
-  // - Note: Likely only for advanced plugins
-
+    // setup any plugins here:
+    // - call #setupPublicServerDb on each plugin
+    // - expose required internal methods:
+    //    - this
+    // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
+    // - Note: Likely only for advanced plugins
+    if (this.extensions) {
+      const publicServerDbExtensions = Array.from(this.extensions).map((extension) => Object.values(extension.default.publicCommunityDbExtensions)).flat().filter(Boolean)
+      for (let dbExtension of publicServerDbExtensions) {
+        //TODO: extensions.setupPublicServerDb(this)
+        dbExtension(this, { dbGet, constructEntryUrl, perf, mlts })
+      }
+    }
   }
 
   async onDatabaseCreated () {
@@ -425,9 +432,10 @@ export class PublicServerDB extends BaseHyperbeeDB {
 }
 
 export class PrivateServerDB extends BaseHyperbeeDB {
-  constructor (key, publicServerDb) {
+  constructor (key, publicServerDb, extensions) {
     super('private:server', key, {isPrivate: true})
     this.publicServerDb = publicServerDb
+    this.extensions = extensions
   }
 
   get dbType () {
@@ -466,6 +474,13 @@ export class PrivateServerDB extends BaseHyperbeeDB {
     //    - this
     // - expose db, dbGetters, errors, util.js, strings.js, network.js from ctzn package
     // - Note: Likely only for advanced plugins
+    if (this.extensions) {
+      const privateServerDbExtensions = Array.from(this.extensions).map((extension) => Object.values(extension.default.publicCommunityDbExtensions)).flat().filter(Boolean)
+      for (let dbExtension of privateServerDbExtensions) {
+        //TODO: extensions.setupPrivateServerDb(this)
+        dbExtension(this, { dbGet, constructEntryUrl, perf, mlts })
+      }
+    }
   }
 
   async getSubscribedDbUrls () {
