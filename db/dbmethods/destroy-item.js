@@ -16,7 +16,7 @@ export default async function (db, caller, args) {
 
     // update source
     itemEntry.value.qty -= args.qty
-    if (itemEntry.value.qty) {
+    if (itemEntry.value.qty > 0) {
       await db.items.put(itemEntry.key, itemEntry.value)
     } else {
       await db.items.del(itemEntry.key)

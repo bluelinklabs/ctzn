@@ -61,6 +61,21 @@ test('ping method', async t => {
   t.is(res5.results[1].call.value.method, 'ctzn.network/ping-method')
   t.is(res5.results[1].call.value.args.message, 1234)
   t.is(res5.results[1].value.code, 'validation-failed')
+
+  const res6 = await api.view.get('ctzn.network/dbmethod-feed-view')
+  t.is(res6.feed.length, 2)
+  t.is(res6.feed[0].call.value.method, 'ctzn.network/ping-method')
+  t.is(res6.feed[0].call.value.args.message, 1234)
+  t.is(res6.feed[0].result.value.code, 'validation-failed')
+  t.is(res6.feed[1].call.value.method, 'ctzn.network/ping-method')
+  t.is(res6.feed[1].call.value.args.message, 'Ping?')
+  t.is(res6.feed[1].result.value.code, 'success')
+
+  const res7 = await api.view.get('ctzn.network/dbmethod-feed-view', {lt: res6.feed[0].key})
+  t.is(res7.feed.length, 1)
+  t.is(res7.feed[0].call.value.method, 'ctzn.network/ping-method')
+  t.is(res7.feed[0].call.value.args.message, 'Ping?')
+  t.is(res7.feed[0].result.value.code, 'success')
 })
 
 test('remote handling', async t => {

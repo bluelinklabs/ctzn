@@ -1,0 +1,123 @@
+{
+  "id": "ctzn.network/dbmethod-feed-view",
+  "title": "Aggregated DBMethod calls/results feed view",
+  "description": "List dbmethod calls and their results for the user's network.",
+  "type": "json-view",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "array",
+    "additionalItems": false,
+    "items": [
+      {
+        "type": "object",
+        "properties": {
+          "limit": {"type": "number"},
+          "lt": {"type": "string"}
+        }
+      }
+    ]
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["feed"],
+    "properties": {
+      "feed": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["key", "caller", "call", "result"],
+          "properties": {
+            "key": {"type": "string"},
+            "caller": {
+              "type": "object",
+              "required": ["dbUrl", "userId"],
+              "properties": {
+                "dbUrl": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "userId": {
+                  "type": "string",
+                  "pattern": ".+@.+"
+                }
+              }
+            },
+            "call": {
+              "type": "object",
+              "required": ["seq", "key", "url", "value"],
+              "properties": {
+                "seq": {"type": "number"},
+                "key": {"type": "string"},
+                "url": {"type": "string", "format": "uri"},
+                "value": {
+                  "type": "object",
+                  "required": ["database", "method", "createdAt"],
+                  "properties": {
+                    "database": {
+                      "type": "object",
+                      "required": ["dbUrl", "userId"],
+                      "properties": {
+                        "dbUrl": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "pattern": ".+@.+"
+                        }
+                      }
+                    },
+                    "method": {"type": "string"},
+                    "args": {"type": "object"},
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            },
+            "result": {
+              "type": "object",
+              "required": ["seq", "key", "url", "value"],
+              "properties": {
+                "seq": {"type": "number"},
+                "key": {"type": "string"},
+                "url": {"type": "string", "format": "uri"},
+                "value": {
+                  "type": "object",
+                  "required": ["call", "code", "createdAt"],
+                  "properties": {
+                    "call": {
+                      "type": "object",
+                      "required": ["dbUrl", "authorId"],
+                      "properties": {
+                        "dbUrl": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "authorId": {
+                          "type": "string",
+                          "pattern": ".+@.+"
+                        }
+                      }
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "details": {"type": "object"},
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

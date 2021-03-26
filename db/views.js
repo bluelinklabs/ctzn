@@ -7,7 +7,7 @@ import { fetchUserId } from '../lib/network.js'
 import * as dbGetters from './getters.js'
 import * as schemas from '../lib/schemas.js'
 import * as errors from '../lib/errors.js'
-import { listHomeFeed } from './feed-getters.js'
+import { listHomeFeed, listDbmethodFeed } from './feed-getters.js'
 import { fetchNotications, countNotications, dbGet, fetchReactions, addPrefixToRangeOpts } from './util.js'
 
 const DEFAULT_USER_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'static', 'img', 'default-user-avatar.jpg')
@@ -145,6 +145,10 @@ export function setup () {
       }
     }
     return {calls: entries}
+  })
+
+  define('ctzn.network/dbmethod-feed-view', async (auth, opts) => {
+    return {feed: await listDbmethodFeed(opts, auth)}
   })
 
   define('ctzn.network/dbmethod-results-view', async (auth, databaseId, opts) => {
