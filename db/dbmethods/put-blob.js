@@ -19,19 +19,19 @@ export default async function (db, caller, args) {
   targetBlobName = targetBlobName || mlts()
 
   const blob = await timeoutRace(30e3, undefined, blobGet(args.source.userId, args.source.blobName))
-  if (!blob) {
+  if (!blob?.buf) {
     throw new Error('Failed to read blob from source database')
   }
   if (targetBlobName === 'avatar') {
-    if (blob.length > (Config.getActiveConfig()?.avatarSizeLimit || 0)) {
+    if (blob.buf.length > (Config.getActiveConfig()?.avatarSizeLimit || 0)) {
       throw new errors.ValidationError(`Your avatar image is too big! It must be smaller than ${bytes(Config.getActiveConfig().avatarSizeLimit)}.`)
     }
   } else {
-    if (blob.length > (Config.getActiveConfig()?.blobSizeLimit || 0)) {
+    if (blob.buf.length > (Config.getActiveConfig()?.blobSizeLimit || 0)) {
       throw new errors.ValidationError(`Your image is too big! It must be smaller than ${bytes(Config.getActiveConfig().blobSizeLimit)}.`)
     }
   }
-  await db.blobs.put(targetBlobName, blob)
+  await db.blobs.put(targetBlobName, blob.buf, {mimeType: blob.mimeType})
 
   return {blobName: targetBlobName}
 }

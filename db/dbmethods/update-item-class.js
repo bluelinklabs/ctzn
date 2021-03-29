@@ -24,14 +24,15 @@ export default async function (db, caller, args) {
     let blobName
     if (args.iconSource) {
       const blob = await timeoutRace(30e3, undefined, blobGet(args.iconSource.userId, args.iconSource.blobName))
-      if (!blob) {
+      console.log(blob)
+      if (!blob?.buf) {
         throw new Error('Failed to read blob from source database')
       }
-      if (blob.length > (Config.getActiveConfig()?.blobSizeLimit || 0)) {
+      if (blob.buf.length > (Config.getActiveConfig()?.blobSizeLimit || 0)) {
         throw new errors.ValidationError(`Your image is too big! It must be smaller than ${bytes(Config.getActiveConfig().blobSizeLimit)}.`)
       }
       blobName = mlts()
-      await db.blobs.put(blobName, blob)
+      await db.blobs.put(blobName, blob.buf, {mimeType: blob.mimeType})
       updates.iconBlobName = blobName
     }
 

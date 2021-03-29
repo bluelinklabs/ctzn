@@ -8,11 +8,11 @@ import bytes from 'bytes'
 export default async function (db, caller, args) {
   await assertUserPermission(db, caller.userId, 'ctzn.network/perm-community-edit-profile')
   const avatar = await timeoutRace(30e3, undefined, blobGet(args.blobSource.userId, args.blobName))
-  if (!avatar) {
+  if (!avatar?.buf) {
     throw new Error('Failed to read blob from source database')
   }
-  if (avatar.length > (Config.getActiveConfig()?.avatarSizeLimit || 0)) {
+  if (avatar.buf.length > (Config.getActiveConfig()?.avatarSizeLimit || 0)) {
     throw new errors.ValidationError(`Your avatar image is too big! It must be smaller than ${bytes(Config.getActiveConfig().avatarSizeLimit)}.`)
   }
-  await db.blobs.put('avatar', avatar)
+  await db.blobs.put('avatar', avatar.buf, {mimeType: avatar.mimeType})
 }

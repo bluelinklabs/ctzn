@@ -53,6 +53,7 @@ export function setup () {
       return {
         ptr,
         etag: `W/block-${ptr.start}`,
+        mimeType: ptr.mimeType,
         createStream: () => userDb.blobs.createReadStreamFromPointer(ptr)
       }
     } catch (e) {
@@ -60,12 +61,14 @@ export function setup () {
         return {
           ptr: null,
           etag: `W/default-community-avatar`,
+          mimeType: 'image/jpeg',
           createStream: () => fs.createReadStream(DEFAULT_COMMUNITY_AVATAR_PATH)
         }
       } else {
         return {
           ptr: null,
           etag: `W/default-citizen-avatar`,
+          mimeType: 'image/jpeg',
           createStream: () => fs.createReadStream(DEFAULT_USER_AVATAR_PATH)
         }
       }
@@ -83,6 +86,7 @@ export function setup () {
     return {
       ptr,
       etag: `W/block-${ptr.start}`,
+      mimeType: ptr.mimeType,
       createStream: () => userDb.blobs.createReadStreamFromPointer(ptr)
     }
   })
@@ -196,13 +200,14 @@ export function setup () {
       return {
         ptr,
         etag: `W/block-${ptr.start}`,
+        mimeType: ptr.mimeType,
         createStream: () => userDb.blobs.createReadStreamFromPointer(ptr)
       }
     } catch (e) {
       return {
         ptr: null,
         etag: `W/default-item-class-icon`,
-        contentType: 'image/svg+xml',
+        mimeType: 'image/svg+xml',
         createStream: () => fs.createReadStream(DEFAULT_ITEM_CLASS_ICON_PATH)
       }
     }

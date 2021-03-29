@@ -24,7 +24,6 @@ const BLOB_CHUNK_SIZE = bytes('64kb')
 
 const dbDescription = schemas.createValidator({
   type: 'object',
-  additionalProperties: false,
   properties: {
     dbType: {
       type: 'string'
@@ -38,10 +37,10 @@ const dbDescription = schemas.createValidator({
 
 const blobPointer = schemas.createValidator({
   type: 'object',
-  additionalProperties: false,
   properties: {
     start: {type: 'number'},
-    end: {type: 'number'}
+    end: {type: 'number'},
+    mimeType: {type: 'string'}
   }
 })
 
@@ -360,12 +359,16 @@ class Blobs {
   }
 
   async get (key, encoding = undefined) {
-    const stream = await this.createReadStream(key)
+    const ptr = await this.getPointer(key)
+    const stream = await this.createReadStreamFromPointer(ptr)
     return new Promise((resolve, reject) => {
       pump(
         stream,
         concat({encoding: 'buffer'}, buf => {
-          resolve(encoding && encoding !== 'buffer' ? buf.toString(encoding) : buf)
+          resolve({
+            mimeType: ptr.mimeType,
+            buf: encoding && encoding !== 'buffer' ? buf.toString(encoding) : buf
+          })
         }),
         reject
       )
@@ -380,10 +383,10 @@ class Blobs {
     })
   }
 
-  async put (key, buf) {
+  async put (key, buf, {mimeType} = {mimeType: undefined}) {
     const chunks = chunkify(buf, BLOB_CHUNK_SIZE)
     const start = await this.feed.append(chunks)
-    const pointer = {start, end: start + chunks.length}
+    const pointer = {start, end: start + chunks.length, mimeType}
     blobPointer.assert(pointer)
     await this.kv.put(key, pointer)
   }

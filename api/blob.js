@@ -14,7 +14,7 @@ export function setup (wsServer, config) {
     return publicDb.blobs.get(name, 'base64')
   })
 
-  wsServer.register('blob.create', async ([base64buf], client) => {
+  wsServer.register('blob.create', async ([base64buf, opts], client) => {
     if (!client?.auth) throw new errors.SessionError()
     const publicDb = publicDbs.get(client.auth.userId)
     if (!publicDb) throw new errors.NotFoundError('User database not found')
@@ -24,11 +24,13 @@ export function setup (wsServer, config) {
     }
 
     const name = mlts()
-    await publicDb.blobs.put(name, Buffer.from(base64buf, 'base64'))
+    await publicDb.blobs.put(name, Buffer.from(base64buf, 'base64'), {
+      mimeType: opts?.mimeType
+    })
     return {name}
   })
   
-  wsServer.register('blob.update', async ([name, base64buf], client) => {
+  wsServer.register('blob.update', async ([name, base64buf, opts], client) => {
     if (!client?.auth) throw new errors.SessionError()
     const publicDb = publicDbs.get(client.auth.userId)
     if (!publicDb) throw new errors.NotFoundError('User database not found')
@@ -43,7 +45,9 @@ export function setup (wsServer, config) {
       }
     }
     
-    await publicDb.blobs.put(name, Buffer.from(base64buf, 'base64'))
+    await publicDb.blobs.put(name, Buffer.from(base64buf, 'base64'), {
+      mimeType: opts?.mimeType
+    })
     return {name}
   })
 

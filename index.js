@@ -117,12 +117,12 @@ export async function start (opts) {
       const args = path.split('/').filter(Boolean).slice(3).map(v => decodeURIComponent(v))
       if (Object.keys(req.query).length) args.push(getListOpts(req))
       if (dbViews.getType(schemaId) === 'blob-view') {
-        const {etag, createStream, contentType} = await dbViews.exec(schemaId, undefined, ...args)
+        const {etag, createStream, mimeType} = await dbViews.exec(schemaId, undefined, ...args)
           if (req.headers['if-none-match'] === etag) {
           return res.status(304).end()
         }
         res.setHeader('ETag', etag)
-        if (contentType) res.setHeader('Content-Type', contentType)
+        if (mimeType) res.setHeader('Content-Type', mimeType)
         res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
         ;(await createStream()).pipe(res)
       } else {
