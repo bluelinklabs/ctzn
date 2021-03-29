@@ -34,7 +34,7 @@ export default async function (db, caller, args) {
 
     await db.itemClasses.put(args.classId, {
       id: args.classId,
-      keyTemplate: args.keyTemplate,
+      grouping: args.grouping,
       displayName: args.displayName,
       description: args.description,
       iconBlobName: blobName,

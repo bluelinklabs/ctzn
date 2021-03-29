@@ -47,7 +47,7 @@
                 "url": {"type": "string", "format": "uri"},
                 "value": {
                   "type": "object",
-                  "required": ["id", "keyTemplate", "createdAt"],
+                  "required": ["id", "grouping", "createdAt"],
                   "properties": {
                     "id": {
                       "type": "string",
@@ -55,16 +55,9 @@
                       "minLength": 1,
                       "maxLength": 64
                     },
-                    "keyTemplate": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": ["type"],
-                        "properties": {
-                          "type": {"type": "string", "enum": ["auto", "json-pointer", "string"]},
-                          "value": {"type": "string"}
-                        }
-                      }
+                    "grouping": {
+                      "type": "string",
+                      "enum": ["unique", "fungible"]
                     },
                     "displayName": {
                       "type": "string",

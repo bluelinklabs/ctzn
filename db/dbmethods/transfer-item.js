@@ -1,6 +1,6 @@
 import { assertUserPermission } from './_util.js'
 import * as errors from '../../lib/errors.js'
-import { compileKeyGenerator } from '../../lib/schemas.js'
+import { keyGenerators } from '../../lib/items.js'
 
 export default async function (db, caller, args) {
   const release = await db.items.lock(args.itemKey)
@@ -20,11 +20,9 @@ export default async function (db, caller, args) {
       throw new errors.NotFoundError(`Item class "${sourceItemEntry.value.classId}" not found`)
     }
 
-    let generateKey
-    try {
-      generateKey = compileKeyGenerator(itemClassEntry.value.keyTemplate)
-    } catch (e) {
-      throw new Error(`Failed to generate keyTemplate from item class: ${e.message}`)
+    const generateKey = keyGenerators[itemClassEntry.value.grouping]
+    if (!generateKey) {
+      throw new Error(`Unsupported grouping for item class: ${itemClassEntry.value.grouping}`)
     }
 
     const destValue = {
