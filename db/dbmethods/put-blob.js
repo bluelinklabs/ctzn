@@ -1,3 +1,4 @@
+import createMlts from 'monotonic-lexicographic-timestamp'
 import { assertUserPermission } from './_util.js'
 import { blobGet } from '../util.js'
 import * as errors from '../../lib/errors.js'
@@ -5,13 +6,17 @@ import { Config } from '../../lib/config.js'
 import { timeoutRace } from '../../lib/functions.js'
 import bytes from 'bytes'
 
+const mlts = createMlts()
+
 export default async function (db, caller, args) {
-  const targetBlobName = args.target.blobName
+  let targetBlobName = args.target.blobName
   if (targetBlobName === 'avatar' || targetBlobName === 'profile-banner') {
     await assertUserPermission(db, caller.userId, 'ctzn.network/perm-community-edit-profile')
-  } else {
-    throw new Error(`Invalid blob name: "${targetBlobName}". This method only supports avatar and profile-banner.`)
+  } else if (targetBlobName) {
+    throw new Error(`Invalid blob name: "${targetBlobName}". This method only supports avatar and profile-banner, or no name (autogenerate).`)
   }
+
+  targetBlobName = targetBlobName || mlts()
 
   const blob = await timeoutRace(30e3, undefined, blobGet(args.source.userId, args.source.blobName))
   if (!blob) {
@@ -27,4 +32,6 @@ export default async function (db, caller, args) {
     }
   }
   await db.blobs.put(targetBlobName, blob)
+
+  return {blobName: targetBlobName}
 }
