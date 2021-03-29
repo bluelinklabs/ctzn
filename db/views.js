@@ -12,6 +12,7 @@ import { fetchNotications, countNotications, dbGet, fetchItemClass, fetchReactio
 
 const DEFAULT_USER_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'static', 'img', 'default-user-avatar.jpg')
 const DEFAULT_COMMUNITY_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'static', 'img', 'default-community-avatar.jpg')
+const DEFAULT_ITEM_CLASS_ICON_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'static', 'img', 'default-item-class-icon.svg')
 
 // globals
 // =
@@ -179,6 +180,32 @@ export function setup () {
   define('ctzn.network/followers-view', async (auth, userId) => {
     userId = await fetchUserId(userId)
     return dbGetters.listFollowers(userId, auth)
+  })
+
+  define('ctzn.network/item-class-icon-view', async (auth, userId, classId) => {
+    try {
+      const userDb = db.publicDbs.get(await fetchUserId(userId))
+      if (!userDb) throw 'Not found'
+
+      const itemClassEntry = await userDb.getTable('ctzn.network/item-class').get(classId)
+      if (!itemClassEntry) throw 'Not found'
+      
+      const ptr = await userDb.blobs.getPointer(itemClassEntry.value.iconBlobName)
+      if (!ptr) throw 'Not found'
+
+      return {
+        ptr,
+        etag: `W/block-${ptr.start}`,
+        createStream: () => userDb.blobs.createReadStreamFromPointer(ptr)
+      }
+    } catch (e) {
+      return {
+        ptr: null,
+        etag: `W/default-item-class-icon`,
+        contentType: 'image/svg+xml',
+        createStream: () => fs.createReadStream(DEFAULT_ITEM_CLASS_ICON_PATH)
+      }
+    }
   })
 
   define('ctzn.network/notifications-view', async (auth, opts) => {

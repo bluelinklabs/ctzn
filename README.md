@@ -32,6 +32,12 @@ CTZN is still in development! If you decide to run a server or build against the
 
 CTZN's development has been live-streamed from day 1. You can [watch the archives on YouTube](https://www.youtube.com/channel/UCSkcL4my2wgDRFvjQOJzrlg).
 
+### Attributions
+
+### Default item-class icon
+
+Icon licensed under CC BY 3.0: [icon king 1](https://freeicons.io/profile/3)
+
 ----
 
 ## ✨ Patreon support

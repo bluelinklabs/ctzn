@@ -20,14 +20,15 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
       'community-put-ban',
       'community-put-role',
       'create-item',
+      'create-item-class',
       'delete-item-class',
       'destroy-item',
       'ping',
       'put-avatar',
       'put-blob',
-      'put-item-class',
       'put-profile',
-      'transfer-item'
+      'transfer-item',
+      'update-item-class'
     ]
   }
 

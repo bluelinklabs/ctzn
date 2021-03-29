@@ -1,7 +1,7 @@
 {
-  "id": "ctzn.network/put-item-class-method",
-  "title": "Put item class method",
-  "description": "Write an item class record.",
+  "id": "ctzn.network/create-item-class-method",
+  "title": "Create item class method",
+  "description": "Create a new item class record.",
   "type": "dbmethod",
   "parameters": {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -21,6 +21,32 @@
           "properties": {
             "type": {"type": "string", "enum": ["auto", "json-pointer", "string"]},
             "value": {"type": "string"}
+          }
+        }
+      },
+      "displayName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "description": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "iconSource": {
+        "type": "object",
+        "required": ["dbUrl", "userId", "blobName"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          },
+          "blobName": {
+            "type": "string"
           }
         }
       },

@@ -1,5 +1,11 @@
 import test from 'ava'
+import fs from 'fs'
+import * as path from 'path'
+import { fileURLToPath } from 'url'
 import { createServer, TestFramework } from './_util.js'
+
+const TEST_IMAGE_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-img.jpg')
+const TEST_IMAGE2_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-img2.svg')
 
 let instances = []
 
@@ -29,7 +35,7 @@ test('unique items (autokey)', async t => {
   await api.communities.join(folks.userId)
 
   await alice.login()
-  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-item-class-method', {
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-class-method', {
     classId: 'cat',
     keyTemplate: [{type: 'auto'}],
     definition: {
@@ -145,7 +151,7 @@ test('unique items (property id)', async t => {
   await api.communities.join(folks.userId)
 
   await alice.login()
-  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-item-class-method', {
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-class-method', {
     classId: 'cat',
     keyTemplate: [{type: 'json-pointer', value: '/properties/name'}],
     definition: {
@@ -261,7 +267,7 @@ test('semi-fungible items', async t => {
   await api.communities.join(folks.userId)
 
   await alice.login()
-  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-item-class-method', {
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-class-method', {
     classId: 'soda',
     keyTemplate: [
       {type: 'json-pointer', value: '/owner/userId'},
@@ -448,7 +454,7 @@ test('fungible items', async t => {
   await api.communities.join(folks.userId)
 
   await alice.login()
-  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-item-class-method', {
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-class-method', {
     classId: 'paulbucks',
     keyTemplate: [
       {type: 'json-pointer', value: '/owner/userId'}
@@ -550,7 +556,7 @@ test('destroying items', async t => {
   const {alice, folks} = sim.users
 
   await alice.login()
-  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-item-class-method', {
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-class-method', {
     classId: 'paulbucks',
     keyTemplate: [
       {type: 'json-pointer', value: '/owner/userId'}
@@ -603,7 +609,7 @@ test('creating items with an owner that already possesses some of the item', asy
   const {alice, folks} = sim.users
 
   await alice.login()
-  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-item-class-method', {
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-class-method', {
     classId: 'paulbucks',
     keyTemplate: [
       {type: 'json-pointer', value: '/owner/userId'}
@@ -650,7 +656,7 @@ test('ownership permissions', async t => {
   await api.communities.join(folks.userId)
 
   await alice.login()
-  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-item-class-method', {
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-class-method', {
     classId: 'cat',
     keyTemplate: [{type: 'auto'}],
     definition: {
@@ -701,7 +707,7 @@ test('overspending', async t => {
   const {alice, folks} = sim.users
 
   await alice.login()
-  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-item-class-method', {
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-class-method', {
     classId: 'paulbucks',
     keyTemplate: [
       {type: 'json-pointer', value: '/owner/userId'}
@@ -726,6 +732,8 @@ test('managing item classes', async t => {
   let inst = await createServer()
   instances.push(inst)
   let api = inst.api
+  const testImgBase64 = fs.readFileSync(TEST_IMAGE_PATH, 'base64')
+  const testImg2Base64 = fs.readFileSync(TEST_IMAGE2_PATH, 'base64')
 
   await sim.createCitizen(inst, 'alice')
   await sim.createCitizen(inst, 'bob')
@@ -737,34 +745,44 @@ test('managing item classes', async t => {
   await api.communities.join(folks.userId)
 
   await alice.login()
-  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-item-class-method', {
+  const blobsRes1 = await api.blob.create(testImgBase64)
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-class-method', {
     classId: 'paulbucks',
     keyTemplate: [
       {type: 'json-pointer', value: '/owner/userId'}
-    ]
+    ],
+    iconSource: {userId: alice.userId, dbUrl: alice.dbUrl, blobName: blobsRes1.name}
   })
   const itemClasses1 = (await api.table.list(folks.userId, 'ctzn.network/item-class'))?.entries
   t.is(itemClasses1.length, 1)
   t.is(itemClasses1[0].value.id, 'paulbucks')
   t.falsy(itemClasses1[0].value.definition)
+  await t.is(await api.blob.get(folks.userId, itemClasses1[0].value.iconBlobName), testImgBase64)
 
-  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-item-class-method', {
+  await t.throwsAsync(() => sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-class-method', {
     classId: 'paulbucks',
     keyTemplate: [
       {type: 'json-pointer', value: '/owner/userId'}
-    ],
+    ]
+  }))
+
+  const blobsRes2 = await api.blob.create(testImg2Base64)
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/update-item-class-method', {
+    classId: 'paulbucks',
     definition: {
       "$schema": "http://json-schema.org/draft-07/schema#",
       type: 'object',
       properties: {
         hypelevel: {type: 'number'}
       }
-    }
+    },
+    iconSource: {userId: alice.userId, dbUrl: alice.dbUrl, blobName: blobsRes2.name}
   })
   const itemClasses2 = (await api.table.list(folks.userId, 'ctzn.network/item-class'))?.entries
   t.is(itemClasses2.length, 1)
   t.is(itemClasses2[0].value.id, 'paulbucks')
   t.is(itemClasses2[0].value.definition.properties.hypelevel.type, 'number')
+  await t.is(await api.blob.get(folks.userId, itemClasses2[0].value.iconBlobName), testImg2Base64)
 
   await sim.dbmethod(inst, folks.userId, 'ctzn.network/delete-item-class-method', {
     classId: 'paulbucks'
@@ -772,8 +790,13 @@ test('managing item classes', async t => {
   const itemClasses3 = (await api.table.list(folks.userId, 'ctzn.network/item-class'))?.entries
   t.is(itemClasses3.length, 0)
 
+  await t.throwsAsync(() => sim.dbmethod(inst, folks.userId, 'ctzn.network/update-item-class-method', {
+    classId: 'paulbucks',
+    description: 'cool cool'
+  }))
+
   await bob.login()
-  await t.throwsAsync(() => sim.dbmethod(inst, folks.userId, 'ctzn.network/put-item-class-method', {
+  await t.throwsAsync(() => sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-class-method', {
     classId: 'paulbucks',
     keyTemplate: [
       {type: 'json-pointer', value: '/owner/userId'}
@@ -800,7 +823,7 @@ test('inventory view', async t => {
   await api.communities.join(folks.userId)
 
   await alice.login()
-  await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-item-class-method', {
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-class-method', {
     classId: 'paulbucks',
     keyTemplate: [
       {type: 'json-pointer', value: '/owner/userId'}

@@ -6,12 +6,13 @@ import communitySetMemberRoles from './dbmethods/community-set-member-roles.js'
 import communityPutBan from './dbmethods/community-put-ban.js'
 import communityPutRole from './dbmethods/community-put-role.js'
 import createItem from './dbmethods/create-item.js'
+import createItemClass from './dbmethods/create-item-class.js'
 import deleteItemClass from './dbmethods/delete-item-class.js'
 import destroyItem from './dbmethods/destroy-item.js'
 import ping from './dbmethods/ping.js'
 import putAvatar from './dbmethods/put-avatar.js'
 import putBlob from './dbmethods/put-blob.js'
-import putItemClass from './dbmethods/put-item-class.js'
+import updateItemClass from './dbmethods/update-item-class.js'
 import putProfile from './dbmethods/put-profile.js'
 import transferItem from './dbmethods/transfer-item.js'
 
@@ -24,13 +25,14 @@ const dbmethods = {
   'community-put-ban': communityPutBan,
   'community-put-role': communityPutRole,
   'create-item': createItem,
+  'create-item-class': createItemClass,
   'delete-item-class': deleteItemClass,
   'destroy-item': destroyItem,
   'ping': ping,
   'put-avatar': putAvatar,
   'put-blob': putBlob,
-  'put-item-class': putItemClass,
   'put-profile': putProfile,
-  'transfer-item': transferItem
+  'transfer-item': transferItem,
+  'update-item-class': updateItemClass
 }
 export default dbmethods

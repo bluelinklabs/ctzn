@@ -26,6 +26,18 @@
           }
         }
       },
+      "displayName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "description": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "iconBlobName": {
+        "type": "string"
+      },
       "definition": {
         "type": "object"
       },
