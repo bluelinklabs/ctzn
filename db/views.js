@@ -237,7 +237,7 @@ export function setup () {
       if (itemEntry) {
         itemEntry.databaseId = idxEntry.value.item.userId
         itemEntry.url = idxEntry.value.item.dbUrl
-        itemEntry.itemClass = await fetchItemClass(itemEntry.databaseId, itemEntry.value.classId, itemClassCache)
+        itemEntry.itemClass = await fetchItemClass(itemEntry.databaseId, itemEntry.value.classId, itemClassCache).catch(e => undefined)
       }
       return itemEntry
     }))
