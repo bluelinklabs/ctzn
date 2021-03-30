@@ -19,15 +19,11 @@
     "properties": {
       "subject": {
         "type": "object",
-        "required": ["dbUrl", "authorId"],
+        "required": ["dbUrl"],
         "properties": {
           "dbUrl": {
             "type": "string",
             "format": "uri"
-          },
-          "authorId": {
-            "type": "string",
-            "pattern": ".+@.+"
           }
         }
       },
