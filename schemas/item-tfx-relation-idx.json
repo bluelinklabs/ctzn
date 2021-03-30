@@ -1,0 +1,62 @@
+{
+  "id": "ctzn.network/item-tfx-relation-idx",
+  "title": "Item transfer relation index",
+  "description": "Points to item transfers according to their relatedTo attribute",
+  "type": "json-table",
+  "keyTemplate": [{"type": "json-pointer", "value": "/subject/dbUrl"}],
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["subject", "transfers"],
+    "properties": {
+      "subject": {
+        "type": "object",
+        "required": ["dbUrl", "authorId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "authorId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "transfers": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["dbmethodCall", "itemClassId", "qty", "createdAt"],
+          "properties": {
+            "dbmethodCall": {
+              "type": "object",
+              "required": ["dbUrl", "authorId"],
+              "properties": {
+                "dbUrl": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "authorId": {
+                  "type": "string",
+                  "pattern": ".+@.+"
+                }
+              }
+            },
+            "itemClassId": {
+              "type": "string"
+            },
+            "qty": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    }
+  }
+}

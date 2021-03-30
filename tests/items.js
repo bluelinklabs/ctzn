@@ -754,7 +754,7 @@ test('managing item classes', async t => {
   t.is(itemClasses1.length, 1)
   t.is(itemClasses1[0].value.id, 'paulbucks')
   t.falsy(itemClasses1[0].value.definition)
-  await t.is(await api.blob.get(folks.userId, itemClasses1[0].value.iconBlobName), testImgBase64)
+  await t.is((await api.blob.get(folks.userId, itemClasses1[0].value.iconBlobName)).buf, testImgBase64)
 
   await t.throwsAsync(() => sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-class-method', {
     classId: 'paulbucks',
@@ -777,7 +777,7 @@ test('managing item classes', async t => {
   t.is(itemClasses2.length, 1)
   t.is(itemClasses2[0].value.id, 'paulbucks')
   t.is(itemClasses2[0].value.definition.properties.hypelevel.type, 'number')
-  await t.is(await api.blob.get(folks.userId, itemClasses2[0].value.iconBlobName), testImg2Base64)
+  await t.is((await api.blob.get(folks.userId, itemClasses2[0].value.iconBlobName)).buf, testImg2Base64)
 
   await sim.dbmethod(inst, folks.userId, 'ctzn.network/delete-item-class-method', {
     classId: 'paulbucks'
@@ -896,4 +896,106 @@ test('inventory view', async t => {
   t.is(view7[0].value.classId, 'paulbucks')
   t.is(view7[0].value.qty, 2)
   t.is(view7[0].value.owner.userId, alice.userId)
+})
+
+test('transfer relations to posts/comments', async t => {
+  let sim = new TestFramework()
+  let inst = await createServer()
+  instances.push(inst)
+  let api = inst.api
+
+  await sim.createCitizen(inst, 'alice')
+  await sim.createCitizen(inst, 'bob')
+  await sim.createCitizen(inst, 'carla')
+  await sim.users.alice.login()
+  await sim.createCommunity(inst, 'folks')
+
+  const {alice, bob, carla, folks} = sim.users
+  await bob.login()
+  await api.communities.join(folks.userId)
+  await carla.login()
+  await api.communities.join(folks.userId)
+
+  await alice.login()
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-class-method', {
+    classId: 'paulbucks',
+    grouping: 'fungible'
+  })
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-method', {
+    classId: 'paulbucks',
+    qty: 100,
+    owner: {userId: alice.userId, dbUrl: alice.dbUrl},
+  })
+  await sim.dbmethod(inst, folks.userId, 'ctzn.network/create-item-method', {
+    classId: 'paulbucks',
+    qty: 100,
+    owner: {userId: carla.userId, dbUrl: carla.dbUrl},
+  })
+  const items1 = (await api.table.list(folks.userId, 'ctzn.network/item'))?.entries
+  
+  await bob.login()
+  const bobPost = await bob.createPost({text: 'post', community: {userId: folks.userId, dbUrl: folks.profile.dbUrl}})
+  const bobComment = await bob.createComment({text: 'comment', reply: {root: bobPost}, community: {userId: folks.userId, dbUrl: folks.profile.dbUrl}})
+
+  await alice.login()
+  const tfx1 = await sim.dbmethod(inst, folks.userId, 'ctzn.network/transfer-item-method', {
+    itemKey: items1[0].key,
+    qty: 10,
+    recp: {userId: bob.userId, dbUrl: bob.dbUrl},
+    relatedTo: {dbUrl: bobPost.url}
+  })
+  await carla.login()
+  const tfx2 = await sim.dbmethod(inst, folks.userId, 'ctzn.network/transfer-item-method', {
+    itemKey: items1[1].key,
+    qty: 10,
+    recp: {userId: bob.userId, dbUrl: bob.dbUrl},
+    relatedTo: {dbUrl: bobPost.url}
+  })
+  const tfx3 = await sim.dbmethod(inst, folks.userId, 'ctzn.network/transfer-item-method', {
+    itemKey: items1[1].key,
+    qty: 10,
+    recp: {userId: bob.userId, dbUrl: bob.dbUrl},
+    relatedTo: {dbUrl: bobComment.url}
+  })
+
+  const idxEntries1 = (await api.table.list(inst.serverUserId, 'ctzn.network/item-tfx-relation-idx')).entries
+  t.is(idxEntries1.length, 2)
+  t.is(idxEntries1[0].value.subject.authorId, bob.userId)
+  t.is(idxEntries1[0].value.subject.dbUrl, bobComment.url)
+  t.is(idxEntries1[0].value.transfers[0].dbmethodCall.authorId, carla.userId)
+  t.is(idxEntries1[0].value.transfers[0].dbmethodCall.dbUrl, tfx3.url)
+  t.is(idxEntries1[0].value.transfers[0].itemClassId, 'paulbucks')
+  t.is(idxEntries1[0].value.transfers[0].qty, 10)
+  t.is(idxEntries1[1].key, bobPost.url)
+  t.is(idxEntries1[1].value.subject.authorId, bob.userId)
+  t.is(idxEntries1[1].value.subject.dbUrl, bobPost.url)
+  t.is(idxEntries1[1].value.transfers[0].dbmethodCall.authorId, alice.userId)
+  t.is(idxEntries1[1].value.transfers[0].dbmethodCall.dbUrl, tfx1.url)
+  t.is(idxEntries1[1].value.transfers[0].itemClassId, 'paulbucks')
+  t.is(idxEntries1[1].value.transfers[0].qty, 10)
+  t.is(idxEntries1[1].value.transfers[1].dbmethodCall.authorId, carla.userId)
+  t.is(idxEntries1[1].value.transfers[1].dbmethodCall.dbUrl, tfx2.url)
+  t.is(idxEntries1[1].value.transfers[1].itemClassId, 'paulbucks')
+  t.is(idxEntries1[1].value.transfers[1].qty, 10)
+
+  await alice.login()
+  // throws because the related item must be authored by the recipient
+  await t.throwsAsync(() => sim.dbmethod(inst, folks.userId, 'ctzn.network/transfer-item-method', {
+    itemKey: items1[0].key,
+    qty: 10,
+    recp: {userId: carla.userId, dbUrl: carla.dbUrl},
+    relatedTo: {dbUrl: bobPost.url}
+  }))
+
+  await bob.login()
+  const postEntries = (await api.view.get('ctzn.network/posts-view', bob.userId)).posts
+  t.is(postEntries[0].relatedItemTransfers.length, 2)
+  const postEntry = (await api.view.get('ctzn.network/post-view', bob.userId, bobPost.key))
+  t.is(postEntry.relatedItemTransfers.length, 2)
+  const feedEntries = (await api.view.get('ctzn.network/feed-view')).feed
+  t.is(feedEntries[0].relatedItemTransfers.length, 2)
+  const threadEntries = (await api.view.get('ctzn.network/thread-view', bobPost.url)).comments
+  t.is(threadEntries[0].relatedItemTransfers.length, 1)
+  const commentEntry = (await api.view.get('ctzn.network/comment-view', bob.userId, bobComment.key))
+  t.is(commentEntry.relatedItemTransfers.length, 1)
 })

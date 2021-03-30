@@ -23,6 +23,16 @@
             "pattern": ".+@.+"
           }
         }
+      },
+      "relatedTo": {
+        "type": "object",
+        "required": ["dbUrl"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
       }
     }
   },

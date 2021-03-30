@@ -280,7 +280,7 @@ test('permissions', async t => {
     blobSource: {userId: alice.userId, dbUrl: alice.dbUrl},
     blobName: blobsRes1.name
   })
-  await t.is(await api.blob.get(folks.userId, 'avatar'), testImgBase64)
+  await t.is((await api.blob.get(folks.userId, 'avatar')).buf, testImgBase64)
   await bob.login()
   await sim.dbmethod(inst, folks.userId, 'ctzn.network/put-profile-method', {displayName: 'Folks 2'})
   t.is((await api.view.get('ctzn.network/profile-view', folks.userId)).value.displayName, 'Folks 2')

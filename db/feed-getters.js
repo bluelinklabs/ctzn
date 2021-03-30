@@ -1,8 +1,7 @@
 import lexint from 'lexicographic-integer-encoding'
 import { publicDbs } from './index.js'
-import { constructEntryUrl, parseEntryUrl, getServerIdForUserId } from '../lib/strings.js'
-import { fetchUserId } from '../lib/network.js'
-import { dbGet, fetchAuthor, fetchReactions, fetchReplyCount, addPrefixToRangeOpts } from './util.js'
+import { constructEntryUrl, getServerIdForUserId } from '../lib/strings.js'
+import { dbGet, fetchAuthor, fetchReactions, fetchReplyCount, fetchRelatedItemTransfers, addPrefixToRangeOpts } from './util.js'
 import * as errors from '../lib/errors.js'
 
 const lexintEncoder = lexint('hex')
@@ -65,6 +64,7 @@ export async function listHomeFeed (opts, auth) {
     entry.author = await fetchAuthor(db.userId, authorsCache)
     entry.reactions = (await fetchReactions(entry)).reactions
     entry.replyCount = await fetchReplyCount(entry)
+    entry.relatedItemTransfers = await fetchRelatedItemTransfers(entry)
     postEntries.push(entry)
     if (postEntries.length >= limit) {
       break

@@ -118,6 +118,15 @@ export async function fetchReplyCount (subject) {
   return comments.length
 }
 
+export async function fetchRelatedItemTransfers (subject) {
+  const relatedItemTfxIdxEntry = await publicServerDb.itemTfxRelationIdx.get(subject.url)
+  return relatedItemTfxIdxEntry?.value.transfers.map(tfx => ({
+    dbmethodCall: tfx.dbmethodCall,
+    itemClassId: tfx.itemClassId,
+    qty: tfx.qty
+  })) || []
+}
+
 async function fetchNotificationsInner (userInfo, {lt, gt, after, before, limit} = {}) {
   let notificationEntries = []
   limit = Math.max(Math.min(limit || 20, 20), 1)

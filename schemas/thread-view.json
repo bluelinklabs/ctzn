@@ -45,6 +45,23 @@
             }
           },
           "replyCount": {"type": "number"},
+          "relatedItemTransfers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "dbmethodCall": {
+                  "type": "object",
+                  "properties": {
+                    "authorId": {"type": "string", "pattern": ".+@.+"},
+                    "dbUrl": {"type": "string", "format": "uri"}
+                  }
+                },
+                "itemClassId": {"type": "string"},
+                "qty": {"type": "integer"}
+              }
+            }
+          },
           "replies": {
             "type": "array",
             "items": {"$ref": "#/definitions/comment"}

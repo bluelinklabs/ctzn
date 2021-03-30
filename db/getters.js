@@ -7,6 +7,7 @@ import {
   fetchReactions,
   fetchReplyCount,
   fetchReplies,
+  fetchRelatedItemTransfers,
   fetchIndexedFollowerIds,
   addPrefixToRangeOpts
 } from './util.js'
@@ -20,6 +21,7 @@ export async function getPost (db, key, authorId, auth = undefined) {
   postEntry.author = await fetchAuthor(authorId)
   postEntry.reactions = (await fetchReactions(postEntry)).reactions
   postEntry.replyCount = await fetchReplyCount(postEntry)
+  postEntry.relatedItemTransfers = await fetchRelatedItemTransfers (postEntry)
   return postEntry
 }
 
@@ -32,6 +34,7 @@ export async function listPosts (db, opts, authorId, auth = undefined) {
       entry.author = await fetchAuthor(authorId, authorsCache)
       entry.reactions = (await fetchReactions(entry)).reactions
       entry.replyCount = await fetchReplyCount(entry)
+      entry.relatedItemTransfers = await fetchRelatedItemTransfers(entry)
     }
     return entries
   } else if (db.dbType === 'ctzn.network/public-community-db') {
@@ -49,6 +52,7 @@ export async function getComment (db, key, authorId, auth = undefined) {
   commentEntry.author = await fetchAuthor(authorId)
   commentEntry.reactions = (await fetchReactions(commentEntry)).reactions
   commentEntry.replyCount = await fetchReplyCount(commentEntry)
+  commentEntry.relatedItemTransfers = await fetchRelatedItemTransfers(commentEntry)
   return commentEntry
 }
 
@@ -156,6 +160,7 @@ async function fetchIndexedComments (comments, {includeReplyCount} = {includeRep
       commentEntry.author = await fetchAuthor(userId, authorsCache)
       commentEntry.reactions = (await fetchReactions(commentEntry)).reactions
       if (includeReplyCount) commentEntry.replyCount = await fetchReplyCount(commentEntry)
+      commentEntry.relatedItemTransfers = await fetchRelatedItemTransfers(commentEntry)
       return commentEntry
     } catch (e) {
       console.log(e)

@@ -24,7 +24,6 @@ export default async function (db, caller, args) {
     let blobName
     if (args.iconSource) {
       const blob = await timeoutRace(30e3, undefined, blobGet(args.iconSource.userId, args.iconSource.blobName))
-      console.log(blob)
       if (!blob?.buf) {
         throw new Error('Failed to read blob from source database')
       }

@@ -32,6 +32,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
     this.notificationsIdx = this.getTable('ctzn.network/notification-idx')
     this.reactionsIdx = this.getTable('ctzn.network/reaction-idx')
     this.feedIdx = this.getTable('ctzn.network/feed-idx')
+    this.itemTfxRelationIdx = this.getTable('ctzn.network/item-tfx-relation-idx')
 
     if (!this.writable) {
       return
@@ -64,7 +65,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
       }
       try {
         methodDefinition.validateCallArgs(args)
-        const res = await methodDefinition.handler(handlerDb, db, args)
+        const res = await methodDefinition.handler(handlerDb, db, args, diff.right)
         methodDefinition.validateResponse(res)
         return await writeDbMethodResult('success', res)
       } catch (e) {
