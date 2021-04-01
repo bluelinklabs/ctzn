@@ -1,0 +1,41 @@
+{
+  "id": "ctzn.network/community-invite-member-method",
+  "title": "Invite member method",
+  "description": "Invite a user to join a community.",
+  "type": "dbmethod",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["invitedUser"],
+    "properties": {
+      "invitedUser": {
+        "type": "object",
+        "required": ["dbUrl", "userId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      }
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "inviteRecord": {
+        "type": "object",
+        "required": ["key", "url"],
+        "properties": {
+          "key": {"type": "string"},
+          "url": {"type": "string", "format": "uri"}
+        }
+      }
+    }
+  }
+}

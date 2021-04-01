@@ -1,10 +1,12 @@
 import communityDeleteBan from './dbmethods/community-delete-ban.js'
 import communityDeleteRole from './dbmethods/community-delete-role.js'
+import communityInviteMember from './dbmethods/community-invite-member.js'
+import communityPutBan from './dbmethods/community-put-ban.js'
+import communityPutRole from './dbmethods/community-put-role.js'
 import communityRemoveContent from './dbmethods/community-remove-content.js'
 import communityRemoveMember from './dbmethods/community-remove-member.js'
 import communitySetMemberRoles from './dbmethods/community-set-member-roles.js'
-import communityPutBan from './dbmethods/community-put-ban.js'
-import communityPutRole from './dbmethods/community-put-role.js'
+import communityUpdateConfig from './dbmethods/community-update-config.js'
 import createItem from './dbmethods/create-item.js'
 import createItemClass from './dbmethods/create-item-class.js'
 import deleteItemClass from './dbmethods/delete-item-class.js'
@@ -19,11 +21,13 @@ import transferItem from './dbmethods/transfer-item.js'
 const dbmethods = {
   'community-delete-ban': communityDeleteBan,
   'community-delete-role': communityDeleteRole,
+  'community-invite-member': communityInviteMember,
+  'community-put-ban': communityPutBan,
+  'community-put-role': communityPutRole,
   'community-remove-content': communityRemoveContent,
   'community-remove-member': communityRemoveMember,
   'community-set-member-roles': communitySetMemberRoles,
-  'community-put-ban': communityPutBan,
-  'community-put-role': communityPutRole,
+  'community-update-config': communityUpdateConfig,
   'create-item': createItem,
   'create-item-class': createItemClass,
   'delete-item-class': deleteItemClass,

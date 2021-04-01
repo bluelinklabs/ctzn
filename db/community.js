@@ -14,11 +14,13 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
     return [
       'community-delete-ban',
       'community-delete-role',
+      'community-invite-member',
+      'community-put-ban',
+      'community-put-role',
       'community-remove-content',
       'community-remove-member',
       'community-set-member-roles',
-      'community-put-ban',
-      'community-put-role',
+      'community-update-config',
       'create-item',
       'create-item-class',
       'delete-item-class',
@@ -36,8 +38,10 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
     await super.setup()
     await this.blobs.setup()
     this.profile = this.getTable('ctzn.network/profile')
+    this.communityConfig = this.getTable('ctzn.network/community-config')
     this.members = this.getTable('ctzn.network/community-member')
     this.roles = this.getTable('ctzn.network/community-role')
+    this.invites = this.getTable('ctzn.network/community-invite')
     this.bans = this.getTable('ctzn.network/community-ban')
     this.itemClasses = this.getTable('ctzn.network/item-class')
     this.items = this.getTable('ctzn.network/item')

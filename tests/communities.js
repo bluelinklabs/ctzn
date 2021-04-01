@@ -504,3 +504,38 @@ test('valid usernames', async t => {
   await t.throwsAsync(() => sim.createCommunity(inst, 'good-folks-'))
   await t.throwsAsync(() => sim.createCommunity(inst, '-good-folks'))
 })
+
+test('closed, invite-based joining', async t => {
+  let sim = new TestFramework()
+  let inst1 = await createServer()
+  let inst2 = await createServer()
+  instances.push(inst1)
+  instances.push(inst2)
+  
+  await sim.createCitizen(inst1, 'bob')
+  await sim.users.bob.login()
+  await sim.createCommunity(inst1, 'folks')
+  await sim.createCitizen(inst2, 'alice')
+  const {alice, bob, folks} = sim.users
+
+  await bob.login()
+  await sim.dbmethod(inst1, folks.userId, 'ctzn.network/community-update-config-method', {joinMode: 'closed'})
+
+  await alice.login()
+  await t.throwsAsync(() => inst2.api.communities.join(folks.userId))
+  const members1 = (await inst1.api.table.list(folks.userId, 'ctzn.network/community-member')).entries
+  t.is(members1.length, 1)
+  const memberships1 = (await inst2.api.table.list(alice.userId, 'ctzn.network/community-membership')).entries
+  t.is(memberships1.length, 0)
+
+  await bob.login()
+  await sim.dbmethod(inst1, folks.userId, 'ctzn.network/community-invite-member-method', {
+    invitedUser: {userId: alice.userId, dbUrl: alice.profile.dbUrl}
+  })
+  await alice.login()
+  await inst2.api.communities.join(folks.userId)
+  const members2 = (await inst1.api.table.list(folks.userId, 'ctzn.network/community-member')).entries
+  t.is(members2.length, 2)
+  const memberships2 = (await inst2.api.table.list(alice.userId, 'ctzn.network/community-membership')).entries
+  t.is(memberships2.length, 1)
+})

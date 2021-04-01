@@ -116,6 +116,15 @@ export function setup (wsServer, config) {
         throw new errors.PermissionsError(`You have been banned from this community. ${ban.value.reason ? `Reason: ${ban.value.reason}` : ''}`)
       }
 
+      // check for invites if it's a closed community
+      const configEntry = await publicCommunityDb.communityConfig.get('self')
+      if (configEntry?.value?.joinMode === 'closed') {
+        const inviteEntry = await publicCommunityDb.invites.get(client.auth.userId)
+        if (!inviteEntry) {
+          throw new errors.PermissionsError(`You must be invited to join this community.`)
+        }
+      }
+
       // create member and membership records
       const joinDate = (new Date()).toISOString()
       const membershipValue = {community: communityInfo, joinDate}
@@ -164,6 +173,15 @@ export function setup (wsServer, config) {
     const ban = await publicCommunityDb.bans.get(opts.user.userId)
     if (ban) {
       throw new errors.PermissionsError(`You have been banned from this community. ${ban.value.reason ? `Reason: ${ban.value.reason}` : ''}`)
+    }
+
+    // check for invites if it's a closed community
+    const configEntry = await publicCommunityDb.communityConfig.get('self')
+    if (configEntry?.value?.joinMode === 'closed') {
+      const inviteEntry = await publicCommunityDb.invites.get(opts.user.userId)
+      if (!inviteEntry) {
+        throw new errors.PermissionsError(`You must be invited to join this community.`)
+      }
     }
 
     // create member record

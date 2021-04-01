@@ -12,6 +12,10 @@ Special permission indicating the user is an admin and has access to all permiss
 
 A role with this permission can remove, ban, and unban members from a community.
 
+## `ctzn.network/perm-invite`
+
+A role with this permission can invite users to join the community.
+
 ## `ctzn.network/perm-community-remove-post`
 
 A role with this permission can remove posts from the community's feed index.
@@ -31,6 +35,10 @@ A role with this permission can create, edit, and delete roles.
 ## `ctzn.network/perm-community-assign-roles`
 
 A role with this permission can assign roles to community members.
+
+## `ctzn.network/perm-community-update-config`
+
+A role with this permission can update the community configuration record.
 
 ## `ctzn.network/perm-manage-item-classes`
 
