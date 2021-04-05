@@ -135,6 +135,7 @@ async function fetchIndexedPosts (postsFeedEntries, {includeReplyCount} = {inclu
       postEntry.author = await fetchAuthor(userId, authorsCache)
       postEntry.reactions = (await fetchReactions(postEntry)).reactions
       if (includeReplyCount) postEntry.replyCount = await fetchReplyCount(postEntry)
+      postEntry.relatedItemTransfers = await fetchRelatedItemTransfers(postEntry)
       return postEntry
     } catch (e) {
       console.log(e)
