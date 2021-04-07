@@ -20,6 +20,17 @@
       "homepageUrl": {
         "type": "string",
         "format": "uri"
+      },
+      "sections": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["id"],
+          "properties": {
+            "id": {"type": "string", "maxLength": 64},
+            "label": {"type": "string", "maxLength": 64}
+          }
+        }
       }
     }
   }
