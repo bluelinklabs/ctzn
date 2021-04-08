@@ -58,6 +58,9 @@
       "extendedText": {
         "type": "string"
       },
+      "extendedTextMimeType": {
+        "type": "string"
+      },
       "community": {
         "type": "object",
         "required": ["dbUrl", "userId"],
