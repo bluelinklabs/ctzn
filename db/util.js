@@ -12,15 +12,15 @@ export async function dbGet (dbUrl, opts = undefined) {
   let userId = await fetchUserId(origin)
   let db = userId ? publicDbs.get(userId) : undefined
   if (!db) {
-    if (!opts.userId) {
+    if (!opts?.userId) {
       throw new Error(`Unable to load ${dbUrl}, user ID not known`)
     }
     if (opts?.noLoadExternal) {
       throw new Error(`Database "${userId}" not found`)
     }
-    db = await loadExternalDb(opts.userId)
+    db = await loadExternalDb(opts?.userId)
     if (!db) {
-      throw new Error(`Database "${opts.userId}" not found`)
+      throw new Error(`Database "${opts?.userId}" not found`)
     }
   }
   const pathParts = urlp.pathname.split('/').filter(Boolean)

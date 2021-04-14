@@ -33,7 +33,7 @@ export function setup (wsServer, config) {
   wsServer.registerLoopback = function (methodName, methodHandler) {
     origRegister.call(this, methodName, async (params, socket_id) => {
       const client = wsServer.namespaces['/'].clients.get(socket_id)
-      if (!client?.auth?.sessionId === 'loopback') {
+      if (client?.auth?.sessionId !== 'loopback') {
         throw new Error('You do not have permission to access this method')
       }
       const res = await methodHandler(params, client)//.catch(e => {throw new Error(e.stack)}) // uncomment this to get a stack in rpc errors
