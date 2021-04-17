@@ -9,7 +9,7 @@ import * as table from './table.js'
 import * as users from './users.js'
 import * as view from './view.js'
 
-export function setup (wsServer, config) {
+export function setup (wsServer, config, extensions) {
   wsServer.wss.on('connection', function connection(ws, req) {
 
     // Save request headers onto the ws client for later
@@ -51,4 +51,11 @@ export function setup (wsServer, config) {
   table.setup(wsServer, config)
   users.setup(wsServer, config)
   view.setup(wsServer, config)
+
+  if (extensions) {
+    const apiExtensions = Array.from(extensions).map((extension) => extension.default.apiExtensions).flat().filter(Boolean)
+    for (let extension of apiExtensions) {
+      extension.setup(wsServer, config)
+    }
+  }
 }

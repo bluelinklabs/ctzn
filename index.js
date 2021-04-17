@@ -15,8 +15,15 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { fileURLToPath } from 'url'
 import * as os from 'os'
-import { setOrigin, getDomain, parseAcctUrl, usernameToUserId, DEBUG_MODE_PORTS_MAP } from './lib/strings.js'
+import * as stringHelpers from './lib/strings.js'
+import * as dbGetters from './db/getters.js'
+import * as dbHelpers from './db/util.js'
+import * as testHelpers from './tests/_util.js'
+import * as schemas from './lib/schemas.js'
+import * as networkHelpers from './lib/network.js'
+import * as errors from './lib/errors.js'
 
+const { setOrigin, getDomain, parseAcctUrl, usernameToUserId, DEBUG_MODE_PORTS_MAP } = stringHelpers;
 const PACKAGE_JSON_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'package.json')
 const PACKAGE_JSON = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, 'utf8'))
 
@@ -43,6 +50,10 @@ export async function start (opts) {
   app.set('views', path.join(path.dirname(fileURLToPath(import.meta.url)), 'views'))
   app.set('view engine', 'ejs')
   app.use(cors())
+
+  //load extensions
+  const extensions = config.extensions.split(',').filter(Boolean) || [];
+  const extensionModules = await Promise.all(extensions.map(async (extension) => await import(extension)));
 
   app.get('/', (req, res) => {
     res.render('index')
@@ -171,12 +182,19 @@ export async function start (opts) {
     }
   })
 
+  if (extensionModules) {
+    const appExtensions = Array.from(extensionModules).map((extensionModule) => extensionModule.default.appExtensions).flat().filter(Boolean)
+    for (let extension of appExtensions) {
+      extension.setup(app)
+    }
+  }
+
   app.use((req, res) => {
     res.status(404).send('404 Page not found')
   })
 
   const wsServer = new WebSocketServer({noServer: true})
-  api.setup(wsServer, config)
+  api.setup(wsServer, config, extensionModules)
 
   const server = new http.Server(app)
   server.on('upgrade', (request, socket, head) => {
@@ -189,7 +207,7 @@ export async function start (opts) {
   })
 
   await email.setup(config)
-  await db.setup(config)
+  await db.setup(config, extensionModules)
 
   // process.on('SIGINT', close)
   // process.on('SIGTERM', close)
@@ -234,4 +252,21 @@ function getDb (username) {
   const publicDb = db.publicDbs.get(userId)
   if (!publicDb) throw new Error('User database not found')
   return publicDb
+}
+
+export {
+  api,
+  db,
+  dbGetters,
+  dbHelpers,
+  dbViews,
+  email,
+  errors,
+  getDb,
+  issues,
+  networkHelpers,
+  perf,
+  schemas,
+  stringHelpers,
+  testHelpers,
 }

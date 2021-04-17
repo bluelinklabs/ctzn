@@ -21,7 +21,8 @@ const match = subcommand({
           domain: args.domain,
           configDir: args.configDir,
           hyperspaceHost: args.hyperspaceHost,
-          hyperspaceStorage: args.hyperspaceStorage
+          hyperspaceStorage: args.hyperspaceStorage,
+          extensions: args.extensions || ''
         })
       }
     },
@@ -35,7 +36,8 @@ const match = subcommand({
           simulateHyperspace: true,
           port: args.port,
           configDir: args.configDir,
-          domain: args.domain
+          domain: args.domain,
+          extensions: args.extensions || ''
         })
       }
     },

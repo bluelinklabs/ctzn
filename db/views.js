@@ -39,14 +39,14 @@ export async function exec (schemaId, auth, ...args) {
   return res
 }
 
-export function setup () {
+export function setup (extensions) {
   define('ctzn.network/avatar-view', async (auth, userId) => {
     let userDb
     try {
       userId = await fetchUserId(userId)
       userDb = db.publicDbs.get(userId)
       if (!userDb) throw 'Not found'
-      
+
       const ptr = await userDb.blobs.getPointer('avatar')
       if (!ptr) throw 'Not found'
 
@@ -79,7 +79,7 @@ export function setup () {
     userId = await fetchUserId(userId)
     const userDb = db.publicDbs.get(userId)
     if (!userDb) throw 'Not found'
-    
+
     const ptr = await userDb.blobs.getPointer(blobname)
     if (!ptr) throw 'Not found'
 
@@ -296,6 +296,13 @@ export function setup () {
   define('ctzn.network/thread-view', async (auth, url) => {
     return {comments: await dbGetters.getThread(url, auth)}
   })
+
+  if (extensions) {
+    const dbViewExtensions = Array.from(extensions).map((extension) => extension.default.dbViewExtensions).flat().filter(Boolean)
+    for (let extension of dbViewExtensions) {
+      extension.setup({define, getDb, getListOpts});
+    }
+  }
 }
 
 // internal methods

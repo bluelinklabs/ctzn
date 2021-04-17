@@ -1,11 +1,11 @@
 import { BaseHyperbeeDB } from './base.js'
 import * as perf from '../lib/perf.js'
 
-
 export class PublicCitizenDB extends BaseHyperbeeDB {
-  constructor (userId, key) {
+  constructor (userId, key, extensions) {
     super(`public:${userId}`, key)
     this.userId = userId
+    this.extensions = extensions
   }
 
   get dbType () {
@@ -27,15 +27,23 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
     this.memberships.onDel(() => this.emit('subscriptions-changed'))
     this.follows.onPut(() => this.emit('subscriptions-changed'))
     this.follows.onDel(() => this.emit('subscriptions-changed'))
+
+    if (this.extensions) {
+      const publicCitizenDbExtensions = Array.from(this.extensions).map((extension) => extension.default.publicCitizenDbExtensions).flat().filter(Boolean)
+      for (let extension of publicCitizenDbExtensions) {
+        extension.setup(this)
+      }
+    }
   }
 }
 
 export class PrivateCitizenDB extends BaseHyperbeeDB {
-  constructor (userId, key, publicServerDb, publicDb) {
+  constructor (userId, key, publicServerDb, publicDb, extensions) {
     super(`private:${userId}`, key, {isPrivate: true})
     this.userId = userId
     this.publicServerDb = publicServerDb
     this.publicDb = publicDb
+    this.extensions = extensions
   }
 
   get dbType () {
@@ -44,5 +52,12 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
 
   async setup () {
     await super.setup()
+
+    if (this.extensions) {
+      const privateCitizenDbExtensions = Array.from(this.extensions).map((extension) => extension.default.privateCitizenDbExtensions).flat().filter(Boolean)
+      for (let extension of privateCitizenDbExtensions) {
+        extension.setup(this, { perf })
+      }
+    }
   }
 }
