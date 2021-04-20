@@ -156,6 +156,9 @@ export class BaseHyperbeeDB extends EventEmitter {
     try {
       if (!this.isInMemory) return
       if (this.blobs) await this.blobs.teardown({unswarm})
+      for (let schemaId in this.tables) {
+        this.tables[schemaId].teardown()
+      }
       if (!this.isPrivate && unswarm) {
         client.network.configure(this.bee.feed, {announce: false, lookup: false})
       }
@@ -170,10 +173,6 @@ export class BaseHyperbeeDB extends EventEmitter {
     this.lastAccess = Date.now()
     if (!this.isInMemory) {
       await this.setup()
-      this.blobs.reset()
-      for (let schemaId in this.tables) {
-        this.tables[schemaId].reset()
-      }
     }
   }
 
@@ -288,7 +287,7 @@ export class BaseHyperbeeDB extends EventEmitter {
         const indexState = indexStates[i]
 
         await changedDb.touch()
-        
+
         let start = indexState?.value?.subject?.lastIndexedSeq || FIRST_HYPERBEE_BLOCK
         if (start === changedDb.bee.version) continue
 
@@ -353,7 +352,7 @@ export class BaseHyperbeeDB extends EventEmitter {
 class Blobs {
   constructor (db, {isPrivate}) {
     this.db = db
-    this.kv = undefined
+    this._kv = undefined
     this.feed = undefined
     this.feedInfo = undefined
     this.isPrivate = isPrivate
@@ -375,11 +374,18 @@ class Blobs {
     return this.feedInfo?.discoveryKey
   }
 
+  get kv () {
+    if (!this._kv || this._kv.feed !== this.db.bee?.feed) {
+      // bee was unloaded since last cache, recreate from current bee
+      this._kv = this.db.bee.sub('_blobs')
+    }
+    return this._kv
+  }
+
   async setup () {
     if (this.feed) {
       return // already setup
     }
-    this.reset()
     if (!this.db.desc.blobsFeedKey) {
       this.feed = client.corestore().get(null)
       await this.feed.ready()
@@ -399,10 +405,6 @@ class Blobs {
     }
 
     // TODO track which ranges in the feed are actively pointed to and cache/decache accordingly
-  }
-
-  reset () {
-    this.kv = this.db.bee.sub('_blobs')
   }
 
   async teardown ({unswarm} = {unswarm: false}) {
@@ -475,18 +477,24 @@ class Table {
   constructor (db, schema) {
     const [domain, name] = schema.id.split('/')
     this.db = db
-    this.bee = undefined
+    this._bee = undefined
     this.schema = schema
     this._schemaDomain = domain
     this._schemaName = name
     this._onPutCbs = undefined
     this._onDelCbs = undefined
     this.lock = (id = '') => this.db.lock(`${this.schema.id}:${id}`)
-    this.reset()
   }
 
-  reset () {
-    this.bee = this.db.bee.sub(this._schemaDomain).sub(this._schemaName)
+  teardown () {
+  }
+
+  get bee () {
+    if (!this._bee || this._bee.feed !== this.db.bee?.feed) {
+      // bee was unloaded since last cache, recreate from current bee
+      this._bee = this.db.bee.sub(this._schemaDomain).sub(this._schemaName)
+    }
+    return this._bee
   }
 
   constructBeeKey (key) {
