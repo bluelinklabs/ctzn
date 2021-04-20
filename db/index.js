@@ -211,11 +211,14 @@ async function loadMemberUserDbs () {
       publicDb.watch(onDatabaseChange)
       publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
 
-      let accountEntry = await privateServerDb.accounts.get(user.value.username)
-      let privateDb = new PrivateCitizenDB(userId, hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicDb)
-      await privateDb.setup()
-      privateDbs.set(userId, privateDb)
-      privateDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+      // DISABLED
+      // we may not use these anymore
+      // -prf
+      // let accountEntry = await privateServerDb.accounts.get(user.value.username)
+      // let privateDb = new PrivateCitizenDB(userId, hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicDb)
+      // await privateDb.setup()
+      // privateDbs.set(userId, privateDb)
+      // privateDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
 
       numLoaded++
     } else if (user.value.type === 'community') {
