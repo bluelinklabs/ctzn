@@ -276,8 +276,9 @@ export class BaseHyperbeeDB extends EventEmitter {
 
   async updateIndexes ({changedDb}) {
     if (!this.key || !this.writable) return
-    await this.touch()
     const release = await this.lock(`update-indexes:${changedDb.url}`)
+    
+    await this.touch()
 
     const batch = this.bee.batch()
     try {
@@ -285,6 +286,9 @@ export class BaseHyperbeeDB extends EventEmitter {
       for (let i = 0; i < this.indexers.length; i++) {
         const indexer = this.indexers[i]
         const indexState = indexStates[i]
+
+        await changedDb.touch()
+        
         let start = indexState?.value?.subject?.lastIndexedSeq || FIRST_HYPERBEE_BLOCK
         if (start === changedDb.bee.version) continue
 
