@@ -71,16 +71,17 @@ class HyperspaceLog extends LitElement {
         @click=${e => this.onClickEntry(e, entry, i)}
       >
         <div>
-          <a href="/admin/hyperspace/db/${entry.dkey}" class="cursor-pointer hover:underline">
+          <a href="/admin/hyperspace/db/${entry.dkey}" class="text-blue-600 cursor-pointer hover:underline">
             ${entry.dkey.slice(0, 6)}..${entry.dkey.slice(-2)}
           </a>
         </div>
         <div>${entry.event}</div>
         <div>
-          ${this.renderEntryDetails(entry)}
+          ${this.renderEntryDetails(entry, i)}
           ${entry.mergedEntries?.length ? html`
-            <span class="bg-pink-200 text-pink-600 rounded px-1">x${entry.mergedEntries.length} entries</span>
-            <small>(click to ${this.expandedEntries[i] ? 'collapse' : 'expand'})</small>
+            <span class="bg-pink-200 text-pink-600 rounded px-1 cursor-pointer hover:bg-pink-300">
+              x${entry.mergedEntries.length + 1} entries
+            </span>
           ` : ''}
         </div>
         <div>${this.renderEntryTs(entry)}</div>
@@ -93,14 +94,20 @@ class HyperspaceLog extends LitElement {
     `
   }
 
-  renderEntryDetails (entry) {
+  renderEntryDetails (entry, i) {
     switch (entry.event) {
       case 'peer-open': return entry.peer.remoteAddress
       case 'peer-remove': return entry.peer.remoteAddress
-      case 'upload': return `Block ${entry.seq}, size ${bytes(entry.byteLength)}`
-      case 'download': return `Block ${entry.seq}, size ${bytes(entry.byteLength)}`
       case 'wait': return `Block ${entry.seq}`
-      case 'append': return `Block ${entry.length}, size ${bytes(entry.byteLength)}`
+      case 'upload':
+      case 'download':
+      case 'append':
+        if (entry.mergedEntries?.length && !this.expandedEntries[i]) {
+          return `${entry.mergedEntries?.length + 1} blocks, ${bytes(entry.accBytes)} total`
+        } else {
+          const seq = typeof entry.seq === 'number' ? entry.seq : entry.length
+          return `Block ${seq}, size ${bytes(entry.byteLength)}`
+        }
       default: return ''
     }
   }
@@ -124,11 +131,11 @@ customElements.define('app-hyperspace-log', HyperspaceLog)
 
 function reduceRelatedEntries (acc, entry) {
   let last = acc.length ? acc[acc.length - 1] : undefined
-  if (!last || entry.type !== last.type) {
+  if (!last || entry.event !== last.event) {
     acc.push(entry)
     return acc
   }
-  if (entry.type === 'peer-open' || entry.type === 'peer-remove') {
+  if (entry.event === 'peer-open' || entry.event === 'peer-remove') {
     if (entry.peer.remoteAddress !== last.peer.remoteAddress) {
       acc.push(entry)
       return acc
@@ -136,5 +143,9 @@ function reduceRelatedEntries (acc, entry) {
   }
   last.mergedEntries = last.mergedEntries || []
   last.mergedEntries.push(entry)
+  if (last.event === 'upload' || last.event === 'download' || last.event === 'append') {
+    last.accBytes = last.accBytes || last.byteLength
+    last.accBytes += entry.byteLength
+  }
   return acc
 }
