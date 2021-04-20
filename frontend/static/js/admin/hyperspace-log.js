@@ -9,7 +9,8 @@ class HyperspaceLog extends LitElement {
   static get properties () {
     return {
       dkey: {type: String},
-      entries: {type: Array}
+      entries: {type: Array},
+      expandedEntries: {type: Object}
     }
   }
 
@@ -20,6 +21,8 @@ class HyperspaceLog extends LitElement {
   constructor () {
     super()
     this.dkey = undefined
+    this.entries = undefined
+    this.expandedEntries = {}
     this.fetchInterval = undefined
   }
 
@@ -43,7 +46,8 @@ class HyperspaceLog extends LitElement {
   async load () {
     try {
       await session.setup()
-      this.entries = await session.api.server.queryHyperspaceLog({dkey: this.dkey})
+      let entries = await session.api.server.queryHyperspaceLog({dkey: this.dkey})
+      this.entries = entries.reduce(reduceRelatedEntries, [])
     } catch (e) {
       console.error(e)
     }
@@ -54,20 +58,38 @@ class HyperspaceLog extends LitElement {
       return html`<div>Loading...</div>`
     }
     return html`
-      <div class="bg-white p-1 font-mono text-sm sm:rounded">
-        ${repeat(this.entries, (entry, i) => i, entry => html`
-          <div class="row flex items-center border-b border-gray-200 py-0.5 hover:bg-gray-50">
-            <div>
-              <a href="/admin/hyperspace/db/${entry.dkey}" class="cursor-pointer hover:underline">
-                ${entry.dkey.slice(0, 6)}..${entry.dkey.slice(-2)}
-              </a>
-            </div>
-            <div>${entry.event}</div>
-            <div>${this.renderEntryDetails(entry)}</div>
-            <div>${this.renderEntryTs(entry)}</div>
-          </div>
-        `)}
+      <div class="bg-white font-mono text-sm sm:rounded">
+        ${repeat(this.entries, (entry, i) => i, (entry, i) => this.renderEntry(entry, i))}
       </div>
+    `
+  }
+
+  renderEntry (entry, i) {
+    return html`
+      <div
+        class="row flex items-center border-b border-gray-200 pl-2 py-0.5 hover:bg-gray-50"
+        @click=${e => this.onClickEntry(e, entry, i)}
+      >
+        <div>
+          <a href="/admin/hyperspace/db/${entry.dkey}" class="cursor-pointer hover:underline">
+            ${entry.dkey.slice(0, 6)}..${entry.dkey.slice(-2)}
+          </a>
+        </div>
+        <div>${entry.event}</div>
+        <div>
+          ${this.renderEntryDetails(entry)}
+          ${entry.mergedEntries?.length ? html`
+            <span class="bg-pink-200 text-pink-600 rounded px-1">x${entry.mergedEntries.length} entries</span>
+            <small>(click to ${this.expandedEntries[i] ? 'collapse' : 'expand'})</small>
+          ` : ''}
+        </div>
+        <div>${this.renderEntryTs(entry)}</div>
+      </div>
+      ${this.expandedEntries[i] ? html`
+        <div class="border-l border-gray-200 ml-2">
+          ${repeat(entry.mergedEntries, (entry2, j) => `${i}-${j}`, entry2 => this.renderEntry(entry2))}
+        </div>
+      ` : html``}
     `
   }
 
@@ -89,5 +111,30 @@ class HyperspaceLog extends LitElement {
 
   // events
   // =
+
+  onClickEntry (e, entry, i) {
+    if (e.target.tagName === 'A') return
+    if (entry.mergedEntries?.length){
+      this.expandedEntries[i] = !this.expandedEntries[i]
+      this.requestUpdate()
+    }
+  }
 }
 customElements.define('app-hyperspace-log', HyperspaceLog)
+
+function reduceRelatedEntries (acc, entry) {
+  let last = acc.length ? acc[acc.length - 1] : undefined
+  if (!last || entry.type !== last.type) {
+    acc.push(entry)
+    return acc
+  }
+  if (entry.type === 'peer-open' || entry.type === 'peer-remove') {
+    if (entry.peer.remoteAddress !== last.peer.remoteAddress) {
+      acc.push(entry)
+      return acc
+    }
+  }
+  last.mergedEntries = last.mergedEntries || []
+  last.mergedEntries.push(entry)
+  return acc
+}
