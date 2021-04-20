@@ -227,8 +227,6 @@ export function setup () {
 
   define('ctzn.network/notifications-count-view', async (auth, opts) => {
     if (!auth) throw new errors.SessionError()
-    const privateDb = db.privateDbs.get(auth.userId)
-    if (!privateDb) throw new errors.NotFoundError('User database not found')
     return {count: await countNotications(auth, opts)}
   })
 
