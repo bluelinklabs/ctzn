@@ -11,7 +11,7 @@ export async function setup () {
   let oldSessionInfo
   try {
     oldSessionInfo = JSON.parse(localStorage.getItem('session-info'))
-    if (!oldSessionInfo) return
+    if (!oldSessionInfo) return emitter.dispatchEvent(new Event('change'))
 
     const newApi = await connectApi()
     
@@ -31,6 +31,7 @@ export async function setup () {
     }
     console.error('Failed to resume API session')
     console.error(e)
+    emitter.dispatchEvent(new Event('change'))
   }
 
   // DEBUG
