@@ -64,49 +64,54 @@ class HyperspaceLog extends LitElement {
     `
   }
 
-  renderEntry (entry, i) {
+  renderEntry (entry, i, noExpand = false) {
+    const isSummary = entry.mergedEntries?.length && !noExpand
+    const isExpanded = this.expandedEntries[i]
     return html`
       <div
         class="row flex items-center border-b border-gray-200 pl-2 py-0.5 hover:bg-gray-50"
         @click=${e => this.onClickEntry(e, entry, i)}
       >
         <div>
-          <a href="/admin/hyperspace/db/${entry.dkey}" class="text-blue-600 cursor-pointer hover:underline">
-            ${entry.dkey.slice(0, 6)}..${entry.dkey.slice(-2)}
-          </a>
+          ${isSummary ? html`
+            <span class="fas fa-caret-${isExpanded ? 'down' : 'right'}"></span>
+            x${entry.mergedEntries.length + 1}
+          ` : html`
+            <a href="/admin/hyperspace/db/${entry.dkey}" class="text-blue-600 cursor-pointer hover:underline">
+              ${entry.dkey.slice(0, 6)}..${entry.dkey.slice(-2)}
+            </a>
+          `}
         </div>
-        <div>${entry.event}</div>
+        <div>
+          ${entry.event}
+        </div>
         <div>
           ${this.renderEntryDetails(entry, i)}
-          ${entry.mergedEntries?.length ? html`
-            <span class="bg-pink-200 text-pink-600 rounded px-1 cursor-pointer hover:bg-pink-300">
-              x${entry.mergedEntries.length + 1} entries
-            </span>
-          ` : ''}
         </div>
         <div>${this.renderEntryTs(entry)}</div>
       </div>
-      ${this.expandedEntries[i] ? html`
+      ${isExpanded ? html`
         <div class="border-l border-gray-200 ml-2">
-          ${repeat(entry.mergedEntries, (entry2, j) => `${i}-${j}`, entry2 => this.renderEntry(entry2))}
+          ${this.renderEntry(entry, undefined, true)}
+          ${repeat(entry.mergedEntries, (entry2, j) => `${i}-${j}`, entry2 => this.renderEntry(entry2, undefined, true))}
         </div>
       ` : html``}
     `
   }
 
-  renderEntryDetails (entry, i) {
+  renderEntryDetails (entry, isSummary) {
     switch (entry.event) {
       case 'peer-open': return entry.peer.remoteAddress
       case 'peer-remove': return entry.peer.remoteAddress
-      case 'wait': return `Block ${entry.seq}`
+      case 'wait': return `block #${entry.seq}`
       case 'upload':
       case 'download':
       case 'append':
-        if (entry.mergedEntries?.length && !this.expandedEntries[i]) {
-          return `${entry.mergedEntries?.length + 1} blocks, ${bytes(entry.accBytes)} total`
+        if (isSummary) {
+          return `${bytes(entry.accBytes)}, ${entry.mergedEntries?.length + 1} blocks`
         } else {
           const seq = typeof entry.seq === 'number' ? entry.seq : entry.length
-          return `Block ${seq}, size ${bytes(entry.byteLength)}`
+          return `${bytes(entry.byteLength)}, block #${seq}`
         }
       default: return ''
     }
