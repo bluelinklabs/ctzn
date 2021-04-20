@@ -10,9 +10,9 @@ import * as errors from '../lib/errors.js'
 import { listHomeFeed, listDbmethodFeed } from './feed-getters.js'
 import { fetchNotications, countNotications, dbGet, fetchItemClass, fetchReactions, addPrefixToRangeOpts } from './util.js'
 
-const DEFAULT_USER_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'static', 'img', 'default-user-avatar.jpg')
-const DEFAULT_COMMUNITY_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'static', 'img', 'default-community-avatar.jpg')
-const DEFAULT_ITEM_CLASS_ICON_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'static', 'img', 'default-item-class-icon.svg')
+const DEFAULT_USER_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'frontend', 'static', 'img', 'default-user-avatar.jpg')
+const DEFAULT_COMMUNITY_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'frontend', 'static', 'img', 'default-community-avatar.jpg')
+const DEFAULT_ITEM_CLASS_ICON_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'frontend', 'static', 'img', 'default-item-class-icon.svg')
 
 // globals
 // =

@@ -3,6 +3,9 @@ import path from 'path'
 import inspector from 'inspector'
 import { promises as fsp } from 'fs'
 import * as db from '../db/index.js'
+import { log as hyperspaceLog } from '../db/hyperspace.js'
+import { beeShallowList } from '../db/util.js'
+import * as diskusage from '../db/diskusage-tracker.js'
 import * as issues from '../lib/issues.js'
 import { constructUserId } from '../lib/strings.js'
 
@@ -27,7 +30,7 @@ export function setup (wsServer) {
     });
   })
 
-  wsServer.registerLoopback('server.toggleProfilingCPU', async ([]) => {
+  wsServer.registerAdminOnly('server.toggleProfilingCPU', async ([]) => {
     if (_inspectorSession) {
       return stopProfilingCPU()
     } else {
@@ -45,29 +48,62 @@ export function setup (wsServer) {
     }
   })
 
-  wsServer.registerLoopback('server.listDatabases', async ([]) => {
-    return (
-      [db.publicServerDb, db.privateServerDb]
-      .concat(Array.from(db.publicDbs.values()))
-      .concat(Array.from(db.privateDbs.values()))
-    ).map(db => ({
+  function getDbInfo (db, all = false) {
+    return {
       dbType: db.dbType,
       writable: db.writable,
       key: db.key.toString('hex'),
+      dkey: db.discoveryKey.toString('hex'),
       userId: db.userId,
       isPrivate: db.isPrivate,
       peerCount: db.peers?.length || 0,
+      peers: all ? db.peers : undefined,
       indexers: db.indexers?.map(i => i.schemaId) || [],
+      diskusage: diskusage.get(db.discoveryKey.toString('hex')),
       blobs: db.blobs.feed ? {
-        key: db.blobs.feed.key.toString('hex'),
+        key: db.blobs.key.toString('hex'),
+        dkey: db.blobs.discoveryKey.toString('hex'),
         writable: db.blobs.writable,
         isPrivate: db.blobs.isPrivate,
-        peerCount: db.blobs.peers?.length || 0
+        peerCount: db.blobs.peers?.length || 0,
+        peers: all ? db.blobs.peers : undefined,
+        diskusage: diskusage.get(db.blobs.discoveryKey.toString('hex'))
       } : undefined
-    }))
+    }
+  }
+
+  wsServer.registerAdminOnly('server.getDatabaseInfo', async ([dkey]) => {
+    const thisDb = db.getDbByDkey(dkey)
+    if (!thisDb) throw new Error('Database not found')
+    return getDbInfo(thisDb, true)
   })
 
-  wsServer.registerLoopback('server.rebuildDatabaseIndexes', async ([userId, indexIds]) => {
+  wsServer.registerAdminOnly('server.listDatabases', async ([]) => {
+    return (
+      Array.from(db.publicDbs.values()).concat(Array.from(db.privateDbs.values()))
+    ).map(db => getDbInfo(db))
+  })
+
+  wsServer.registerAdminOnly('server.beeShallowList', async ([dkey, path]) => {
+    const thisDb = db.getDbByDkey(dkey)
+    if (!thisDb) throw new Error('Database not found')
+    return beeShallowList(thisDb.bee, path)
+  })
+
+  wsServer.registerAdminOnly('server.queryHyperspaceLog', async ([query]) => {
+    return hyperspaceLog.query(entry => {
+      if (query) {
+        for (let k in query) {
+          if (entry[k] !== query[k]) {
+            return false
+          }
+        }
+      }
+      return true
+    })
+  })
+
+  wsServer.registerAdminOnly('server.rebuildDatabaseIndexes', async ([userId, indexIds]) => {
     let targetDb = db.publicDbs.get(userId)
     if (!targetDb && userId === db.publicServerDb.userId) {
       targetDb = db.publicServerDb
@@ -79,7 +115,7 @@ export function setup (wsServer) {
     return targetDb.rebuildIndexes(indexIds)
   })
   
-  wsServer.registerLoopback('server.listIssues', () => {
+  wsServer.registerAdminOnly('server.listIssues', () => {
     return Object.entries(issues.getAll()).map(([id, entries]) => {
       return {
         id,
@@ -93,15 +129,15 @@ export function setup (wsServer) {
     })
   })
 
-  wsServer.registerLoopback('server.recoverIssue', ([issueId]) => {
+  wsServer.registerAdminOnly('server.recoverIssue', ([issueId]) => {
     return issues.recover(issueId)
   })
 
-  wsServer.registerLoopback('server.dismissIssue', ([issueId, opts]) => {
+  wsServer.registerAdminOnly('server.dismissIssue', ([issueId, opts]) => {
     return issues.dismiss(issueId, opts)
   })
 
-  wsServer.registerLoopback('server.listAccounts', async ([]) => {
+  wsServer.registerAdminOnly('server.listAccounts', async ([]) => {
     let userRecords = await db.publicServerDb.users.list()
     return await Promise.all(userRecords.map(async userRecord => {
       const userId = constructUserId(userRecord.key)
@@ -115,7 +151,7 @@ export function setup (wsServer) {
     }))
   })
 
-  wsServer.registerLoopback('server.listCommunities', async ([]) => {
+  wsServer.registerAdminOnly('server.listCommunities', async ([]) => {
     let communityDbs = Array.from(db.publicDbs.values()).filter(db => db.dbType === 'ctzn.network/public-community-db')
     return Promise.all(communityDbs.map(async db => {
       let profile = await db.profile.get('self')
@@ -129,7 +165,7 @@ export function setup (wsServer) {
     }))
   })
 
-  wsServer.registerLoopback('server.addCommunityAdmin', async ([communityUserId, adminUserId]) => {
+  wsServer.registerAdminOnly('server.addCommunityAdmin', async ([communityUserId, adminUserId]) => {
     await updateCommunityMemberRole(communityUserId, adminUserId, memberRecordValue => {
       memberRecordValue.roles = memberRecordValue.roles || []
       if (!memberRecordValue.roles.includes('admin')) {
@@ -138,7 +174,7 @@ export function setup (wsServer) {
     })
   })
 
-  wsServer.registerLoopback('server.removeCommunityAdmin', async ([communityUserId, adminUserId]) => {
+  wsServer.registerAdminOnly('server.removeCommunityAdmin', async ([communityUserId, adminUserId]) => {
     await updateCommunityMemberRole(communityUserId, adminUserId, memberRecordValue => {
       memberRecordValue.roles = memberRecordValue.roles || []
       if (memberRecordValue.roles.includes('admin')) {
@@ -147,7 +183,7 @@ export function setup (wsServer) {
     })
   })
 
-  wsServer.registerLoopback('server.removeUser', async ([username]) => {
+  wsServer.registerAdminOnly('server.removeUser', async ([username]) => {
     await db.deleteUser(username)
   })
 }

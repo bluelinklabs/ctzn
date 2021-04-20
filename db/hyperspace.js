@@ -2,14 +2,20 @@ import {
   Client as HyperspaceClient,
   Server as HyperspaceServer
 } from 'hyperspace'
+import { QueryableLog } from 'queryable-log'
+import path from 'path'
 import dht from '@hyperswarm/dht'
 import ram from 'random-access-memory'
 
 export let server = undefined
 export let client = undefined
+export let log = undefined
 let _cleanup = undefined
 
-export async function setup ({hyperspaceHost, hyperspaceStorage, simulateHyperspace}) {
+export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simulateHyperspace}) {
+  log = new QueryableLog(path.join(configDir, 'hyperspace.log'), {overwrite: true, sizeLimit: 5e6})
+  addLoggerFunctions(log)
+
   if (simulateHyperspace) {
     const bootstrapper = dht({
       bootstrap: false
@@ -68,4 +74,25 @@ export async function cleanup () {
     console.log('Shutting down Hyperspace, this may take a few seconds...')
     await server.stop()
   }
+}
+
+function addLoggerFunctions (log) {
+  log.create = (structure, dkey) => log.append({event: 'create', structure, dkey})
+  log.createBee = (dkey) => log.create('hyperbee', dkey)
+  log.createCore = (dkey) => log.create('hypercore', dkey)
+  log.load = (structure, dkey) => log.append({event: 'load', structure, dkey})
+  log.loadBee = (dkey) => log.load('hyperbee', dkey)
+  log.loadCore = (dkey) => log.load('hypercore', dkey)
+  log.track = (structure, core) => {
+    const dkey = core.discoveryKey.toString('hex')
+    core.on('append', ({length, byteLength}) => log.append({event: 'append', structure, dkey, length, byteLength}))
+    core.on('close', () => log.append({event: 'close', structure, dkey}))
+    core.on('peer-open', (peer) => log.append({event: 'peer-open', structure, dkey, peer: {type: peer.type, remoteAddress: peer.remoteAddress}}))
+    core.on('peer-remove', (peer) => log.append({event: 'peer-remove', structure, dkey, peer: {type: peer.type, remoteAddress: peer.remoteAddress}}))
+    core.on('wait', (waitId, seq) => log.append({event: 'wait', structure, dkey, seq}))
+    core.on('download', (seq, {byteLength}) => log.append({event: 'download', structure, dkey, seq, byteLength}))
+    core.on('upload', (seq, {byteLength}) => log.append({event: 'upload', structure, dkey, seq, byteLength}))
+  }
+  log.trackBee = (core) => log.track('hyperbee', core)
+  log.trackCore = (core) => log.track('hypercore', core)
 }

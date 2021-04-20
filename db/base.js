@@ -1,6 +1,6 @@
 import EventEmitter from 'events'
 import _debounce from 'lodash.debounce'
-import { client } from './hyperspace.js'
+import { client, log as hyperspaceLog } from './hyperspace.js'
 import Hyperbee from 'hyperbee'
 import * as schemas from '../lib/schemas.js'
 import pump from 'pump'
@@ -82,6 +82,10 @@ export class BaseHyperbeeDB extends EventEmitter {
     return `hyper://${this.key.toString('hex')}/`
   }
 
+  get discoveryKey () {
+    return this.bee?.feed?.discoveryKey
+  }
+
   async setup () {
     this.bee = new Hyperbee(client.corestore().get(this.key), {
       keyEncoding: 'utf8',
@@ -97,10 +101,13 @@ export class BaseHyperbeeDB extends EventEmitter {
     }
 
     if (!this.key) {
+      hyperspaceLog.createBee(this.discoveryKey.toString('hex'))
       this.key = this.bee.feed.key
       await this.updateDesc()
       this.onDatabaseCreated()
     }
+    hyperspaceLog.loadBee(this.discoveryKey.toString('hex'))
+    hyperspaceLog.trackBee(this.bee.feed)
 
     const desc = await this.bee.get('_db', {timeout: READ_TIMEOUT})
     if (desc) {
@@ -312,6 +319,14 @@ class Blobs {
     return this.feed?.peers
   }
 
+  get key () {
+    return this.feed?.key
+  }
+
+  get discoveryKey () {
+    return this.feed?.discoveryKey
+  }
+
   async setup () {
     this.kv = this.db.bee.sub('_blobs')
 
@@ -321,10 +336,13 @@ class Blobs {
       await this.db.updateDesc({
         blobsFeedKey: this.feed.key.toString('hex')
       })
+      hyperspaceLog.createCore(this.discoveryKey.toString('hex'))
     } else {
       this.feed = client.corestore().get(Buffer.from(this.db.desc.blobsFeedKey, 'hex'))
       await this.feed.ready()
     }
+    hyperspaceLog.loadCore(this.discoveryKey.toString('hex'))
+    hyperspaceLog.trackCore(this.feed)
     if (!this.isPrivate) {
       client.replicate(this.feed)
     }

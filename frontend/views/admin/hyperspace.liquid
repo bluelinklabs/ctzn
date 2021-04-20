@@ -1,0 +1,9 @@
+{% layout '_layouts/admin.liquid' %}
+{% block view %}
+  <div class="pb-2">
+    <a class="inline-block px-4 py-2 border-b-4 border-gray-400 hover:border-gray-400" href="/admin/hyperspace">All DBs</a>
+    <a class="inline-block px-4 py-2 border-b-4 hover:border-gray-400" href="/admin/hyperspace/log">Log</a>
+  </div>
+  <app-hyperspace-dbs></app-hyperspace-dbs>
+  <script type="module" src="/js/admin/hyperspace-dbs.js"></script>
+{% endblock %}

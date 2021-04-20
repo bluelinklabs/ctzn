@@ -1,0 +1,37 @@
+.grid-admin-layout {
+  grid-template-columns: 260px minmax(0, 1fr);
+  grid-gap: 1rem;
+}
+
+main {
+  max-width: 800px;
+}
+
+app-hyperspace-dbs .row > :nth-child(1) {
+  flex: 0 0 200px;
+}
+app-hyperspace-dbs .row > :nth-child(2) {
+  flex: 1;
+}
+app-hyperspace-dbs .row > :nth-child(3) {
+  flex: 0 0 100px;
+}
+app-hyperspace-dbs .row > :nth-child(4) {
+  flex: 0 0 100px;
+}
+app-hyperspace-dbs .row > :nth-child(5) {
+  flex: 0 0 100px;
+}
+
+app-hyperspace-log .row > :nth-child(1) {
+  flex: 0 0 120px;
+}
+app-hyperspace-log .row > :nth-child(2) {
+  flex: 0 0 120px;
+}
+app-hyperspace-log .row > :nth-child(3) {
+  flex: 1;
+}
+app-hyperspace-log .row > :nth-child(4) {
+  flex: 0 0 100px;
+}

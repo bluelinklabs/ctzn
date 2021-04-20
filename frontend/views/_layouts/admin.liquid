@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>CTZN Admin</title>
+    <link rel="stylesheet" href="/css/tailwind.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/fontawesome.css">
+    <link rel="icon" href="/img/favicon.png">
+    <script type="module" src="/js/admin/session.js"></script>
+  </head>
+  <body class="bg-gray-200 antialiased">
+    <div class="grid grid-admin-layout px-2 py-1">
+      <div>
+        <!-- nav -->
+        <h1>
+          <a href="/admin" class="cursor-pointer hover:underline">
+            <span class="text-4xl font-bold">CTZN</span>
+            <span class="text-2xl font-bold">admin</span>
+          </a>
+        </h1>
+        <a class="block px-2 py-1 text-xl font-semibold cursor-pointer hover:bg-white" href="/admin">
+          <span class="fas fa-home fa-fw"></span> Home
+        </a>
+        <a class="block px-2 py-1 text-xl font-semibold cursor-pointer hover:bg-white" href="/admin/hyperspace">
+          <span class="fas fa-share-alt fa-fw"></span> Hyperspace
+        </a>
+      </div>
+      <main class="">
+        <!-- view -->
+        <app-session></app-session>
+        {% block view %}View goes here{% endblock %}
+      </main>
+    </div>
+  </body>
+</html>

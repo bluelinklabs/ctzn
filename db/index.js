@@ -6,6 +6,7 @@ import * as hyperspace from './hyperspace.js'
 import { PublicServerDB, PrivateServerDB } from './server.js'
 import { PublicCitizenDB, PrivateCitizenDB } from './citizen.js'
 import { PublicCommunityDB } from './community.js'
+import * as diskusageTracker from './diskusage-tracker.js'
 import * as schemas from '../lib/schemas.js'
 import * as views from './views.js'
 import { RESERVED_USERNAMES, HYPER_KEY, hyperUrlToKey, constructUserId, getDomain, getServerIdForUserId } from '../lib/strings.js'
@@ -27,8 +28,9 @@ export let publicDbs = new CaseInsensitiveMap()
 export let privateDbs = new CaseInsensitiveMap()
 
 export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simulateHyperspace}) {
-  await hyperspace.setup({hyperspaceHost, hyperspaceStorage, simulateHyperspace})
+  await hyperspace.setup({configDir, hyperspaceHost, hyperspaceStorage, simulateHyperspace})
   await schemas.setup()
+  diskusageTracker.setup()
   
   _configDir = configDir
   configPath = path.join(configDir, 'dbconfig.json')
@@ -301,6 +303,17 @@ export function getDbByUrl (url) {
   }
   for (let db of privateDbs.values()) {
     if (db.url === url) return db
+  }
+}
+
+export function getDbByDkey (dkey) {
+  if (publicServerDb.discoveryKey.toString('hex') === dkey) return publicServerDb
+  if (privateServerDb.discoveryKey.toString('hex') === dkey) return privateServerDb
+  for (let db of publicDbs.values()) {
+    if (db.discoveryKey.toString('hex') === dkey) return db
+  }
+  for (let db of privateDbs.values()) {
+    if (db.discoveryKey.toString('hex') === dkey) return db
   }
 }
 

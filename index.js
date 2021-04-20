@@ -16,6 +16,7 @@ import * as fs from 'fs'
 import { fileURLToPath } from 'url'
 import * as os from 'os'
 import { setOrigin, getDomain, parseAcctUrl, usernameToUserId, DEBUG_MODE_PORTS_MAP } from './lib/strings.js'
+import { Liquid } from 'liquidjs'
 
 const PACKAGE_JSON_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'package.json')
 const PACKAGE_JSON = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, 'utf8'))
@@ -40,19 +41,22 @@ export async function start (opts) {
   const PRIVACY_POLICY_PATH = path.join(opts.configDir, 'privacy-policy.txt')
 
   app = express()
-  app.set('views', path.join(path.dirname(fileURLToPath(import.meta.url)), 'views'))
-  app.set('view engine', 'ejs')
+  app.engine('liquid', (new Liquid()).express())
+  app.set('views', path.join(path.dirname(fileURLToPath(import.meta.url)), 'frontend', 'views'))
+  app.set('view engine', 'liquid')
   app.use(cors())
 
-  app.get('/', (req, res) => {
-    res.render('index')
-  })
+  app.get('/', (req, res) => res.render('index'))
+  app.get('/admin', (req, res) => res.render('admin/index'))
+  app.get('/admin/hyperspace', (req, res) => res.render('admin/hyperspace'))
+  app.get('/admin/hyperspace/log', (req, res) => res.render('admin/hyperspace-log'))
+  app.get('/admin/hyperspace/db/:id', (req, res) => res.render('admin/hyperspace-view-db'))
 
-  app.use('/img', express.static('static/img'))
-  app.use('/css', express.static('static/css'))
-  app.use('/js', express.static('static/js'))
-  app.use('/vendor', express.static('static/vendor'))
-  app.use('/webfonts', express.static('static/webfonts'))
+  app.use('/img', express.static('frontend/static/img'))
+  app.use('/css', express.static('frontend/static/css'))
+  app.use('/js', express.static('frontend/static/js'))
+  app.use('/vendor', express.static('frontend/static/vendor'))
+  app.use('/webfonts', express.static('frontend/static/webfonts'))
   app.use('/_schemas', express.static('schemas'))
 
   app.get('/.well-known/webfinger', async (req, res) => {
@@ -186,6 +190,7 @@ export async function start (opts) {
   })
   server.listen(config.port, () => {
     console.log(`CTZN server listening at http://localhost:${config.port}`)
+    console.log(`Server admins:`, config.serverAdmins.join(', '))
   })
 
   await email.setup(config)

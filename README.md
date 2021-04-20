@@ -19,6 +19,7 @@ CTZN is still in development! If you decide to run a server or build against the
 
 - **Setup**
     - [**How to set up a CTZN server**](./docs/setting-up-a-server.md)
+    - [**How to work on the CTZN codebase**](./docs/developer-setup.md)
 - **Architecture**
     - [**Design overview**](./docs/design.md)
     - [**Roadmap**](./docs/roadmap.md)

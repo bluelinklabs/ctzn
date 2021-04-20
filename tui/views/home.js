@@ -255,6 +255,7 @@ export class HomeView extends BaseView {
     header({label: 'Basics'})
     input({label: 'Domain', key: 'domain'})
     input({label: 'Port', key: 'port'})
+    input({label: 'Server Admins', key: 'serverAdmins'})
     header({label: 'SMTP Server Settings'})
     input({label: 'Domain', key: 'smtpConfig.host'})
     input({label: 'Port', key: 'smtpConfig.port', def: 465})
