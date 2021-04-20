@@ -2,4 +2,4 @@
 node_modules
 package-lock.json
 *.build.js
-static/css/tailwind.css
+frontend/static/css/tailwind.css

@@ -18,7 +18,8 @@ import * as os from 'os'
 import { setOrigin, getDomain, parseAcctUrl, usernameToUserId, DEBUG_MODE_PORTS_MAP } from './lib/strings.js'
 import { Liquid } from 'liquidjs'
 
-const PACKAGE_JSON_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'package.json')
+const INSTALL_PATH = path.dirname(fileURLToPath(import.meta.url))
+const PACKAGE_JSON_PATH = path.join(INSTALL_PATH, 'package.json')
 const PACKAGE_JSON = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, 'utf8'))
 
 let app
@@ -52,11 +53,11 @@ export async function start (opts) {
   app.get('/admin/hyperspace/log', (req, res) => res.render('admin/hyperspace-log'))
   app.get('/admin/hyperspace/db/:id', (req, res) => res.render('admin/hyperspace-view-db'))
 
-  app.use('/img', express.static('frontend/static/img'))
-  app.use('/css', express.static('frontend/static/css'))
-  app.use('/js', express.static('frontend/static/js'))
-  app.use('/vendor', express.static('frontend/static/vendor'))
-  app.use('/webfonts', express.static('frontend/static/webfonts'))
+  app.use('/img', express.static(path.join(INSTALL_PATH, 'frontend/static/img')))
+  app.use('/css', express.static(path.join(INSTALL_PATH, 'frontend/static/css')))
+  app.use('/js', express.static(path.join(INSTALL_PATH, 'frontend/static/js')))
+  app.use('/vendor', express.static(path.join(INSTALL_PATH, 'frontend/static/vendor')))
+  app.use('/webfonts', express.static(path.join(INSTALL_PATH, 'frontend/static/webfonts')))
   app.use('/_schemas', express.static('schemas'))
 
   app.get('/.well-known/webfinger', async (req, res) => {
