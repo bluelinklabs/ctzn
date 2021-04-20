@@ -63,7 +63,7 @@ export class BaseHyperbeeDB extends EventEmitter {
     this.indexers = []
     this.dbmethods = {}
     this.lastAccess = 0
-    this.lock = (id = '') => lock(`${this.key.toString('hex')}:${id}`)
+    this.lock = (id = '') => lock(`${this.key?.toString('hex') || 'newdb'}:${id}`)
   }
 
   get isInMemory () {
@@ -391,6 +391,7 @@ class Blobs {
     if (!this.db.desc.blobsFeedKey) {
       this.feed = client.corestore().get(null)
       await this.feed.ready()
+      this.feedInfo = {writable: this.feed.writable, key: this.feed.key, discoveryKey: this.feed.discoveryKey}
       await this.db.updateDesc({
         blobsFeedKey: this.feed.key.toString('hex')
       })
@@ -398,8 +399,8 @@ class Blobs {
     } else {
       this.feed = client.corestore().get(Buffer.from(this.db.desc.blobsFeedKey, 'hex'))
       await this.feed.ready()
+      this.feedInfo = {writable: this.feed.writable, key: this.feed.key, discoveryKey: this.feed.discoveryKey}
     }
-    this.feedInfo = {writable: this.feed.writable, key: this.feed.key, discoveryKey: this.feed.discoveryKey}
     hyperspaceLog.loadCore(this.discoveryKey.toString('hex'))
     hyperspaceLog.trackCore(this.feed)
     if (!this.isPrivate) {
