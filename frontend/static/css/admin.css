@@ -24,7 +24,7 @@ app-hyperspace-dbs .row > :nth-child(5) {
 }
 
 app-hyperspace-log .row > :nth-child(1) {
-  flex: 0 0 120px;
+  flex: 0 0 60px;
 }
 app-hyperspace-log .row > :nth-child(2) {
   flex: 0 0 120px;
@@ -33,5 +33,8 @@ app-hyperspace-log .row > :nth-child(3) {
   flex: 1;
 }
 app-hyperspace-log .row > :nth-child(4) {
+  flex: 0 0 120px;
+}
+app-hyperspace-log .row > :nth-child(5) {
   flex: 0 0 100px;
 }

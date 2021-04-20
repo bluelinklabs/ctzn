@@ -76,17 +76,20 @@ class HyperspaceLog extends LitElement {
           ${isSummary ? html`
             <span class="fas fa-caret-${isExpanded ? 'down' : 'right'}"></span>
             x${entry.mergedEntries.length + 1}
-          ` : html`
-            <a href="/admin/hyperspace/db/${entry.dkey}" class="text-blue-600 cursor-pointer hover:underline">
-              ${entry.dkey.slice(0, 6)}..${entry.dkey.slice(-2)}
-            </a>
-          `}
+          ` : ''}
         </div>
         <div>
           ${entry.event}
         </div>
         <div>
-          ${this.renderEntryDetails(entry, i)}
+          ${this.renderEntryDetails(entry, isSummary)}
+        </div>
+        <div>
+          ${isSummary ? '' : html`
+            <a href="/admin/hyperspace/db/${entry.dkey}" class="text-blue-600 cursor-pointer hover:underline">
+              ${entry.dkey.slice(0, 6)}..${entry.dkey.slice(-2)}
+            </a>
+          `}
         </div>
         <div>${this.renderEntryTs(entry)}</div>
       </div>
