@@ -239,8 +239,8 @@ export async function beeShallowList (bee, path) {
 
   var arr = []
   var pathlen = path && path.length > 0 ? path.length : 0
-  var bot = pathlen > 0 ? Buffer.concat([pathToKey(path), MIN]) : MIN
-  var top = pathlen > 0 ? Buffer.concat([pathToKey(path), MAX]) : MAX
+  var bot = pathlen > 0 ? Buffer.concat([pathToKey(path), SEP, MIN]) : MIN
+  var top = pathlen > 0 ? Buffer.concat([pathToKey(path), SEP, MAX]) : MAX
   do {
     let item = await bee.peek({gt: bot, lt: top})
     if (!item) return arr
