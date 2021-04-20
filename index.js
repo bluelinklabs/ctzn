@@ -48,10 +48,13 @@ export async function start (opts) {
   app.use(cors())
 
   app.get('/', (req, res) => res.render('index'))
-  app.get('/admin', (req, res) => res.render('admin/index'))
-  app.get('/admin/hyperspace', (req, res) => res.render('admin/hyperspace'))
-  app.get('/admin/hyperspace/log', (req, res) => res.render('admin/hyperspace-log'))
-  app.get('/admin/hyperspace/db/:id', (req, res) => res.render('admin/hyperspace-view-db'))
+  app.get('/admin', (req, res) => res.render('admin/index', {topnav: 'dashboard'}))
+  app.get('/admin/hyperspace', (req, res) => res.render('admin/hyperspace', {topnav: 'hyperspace'}))
+  app.get('/admin/hyperspace/log', (req, res) => res.render('admin/hyperspace-log', {topnav: 'hyperspace'}))
+  app.get('/admin/hyperspace/db/:id', (req, res) => res.render('admin/hyperspace-view-db', {topnav: 'hyperspace'}))
+  app.get('/admin/issues', (req, res) => res.render('admin/issues', {topnav: 'issues'}))
+  app.get('/admin/users', (req, res) => res.render('admin/users', {topnav: 'users'}))
+  app.get('/admin/users/view/:username', (req, res) => res.render('admin/user-view', {topnav: 'users', username: req.params.username}))
 
   app.use('/img', express.static(path.join(INSTALL_PATH, 'frontend/static/img')))
   app.use('/css', express.static(path.join(INSTALL_PATH, 'frontend/static/css')))

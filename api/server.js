@@ -145,11 +145,34 @@ export function setup (wsServer) {
       const publicDb = db.publicDbs.get(userId)
       const profile = publicDb ? await publicDb.profile.get('self') : undefined
       return {
+        key: publicDb.key.toString('hex'),
+        dkey: publicDb.discoveryKey.toString('hex'),
+        username: userRecord.key,
         userId,
         type: userRecord.value.type,
         displayName: profile?.value?.displayName || ''
       }
     }))
+  })
+
+  wsServer.registerAdminOnly('server.getAccount', async ([username]) => {
+    let userRecord = await db.publicServerDb.users.get(username)
+    const userId = constructUserId(userRecord.key)
+    const publicDb = db.publicDbs.get(userId)
+    const profile = publicDb ? await publicDb.profile.get('self') : undefined
+    let members
+    if (userRecord.value.type === 'community') {
+      members = await publicDb.members.list()
+    }
+    return {
+      key: publicDb.key.toString('hex'),
+      dkey: publicDb.discoveryKey.toString('hex'),
+      username: userRecord.key,
+      userId,
+      type: userRecord.value.type,
+      profile: profile?.value,
+      members
+    }
   })
 
   wsServer.registerAdminOnly('server.listCommunities', async ([]) => {

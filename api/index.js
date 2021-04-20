@@ -11,7 +11,6 @@ import * as view from './view.js'
 
 export function setup (wsServer, config) {
   wsServer.wss.on('connection', function connection(ws, req) {
-
     // Save request headers onto the ws client for later
     ws.headers = req.headers
   })

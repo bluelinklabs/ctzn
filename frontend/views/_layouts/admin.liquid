@@ -11,23 +11,37 @@
     <script type="module" src="/js/admin/session.js"></script>
   </head>
   <body class="bg-gray-200 antialiased">
-    <div class="grid grid-admin-layout px-2 py-1">
-      <div>
+    <div class="bg-white shadow">
+      <main class="flex">
         <!-- nav -->
-        <h1>
-          <a href="/admin" class="cursor-pointer hover:underline">
-            <span class="text-4xl font-bold">CTZN</span>
-            <span class="text-2xl font-bold">admin</span>
-          </a>
-        </h1>
-        <a class="block px-2 py-1 text-xl font-semibold cursor-pointer hover:bg-white" href="/admin">
-          <span class="fas fa-home fa-fw"></span> Home
+        <a
+          class="block px-3 py-2 text-lg font-semibold cursor-pointer border-b-2 border-gray-100 {% if topnav == 'dashboard' %}bg-gray-50 border-pink-600{% else %}hover:bg-gray-50{% endif %}"
+          href="/admin"
+        >
+          <span class="fas fa-home fa-fw"></span> Dashboard
         </a>
-        <a class="block px-2 py-1 text-xl font-semibold cursor-pointer hover:bg-white" href="/admin/hyperspace">
-          <span class="fas fa-share-alt fa-fw"></span> Hyperspace
+        <a
+          class="block px-3 py-2 text-lg font-semibold cursor-pointer border-b-2 border-gray-100 {% if topnav == 'hyperspace' %}bg-gray-50 border-pink-600{% else %}hover:bg-gray-50{% endif %}"
+          href="/admin/hyperspace"
+        >
+          <span class="fas fa-database fa-fw"></span> Hyperspace
+        </a>
+        <a
+          class="block px-3 py-2 text-lg font-semibold cursor-pointer border-b-2 border-gray-100 {% if topnav == 'users' %}bg-gray-50 border-pink-600{% else %}hover:bg-gray-50{% endif %}"
+          href="/admin/users"
+        >
+          <span class="fas fa-users fa-fw"></span> Users
+        </a>
+        <a
+          class="block px-3 py-2 text-lg font-semibold cursor-pointer border-b-2 border-gray-100 {% if topnav == 'issues' %}bg-gray-50 border-pink-600{% else %}hover:bg-gray-50{% endif %}"
+          href="/admin/issues"
+        >
+          <span class="fas fa-exclamation-triangle fa-fw"></span> Issues (0)
         </a>
       </div>
-      <main class="">
+    </div>
+    <div>
+      <main class="px-2 py-1">
         <!-- view -->
         <app-session></app-session>
         {% block view %}View goes here{% endblock %}

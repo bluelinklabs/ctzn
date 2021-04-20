@@ -1,10 +1,13 @@
-.grid-admin-layout {
-  grid-template-columns: 260px minmax(0, 1fr);
-  grid-gap: 1rem;
+*:focus {
+  outline: 0;
+}
+input:focus {
+  border-color: rgb(219, 39, 119);
 }
 
 main {
   max-width: 800px;
+  margin: 0 auto;
 }
 
 app-hyperspace-dbs .row > :nth-child(1) {
@@ -36,5 +39,15 @@ app-hyperspace-log .row > :nth-child(4) {
   flex: 0 0 120px;
 }
 app-hyperspace-log .row > :nth-child(5) {
+  flex: 0 0 100px;
+}
+
+app-users .row > :nth-child(1) {
+  flex: 0 0 200px;
+}
+app-users .row > :nth-child(2) {
+  flex: 1;
+}
+app-users .row > :nth-child(3) {
   flex: 0 0 100px;
 }
