@@ -19,6 +19,8 @@ import { LoadExternalUserDbIssue } from '../lib/issues/load-external-user-db.js'
 import { UnknownUserTypeIssue } from '../lib/issues/unknown-user-type.js'
 import lock from '../lib/lock.js'
 
+const SWEEP_INACTIVE_DBS_INTERVAL = 10e3
+
 let _configDir = undefined
 export let configPath = undefined
 export let config = undefined
@@ -52,6 +54,9 @@ export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simu
   await loadMemberUserDbs()
   await loadOrUnloadExternalUserDbs()
   /* dont await */ catchupAllIndexes()
+
+  const sweepInterval = setInterval(sweepInactiveDbs, SWEEP_INACTIVE_DBS_INTERVAL)
+  sweepInterval.unref()
 }
 
 export async function createUser ({type, username, email, password, profile}) {
@@ -131,11 +136,11 @@ export async function deleteUser (username) {
       if (publicDbs.get(userId).dbType === 'ctzn.network/public-server-db') {
         throw new Error('Cannot delete server database')
       }
-      await publicDbs.get(userId).teardown()
+      await publicDbs.get(userId).teardown({unswarm: true})
       publicDbs.delete(userId)
     }
     if (privateDbs.has(userId)) {
-      await privateDbs.get(userId).teardown()
+      await privateDbs.get(userId).teardown({unswarm: true})
       privateDbs.delete(userId)
     }
     await publicServerDb.users.del(username)
@@ -427,7 +432,16 @@ async function loadOrUnloadExternalUserDbs () {
     if (userId.endsWith(getDomain()) || externalUserIds.includes(userId)) {
       continue
     }
-    publicDbs.get(userId).teardown()
+    publicDbs.get(userId).teardown({unswarm: true})
     publicDbs.delete(userId)
+  }
+}
+
+async function sweepInactiveDbs () {
+  const ts = Date.now()
+  for (let db of getAllDbs()) {
+    if (db.isEjectableFromMemory(ts)) {
+      await db.teardown({unswarm: false})
+    }
   }
 }

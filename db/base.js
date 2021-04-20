@@ -21,6 +21,7 @@ const FIRST_HYPERBEE_BLOCK = 2
 const READ_TIMEOUT = 10e3
 const BACKGROUND_INDEXING_DELAY = 5e3 // how much time is allowed to pass before globally indexing an update
 const BLOB_CHUNK_SIZE = bytes('64kb')
+const KEEP_IN_MEMORY_TTL = 15e3
 
 const dbDescription = schemas.createValidator({
   type: 'object',
@@ -55,11 +56,21 @@ export class BaseHyperbeeDB extends EventEmitter {
     this.desc = undefined
     this.key = key || null
     this.bee = null
+    this.beeInfo = {writable: undefined, discoveryKey: undefined}
     this.blobs = new Blobs(this, {isPrivate})
     this.tables = {}
     this.indexers = []
     this.dbmethods = {}
+    this.lastAccess = 0
     this.lock = (id = '') => lock(`${this.key.toString('hex')}:${id}`)
+  }
+
+  get isInMemory () {
+    return !!this.bee
+  }
+
+  isEjectableFromMemory (ts) {
+    return this.lastAccess + KEEP_IN_MEMORY_TTL < ts
   }
 
   get dbType () {
@@ -71,11 +82,11 @@ export class BaseHyperbeeDB extends EventEmitter {
   }
 
   get writable () {
-    return this.bee?.feed?.writable
+    return this.beeInfo?.writable
   }
 
   get peers () {
-    return this.bee?.feed?.peers
+    return this.bee?.feed?.peers || []
   }
 
   get url () {
@@ -83,63 +94,91 @@ export class BaseHyperbeeDB extends EventEmitter {
   }
 
   get discoveryKey () {
-    return this.bee?.feed?.discoveryKey
+    return this.beeInfo?.discoveryKey
   }
 
   async setup () {
-    this.bee = new Hyperbee(client.corestore().get(this.key), {
-      keyEncoding: 'utf8',
-      valueEncoding: 'json'
-    })
-    await this.bee.ready()
-    if (!this.isPrivate) {
-      client.replicate(this.bee.feed)
-    }
-
-    if (!this.bee.feed.writable) {
-      this._eagerUpdate()
-    }
-
-    if (!this.key) {
-      hyperspaceLog.createBee(this.discoveryKey.toString('hex'))
-      this.key = this.bee.feed.key
-      await this.updateDesc()
-      this.onDatabaseCreated()
-    }
-    hyperspaceLog.loadBee(this.discoveryKey.toString('hex'))
-    hyperspaceLog.trackBee(this.bee.feed)
-
-    const desc = await this.bee.get('_db', {timeout: READ_TIMEOUT})
-    if (desc) {
-      dbDescription.assert(desc.value)
-      this.desc = desc.value
-    } else {
-      this.desc = {
-        blobsFeedKey: null
+    const release = await this.lock('setup') // lock to handle multiple setup() calls
+    try {
+      if (this.bee) {
+        return // already loaded
       }
-    }
 
-    this.dbmethodCalls = this.getTable('ctzn.network/dbmethod-call')
-    this.dbmethodResults = this.getTable('ctzn.network/dbmethod-result')
-    this.dbmethodResultsChronIdx = this.getTable('ctzn.network/dbmethod-result-chron-idx')
-    if (this.writable) {
-      for (let method of this.supportedMethods) {
-        this.createDbMethod(`ctzn.network/${method}-method`, dbmethods[method])
+      this.lastAccess = Date.now()
+      this.bee = new Hyperbee(client.corestore().get(this.key), {
+        keyEncoding: 'utf8',
+        valueEncoding: 'json'
+      })
+      await this.bee.ready()
+      this.beeInfo = {writable: this.bee.feed.writable, discoveryKey: this.bee.feed.discoveryKey}
+      if (!this.isPrivate) {
+        client.replicate(this.bee.feed)
       }
+
+      if (!this.bee.feed.writable) {
+        this._eagerUpdate()
+      }
+
+      if (!this.key) {
+        hyperspaceLog.createBee(this.discoveryKey.toString('hex'))
+        this.key = this.bee.feed.key
+        await this.updateDesc()
+        this.onDatabaseCreated()
+      }
+      hyperspaceLog.loadBee(this.discoveryKey.toString('hex'))
+      hyperspaceLog.trackBee(this.bee.feed)
+
+      const desc = await this.bee.get('_db', {timeout: READ_TIMEOUT})
+      if (desc) {
+        dbDescription.assert(desc.value)
+        this.desc = desc.value
+      } else {
+        this.desc = {
+          blobsFeedKey: null
+        }
+      }
+
+      this.dbmethodCalls = this.getTable('ctzn.network/dbmethod-call')
+      this.dbmethodResults = this.getTable('ctzn.network/dbmethod-result')
+      this.dbmethodResultsChronIdx = this.getTable('ctzn.network/dbmethod-result-chron-idx')
+      if (this.writable) {
+        for (let method of this.supportedMethods) {
+          this.createDbMethod(`ctzn.network/${method}-method`, dbmethods[method])
+        }
+      }
+    } finally {
+      release()
     }
   }
 
-  async teardown () {
-    if (this.blobs) await this.blobs.teardown()
-    this.blobs = undefined
-    if (!this.isPrivate) {
-      client.network.configure(this.bee.feed, {announce: false, lookup: false})
+  async teardown ({unswarm} = {unswarm: false}) {
+    const release = await this.lock('teardown') // lock to handle multiple teardown() calls
+    try {
+      if (!this.isInMemory) return
+      if (this.blobs) await this.blobs.teardown({unswarm})
+      if (!this.isPrivate && unswarm) {
+        client.network.configure(this.bee.feed, {announce: false, lookup: false})
+      }
+      await this.bee.feed.close()
+      this.bee = undefined
+    } finally {
+      release()
     }
-    await this.bee.feed.close()
-    this.bee = undefined
+  }
+
+  async touch () {
+    this.lastAccess = Date.now()
+    if (!this.isInMemory) {
+      await this.setup()
+      this.blobs.reset()
+      for (let schemaId in this.tables) {
+        this.tables[schemaId].reset()
+      }
+    }
   }
 
   async updateDesc (updates) {
+    await this.touch()
     this.desc = this.desc || {}
     if (updates) {
       for (let k in updates) {
@@ -156,6 +195,7 @@ export class BaseHyperbeeDB extends EventEmitter {
 
   async whenSynced () {
     if (!this.bee.feed.writable) {
+      await this.touch()
       const pend = perf.measure('whenSynced')
       await this.bee.feed.update({ifAvailable: true}).catch(e => undefined)
       pend()
@@ -163,6 +203,7 @@ export class BaseHyperbeeDB extends EventEmitter {
   }
 
   watch (_cb) {
+    if (!this.isInMemory) return
     const cb = _debounce(() => _cb(this), BACKGROUND_INDEXING_DELAY, {trailing: true})
     this.bee.feed.on('append', () => cb())
   }
@@ -207,6 +248,7 @@ export class BaseHyperbeeDB extends EventEmitter {
 
   async rebuildIndexes (indexIds = undefined) {
     if (!this.key || !this.writable) return
+    await this.touch()
     console.log('Rebuilding', indexIds ? `indexes: ${indexIds.join(', ')}` : 'all indexes of', this._ident)
     const release = await this.lockAllIndexes()
     try {
@@ -234,6 +276,7 @@ export class BaseHyperbeeDB extends EventEmitter {
 
   async updateIndexes ({changedDb}) {
     if (!this.key || !this.writable) return
+    await this.touch()
     const release = await this.lock(`update-indexes:${changedDb.url}`)
 
     const batch = this.bee.batch()
@@ -308,28 +351,31 @@ class Blobs {
     this.db = db
     this.kv = undefined
     this.feed = undefined
+    this.feedInfo = undefined
     this.isPrivate = isPrivate
   }
 
   get writable () {
-    return this.feed?.writable
+    return this.feedInfo?.writable
   }
 
   get peers () {
-    return this.feed?.peers
+    return this.feed?.peers || []
   }
 
   get key () {
-    return this.feed?.key
+    return this.feedInfo?.key
   }
 
   get discoveryKey () {
-    return this.feed?.discoveryKey
+    return this.feedInfo?.discoveryKey
   }
 
   async setup () {
-    this.kv = this.db.bee.sub('_blobs')
-
+    if (this.feed) {
+      return // already setup
+    }
+    this.reset()
     if (!this.db.desc.blobsFeedKey) {
       this.feed = client.corestore().get(null)
       await this.feed.ready()
@@ -341,6 +387,7 @@ class Blobs {
       this.feed = client.corestore().get(Buffer.from(this.db.desc.blobsFeedKey, 'hex'))
       await this.feed.ready()
     }
+    this.feedInfo = {writable: this.feed.writable, key: this.feed.key, discoveryKey: this.feed.discoveryKey}
     hyperspaceLog.loadCore(this.discoveryKey.toString('hex'))
     hyperspaceLog.trackCore(this.feed)
     if (!this.isPrivate) {
@@ -350,15 +397,21 @@ class Blobs {
     // TODO track which ranges in the feed are actively pointed to and cache/decache accordingly
   }
 
-  async teardown () {
+  reset () {
+    this.kv = this.db.bee.sub('_blobs')
+  }
+
+  async teardown ({unswarm} = {unswarm: false}) {
     if (!this.feed) return
-    if (!this.isPrivate) {
+    if (!this.isPrivate && unswarm) {
       client.network.configure(this.feed, {announce: false, lookup: false})
     }
     await this.feed.close()
+    this.feed = undefined
   }
 
   async getPointer (key) {
+    await this.db.touch()
     const pointer = await this.kv.get(key, {timeout: READ_TIMEOUT})
     if (!pointer) throw new Error('Blob not found')
     blobPointer.assert(pointer.value)
@@ -366,6 +419,7 @@ class Blobs {
   }
 
   async createReadStream (key) {
+    await this.db.touch()
     const pointer = await this.kv.get(key, {timeout: READ_TIMEOUT})
     if (!pointer) throw new Error('Blob not found')
     blobPointer.assert(pointer.value)
@@ -377,6 +431,7 @@ class Blobs {
   }
 
   async get (key, encoding = undefined) {
+    // no need to touch() because getPointer() does it
     const ptr = await this.getPointer(key)
     const stream = await this.createReadStreamFromPointer(ptr)
     return new Promise((resolve, reject) => {
@@ -394,6 +449,7 @@ class Blobs {
   }
 
   async createReadStreamFromPointer (pointer) {
+    await this.db.touch()
     return this.feed.createReadStream({
       start: pointer.start,
       end: pointer.end,
@@ -402,6 +458,7 @@ class Blobs {
   }
 
   async put (key, buf, {mimeType} = {mimeType: undefined}) {
+    await this.db.touch()
     const chunks = chunkify(buf, BLOB_CHUNK_SIZE)
     const start = await this.feed.append(chunks)
     const pointer = {start, end: start + chunks.length, mimeType}
@@ -414,13 +471,18 @@ class Table {
   constructor (db, schema) {
     const [domain, name] = schema.id.split('/')
     this.db = db
-    this.bee = this.db.bee.sub(domain).sub(name)
+    this.bee = undefined
     this.schema = schema
     this._schemaDomain = domain
     this._schemaName = name
     this._onPutCbs = undefined
     this._onDelCbs = undefined
     this.lock = (id = '') => this.db.lock(`${this.schema.id}:${id}`)
+    this.reset()
+  }
+
+  reset () {
+    this.bee = this.db.bee.sub(this._schemaDomain).sub(this._schemaName)
   }
 
   constructBeeKey (key) {
@@ -432,6 +494,7 @@ class Table {
   }
 
   async get (key) {
+    await this.db.touch()
     const pend = perf.measure('table.get')
     let entry = await this.bee.get(String(key), {timeout: READ_TIMEOUT})
     if (entry) {
@@ -442,6 +505,7 @@ class Table {
   }
 
   async put (key, value) {
+    await this.db.touch()
     const pend = perf.measure('table.put')
     this.schema.assertValid(value)
     const res = await this.bee.put(String(key), value)
@@ -453,6 +517,7 @@ class Table {
   }
 
   async del (key) {
+    await this.db.touch()
     const pend = perf.measure('table.del')
     const res = await this.bee.del(String(key))
     pend()
@@ -462,7 +527,8 @@ class Table {
     return res
   }
 
-  createReadStream (opts) {
+  async createReadStream (opts) {
+    await this.db.touch()
     let _this = this
     opts = opts || {}
     opts.timeout = READ_TIMEOUT
@@ -474,12 +540,14 @@ class Table {
   }
 
   async list (opts) {
+    // no need to .touch() because createReadStream() does it
     const pend = perf.measure('table.list')
     opts = opts || {}
     opts.timeout = READ_TIMEOUT
+    let stream = await this.createReadStream(opts)
     return new Promise((resolve, reject) => {
       pump(
-        this.createReadStream(opts),
+        stream,
         concat(resolve),
         err => {
           pend()
@@ -489,12 +557,13 @@ class Table {
     })
   }
 
-  scanFind (opts, fn) {
+  async scanFind (opts, fn) {
+    // no need to .touch() because createReadStream() does it
+    const rs = await this.createReadStream(opts)
     return new Promise((resolve, reject) => {
       let found = false
       opts = opts || {}
       opts.timeout = READ_TIMEOUT
-      const rs = this.createReadStream(opts)
       rs.on('data', entry => {
         if (found) return
         if (fn(entry)) {
@@ -511,6 +580,7 @@ class Table {
   }
 
   cursorRead (opts = {}) {
+    // no need to .touch() because list() does it
     let lt = opts.lt
     let atEnd = false
     return {
@@ -540,6 +610,7 @@ class Table {
   }
 
   async listDiff (other, opts) {
+    await this.db.touch()
     const pend = perf.measure('table.listDiff')
     opts = opts || {}
     opts.timeout = READ_TIMEOUT
@@ -671,12 +742,4 @@ function chunkify (buf, chunkSize) {
     buf = buf.slice(chunkSize)
   }
   return chunks
-}
-
-const _debouncers = {}
-function getDebouncedFn (key, fn, wait) {
-  if (!_debouncers[key]) {
-    _debouncers[key] = _debounce(fn, wait)
-  }
-  return _debouncers[key]
 }

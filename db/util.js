@@ -27,6 +27,7 @@ export async function dbGet (dbUrl, opts = undefined) {
     }
   }
   const pathParts = urlp.pathname.split('/').filter(Boolean)
+  await db.touch()
   let bee = db.bee
   for (let i = 0; i < pathParts.length - 1; i++) {
     bee = bee.sub(decodeURIComponent(pathParts[i]))

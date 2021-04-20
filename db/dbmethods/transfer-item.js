@@ -47,6 +47,7 @@ export default async function (db, caller, args, callMetadata) {
       throw new Error(`Failed to generate key: ${e.message}`)
     }
 
+    await db.touch()
     const batch = db.bee.batch()
 
     if (destKey === args.itemKey) {

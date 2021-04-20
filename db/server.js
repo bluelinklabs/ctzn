@@ -22,6 +22,10 @@ export class PublicServerDB extends BaseHyperbeeDB {
     return 'ctzn.network/public-server-db'
   }
 
+  isEjectableFromMemory (ts) {
+    return false // never eject the public server db from memory
+  }
+
   async setup () {
     await super.setup()
     this.indexState = this.getTable('ctzn.network/index-state')
@@ -424,6 +428,10 @@ export class PrivateServerDB extends BaseHyperbeeDB {
 
   get dbType () {
     return 'ctzn.network/private-server-db'
+  }
+
+  isEjectableFromMemory (ts) {
+    return false // never eject the private server db from memory
   }
 
   async setup () {

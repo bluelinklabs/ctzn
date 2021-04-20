@@ -60,7 +60,7 @@ export function setup (wsServer) {
       peers: all ? db.peers : undefined,
       indexers: db.indexers?.map(i => i.schemaId) || [],
       diskusage: diskusage.get(db.discoveryKey.toString('hex')),
-      blobs: db.blobs.feed ? {
+      blobs: db.blobs.feedInfo ? {
         key: db.blobs.key.toString('hex'),
         dkey: db.blobs.discoveryKey.toString('hex'),
         writable: db.blobs.writable,
@@ -87,6 +87,7 @@ export function setup (wsServer) {
   wsServer.registerAdminOnly('server.beeShallowList', async ([dkey, path]) => {
     const thisDb = db.getDbByDkey(dkey)
     if (!thisDb) throw new Error('Database not found')
+    await thisDb.touch()
     return beeShallowList(thisDb.bee, path)
   })
 
