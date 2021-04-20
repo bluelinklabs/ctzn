@@ -19,6 +19,7 @@ import { DbmethodBadResponse } from '../lib/issues/dbmethod-bad-response.js'
 
 const FIRST_HYPERBEE_BLOCK = 2
 const READ_TIMEOUT = 10e3
+const UPDATE_CHECK_INTERVAL = 60e3
 const BACKGROUND_INDEXING_DELAY = 5e3 // how much time is allowed to pass before globally indexing an update
 const BLOB_CHUNK_SIZE = bytes('64kb')
 const KEEP_IN_MEMORY_TTL = 15e3
@@ -208,9 +209,10 @@ export class BaseHyperbeeDB extends EventEmitter {
   }
 
   async _eagerUpdate () {
-    if (!this.bee) return
-    await this.bee.feed.update({ifAvailable: false}).catch(e => undefined)
-    this._eagerUpdate()
+    if (this.bee) {
+      await this.bee.feed.update({ifAvailable: false}).catch(e => undefined)
+    }
+    setTimeout(() => this._eagerUpdate(), UPDATE_CHECK_INTERVAL).unref()
   }
 
   getTable (schemaId) {
