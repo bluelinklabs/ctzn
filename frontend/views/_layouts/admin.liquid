@@ -10,38 +10,38 @@
     <link rel="icon" href="/img/favicon.png">
     <script type="module" src="/js/admin/session.js"></script>
   </head>
-  <body class="bg-gray-200 antialiased">
-    <div class="bg-white shadow">
+  <body class="bg-gray-50 antialiased">
+    <div class="bg-white border-b border-gray-300">
       <main class="flex">
         <!-- nav -->
         <a
-          class="block px-3 py-2 text-lg font-semibold cursor-pointer border-b-2 border-gray-100 {% if topnav == 'dashboard' %}bg-gray-50 border-pink-600{% else %}hover:bg-gray-50{% endif %}"
+          class="block px-4 py-4 mr-2 font-medium cursor-pointer border-b {% if topnav == 'dashboard' %}text-pink-600 border-pink-600{% else %}border-transparent{% endif %} hover:text-pink-600 hover:bg-pink-50"
           href="/admin"
         >
-          <span class="fas fa-home fa-fw"></span> Dashboard
+          Dashboard
         </a>
         <a
-          class="block px-3 py-2 text-lg font-semibold cursor-pointer border-b-2 border-gray-100 {% if topnav == 'hyperspace' %}bg-gray-50 border-pink-600{% else %}hover:bg-gray-50{% endif %}"
+          class="block px-4 py-4 mr-2 font-medium cursor-pointer border-b {% if topnav == 'hyperspace' %}text-pink-600 border-pink-600{% else %}border-transparent{% endif %} hover:text-pink-600 hover:bg-pink-50"
           href="/admin/hyperspace"
         >
-          <span class="fas fa-database fa-fw"></span> Hyperspace
+          Hyperspace
         </a>
         <a
-          class="block px-3 py-2 text-lg font-semibold cursor-pointer border-b-2 border-gray-100 {% if topnav == 'users' %}bg-gray-50 border-pink-600{% else %}hover:bg-gray-50{% endif %}"
+          class="block px-4 py-4 mr-2 font-medium cursor-pointer border-b {% if topnav == 'users' %}text-pink-600 border-pink-600{% else %}border-transparent{% endif %} hover:text-pink-600 hover:bg-pink-50"
           href="/admin/users"
         >
-          <span class="fas fa-users fa-fw"></span> Users
+          Users
         </a>
         <a
-          class="block px-3 py-2 text-lg font-semibold cursor-pointer border-b-2 border-gray-100 {% if topnav == 'issues' %}bg-gray-50 border-pink-600{% else %}hover:bg-gray-50{% endif %}"
+          class="block px-4 py-4 mr-2 font-medium cursor-pointer border-b {% if topnav == 'issues' %}text-pink-600 border-pink-600{% else %}border-transparent{% endif %} hover:text-pink-600 hover:bg-pink-50"
           href="/admin/issues"
         >
-          <span class="fas fa-exclamation-triangle fa-fw"></span> Issues (0)
+          Issues (0)
         </a>
       </div>
     </div>
     <div>
-      <main class="px-2 py-1">
+      <main class="px-2 py-1 bg-white">
         <!-- view -->
         <app-session></app-session>
         {% block view %}View goes here{% endblock %}

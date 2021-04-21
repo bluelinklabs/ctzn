@@ -51,3 +51,21 @@ app-users .row > :nth-child(2) {
 app-users .row > :nth-child(3) {
   flex: 0 0 100px;
 }
+
+.arrow-decor {
+  position: relative;
+}
+
+.arrow-decor:before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  background: #fff;
+  border-left: 1px solid #ddd;
+  border-top: 1px solid #ddd;
+  left: 50%;
+  bottom: -11px;
+}

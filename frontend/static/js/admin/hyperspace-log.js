@@ -69,7 +69,7 @@ class HyperspaceLog extends LitElement {
     const isExpanded = this.expandedEntries[i]
     return html`
       <div
-        class="row flex items-center border-b border-gray-200 pl-2 py-0.5 hover:bg-gray-50"
+        class="row flex items-center ${i !== 0 ? 'border-t' : ''} border-gray-200 pl-2 py-0.5 hover:bg-gray-50"
         @click=${e => this.onClickEntry(e, entry, i)}
       >
         <div>
