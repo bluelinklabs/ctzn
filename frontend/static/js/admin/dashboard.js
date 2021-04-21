@@ -42,17 +42,20 @@ class Dashboard extends LitElement {
     this.requestUpdate()
     this.metrics.day = await session.api.server.countMultipleMetricsEvents({
       timespan: 'day',
-      events: ['signed-up', 'logged-in', 'community-created', 'post-created', 'comment-created']
+      events: ['signed-up', 'logged-in', 'community-created', 'post-created', 'comment-created'],
+      uniqueBys: {'logged-in': 'user'}
     })
     this.requestUpdate()
     this.metrics.week = await session.api.server.countMultipleMetricsEvents({
       timespan: 'week',
-      events: ['signed-up', 'logged-in', 'community-created', 'post-created', 'comment-created']
+      events: ['signed-up', 'logged-in', 'community-created', 'post-created', 'comment-created'],
+      uniqueBys: {'logged-in': 'user'}
     })
     this.requestUpdate()
     this.metrics.month = await session.api.server.countMultipleMetricsEvents({
       timespan: 'month',
-      events: ['signed-up', 'logged-in', 'community-created', 'post-created', 'comment-created']
+      events: ['signed-up', 'logged-in', 'community-created', 'post-created', 'comment-created'],
+      uniqueBys: {'logged-in': 'user'}
     })
     this.requestUpdate()
     this.httpHits = Object.entries(await session.api.server.aggregateHttpHits({timespan: 'day'}))
