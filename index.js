@@ -7,6 +7,7 @@ import * as db from './db/index.js'
 import * as dbViews from './db/views.js'
 import * as api from './api/index.js'
 import * as perf from './lib/perf.js'
+import * as metrics from './lib/metrics.js'
 import { NoTermsOfServiceIssue } from './lib/issues/no-terms-of-service.js'
 import { NoPrivacyPolicyIssue } from './lib/issues/no-privacy-policy.js'
 import * as issues from './lib/issues.js'
@@ -34,6 +35,7 @@ export async function start (opts) {
   if (config.benchmarkMode) {
     perf.enable()
   }
+  metrics.setup({configDir: opts.configDir})
   if (config.debugMode && DEBUG_MODE_PORTS_MAP[config.domain]) {
     config.overrides.port = DEBUG_MODE_PORTS_MAP[config.domain]
   }
@@ -46,6 +48,11 @@ export async function start (opts) {
   app.set('views', path.join(path.dirname(fileURLToPath(import.meta.url)), 'frontend', 'views'))
   app.set('view engine', 'liquid')
   app.use(cors())
+
+  app.use((req, res, next) => {
+    metrics.httpRequest({path: req.url})
+    next()
+  })
 
   app.get('/', (req, res) => res.render('index'))
   app.get('/admin', (req, res) => res.render('admin/index', {topnav: 'dashboard'}))

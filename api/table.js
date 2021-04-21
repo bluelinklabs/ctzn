@@ -2,6 +2,7 @@ import { publicDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 import * as errors from '../lib/errors.js'
+import * as metrics from '../lib/metrics.js'
 
 export function setup (wsServer) {
   wsServer.register('table.list', async ([databaseId, schemaId, opts], client) => {
@@ -31,6 +32,12 @@ export function setup (wsServer) {
     }
     await table.put(key, value)
     await onDatabaseChange(db)
+
+    if (schemaId === 'ctzn.network/post') {
+      metrics.postCreated({user: client.auth.userId})
+    } else if (schemaId === 'ctzn.network/comment') {
+      metrics.commentCreated({user: client.auth.userId})
+    }
 
     const url = constructEntryUrl(db.url, schemaId, key)
     return {key, url}

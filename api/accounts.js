@@ -4,6 +4,7 @@ import { publicServerDb, privateServerDb, createUser } from '../db/index.js'
 import { constructUserUrl, constructUserId } from '../lib/strings.js'
 import { hashPassword, verifyPassword, generateRecoveryCode } from '../lib/crypto.js'
 import * as errors from '../lib/errors.js'
+import * as metrics from '../lib/metrics.js'
 import * as email from '../lib/email.js'
 import ip from 'ip'
 import deindent from 'deindent'
@@ -96,6 +97,7 @@ export function setup (wsServer, config) {
     }
     const userId = constructUserId(username)
     const sess = await createSession(client, {username, userId, dbUrl: user.value.dbUrl})
+    metrics.loggedIn({user: userId})
 
     return {
       userId,
@@ -132,6 +134,7 @@ export function setup (wsServer, config) {
     const userId = constructUserId(username)
     const dbUrl = citizenUser.publicDb.url
     const sess = await createSession(client, {username, userId, dbUrl})
+    metrics.signedUp({user: userId})
     return {
       userId,
       url: constructUserUrl(username),

@@ -7,6 +7,7 @@ import { log as hyperspaceLog } from '../db/hyperspace.js'
 import { beeShallowList } from '../db/util.js'
 import * as diskusage from '../db/diskusage-tracker.js'
 import * as issues from '../lib/issues.js'
+import * as metrics from '../lib/metrics.js'
 import { constructUserId } from '../lib/strings.js'
 
 let _inspectorSession
@@ -209,6 +210,27 @@ export function setup (wsServer) {
 
   wsServer.registerAdminOnly('server.removeUser', async ([username]) => {
     await db.deleteUser(username)
+  })
+
+  wsServer.registerAdminOnly('server.listMetricsEvents', async ([opts]) => {
+    return metrics.listEvents(opts)
+  })
+
+  wsServer.registerAdminOnly('server.countMetricsEvents', async ([opts]) => {
+    return metrics.countEvents(opts)
+  })
+
+  wsServer.registerAdminOnly('server.countMultipleMetricsEvents', async ([opts]) => {
+    return metrics.countMultipleEvents(opts)
+  })
+
+  wsServer.registerAdminOnly('server.aggregateHttpHits', async ([opts]) => {
+    return metrics.aggregateHttpHits(opts)
+  })
+
+  wsServer.registerAdminOnly('server.countUsers', async ([]) => {
+    let userRecords = await db.publicServerDb.users.list()
+    return userRecords.filter(u => u.value.type === 'citizen').length
   })
 }
 

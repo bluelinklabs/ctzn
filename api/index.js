@@ -8,8 +8,16 @@ import * as server from './server.js'
 import * as table from './table.js'
 import * as users from './users.js'
 import * as view from './view.js'
+import * as metrics from '../lib/metrics.js'
+
+const CAPTURE_CONN_COUNT_INTERVAL = 30e3
 
 export function setup (wsServer, config) {
+  metrics.activeWebsocketCount({count: 0})
+  setInterval(() => {
+    metrics.activeWebsocketCount({count: wsServer.namespaces['/'].clients.size})
+  }, CAPTURE_CONN_COUNT_INTERVAL).unref()
+
   wsServer.wss.on('connection', function connection(ws, req) {
     // Save request headers onto the ws client for later
     ws.headers = req.headers

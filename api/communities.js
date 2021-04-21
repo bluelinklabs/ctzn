@@ -3,6 +3,7 @@ import { constructEntryUrl, parseUserId } from '../lib/strings.js'
 import { createValidator } from '../lib/schemas.js'
 import { fetchUserInfo, reverseDns, connectWs } from '../lib/network.js'
 import * as errors from '../lib/errors.js'
+import * as metrics from '../lib/metrics.js'
 
 const createParam = createValidator({
   type: 'object',
@@ -71,6 +72,7 @@ export function setup (wsServer, config) {
     await publicCitizenDb.memberships.put(communityInfo.userId, membershipValue)
     await communityUser.publicDb.members.put(client.auth.userId, memberValue)
     /* dont await */ catchupIndexes(communityUser.publicDb)
+    metrics.communityCreated({user: client.auth.userId, community: communityInfo.userId})
 
     return communityInfo
   })

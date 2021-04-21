@@ -69,3 +69,7 @@ app-users .row > :nth-child(3) {
   left: 50%;
   bottom: -11px;
 }
+
+.zebra-row:nth-child(even) {
+  background: #f7f7fa;
+}
