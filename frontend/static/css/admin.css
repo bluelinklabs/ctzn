@@ -52,6 +52,13 @@ app-users .row > :nth-child(3) {
   flex: 0 0 100px;
 }
 
+app-issues .row > :nth-child(1) {
+  flex: 1;
+}
+app-issues .row > :nth-child(2) {
+  flex: 0 0 100px;
+}
+
 .arrow-decor {
   position: relative;
 }

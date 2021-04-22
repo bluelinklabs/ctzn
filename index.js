@@ -55,11 +55,17 @@ export async function start (opts) {
   })
 
   app.get('/', (req, res) => res.render('index'))
+
+  app.use('/admin', (req, res, next) => {
+    res.locals.issueCount = issues.count()
+    next()
+  })
   app.get('/admin', (req, res) => res.render('admin/index', {topnav: 'dashboard'}))
   app.get('/admin/hyperspace', (req, res) => res.render('admin/hyperspace', {topnav: 'hyperspace'}))
   app.get('/admin/hyperspace/log', (req, res) => res.render('admin/hyperspace-log', {topnav: 'hyperspace'}))
   app.get('/admin/hyperspace/db/:id', (req, res) => res.render('admin/hyperspace-view-db', {topnav: 'hyperspace'}))
   app.get('/admin/issues', (req, res) => res.render('admin/issues', {topnav: 'issues'}))
+  app.get('/admin/issues/view/:id', (req, res) => res.render('admin/issue-view', {topnav: 'issues', id: req.params.id}))
   app.get('/admin/users', (req, res) => res.render('admin/users', {topnav: 'users'}))
   app.get('/admin/users/view/:username', (req, res) => res.render('admin/user-view', {topnav: 'users', username: req.params.username}))
 

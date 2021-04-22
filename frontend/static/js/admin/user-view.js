@@ -6,7 +6,7 @@ class UserView extends LitElement {
   static get properties () {
     return {
       username: {type: String},
-      account: {type: Array},
+      account: {type: Object},
       currentError: {type: String}
     }
   }
