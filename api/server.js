@@ -225,6 +225,10 @@ export function setup (wsServer) {
     return metrics.countMultipleEvents(opts)
   })
 
+  wsServer.registerAdminOnly('server.countMultipleMetricsEventsOverTime', async ([opts]) => {
+    return metrics.countMultipleEventsOverTime(opts)
+  })
+
   wsServer.registerAdminOnly('server.aggregateHttpHits', async ([opts]) => {
     return metrics.aggregateHttpHits(opts)
   })

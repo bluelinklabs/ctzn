@@ -2,6 +2,14 @@ import { LitElement, html } from '../../vendor/lit-element/lit-element.js'
 import { repeat } from '../../vendor/lit-element/lit-html/directives/repeat.js'
 import * as session from '../lib/session.js'
 
+const METRIC_GRAPH_COLORS = {
+  'signed-up': 'rgba(255, 99, 132, 1)',
+  'logged-in': 'rgba(54, 162, 235, 1)',
+  'community-created': 'rgba(255, 206, 86, 1)',
+  'post-created': 'rgba(75, 192, 192, 1)',
+  'comment-created': 'rgba(153, 102, 255, 1)'
+}
+
 class Dashboard extends LitElement {
   static get properties () {
     return {
@@ -36,7 +44,8 @@ class Dashboard extends LitElement {
       fixed: {users, activeSessions: activeWebsocketCounts[activeWebsocketCounts.length - 1]?.count},
       day: {},
       week: {},
-      month: {}
+      month: {},
+      overtime: {}
     }
     this.updateActiveSessionsGraph(activeWebsocketCounts)
     this.requestUpdate()
@@ -60,6 +69,14 @@ class Dashboard extends LitElement {
     this.requestUpdate()
     this.httpHits = Object.entries(await session.api.server.aggregateHttpHits({timespan: 'day'}))
     this.httpHits.sort((a, b) => b[1] - a[1])
+    this.requestUpdate()
+    this.metrics.overtime = await session.api.server.countMultipleMetricsEventsOverTime({
+      timespan: 'month',
+      window: 'day',
+      events: ['signed-up', 'logged-in', 'community-created', 'post-created', 'comment-created'],
+      uniqueBys: {'logged-in': 'user'}
+    })
+    this.updateOvertimeGraphs(this.metrics.overtime)
     console.log(this.metrics, activeWebsocketCounts)
   }
 
@@ -81,6 +98,27 @@ class Dashboard extends LitElement {
           borderColor: 'rgb(219, 39, 119)',
           fill: false
         }],
+      }
+    })
+  }
+
+  updateOvertimeGraphs (overtime) {
+    const labels = Object.keys(overtime).map(ts => (new Date(+ts)).toLocaleDateString())
+    const datasets = []
+    for (let evt of ['signed-up', 'logged-in', 'community-created', 'post-created', 'comment-created']) {
+      datasets.push({
+        label: evt,
+        data: Object.values(overtime).map(({counts}) => counts[evt] || 0),
+        borderColor: METRIC_GRAPH_COLORS[evt],
+        fill: false
+      })
+    }
+    const ctx = this.querySelector(`#metrics-graph`).getContext('2d')
+    var myChart = new window.Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets,
       }
     })
   }
@@ -144,7 +182,7 @@ class Dashboard extends LitElement {
         <h4 class="font-semibold text-lg">Active Sessions <span class="text-sm font-normal text-gray-600">Past 24 hours</span></h4>
         <canvas id="active-sessions-graph"></canvas>
       </div>
-      <div class="px-3 pt-2 pb-6">
+      <div class="px-3 pt-2 pb-2">
         <h4 class="font-semibold text-lg">HTTP Requests <span class="text-sm font-normal text-gray-600">Past 24 hours</span></h4>
         <div class="overflow-y-auto font-mono text-sm text-gray-800 border border-gray-200 rounded px-1 py-2" style="max-height: 400px">
           ${repeat(this.httpHits, ([path]) => path, ([path, count]) => html`
@@ -154,6 +192,10 @@ class Dashboard extends LitElement {
             </div>
           `)}
         </div>
+      </div>
+      <div class="px-3 pt-8 pb-6">
+        <h4 class="font-semibold text-lg">Metrics <span class="text-sm font-normal text-gray-600">Past month</span></h4>
+        <canvas id="metrics-graph"></canvas>
       </div>
     `
   }
