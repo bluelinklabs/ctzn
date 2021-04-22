@@ -199,42 +199,47 @@ async function loadMemberUserDbs () {
   let numLoaded = 0
   let users = await publicServerDb.users.list()
   await Promise.allSettled(users.map(async (user) => {
-    if (user.value.type === 'citizen') {
-      const userId = constructUserId(user.key)
-      if (publicDbs.has(userId)) {
-        console.error('Skipping db load due to duplicate userId', userId)
-        return
-      }
-      let publicDb = new PublicCitizenDB(userId, hyperUrlToKey(user.value.dbUrl))
-      await publicDb.setup()
-      publicDbs.set(userId, publicDb)
-      publicDb.watch(onDatabaseChange)
-      publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+    try {
+      if (user.value.type === 'citizen') {
+        const userId = constructUserId(user.key)
+        if (publicDbs.has(userId)) {
+          console.error('Skipping db load due to duplicate userId', userId)
+          return
+        }
+        let publicDb = new PublicCitizenDB(userId, hyperUrlToKey(user.value.dbUrl))
+        await publicDb.setup()
+        publicDbs.set(userId, publicDb)
+        publicDb.watch(onDatabaseChange)
+        publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
 
-      // DISABLED
-      // we may not use these anymore
-      // -prf
-      // let accountEntry = await privateServerDb.accounts.get(user.value.username)
-      // let privateDb = new PrivateCitizenDB(userId, hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicDb)
-      // await privateDb.setup()
-      // privateDbs.set(userId, privateDb)
-      // privateDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+        // DISABLED
+        // we may not use these anymore
+        // -prf
+        // let accountEntry = await privateServerDb.accounts.get(user.value.username)
+        // let privateDb = new PrivateCitizenDB(userId, hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicDb)
+        // await privateDb.setup()
+        // privateDbs.set(userId, privateDb)
+        // privateDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
 
-      numLoaded++
-    } else if (user.value.type === 'community') {
-      const userId = constructUserId(user.key)
-      if (publicDbs.has(userId)) {
-        console.error('Skipping db load due to duplicate userId', userId)
-        return
+        numLoaded++
+      } else if (user.value.type === 'community') {
+        const userId = constructUserId(user.key)
+        if (publicDbs.has(userId)) {
+          console.error('Skipping db load due to duplicate userId', userId)
+          return
+        }
+        let publicDb = new PublicCommunityDB(userId, hyperUrlToKey(user.value.dbUrl))
+        await publicDb.setup()
+        publicDbs.set(userId, publicDb)
+        publicDb.watch(onDatabaseChange)
+        publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+        numLoaded++
+      } else {
+        issues.add(new UnknownUserTypeIssue(user))
       }
-      let publicDb = new PublicCommunityDB(userId, hyperUrlToKey(user.value.dbUrl))
-      await publicDb.setup()
-      publicDbs.set(userId, publicDb)
-      publicDb.watch(onDatabaseChange)
-      publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
-      numLoaded++
-    } else {
-      issues.add(new UnknownUserTypeIssue(user))
+    } catch (e) {
+      console.error('Failed to load database for', user.key)
+      console.error(e)
     }
   }))
   console.log('Loaded', numLoaded, 'user DBs (from', users.length, 'member records)')
