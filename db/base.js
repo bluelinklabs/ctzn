@@ -588,6 +588,7 @@ class Table {
           resolve(entry)
         }
       })
+      rs.on('error', (e) => reject(e))
       rs.on('end', () => {
         if (!found) resolve(undefined)
       })
@@ -603,7 +604,7 @@ class Table {
       db: this.db,
       next: async (n) => {
         if (atEnd) return null
-        let res = await this.list(Object.assign({}, opts, {lt, limit: n}))
+        let res = await this.list(Object.assign({}, opts, {lt, limit: n})).catch(e => [])
         if (res.length === 0) {
           atEnd = true
           return null

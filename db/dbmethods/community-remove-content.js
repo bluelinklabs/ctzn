@@ -9,7 +9,7 @@ export default async function (db, caller, args) {
     await assertUserPermission(db, caller.userId, 'ctzn.network/perm-community-remove-post')
     const feedIdxEntry = await publicServerDb.feedIdx.scanFind(addPrefixToRangeOpts(db.userId, {reverse: true}), entry => (
       entry.value.item.dbUrl === args.contentUrl
-    ))
+    )).catch(e => undefined)
     if (!feedIdxEntry) {
       throw new Error('Unable to find post in the community feed')
     }

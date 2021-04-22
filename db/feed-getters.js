@@ -117,11 +117,11 @@ export async function listDbmethodFeed (opts, auth) {
 
       db = publicDbs.get(entry.value.database.userId)
       if (!db) continue
-      const result = await db.dbmethodResults.get(entry.value.resultKey, {wait: false})
+      const result = await db.dbmethodResults.get(entry.value.resultKey, {wait: false}).catch(e => undefined)
       if (!result) continue
 
       result.url = constructEntryUrl(db.url, 'ctzn.network/dbmethod-result', entry.value.resultKey)
-      const callRes = await dbGet(result.value.call.dbUrl, {wait: false})
+      const callRes = await dbGet(result.value.call.dbUrl, {wait: false}).catch(e => undefined)
       if (!callRes) continue
       const call = callRes.entry
       call.url = result.value.call.dbUrl
@@ -140,7 +140,7 @@ export async function listDbmethodFeed (opts, auth) {
       const call = entry
       call.url = constructEntryUrl(db.url, 'ctzn.network/dbmethod-call', entry.key)
       const resultUrl = constructEntryUrl(entry.value.database.dbUrl, 'ctzn.network/dbmethod-result', entry.url)
-      const result = (await dbGet(resultUrl, {wait: false}))?.entry
+      const result = (await dbGet(resultUrl, {wait: false}).catch(e => undefined))?.entry
       if (!result) continue
       result.url = resultUrl
       feedEntries.push({
