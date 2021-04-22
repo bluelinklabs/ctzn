@@ -142,12 +142,13 @@ export function setup (wsServer) {
   wsServer.registerAdminOnly('server.listAccounts', async ([]) => {
     let userRecords = await db.publicServerDb.users.list()
     return await Promise.all(userRecords.map(async userRecord => {
+      if (!userRecord) return {}
       const userId = constructUserId(userRecord.key)
       const publicDb = db.publicDbs.get(userId)
       const profile = publicDb ? await publicDb.profile.get('self') : undefined
       return {
-        key: publicDb.key.toString('hex'),
-        dkey: publicDb.discoveryKey.toString('hex'),
+        key: publicDb?.key?.toString('hex'),
+        dkey: publicDb?.discoveryKey?.toString('hex'),
         username: userRecord.key,
         userId,
         type: userRecord.value.type,
