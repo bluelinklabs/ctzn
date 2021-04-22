@@ -80,3 +80,7 @@ app-issues .row > :nth-child(2) {
 .zebra-row:nth-child(even) {
   background: #f7f7fa;
 }
+
+.zebra-row-hovers:hover {
+  background: rgb(253, 242, 248) !important;
+}

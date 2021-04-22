@@ -62,7 +62,7 @@ class HyperspaceDbs extends LitElement {
     let lastDbType = undefined
     return html`
       <div class="pb-8">
-        <div class="sticky top-0 z-10 row flex items-center bg-pink-600 text-white sm:rounded px-3 py-2 mb-0.5 font-semibold">
+        <div class="sticky top-0 z-10 row flex items-center border-b-2 border-pink-600 bg-white px-3 py-2 mb-0.5 font-semibold">
           <div class="truncate">Type</div>
           <div class="truncate">User ID</div>
           <div class="truncate">Peers</div>
@@ -72,10 +72,10 @@ class HyperspaceDbs extends LitElement {
         ${repeat(this.databases, db => db.key, db => {
           const res = html`
             ${db.dbType !== lastDbType ? html`
-              <div class="pt-3 pb-1 px-1 text-sm font-semibold">${this.renderDbType(db.dbType)}s</div>
+              <div class="pt-3 pb-1 px-1 text-base font-medium border-b border-gray-300">${this.renderDbType(db.dbType)}s</div>
             ` : ''}
             <a
-              class="row flex items-center bg-white sm:rounded px-3 py-2 mb-0.5 hover:bg-gray-50 cursor-pointer"
+              class="row flex items-center px-3 py-2 cursor-pointer zebra-row zebra-row-hovers"
               href="/admin/hyperspace/db/${db.dkey}"
             >
               <div class="truncate">${this.renderDbType(db.dbType)}</div>

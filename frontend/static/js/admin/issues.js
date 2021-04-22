@@ -55,7 +55,7 @@ class Issues extends LitElement {
   render () {
     if (!this.issues) {
       return html`
-        <div class="bg-white sm:rounded px-4 py-3 my-2">
+        <div class="px-3 py-3">
           <h1 class="text-2xl font-semibold">Issues</h1>
         </div>
         <div>Loading...</div>
@@ -63,22 +63,22 @@ class Issues extends LitElement {
     }
     return html`
       <div class="pb-2">
-        <div class="flex items-center justify-between bg-white sm:rounded px-4 py-3 my-2">
+        <div class="flex items-center justify-between px-3 py-3">
           <h1 class="text-2xl font-semibold">Issues</h1>
           <input
-            class="border border-gray-200 rounded-full px-3 py-1"
+            class="border border-gray-300 rounded-full px-3 py-1"
             placeholder="Search"
             @keyup=${this.onSearchChange}
             @change=${this.onSearchChange}
           >
         </div>
-        <div class="sticky top-0 z-10 row flex items-center bg-pink-600 text-white sm:rounded px-3 py-2 mb-0.5 font-semibold">
+        <div class="sticky top-0 z-10 row flex items-center border-b-2 border-pink-600 bg-white px-3 py-2 mb-0.5 font-semibold">
           <div class="truncate">Issue</div>
-          <div class="truncate">Repititions</div>
+          <div class="truncate">Repetitions</div>
         </div>
         ${repeat(this.filteredIssues, issue => issue.id, issue =>  html`
           <a
-            class="row flex items-center px-3 py-2 border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+            class="row flex items-center px-3 py-2 cursor-pointer zebra-row zebra-row-hovers"
             href="/admin/issues/view/${issue.id}"
           >
             <div class="truncate">${issue.entries[0].description}</div>

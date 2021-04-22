@@ -39,11 +39,8 @@ class UserView extends LitElement {
       return html`<div>Loading...</div>`
     }
     return html`
-      <div class="sticky top-0 z-10 flex items-center bg-pink-600 text-white sm:rounded px-3 py-2 mb-0.5 font-semibold">
-        <a
-          class="cursor-pointer mr-1"
-          href="/admin/users"
-        >
+      <div class="px-3 pt-2 pb-3 mb-0.5 border-b-2 border-pink-600">
+        <a class="cursor-pointer" href="/admin/users">
           <span class="fas fa-fw fa-arrow-left"></span>
         </a>
       </div>
@@ -52,11 +49,9 @@ class UserView extends LitElement {
           <span class="fas fa-exclamation-triangle fa-fw"></span> ${this.currentError}
         </div>
       ` : ''}
-      <div class="bg-white sm:rounded px-3 py-2 mb-1">
-        <h2>
-          <span class="text-2xl font-medium">${this.account.username}</span>
-          <span class="text-lg font-medium">${this.account.type}</span>
-        </h2>
+      <div class="bg-white sm:rounded px-3 pt-4 pb-2">
+        <h2 class="text-4xl font-medium">${this.account.userId}</h2>
+        <div class="text-lg text-gray-600 font-medium pb-6">${this.account.type}</div>
         <div>
           <strong>Display Name:</strong>
           <span>${this.account.profile.displayName}</span>
@@ -64,14 +59,6 @@ class UserView extends LitElement {
         <div>
           <strong>Description:</strong>
           <span>${this.account.profile.description}</span>
-        </div>
-        <div>
-          <a
-            class="text-blue-600 hover:underline cursor-pointer"
-            href="/admin/hyperspace/db/${this.account.dkey}"
-          >
-            View database
-          </a>
         </div>
       </div>
       ${this.account.members ? html`
@@ -88,6 +75,12 @@ class UserView extends LitElement {
         </div>
       ` : ''}
       <div class="bg-white sm:rounded px-3 py-3 mb-1">
+        <a
+          class="px-2 py-1 rounded text-gray-600 text-sm hover:bg-gray-100 hover:text-gray-700"
+          href="/admin/hyperspace/db/${this.account.dkey}"
+        >
+          <span class="fas fa-fw fa-database"></span> View database
+        </a>
         ${this.account.type === 'community' ? html`
           <button
             class="px-2 py-1 rounded text-gray-600 text-sm hover:bg-red-100 hover:text-red-700"
