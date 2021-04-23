@@ -2,6 +2,7 @@ import * as http from 'http'
 import express from 'express'
 import { Server as WebSocketServer } from 'rpc-websockets'
 import cors from 'cors'
+import pump from 'pump'
 import { Config } from './lib/config.js'
 import * as db from './db/index.js'
 import * as dbViews from './db/views.js'
@@ -145,7 +146,7 @@ export async function start (opts) {
         res.setHeader('ETag', etag)
         if (mimeType) res.setHeader('Content-Type', mimeType)
         res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
-        ;(await createStream()).pipe(res)
+        pump(await createStream(), res, () => res.end())
       } else {
         res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
         res.status(200).json(await dbViews.exec(schemaId, undefined, ...args))

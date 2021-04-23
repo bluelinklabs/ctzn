@@ -50,6 +50,7 @@
     "nodemailer-stub": "^1.2.2",
     "pm2": "^4.5.5",
     "pump": "^3.0.0",
+    "pumpify": "^2.0.1",
     "queryable-log": "^1.1.0",
     "rpc-websockets": "^7.4.8",
     "shelljs": "^0.8.4",

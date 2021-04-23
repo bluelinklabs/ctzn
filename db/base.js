@@ -3,6 +3,7 @@ import _debounce from 'lodash.debounce'
 import { client, log as hyperspaceLog } from './hyperspace.js'
 import Hyperbee from 'hyperbee'
 import * as schemas from '../lib/schemas.js'
+import pumpify from 'pumpify'
 import pump from 'pump'
 import concat from 'concat-stream'
 import through2 from 'through2'
@@ -547,11 +548,14 @@ class Table {
     let _this = this
     opts = opts || {}
     opts.timeout = READ_TIMEOUT
-    return this.bee.createReadStream(opts).pipe(through2.obj(function (entry, enc, cb) {
-      const valid = _this.schema.validate(entry.value)
-      if (valid) this.push(entry)
-      cb()
-    }))
+    return pumpify.obj(
+      this.bee.createReadStream(opts),
+      through2.obj(function (entry, enc, cb) {
+        const valid = _this.schema.validate(entry.value)
+        if (valid) this.push(entry)
+        cb()
+      }
+    ))
   }
 
   async list (opts) {
