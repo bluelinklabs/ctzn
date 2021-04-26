@@ -28,7 +28,7 @@ export function setup (wsServer, config) {
   wsServer.register = function (methodName, methodHandler) {
     origRegister.call(this, methodName, async (params, socket_id) => {
       const client = wsServer.namespaces['/'].clients.get(socket_id)
-      debugLog.wsCall(methodName, client?.auth?.userId)
+      debugLog.wsCall(methodName, client?.auth?.userId, params)
       const res = await methodHandler(params, client).catch(e => {
         throw {
           code: e.rpcCode || -32000,

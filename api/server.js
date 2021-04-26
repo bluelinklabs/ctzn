@@ -255,20 +255,8 @@ export function setup (wsServer) {
     return debugLog.reset()
   })
 
-  wsServer.registerAdminOnly('server.listDebugEvents', async ([opts]) => {
-    return debugLog.listEvents(opts)
-  })
-
-  wsServer.registerAdminOnly('server.countDebugEvents', async ([opts]) => {
-    return debugLog.countEvents(opts)
-  })
-
-  wsServer.registerAdminOnly('server.countMultipleDebugEvents', async ([opts]) => {
-    return debugLog.countMultipleEvents(opts)
-  })
-
-  wsServer.registerAdminOnly('server.countMultipleDebugEventsOverTime', async ([opts]) => {
-    return debugLog.countMultipleEventsOverTime(opts)
+  wsServer.registerAdminOnly('server.fetchAndClearDebugLog', async ([]) => {
+    return debugLog.fetchAndClear()
   })
 }
 

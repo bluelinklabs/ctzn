@@ -2,7 +2,8 @@ import { LitElement, html } from '../../vendor/lit-element/lit-element.js'
 import { repeat } from '../../vendor/lit-element/lit-html/directives/repeat.js'
 import * as session from '../lib/session.js'
 
-const FETCH_INTERVAL = 10e3
+const FETCH_INTERVAL = 1e3
+const DEBUGGER_EVENTS = ['ws:server.isDebuggerEnabled', 'ws:server.fetchAndClearDebugLog', 'ws:server.listIssues']
 
 class Debugger extends LitElement {
   static get properties () {
@@ -11,7 +12,10 @@ class Debugger extends LitElement {
       currentView: {type: String},
       entries: {type: Array},
       counts: {type: Array},
-      filter: {type: String}
+      filter: {type: String},
+      showWs: {type: Boolean},
+      showDb: {type: Boolean},
+      showOther: {type: Boolean}
     }
   }
 
@@ -23,28 +27,43 @@ class Debugger extends LitElement {
     super()
     this.isEnabled = undefined
     this.currentView = 'log'
-    this.entries = undefined
+    this.entries = []
     this.counts = {}
     this.filter = ''
+    this.showWs = true
+    this.showDb = true
+    this.showOther = true
     this.fetchInterval = undefined
   }
 
   get filteredEntries () {
-    if (!this.filter || !this.entries) return this.entries
     return this.entries.filter(entry => {
-      for (let k in entry) {
-        if (String(entry[k]).toLowerCase().includes(this.filter)) {
-          return true
+      if (!this.showWs && entry.event.startsWith('ws:')) return false
+      if (!this.showDb && entry.event.startsWith('db:')) return false
+      if (!this.showOther && !(entry.event.startsWith('db:') || entry.event.startsWith('ws:'))) return false
+      if (this.filter) {
+        for (let k in entry) {
+          if (String(entry[k]).toLowerCase().includes(this.filter)) {
+            return true
+          }
         }
+        return false
       }
-      return false
+      return true
     })
   }
 
   get filteredCounts () {
     let countEntries = Object.entries(this.counts)
-    if (!this.filter) return countEntries
-    return countEntries.filter(([evt, count]) => evt.toLowerCase().includes(this.filter))
+    return countEntries.filter(([evt, count]) => {
+      if (!this.showWs && evt.startsWith('ws:')) return false
+      if (!this.showDb && evt.startsWith('db:')) return false
+      if (!this.showOther && !(evt.startsWith('db:') || evt.startsWith('ws:'))) return false
+      if (this.filter) {
+        if (!evt.toLowerCase().includes(this.filter)) return false
+      }
+      return true
+    })
   }
 
   connectedCallback () {
@@ -61,10 +80,15 @@ class Debugger extends LitElement {
   async load () {
     await session.setup()
     this.isEnabled = await session.api.server.isDebuggerEnabled()
-    if (this.currentView === 'log') {
-      this.entries = await session.api.server.listDebugEvents({timespan: 'all'})
-    } else if (this.currentView === 'counts') {
-      this.counts = await session.api.server.countMultipleDebugEvents({timespan: 'month'})
+    if (this.isEnabled) {
+      let newEntries = await session.api.server.fetchAndClearDebugLog()
+      newEntries = newEntries.filter(entry => {
+        return !DEBUGGER_EVENTS.includes(entry.event)
+      })
+      for (let entry of newEntries) {
+        this.counts[entry.event] = (this.counts[entry.event] || 0) + 1
+      }
+      this.entries = this.entries.concat(newEntries)
     }
   }
 
@@ -102,14 +126,20 @@ class Debugger extends LitElement {
             @click=${e => this.setCurrentView('log')}
           >Log</span>
           <span
-            class="inline-block px-4 py-2 mr-1 rounded cursor-pointer ${this.currentView === 'counts' ? 'bg-pink-50 text-pink-600' : ''} hover:bg-pink-50 hover:text-pink-600"
+            class="inline-block px-4 py-2 mr-auto rounded cursor-pointer ${this.currentView === 'counts' ? 'bg-pink-50 text-pink-600' : ''} hover:bg-pink-50 hover:text-pink-600"
             @click=${e => this.setCurrentView('counts')}
           >Counts</span>
+          <input id="show-ws" type="checkbox" @click=${this.onToggleShowWs} ?checked=${this.showWs}>
+          <label class="ml-1 mr-3" for="show-ws">WebSocket events</label>
+          <input id="show-db" type="checkbox" @click=${this.onToggleShowDb} ?checked=${this.showDb}>
+          <label class="ml-1 mr-3" for="show-db">DB events</label>
+          <input id="show-other" type="checkbox" @click=${this.onToggleShowOther} ?checked=${this.showOther}>
+          <label class="ml-1 mr-3" for="show-other">Other events</label>
         </div>
-        <div class="text-xs font-mono">
+        <div class="text-xs font-mono overflow-x-auto whitespace-nowrap">
           ${this.currentView === 'log' ? html`
             ${repeat(this.filteredEntries || [], (entry, i) => i, entry =>  html`
-              <div class="row truncate px-3 py-2 zebra-row zebra-row-hovers">
+              <div class="row px-3 py-2 zebra-row zebra-row-hovers">
                 <span>${entry.event}</span>
                 <span class="text-gray-500">${describeEntry(entry)}</span>
               </a>
@@ -117,7 +147,7 @@ class Debugger extends LitElement {
           ` : ''}
           ${this.currentView === 'counts' ? html`
             ${repeat(this.filteredCounts || [], (entry, i) => i, entry =>  html`
-              <div class="flex row truncate px-3 py-2 zebra-row zebra-row-hovers">
+              <div class="flex row px-3 py-2 zebra-row zebra-row-hovers">
                 <span style="flex: 0 0 60px">${entry[1]}</span>
                 <span>${entry[0]}</span>
               </a>
@@ -140,6 +170,18 @@ class Debugger extends LitElement {
     this.load()
   }
 
+  onToggleShowWs () {
+    this.showWs = !this.showWs
+  }
+
+  onToggleShowDb () {
+    this.showDb = !this.showDb
+  }
+
+  onToggleShowOther () {
+    this.showOther = !this.showOther
+  }
+
   async onToggleDebugger (e) {
     if (this.isEnabled) {
       await session.api.server.setDebuggerEnabled(false)
@@ -153,7 +195,6 @@ class Debugger extends LitElement {
     await session.api.server.clearDebuggerLog()
     this.entries = []
     this.counts = {}
-    // this.load()
   }
 }
 customElements.define('app-debugger', Debugger)
@@ -162,7 +203,7 @@ function describeEntry (entry) {
   var attrs = []
   for (let k in entry) {
     if (k === 'event' || k === 'ts') continue
-    attrs.push(`${k}=${entry[k]}`)
+    attrs.push(`${k}=${JSON.stringify(entry[k])}`)
   }
   attrs.push((new Date(entry.ts)).toLocaleTimeString())
   return attrs.join(' ')
