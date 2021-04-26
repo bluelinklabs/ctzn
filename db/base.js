@@ -73,7 +73,7 @@ export class BaseHyperbeeDB extends EventEmitter {
   }
 
   isEjectableFromMemory (ts) {
-    return this.lastAccess + KEEP_IN_MEMORY_TTL < ts
+    return this.isInMemory && this.lastAccess + KEEP_IN_MEMORY_TTL < ts
   }
 
   get dbType () {
