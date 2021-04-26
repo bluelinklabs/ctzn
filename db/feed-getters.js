@@ -11,17 +11,18 @@ const lexintEncoder = lexint('hex')
 export async function listHomeFeed (opts, auth) {
   opts = opts && typeof opts === 'object' ? opts : {}
   const didSpecifyLt = !!opts.lt
+  const limit = Math.min(opts?.limit || 100, 100)
   opts.lt = opts.lt && typeof opts.lt === 'string' ? opts.lt : lexintEncoder.encode(Date.now())
 
   if (!auth) throw new errors.SessionError()
   const publicDb = publicDbs.get(auth.userId)
   if (!publicDb) throw new errors.NotFoundError('User database not found')
 
-  if (!didSpecifyLt && (!opts.limit || opts.limit <= 15)) {
-    let cached = cache.getHomeFeed(auth.userId)
+  if (!didSpecifyLt) {
+    let cached = cache.getHomeFeed(auth.userId, limit)
     if (cached) {
       debugLog.cacheHit('home-feed', auth.userId)
-      let cachedEntries = opts.limit ? cached.slice(0, opts.limit) : cached
+      let cachedEntries = opts.limit ? cached.slice(0, limit) : cached
       for (let entry of cachedEntries) {
         entry.reactions = (await fetchReactions(entry)).reactions
         entry.replyCount = await fetchReplyCount(entry)
@@ -58,7 +59,6 @@ export async function listHomeFeed (opts, auth) {
 
   const postEntries = []
   const authorsCache = {}
-  const limit = Math.min(opts?.limit || 100, 100)
   const mergedCursor = mergeCursors(cursors)
   for await (let [db, entry] of mergedCursor) {
     if (db.dbType === 'ctzn.network/public-server-db') {
@@ -88,8 +88,8 @@ export async function listHomeFeed (opts, auth) {
     }
   }
 
-  if (!didSpecifyLt && (!opts.limit || opts.limit >= 15)) {
-    cache.setHomeFeed(auth.userId, postEntries, 60e3)
+  if (!didSpecifyLt) {
+    cache.setHomeFeed(auth.userId, postEntries, limit, 60e3)
   }
 
   return postEntries
