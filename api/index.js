@@ -9,6 +9,7 @@ import * as table from './table.js'
 import * as users from './users.js'
 import * as view from './view.js'
 import * as metrics from '../lib/metrics.js'
+import { debugLog } from '../lib/debug-log.js'
 
 const CAPTURE_CONN_COUNT_INTERVAL = 30e3
 
@@ -27,6 +28,7 @@ export function setup (wsServer, config) {
   wsServer.register = function (methodName, methodHandler) {
     origRegister.call(this, methodName, async (params, socket_id) => {
       const client = wsServer.namespaces['/'].clients.get(socket_id)
+      debugLog.wsCall(methodName, client?.auth?.userId)
       const res = await methodHandler(params, client).catch(e => {
         throw {
           code: e.rpcCode || -32000,
@@ -40,6 +42,7 @@ export function setup (wsServer, config) {
   wsServer.registerAdminOnly = function (methodName, methodHandler) {
     origRegister.call(this, methodName, async (params, socket_id) => {
       const client = wsServer.namespaces['/'].clients.get(socket_id)
+      debugLog.wsCall(methodName, client?.auth?.userId)
       if (!config.isUsernameAdmin(client?.auth?.username)) {
         throw new Error('You do not have permission to access this method')
       }

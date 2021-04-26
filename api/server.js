@@ -8,6 +8,7 @@ import { beeShallowList } from '../db/util.js'
 import * as diskusage from '../db/diskusage-tracker.js'
 import * as issues from '../lib/issues.js'
 import * as metrics from '../lib/metrics.js'
+import * as debugLog from '../lib/debug-log.js'
 import { constructUserId } from '../lib/strings.js'
 
 let _inspectorSession
@@ -236,6 +237,38 @@ export function setup (wsServer) {
   wsServer.registerAdminOnly('server.countUsers', async ([]) => {
     let userRecords = await db.publicServerDb.users.list()
     return userRecords.filter(u => u.value.type === 'citizen').length
+  })
+
+  wsServer.registerAdminOnly('server.isDebuggerEnabled', async ([]) => {
+    return debugLog.debugLog.isEnabled()
+  })
+  
+  wsServer.registerAdminOnly('server.setDebuggerEnabled', async ([b]) => {
+    if (b) {
+      return debugLog.debugLog.enable()
+    } else {
+      return debugLog.debugLog.disable()
+    }
+  })
+
+  wsServer.registerAdminOnly('server.clearDebuggerLog', async ([b]) => {
+    return debugLog.reset()
+  })
+
+  wsServer.registerAdminOnly('server.listDebugEvents', async ([opts]) => {
+    return debugLog.listEvents(opts)
+  })
+
+  wsServer.registerAdminOnly('server.countDebugEvents', async ([opts]) => {
+    return debugLog.countEvents(opts)
+  })
+
+  wsServer.registerAdminOnly('server.countMultipleDebugEvents', async ([opts]) => {
+    return debugLog.countMultipleEvents(opts)
+  })
+
+  wsServer.registerAdminOnly('server.countMultipleDebugEventsOverTime', async ([opts]) => {
+    return debugLog.countMultipleEventsOverTime(opts)
   })
 }
 

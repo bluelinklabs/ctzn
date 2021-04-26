@@ -9,6 +9,7 @@ import * as dbViews from './db/views.js'
 import * as api from './api/index.js'
 import * as perf from './lib/perf.js'
 import * as metrics from './lib/metrics.js'
+import { setup as setupDebugLog } from './lib/debug-log.js'
 import { NoTermsOfServiceIssue } from './lib/issues/no-terms-of-service.js'
 import { NoPrivacyPolicyIssue } from './lib/issues/no-privacy-policy.js'
 import * as issues from './lib/issues.js'
@@ -37,6 +38,7 @@ export async function start (opts) {
     perf.enable()
   }
   metrics.setup({configDir: opts.configDir})
+  setupDebugLog({configDir: opts.configDir})
   if (config.debugMode && DEBUG_MODE_PORTS_MAP[config.domain]) {
     config.overrides.port = DEBUG_MODE_PORTS_MAP[config.domain]
   }
@@ -69,6 +71,7 @@ export async function start (opts) {
   app.get('/admin/issues/view/:id', (req, res) => res.render('admin/issue-view', {topnav: 'issues', id: req.params.id}))
   app.get('/admin/users', (req, res) => res.render('admin/users', {topnav: 'users'}))
   app.get('/admin/users/view/:username', (req, res) => res.render('admin/user-view', {topnav: 'users', username: req.params.username}))
+  app.get('/admin/debug', (req, res) => res.render('admin/debug', {topnav: 'debug'}))
 
   app.use('/img', express.static(path.join(INSTALL_PATH, 'frontend/static/img')))
   app.use('/css', express.static(path.join(INSTALL_PATH, 'frontend/static/css')))

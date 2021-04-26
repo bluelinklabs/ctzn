@@ -2,6 +2,7 @@ import lexint from 'lexicographic-integer-encoding'
 import { publicServerDb, publicDbs, loadExternalDb } from '../db/index.js'
 import { constructUserUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
+import { debugLog } from '../lib/debug-log.js'
 
 const lexintEncoder = lexint('hex')
 const SEP = Buffer.from([0])
@@ -9,6 +10,7 @@ const MIN = SEP
 const MAX = Buffer.from([255])
 
 export async function dbGet (dbUrl, opts = undefined) {
+  debugLog.dbCall('dbGet', undefined, undefined, dbUrl)
   const wait = typeof opts?.wait === 'boolean' ? opts.wait : true
   const urlp = new URL(dbUrl)
   const origin = `hyper://${urlp.hostname}/`
@@ -32,6 +34,7 @@ export async function dbGet (dbUrl, opts = undefined) {
   for (let i = 0; i < pathParts.length - 1; i++) {
     bee = bee.sub(decodeURIComponent(pathParts[i]))
   }
+  debugLog.dbCall('bee.get', db._ident, urlp.pathname)
   return {
     db,
     entry: await bee.get(decodeURIComponent(pathParts[pathParts.length - 1]), {wait})
@@ -39,6 +42,7 @@ export async function dbGet (dbUrl, opts = undefined) {
 }
 
 export async function blobGet (dbId, blobName, opts = undefined) {
+  debugLog.dbCall('blobGet', dbId, undefined, blobName)
   if (typeof opts === 'string') {
     opts = {encoding: opts}
   }
