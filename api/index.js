@@ -1,3 +1,4 @@
+import { RateLimiter } from 'pauls-sliding-window-rate-limiter'
 import * as accounts from './accounts.js'
 import * as blob from './blob.js'
 import * as communities from './communities.js'
@@ -12,6 +13,10 @@ import * as metrics from '../lib/metrics.js'
 import { debugLog } from '../lib/debug-log.js'
 
 const CAPTURE_CONN_COUNT_INTERVAL = 30e3
+const rl = new RateLimiter({
+  limit: 300,
+  window: 60e3
+})
 
 export function setup (wsServer, config) {
   metrics.activeWebsocketCount({count: 0})
@@ -28,6 +33,14 @@ export function setup (wsServer, config) {
   wsServer.register = function (methodName, methodHandler) {
     origRegister.call(this, methodName, async (params, socket_id) => {
       const client = wsServer.namespaces['/'].clients.get(socket_id)
+      if (!rl.hit(client?.auth?.userId || socket_id)) {
+        debugLog.rateLimitError(client?.auth?.userId || socket_id, methodName)
+        throw {
+          code: -32007,
+          message: 'RateLimitError',
+          data: 'Rate limit exceeded'
+        }
+      }
       debugLog.wsCall(methodName, client?.auth?.userId, params)
       const res = await methodHandler(params, client).catch(e => {
         throw {
