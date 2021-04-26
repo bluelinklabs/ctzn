@@ -11,6 +11,8 @@ import {
   fetchIndexedFollowerIds,
   addPrefixToRangeOpts
 } from './util.js'
+import * as cache from '../lib/cache.js'
+import { debugLog } from '../lib/debug-log.js'
 
 export async function getPost (db, key, authorId, auth = undefined) {
   const postEntry = await db.posts.get(key)
@@ -26,6 +28,21 @@ export async function getPost (db, key, authorId, auth = undefined) {
 }
 
 export async function listPosts (db, opts, authorId, auth = undefined) {
+  const didSpecifyLt = !!opts?.lt
+  if (!didSpecifyLt) {
+    let cached = cache.getUserFeed(authorId, opts?.limit || 100)
+    if (cached) {
+      debugLog.cacheHit('user-feed', authorId)
+      let cachedEntries = opts.limit ? cached.slice(0, opts?.limit || 100) : cached
+      for (let entry of cachedEntries) {
+        entry.reactions = (await fetchReactions(entry)).reactions
+        entry.replyCount = await fetchReplyCount(entry)
+        entry.relatedItemTransfers = await fetchRelatedItemTransfers(entry)
+      }
+      return cachedEntries
+    }
+  }
+
   if (db.dbType === 'ctzn.network/public-citizen-db') {
     const entries = await db.posts.list(opts)
     const authorsCache = {}
@@ -36,10 +53,17 @@ export async function listPosts (db, opts, authorId, auth = undefined) {
       entry.replyCount = await fetchReplyCount(entry)
       entry.relatedItemTransfers = await fetchRelatedItemTransfers(entry)
     }
+    if (!didSpecifyLt) {
+      cache.setUserFeed(authorId, entries, entries.length)
+    }
     return entries
   } else if (db.dbType === 'ctzn.network/public-community-db') {
     const entries = await publicServerDb.feedIdx.list(addPrefixToRangeOpts(db.userId, opts))
-    return fetchIndexedPosts(entries, {includeReplyCount: true})
+    const entries2 = await fetchIndexedPosts(entries, {includeReplyCount: true})
+    if (!didSpecifyLt) {
+      cache.setUserFeed(authorId, entries2, entries2.length)
+    }
+    return entries2
   }
 }
 
