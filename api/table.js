@@ -3,6 +3,7 @@ import { constructEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 import * as errors from '../lib/errors.js'
 import * as metrics from '../lib/metrics.js'
+import * as cache from '../lib/cache.js'
 
 export function setup (wsServer) {
   wsServer.register('table.list', async ([databaseId, schemaId, opts], client) => {
@@ -38,6 +39,7 @@ export function setup (wsServer) {
     } else if (schemaId === 'ctzn.network/comment') {
       metrics.commentCreated({user: client.auth.userId})
     }
+    cache.onDatabaseChange(client.auth.userId, schemaId)
 
     const url = constructEntryUrl(db.url, schemaId, key)
     return {key, url}
@@ -55,6 +57,7 @@ export function setup (wsServer) {
       
       await table.put(key, value)
       await onDatabaseChange(db)
+      cache.onDatabaseChange(client.auth.userId, schemaId)
 
       const url = constructEntryUrl(db.url, schemaId, key)
       return {key, url}
@@ -70,6 +73,7 @@ export function setup (wsServer) {
     try {
       await table.del(key)
       await onDatabaseChange(db)
+      cache.onDatabaseChange(client.auth.userId, schemaId)
     } finally {
       release()
     }

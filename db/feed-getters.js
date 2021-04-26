@@ -3,16 +3,33 @@ import { publicDbs } from './index.js'
 import { constructEntryUrl, getServerIdForUserId } from '../lib/strings.js'
 import { dbGet, fetchAuthor, fetchReactions, fetchReplyCount, fetchRelatedItemTransfers, addPrefixToRangeOpts } from './util.js'
 import * as errors from '../lib/errors.js'
+import * as cache from '../lib/cache.js'
+import { debugLog } from '../lib/debug-log.js'
 
 const lexintEncoder = lexint('hex')
 
 export async function listHomeFeed (opts, auth) {
   opts = opts && typeof opts === 'object' ? opts : {}
+  const didSpecifyLt = !!opts.lt
   opts.lt = opts.lt && typeof opts.lt === 'string' ? opts.lt : lexintEncoder.encode(Date.now())
 
   if (!auth) throw new errors.SessionError()
   const publicDb = publicDbs.get(auth.userId)
   if (!publicDb) throw new errors.NotFoundError('User database not found')
+
+  if (!didSpecifyLt && (!opts.limit || opts.limit <= 15)) {
+    let cached = cache.getHomeFeed(auth.userId)
+    if (cached) {
+      debugLog.cacheHit('home-feed', auth.userId)
+      let cachedEntries = opts.limit ? cached.slice(0, opts.limit) : cached
+      for (let entry of cachedEntries) {
+        entry.reactions = (await fetchReactions(entry)).reactions
+        entry.replyCount = await fetchReplyCount(entry)
+        entry.relatedItemTransfers = await fetchRelatedItemTransfers(entry)
+      }
+      return cachedEntries
+    }
+  }
 
   const followEntries = await publicDb.follows.list()
   followEntries.unshift({value: {subject: auth}})
@@ -69,6 +86,10 @@ export async function listHomeFeed (opts, auth) {
     if (postEntries.length >= limit) {
       break
     }
+  }
+
+  if (!didSpecifyLt && (!opts.limit || opts.limit >= 15)) {
+    cache.setHomeFeed(auth.userId, postEntries, 60e3)
   }
 
   return postEntries
