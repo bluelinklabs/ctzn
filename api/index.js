@@ -33,8 +33,9 @@ export function setup (wsServer, config) {
   wsServer.register = function (methodName, methodHandler) {
     origRegister.call(this, methodName, async (params, socket_id) => {
       const client = wsServer.namespaces['/'].clients.get(socket_id)
-      if (!rl.hit(client?.auth?.userId || socket_id)) {
-        debugLog.rateLimitError(client?.auth?.userId || socket_id, methodName)
+      const ip = client.headers['x-forwarded-for'] || client._socket.remoteAddress
+      if (!rl.hit(client?.auth?.userId || ip)) {
+        debugLog.rateLimitError(client?.auth?.userId || ip, methodName)
         throw {
           code: -32007,
           message: 'RateLimitError',

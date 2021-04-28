@@ -1,3 +1,4 @@
+import { RateLimiter } from 'pauls-sliding-window-rate-limiter'
 import * as http from 'http'
 import express from 'express'
 import { Server as WebSocketServer } from 'rpc-websockets'
@@ -13,6 +14,7 @@ import { NoTermsOfServiceIssue } from './lib/issues/no-terms-of-service.js'
 import { NoPrivacyPolicyIssue } from './lib/issues/no-privacy-policy.js'
 import * as issues from './lib/issues.js'
 import * as email from './lib/email.js'
+import { debugLog } from './lib/debug-log.js'
 import * as path from 'path'
 import * as fs from 'fs'
 import { fileURLToPath } from 'url'
@@ -48,10 +50,21 @@ export async function start (opts) {
   app.engine('liquid', (new Liquid()).express())
   app.set('views', path.join(path.dirname(fileURLToPath(import.meta.url)), 'frontend', 'views'))
   app.set('view engine', 'liquid')
+  app.set('trust proxy', 'loopback')
   app.use(cors())
 
+  const rl = new RateLimiter({
+    limit: 300,
+    window: 60e3
+  })
   app.use((req, res, next) => {
     metrics.httpRequest({path: req.url})
+    if (!rl.hit(req.ip)) {
+      return res.status(429).json({
+        error: 'RateLimitError',
+        message: 'Rate limit exceeded'
+      })
+    }
     next()
   })
 
