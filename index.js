@@ -93,6 +93,7 @@ export async function start (opts) {
 
   app.get('/.well-known/webfinger', async (req, res) => {
     try {
+      debugLog.httpCall('webfinger', req.ip, req.params, req.query)
       if (!req.query.resource) throw new Error('?resource is required')
       const {username, domain} = parseAcctUrl(req.query.resource)
       if (domain !== getDomain()) throw 'Not found'
@@ -115,6 +116,7 @@ export async function start (opts) {
 
   app.get('/.table/:username([^\/]{3,})/:schemaNs/:schemaName', async (req, res) => {
     try {
+      debugLog.httpCall('table.list', req.ip, req.params, req.query)
       const db = getDb(req.params.username)
       const schemaId = `${req.params.schemaNs}/${req.params.schemaName}`
       const table = db.tables[schemaId]
@@ -132,6 +134,7 @@ export async function start (opts) {
 
   app.get('/.table/:username([^\/]{3,})/:schemaNs/:schemaName/:key', async (req, res) => {
     try {
+      debugLog.httpCall('table.get', req.ip, req.params, req.query)
       const db = getDb(req.params.username)
       const table = db.tables[`${req.params.schemaNs}/${req.params.schemaName}`]
       if (!table) throw new Error('Table not found')
@@ -148,6 +151,7 @@ export async function start (opts) {
 
   async function serveView (req, res) {
     try {
+      debugLog.httpCall('view.get', req.ip, req.params, req.query)
       const schemaId = `${req.params.viewns}/${req.params.viewname}`
       const path = req.url.split('?')[0]
       const args = path.split('/').filter(Boolean).slice(3).map(v => decodeURIComponent(v))

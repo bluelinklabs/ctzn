@@ -14,6 +14,7 @@ class Debugger extends LitElement {
       counts: {type: Array},
       filter: {type: String},
       showWs: {type: Boolean},
+      showHttp: {type: Boolean},
       showDb: {type: Boolean},
       showOther: {type: Boolean}
     }
@@ -31,6 +32,7 @@ class Debugger extends LitElement {
     this.counts = {}
     this.filter = ''
     this.showWs = true
+    this.showHttp = true
     this.showDb = true
     this.showOther = true
     this.fetchInterval = undefined
@@ -39,8 +41,9 @@ class Debugger extends LitElement {
   get filteredEntries () {
     return this.entries.filter(entry => {
       if (!this.showWs && entry.event.startsWith('ws:')) return false
+      if (!this.showHttp && entry.event.startsWith('http:')) return false
       if (!this.showDb && entry.event.startsWith('db:')) return false
-      if (!this.showOther && !(entry.event.startsWith('db:') || entry.event.startsWith('ws:'))) return false
+      if (!this.showOther && !(entry.event.startsWith('db:') || entry.event.startsWith('ws:') || entry.event.startsWith('http:'))) return false
       if (this.filter) {
         for (let k in entry) {
           if (String(entry[k]).toLowerCase().includes(this.filter)) {
@@ -57,8 +60,9 @@ class Debugger extends LitElement {
     let countEntries = Object.entries(this.counts)
     return countEntries.filter(([evt, count]) => {
       if (!this.showWs && evt.startsWith('ws:')) return false
+      if (!this.showHttp && evt.startsWith('http:')) return false
       if (!this.showDb && evt.startsWith('db:')) return false
-      if (!this.showOther && !(evt.startsWith('db:') || evt.startsWith('ws:'))) return false
+      if (!this.showOther && !(evt.startsWith('db:') || evt.startsWith('ws:') || evt.startsWith('http:'))) return false
       if (this.filter) {
         if (!evt.toLowerCase().includes(this.filter)) return false
       }
@@ -130,11 +134,13 @@ class Debugger extends LitElement {
             @click=${e => this.setCurrentView('counts')}
           >Counts</span>
           <input id="show-ws" type="checkbox" @click=${this.onToggleShowWs} ?checked=${this.showWs}>
-          <label class="ml-1 mr-3" for="show-ws">WebSocket events</label>
+          <label class="ml-1 mr-3" for="show-ws">WS</label>
+          <input id="show-http" type="checkbox" @click=${this.onToggleShowHttp} ?checked=${this.showHttp}>
+          <label class="ml-1 mr-3" for="show-http">HTTP</label>
           <input id="show-db" type="checkbox" @click=${this.onToggleShowDb} ?checked=${this.showDb}>
-          <label class="ml-1 mr-3" for="show-db">DB events</label>
+          <label class="ml-1 mr-3" for="show-db">DB</label>
           <input id="show-other" type="checkbox" @click=${this.onToggleShowOther} ?checked=${this.showOther}>
-          <label class="ml-1 mr-3" for="show-other">Other events</label>
+          <label class="ml-1 mr-3" for="show-other">Other</label>
         </div>
         <div class="text-xs font-mono overflow-x-auto whitespace-nowrap">
           ${this.currentView === 'log' ? html`
@@ -172,6 +178,10 @@ class Debugger extends LitElement {
 
   onToggleShowWs () {
     this.showWs = !this.showWs
+  }
+
+  onToggleShowHttp () {
+    this.showHttp = !this.showHttp
   }
 
   onToggleShowDb () {
