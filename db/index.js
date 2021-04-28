@@ -1,5 +1,6 @@
 import { promises as fsp } from 'fs'
 import * as path from 'path'
+import _debounce from 'lodash.debounce'
 import { client } from './hyperspace.js'
 import Hyperbee from 'hyperbee'
 import * as hyperspace from './hyperspace.js'
@@ -52,7 +53,7 @@ export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simu
 
   views.setup()
   await loadMemberUserDbs()
-  await loadOrUnloadExternalUserDbs()
+  await loadOrUnloadExternalUserDbsDebounced()
   /* dont await */ catchupAllIndexes()
 
   const sweepInterval = setInterval(sweepInactiveDbs, SWEEP_INACTIVE_DBS_INTERVAL)
@@ -96,7 +97,7 @@ export async function createUser ({type, username, email, password, profile}) {
       publicDb = new PublicCitizenDB(userId, null)
       await publicDb.setup()
       publicDb.watch(onDatabaseChange)
-      publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+      publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
       await catchupIndexes(publicDb)
       user.dbUrl = publicDb.url
 
@@ -108,7 +109,7 @@ export async function createUser ({type, username, email, password, profile}) {
       publicDb = new PublicCommunityDB(userId, null)
       await publicDb.setup()
       publicDb.watch(onDatabaseChange)
-      publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+      publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
       user.dbUrl = publicDb.url
     }
 
@@ -120,7 +121,7 @@ export async function createUser ({type, username, email, password, profile}) {
     publicDbs.set(userId, publicDb)
     if (privateDb) {
       privateDbs.set(userId, privateDb)
-      privateDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+      privateDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
     }
     return {privateDb, publicDb, userId}
   } finally {
@@ -210,7 +211,7 @@ async function loadMemberUserDbs () {
         await publicDb.setup()
         publicDbs.set(userId, publicDb)
         publicDb.watch(onDatabaseChange)
-        publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+        publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
 
         // DISABLED
         // we may not use these anymore
@@ -219,7 +220,7 @@ async function loadMemberUserDbs () {
         // let privateDb = new PrivateCitizenDB(userId, hyperUrlToKey(accountEntry.value.privateDbUrl), publicServerDb, publicDb)
         // await privateDb.setup()
         // privateDbs.set(userId, privateDb)
-        // privateDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+        // privateDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
 
         numLoaded++
       } else if (user.value.type === 'community') {
@@ -232,7 +233,7 @@ async function loadMemberUserDbs () {
         await publicDb.setup()
         publicDbs.set(userId, publicDb)
         publicDb.watch(onDatabaseChange)
-        publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbs)
+        publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
         numLoaded++
       } else {
         issues.add(new UnknownUserTypeIssue(user))
@@ -444,6 +445,7 @@ async function loadOrUnloadExternalUserDbs () {
     publicDbs.delete(userId)
   }
 }
+const loadOrUnloadExternalUserDbsDebounced = _debounce(loadOrUnloadExternalUserDbs, 30e3)
 
 async function sweepInactiveDbs () {
   const ts = Date.now()
