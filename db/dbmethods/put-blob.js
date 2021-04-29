@@ -12,6 +12,8 @@ export default async function (db, caller, args) {
   let targetBlobName = args.target?.blobName
   if (targetBlobName === 'avatar' || targetBlobName === 'profile-banner' || targetBlobName.startsWith('ui:profile:')) {
     await assertUserPermission(db, caller.userId, 'ctzn.network/perm-community-edit-profile')
+  } else if (targetBlobName.startsWith('ui:pages:')) {
+    await assertUserPermission(db, caller.userId, 'ctzn.network/perm-manage-pages')
   } else {
     throw new Error(`Invalid blob name: "${targetBlobName}". This method only supports avatar and profile-banner, or no name (autogenerate).`)
   }

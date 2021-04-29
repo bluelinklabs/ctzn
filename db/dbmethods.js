@@ -10,10 +10,12 @@ import communityUpdateConfig from './dbmethods/community-update-config.js'
 import createItem from './dbmethods/create-item.js'
 import createItemClass from './dbmethods/create-item-class.js'
 import deleteItemClass from './dbmethods/delete-item-class.js'
+import deletePage from './dbmethods/delete-page.js'
 import destroyItem from './dbmethods/destroy-item.js'
 import ping from './dbmethods/ping.js'
 import putAvatar from './dbmethods/put-avatar.js'
 import putBlob from './dbmethods/put-blob.js'
+import putPage from './dbmethods/put-page.js'
 import updateItemClass from './dbmethods/update-item-class.js'
 import putProfile from './dbmethods/put-profile.js'
 import transferItem from './dbmethods/transfer-item.js'
@@ -31,10 +33,12 @@ const dbmethods = {
   'create-item': createItem,
   'create-item-class': createItemClass,
   'delete-item-class': deleteItemClass,
+  'delete-page': deletePage,
   'destroy-item': destroyItem,
   'ping': ping,
   'put-avatar': putAvatar,
   'put-blob': putBlob,
+  'put-page': putPage,
   'put-profile': putProfile,
   'transfer-item': transferItem,
   'update-item-class': updateItemClass

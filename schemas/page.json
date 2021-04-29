@@ -1,0 +1,44 @@
+{
+  "id": "ctzn.network/page",
+  "title": "Page",
+  "description": "An HTML document",
+  "type": "json-table",
+  "keyTemplate": [
+    {"type": "json-pointer", "value": "/id"}
+  ],
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["id", "createdAt"],
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^([a-zA-Z][a-zA-Z0-9-]{1,62}[a-zA-Z0-9])$"
+      },
+      "title": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "content": {
+        "type": "object",
+        "required": ["mimeType", "blobName"],
+        "properties": {
+          "mimeType": {
+            "type": "string"
+          },
+          "blobName": {
+            "type": "string"
+          }
+        }
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updatedAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+}

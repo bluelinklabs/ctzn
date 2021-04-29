@@ -1,0 +1,42 @@
+{
+  "id": "ctzn.network/put-page-method",
+  "title": "Put page method",
+  "description": "Write a page in the database.",
+  "type": "dbmethod",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["id"],
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^([a-zA-Z][a-zA-Z0-9-]{1,62}[a-zA-Z0-9])$"
+      },
+      "title": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "content": {
+        "type": "object",
+        "required": ["mimeType", "blobName"],
+        "properties": {
+          "mimeType": {
+            "type": "string"
+          },
+          "blobName": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["key", "url"],
+    "properties": {
+      "key": {"type": "string"},
+      "url": {"type": "string", "format": "uri"}
+    }
+  }
+}

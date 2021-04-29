@@ -1,0 +1,17 @@
+{
+  "id": "ctzn.network/delete-page-method",
+  "title": "Delete page method",
+  "description": "Remove a page from the database.",
+  "type": "dbmethod",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["id"],
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^([a-zA-Z][a-zA-Z0-9-]{1,62}[a-zA-Z0-9])$"
+      }
+    }
+  }
+}

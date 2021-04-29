@@ -40,6 +40,10 @@ A role with this permission can assign roles to community members.
 
 A role with this permission can update the community configuration record.
 
+## `ctzn.network/perm-manage-pages`
+
+A role with this permission can create, edit, and delete pages.
+
 ## `ctzn.network/perm-manage-item-classes`
 
 A role with this permission can write and delete item class records.
