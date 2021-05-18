@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>TC</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/fontawesome.css">
+    <link rel="stylesheet" href="/css/tailwind.css">
+    <link rel="stylesheet" href="/css/custom-html.css">
+    <link rel="icon" href="/img/favicon.png">
+    <link rel="manifest" href="/manifest.json">
+
+    <link rel="apple-touch-icon" href="/img/icon-32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="/img/icon-144.png" sizes="144x144">
+    <link rel="apple-touch-icon" href="/img/icon-192.png" sizes="192x192">
+    <link rel="apple-touch-icon" href="/img/icon-512.png" sizes="512x512">
+  </head>
+  <body class="antialiased">
+    {% block view %}View goes here{% endblock %}
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

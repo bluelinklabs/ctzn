@@ -1,0 +1,42 @@
+{
+  "id": "ctzn.network/tag",
+  "title": "Tag",
+  "description": "A topic tag on a record, used for constructing the social wiki/index",
+  "type": "json-table",
+  "keyTemplate": [
+    {"type": "json-pointer", "value": "/topic"},
+    {"type": "string", "value": ":"},
+    {"type": "json-pointer", "value": "/subject/dbUrl"}
+  ],
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["subject", "topic", "createdAt"],
+    "properties": {
+      "topic": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "[a-z0-9_-]+"
+      },
+      "subject": {
+        "type": "object",
+        "required": ["dbUrl", "authorId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "authorId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+}

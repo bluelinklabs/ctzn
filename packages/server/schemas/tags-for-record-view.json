@@ -1,0 +1,41 @@
+{
+  "id": "ctzn.network/tags-for-record-view",
+  "title": "Tags for Record View",
+  "description": "Get the reaction-records for a given subject.",
+  "type": "json-view",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "array",
+    "minItems": 1,
+    "additionalItems": false,
+    "items": [
+      {"type": "string", "format": "uri"}
+    ]
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["subject", "reactions"],
+    "properties": {
+      "subject": {
+        "type": "object",
+        "required": ["dbUrl"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "reactions": {
+        "type": "object",
+        "patternProperties": {
+          ".*": {
+            "type": "array",
+            "items": {"type": "string", "pattern": ".+@.+"}
+          }
+        }
+      }
+    }
+  }
+}

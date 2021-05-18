@@ -1,0 +1,40 @@
+{
+  "id": "ctzn.network/tags-for-record-idx",
+  "title": "Tags for Record Index",
+  "description": "Aggregated tags on a given record",
+  "type": "json-table",
+  "keyTemplate": [{"type": "json-pointer", "value": "/subject/dbUrl"}],
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["subject", "tags"],
+    "properties": {
+      "subject": {
+        "type": "object",
+        "required": ["dbUrl", "authorId"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "authorId": {
+            "type": "string",
+            "pattern": ".+@.+"
+          }
+        }
+      },
+      "tags": {
+        "type": "object",
+        "patternProperties": {
+          ".*": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        }
+      }
+    }
+  }
+}
