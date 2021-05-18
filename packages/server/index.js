@@ -21,10 +21,11 @@ import { fileURLToPath } from 'url'
 import * as os from 'os'
 import { setOrigin, getDomain, parseAcctUrl, usernameToUserId, DEBUG_MODE_PORTS_MAP } from './lib/strings.js'
 import { Liquid } from 'liquidjs'
+import {resolve} from 'import-meta-resolve'
 
 const INSTALL_PATH = path.dirname(fileURLToPath(import.meta.url))
-const INSTALL_UI_PATH = path.join(INSTALL_PATH, '..', 'ui')
-const INSTALL_ADMIN_PATH = path.join(INSTALL_PATH, '..', 'adminui')
+const INSTALL_UI_PATH = path.join(fileURLToPath(await resolve('@bluelinklabs/ctzn-ui/package.json', import.meta.url)), '..')
+const INSTALL_ADMIN_PATH = path.join(fileURLToPath(await resolve('@bluelinklabs/ctzn-adminui/package.json', import.meta.url)), '..')
 const PACKAGE_JSON_PATH = path.join(INSTALL_PATH, 'package.json')
 const PACKAGE_JSON = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, 'utf8'))
 
@@ -81,7 +82,7 @@ function createAppServer (config, configDir) {
 
   app = express()
   app.engine('liquid', (new Liquid()).express())
-  app.set('views', path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'ui', 'views'))
+  app.set('views', path.join(INSTALL_UI_PATH, 'views'))
   app.set('view engine', 'liquid')
   app.set('trust proxy', 'loopback')
   app.use(cors())
@@ -260,7 +261,7 @@ function createAppServer (config, configDir) {
 function createAdminServer (config, configDir) {
   app = express()
   app.engine('liquid', (new Liquid()).express())
-  app.set('views', path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'adminui', 'views'))
+  app.set('views', path.join(INSTALL_ADMIN_PATH, 'views'))
   app.set('view engine', 'liquid')
   app.set('trust proxy', 'loopback')
   app.use(cors())
