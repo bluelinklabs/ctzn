@@ -21,18 +21,12 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
       'community-remove-member',
       'community-set-member-roles',
       'community-update-config',
-      'create-item',
-      'create-item-class',
-      'delete-item-class',
       'delete-page',
-      'destroy-item',
       'ping',
       'put-avatar',
       'put-blob',
       'put-page',
-      'put-profile',
-      'transfer-item',
-      'update-item-class'
+      'put-profile'
     ]
   }
 
@@ -46,8 +40,6 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
     this.invites = this.getTable('ctzn.network/community-invite')
     this.bans = this.getTable('ctzn.network/community-ban')
     this.pages = this.getTable('ctzn.network/page')
-    this.itemClasses = this.getTable('ctzn.network/item-class')
-    this.items = this.getTable('ctzn.network/item')
     this.tags = this.getTable('ctzn.network/tag')
 
     this.members.onPut(() => this.emit('subscriptions-changed'))

@@ -8,11 +8,10 @@ import * as dbGetters from './getters.js'
 import * as schemas from '../lib/schemas.js'
 import * as errors from '../lib/errors.js'
 import { listHomeFeed, listDbmethodFeed } from './feed-getters.js'
-import { fetchNotications, countNotications, dbGet, fetchItemClass, fetchReactions, addPrefixToRangeOpts, fetchAuthor } from './util.js'
+import { fetchNotications, countNotications, dbGet, fetchReactions, addPrefixToRangeOpts, fetchAuthor } from './util.js'
 
 const DEFAULT_USER_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'frontend', 'static', 'img', 'default-user-avatar.jpg')
 const DEFAULT_COMMUNITY_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'frontend', 'static', 'img', 'default-community-avatar.jpg')
-const DEFAULT_ITEM_CLASS_ICON_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'frontend', 'static', 'img', 'default-item-class-icon.svg')
 
 // globals
 // =
@@ -186,33 +185,6 @@ export function setup () {
     return dbGetters.listFollowers(userId, auth)
   })
 
-  define('ctzn.network/item-class-icon-view', async (auth, userId, classId) => {
-    try {
-      const userDb = db.publicDbs.get(await fetchUserId(userId))
-      if (!userDb) throw 'Not found'
-
-      const itemClassEntry = await userDb.getTable('ctzn.network/item-class').get(classId)
-      if (!itemClassEntry) throw 'Not found'
-      
-      const ptr = await userDb.blobs.getPointer(itemClassEntry.value.iconBlobName)
-      if (!ptr) throw 'Not found'
-
-      return {
-        ptr,
-        etag: `W/block-${ptr.start}`,
-        mimeType: ptr.mimeType,
-        createStream: () => userDb.blobs.createReadStreamFromPointer(ptr)
-      }
-    } catch (e) {
-      return {
-        ptr: null,
-        etag: `W/default-item-class-icon`,
-        mimeType: 'image/svg+xml',
-        createStream: () => fs.createReadStream(DEFAULT_ITEM_CLASS_ICON_PATH)
-      }
-    }
-  })
-
   define('ctzn.network/notifications-view', async (auth, opts) => {
     if (!auth) throw new errors.SessionError()
     return {notifications: await fetchNotications(auth, opts)}
@@ -228,23 +200,6 @@ export function setup () {
   define('ctzn.network/notifications-count-view', async (auth, opts) => {
     if (!auth) throw new errors.SessionError()
     return {count: await countNotications(auth, opts)}
-  })
-
-  define('ctzn.network/owned-items-view', async (auth, userId, opts) => {
-    const itemClassCache = {}
-    userId = await fetchUserId(userId)
-    const table = db.publicServerDb.getTable('ctzn.network/owned-items-idx')
-    const idxEntries = await table.list(addPrefixToRangeOpts(userId, getListOpts(opts)))
-    const itemEntries = await Promise.all(idxEntries.map(async (idxEntry) => {
-      const itemEntry = (await dbGet(idxEntry.value.item.dbUrl))?.entry
-      if (itemEntry) {
-        itemEntry.databaseId = idxEntry.value.item.userId
-        itemEntry.url = idxEntry.value.item.dbUrl
-        itemEntry.itemClass = await fetchItemClass(itemEntry.databaseId, itemEntry.value.classId, itemClassCache).catch(e => undefined)
-      }
-      return itemEntry
-    }))
-    return {items: itemEntries.filter(Boolean)}
   })
 
   define('ctzn.network/reactions-to-view', async (auth, subjectUrl) => {

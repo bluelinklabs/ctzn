@@ -7,7 +7,6 @@ import {
   fetchReactions,
   fetchReplyCount,
   fetchReplies,
-  fetchRelatedItemTransfers,
   fetchIndexedFollowerIds,
   addPrefixToRangeOpts
 } from './util.js'
@@ -23,7 +22,6 @@ export async function getPost (db, key, authorId, auth = undefined) {
   postEntry.author = await fetchAuthor(authorId)
   postEntry.reactions = (await fetchReactions(postEntry)).reactions
   postEntry.replyCount = await fetchReplyCount(postEntry)
-  postEntry.relatedItemTransfers = await fetchRelatedItemTransfers (postEntry)
   return postEntry
 }
 
@@ -37,7 +35,6 @@ export async function listPosts (db, opts, authorId, auth = undefined) {
       for (let entry of cachedEntries) {
         entry.reactions = (await fetchReactions(entry)).reactions
         entry.replyCount = await fetchReplyCount(entry)
-        entry.relatedItemTransfers = await fetchRelatedItemTransfers(entry)
       }
       return cachedEntries
     }
@@ -51,7 +48,6 @@ export async function listPosts (db, opts, authorId, auth = undefined) {
       entry.author = await fetchAuthor(authorId, authorsCache)
       entry.reactions = (await fetchReactions(entry)).reactions
       entry.replyCount = await fetchReplyCount(entry)
-      entry.relatedItemTransfers = await fetchRelatedItemTransfers(entry)
     }
     if (!didSpecifyLt) {
       cache.setUserFeed(authorId, entries, entries.length)
@@ -76,7 +72,6 @@ export async function getComment (db, key, authorId, auth = undefined) {
   commentEntry.author = await fetchAuthor(authorId)
   commentEntry.reactions = (await fetchReactions(commentEntry)).reactions
   commentEntry.replyCount = await fetchReplyCount(commentEntry)
-  commentEntry.relatedItemTransfers = await fetchRelatedItemTransfers(commentEntry)
   return commentEntry
 }
 
@@ -159,7 +154,6 @@ async function fetchIndexedPosts (postsFeedEntries, {includeReplyCount} = {inclu
       postEntry.author = await fetchAuthor(userId, authorsCache)
       postEntry.reactions = (await fetchReactions(postEntry)).reactions
       if (includeReplyCount) postEntry.replyCount = await fetchReplyCount(postEntry)
-      postEntry.relatedItemTransfers = await fetchRelatedItemTransfers(postEntry)
       return postEntry
     } catch (e) {
       console.log(e)
@@ -185,7 +179,6 @@ async function fetchIndexedComments (comments, {includeReplyCount} = {includeRep
       commentEntry.author = await fetchAuthor(userId, authorsCache)
       commentEntry.reactions = (await fetchReactions(commentEntry)).reactions
       if (includeReplyCount) commentEntry.replyCount = await fetchReplyCount(commentEntry)
-      commentEntry.relatedItemTransfers = await fetchRelatedItemTransfers(commentEntry)
       return commentEntry
     } catch (e) {
       console.log(e)

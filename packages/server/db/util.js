@@ -58,20 +58,6 @@ export async function blobGet (dbId, blobName, opts = undefined) {
   return db.blobs.get(blobName, opts?.encoding)
 }
 
-export async function fetchItemClass (databaseId, classId, cache = undefined) {
-  const key = `${databaseId}:${classId}`
-  if (cache && cache[key]) {
-    return cache[key]
-  } else {
-    let publicDb = publicDbs.get(databaseId)
-    if (!publicDb) return undefined
-    let profileEntry = await publicDb.getTable('ctzn.network/item-class').get(classId)
-    profileEntry.url = publicDb.getTable('ctzn.network/item-class').constructEntryUrl(profileEntry.key)
-    if (cache) cache[key] = profileEntry
-    return profileEntry
-  }
-}
-
 export async function fetchAuthor (authorId, cache = undefined) {
   if (cache && cache[authorId]) {
     return cache[authorId]
@@ -124,15 +110,6 @@ export async function fetchReplies (subject) {
 export async function fetchReplyCount (subject) {
   const comments = await fetchReplies(subject)
   return comments.length
-}
-
-export async function fetchRelatedItemTransfers (subject) {
-  const relatedItemTfxIdxEntry = await publicServerDb.itemTfxRelationIdx.get(subject.url)
-  return relatedItemTfxIdxEntry?.value.transfers.map(tfx => ({
-    dbmethodCall: tfx.dbmethodCall,
-    itemClassId: tfx.itemClassId,
-    qty: tfx.qty
-  })) || []
 }
 
 async function fetchNotificationsInner (userInfo, {lt, gt, after, before, limit} = {}) {

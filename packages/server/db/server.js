@@ -30,13 +30,11 @@ export class PublicServerDB extends BaseHyperbeeDB {
     await super.setup()
     this.indexState = this.getTable('ctzn.network/index-state')
     this.users = this.getTable('ctzn.network/user')
-    this.ownedItemsIndex = this.getTable('ctzn.network/owned-items-idx')
     this.threadIdx = this.getTable('ctzn.network/thread-idx')
     this.followsIdx = this.getTable('ctzn.network/follow-idx')
     this.notificationsIdx = this.getTable('ctzn.network/notification-idx')
     this.reactionsIdx = this.getTable('ctzn.network/reaction-idx')
     this.feedIdx = this.getTable('ctzn.network/feed-idx')
-    this.itemTfxRelationIdx = this.getTable('ctzn.network/item-tfx-relation-idx')
     this.tagsForRecordIdx = this.getTable('ctzn.network/tags-for-record-idx')
 
     if (!this.writable) {
@@ -416,40 +414,6 @@ export class PublicServerDB extends BaseHyperbeeDB {
         await batch.put(this.tagsForRecordIdx.constructBeeKey(idxRecord.key), idxRecord.value)
       } finally {
         release()
-      }
-    })
-
-    this.createIndexer('ctzn.network/owned-items-idx', ['ctzn.network/item'], async (batch, db, diff) => {
-      const pend = perf.measure(`publicDb:owned-items-indexer`)
-      
-      const newOwner = diff.right?.value?.owner
-      const oldOwner = diff.left?.value?.owner
-      if (newOwner?.dbUrl === oldOwner?.dbUrl) {
-        return // no change in ownership, dont need to process it
-      }
-      const itemUrl = (diff.right || diff.left).url
-
-      const release = await this.lock(`owned-items-idx:${itemUrl}`)
-      try {
-        if (oldOwner?.dbUrl) {
-          // we're the old owner, item is now gone
-          const key = `${oldOwner.userId}:${(diff.right || diff.left).key}`
-          await batch.del(this.ownedItemsIndex.constructBeeKey(key))
-        } else if (newOwner?.dbUrl) {
-          // we're the new owner, item is added
-          const key = `${newOwner.userId}:${(diff.right || diff.left).key}`
-          await batch.put(this.ownedItemsIndex.constructBeeKey(key), {
-            item: {
-              key: diff.right.key,
-              userId: db.userId,
-              dbUrl: itemUrl
-            },
-            createdAt: (new Date()).toISOString()
-          })
-        }
-      } finally {
-        release()
-        pend()
       }
     })
   }
