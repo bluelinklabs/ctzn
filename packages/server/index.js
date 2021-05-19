@@ -88,7 +88,7 @@ function createAppServer (config, configDir) {
   app.use(cors())
 
   const rl = new RateLimiter({
-    limit: 300,
+    limit: 10000,
     window: 60e3
   })
   app.use((req, res, next) => {
@@ -103,6 +103,14 @@ function createAppServer (config, configDir) {
   })
 
   app.get('/', (req, res) => res.render('index'))
+  app.get('/index', (req, res) => res.render('index'))
+  app.get('/index.html', (req, res) => res.render('index'))
+  app.get('/search', (req, res) => res.render('index'))
+  app.get('/notifications', (req, res) => res.render('index'))
+  app.get('/forgot-password', (req, res) => res.render('index'))
+  app.get('/communities', (req, res) => res.render('index'))
+  app.get('/account', (req, res) => res.render('index'))
+  app.get('/signup', (req, res) => res.render('index'))
   app.use('/img', express.static(path.join(INSTALL_UI_PATH, 'static', 'img')))
   app.use('/css', express.static(path.join(INSTALL_UI_PATH, 'static', 'css')))
   app.get('/js/app.build.js', (req, res) => {
@@ -237,6 +245,11 @@ function createAppServer (config, configDir) {
       res.status(404).end()
     }
   })
+  
+  app.get(new RegExp('/([^/])/ctzn.network/page/([^/]+)'), (req, res) => res.render('index'))
+  app.get(new RegExp('/([^/])/ctzn.network/post/([^/]+)'), (req, res) => res.render('index'))
+  app.get(new RegExp('/([^/])/ctzn.network/comment/([^/]+)'), (req, res) => res.render('index'))
+  app.get(new RegExp('/([^/])'), (req, res) => res.render('index'))
 
   app.use((req, res) => {
     res.status(404).send('404 Page not found')

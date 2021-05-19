@@ -67,7 +67,7 @@ export class CustomHtml extends LitElement {
       return
     }
     try {
-      let base64buf = (await session.ctzn.getBlobByHomeServer(this.userId, this.blobName))?.buf
+      let base64buf = (await session.ctzn.blob.get(this.userId, this.blobName))?.buf
       if (base64buf) this.loadedHtml = decodeBase64(base64buf)
       else this.loadedHtml = ''
     } catch (e) {

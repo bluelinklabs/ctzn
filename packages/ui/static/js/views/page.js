@@ -62,7 +62,7 @@ class CtznPageView extends LitElement {
       console.log(this.pageRecord)
       if (this.pageRecord?.value?.content?.blobName) {
         document.title = `${this.pageRecord.value.title || 'Page'} by ${this.authorProfile?.value.displayName || userId} | CTZN`
-        let base64buf = (await session.ctzn.getBlobByHomeServer(userId, this.pageRecord.value.content.blobName))?.buf
+        let base64buf = (await session.ctzn.blob.get(userId, this.pageRecord.value.content.blobName))?.buf
         if (base64buf) this.pageContent = decodeBase64(base64buf)
         else this.pageContent = ''
       } else {

@@ -9,12 +9,13 @@ import * as toast from '../com/toast.js'
 import {
   AVATAR_URL,
   BLOB_URL,
+  USER_URL,
   FIXED_COMMUNITY_PROFILE_SECTIONS,
   FIXED_CITIZEN_PROFILE_SECTIONS
 } from '../lib/const.js'
 import * as session from '../lib/session.js'
 import * as gestures from '../lib/gestures.js'
-import { pluralize, makeSafe, linkify } from '../lib/strings.js'
+import { pluralize, makeSafe, linkify, isHyperUrl, toNiceDomain } from '../lib/strings.js'
 import { emit } from '../lib/dom.js'
 import { emojify } from '../lib/emojify.js'
 import '../com/header.js'
@@ -61,10 +62,7 @@ class CtznUser extends LitElement {
     // ui helper state
     this.lastScrolledToUserId = undefined
     this.miniProfileObserver = undefined
-
-    const pathParts = (new URL(location)).pathname.split('/')
-    this.userId = pathParts[1]
-    this.currentView = pathParts[2] || undefined
+    this.readInfoFromPath()
     document.title = `Loading... | CTZN`
   }
 
@@ -85,9 +83,15 @@ class CtznUser extends LitElement {
     this.showMiniRightNavProfile = false
   }
 
+  readInfoFromPath () {
+    const parts = (new URL(window.location)).pathname.split('/')
+    this.userId = parts[1]
+    this.niceUserId = isHyperUrl(this.userId) ? toNiceDomain(this.userId) : this.userId
+    this.currentView = parts[2] || undefined
+  }
 
   get isMe () {
-    return session.info?.userId === this.userId
+    return session.info?.dbUrl === this.userProfile?.dbUrl
   }
 
   get isCitizen () {
@@ -99,23 +103,19 @@ class CtznUser extends LitElement {
   }
 
   get amIFollowing () {
-    return !!session.myFollowing?.find?.(id => id === this.userId)
+    return !!session.myFollowing?.find?.(dbUrl => dbUrl === this.userProfile?.dbUrl)
   }
 
   get isFollowingMe () {
-    return !!this.following?.find?.(f => f.value.subject.userId === session.info?.userId)
+    return !!this.following?.find?.(f => f.value.subject.dbUrl === session.info?.dbUrl)
   }
 
   get amIAMember () {
-    return !!this.members?.find?.(m => m.value.user.userId === session.info?.userId)
+    return !!this.members?.find?.(m => m.value.user.dbUrl === session.info?.dbUrl)
   }
 
   get isMembershipClosed () {
     return this.communityConfig?.joinMode === 'closed'
-  }
-
-  get userUrl () {
-    return `${(new URL(location)).origin}/${this.userId}`
   }
 
   get sections () {
@@ -136,10 +136,10 @@ class CtznUser extends LitElement {
       {back: true, label: html`<span class="fas fa-angle-left"></span>`, mobileOnly: true},
       ...this.sections.map(section => ({
         label: section.label || section.id,
-        path: `/${this.userId}/${section.id}`
+        path: `${USER_URL(this.userId)}/${section.id}`
       })),
       {
-        path: `/${this.userId}/settings`,
+        path: `${USER_URL(this.userId)}/settings`,
         label: html`<span class="fas fa-cog"></span>`,
         thin: true,
         rightAlign: true
@@ -166,16 +166,13 @@ class CtznUser extends LitElement {
   setGesturesNav () {
     gestures.setCurrentNav([
       {back: true},
-      ...this._sections.map(s => `/${this.userId}/${s.id}`),
-      `/${this.userId}/settings`
+      ...this._sections.map(s => `${USER_URL(this.userId)}/${s.id}`),
+      `${USER_URL(this.userId)}/settings`
     ])
   }
 
   async load ({force} = {force: false}) {
-    const urlp = new URL(location)
-    const pathParts = urlp.pathname.split('/')
-    this.userId = pathParts[1]
-    this.currentView = pathParts[2]
+    this.readInfoFromPath()
 
     // 1. If opening a profile for the first time (change of lastScrolledToUserId) go to top
     // 2. If we're scrolled beneath the header, jump to just below the header
@@ -194,15 +191,16 @@ class CtznUser extends LitElement {
     this.lastScrolledToUserId = this.userId
 
     // profile change?
-    if (force || this.userId !== this.userProfile?.userId) {
+    if (force || (this.userId !== this.userProfile?.username && this.userId !== this.userProfile?.dbUrl)) {
       this.reset()
       this.isProfileLoading = true
       this.userProfile = await session.ctzn.getProfile(this.userId).catch(e => ({error: true, message: e.toString()}))
       if (this.userProfile.error) {
+        console.log('User profile not found for', this.userId)
         document.title = `Not Found | CTZN`
         return this.requestUpdate()
       }
-      document.title = `${this.userProfile?.value.displayName || this.userId} | CTZN`
+      document.title = `${this.userProfile?.value.displayName || this.niceUserId} | CTZN`
       if (this.isCitizen) {
         this.sections = FIXED_CITIZEN_PROFILE_SECTIONS.concat(
           this.userProfile?.value?.sections?.length
@@ -261,7 +259,7 @@ class CtznUser extends LitElement {
     }
 
     if (!this.currentView) {
-      emit(this, 'navigate-to', {detail: {url: `/${this.userId}/${this.sections[0].id}`, replace: true}})
+      emit(this, 'navigate-to', {detail: {url: `${USER_URL(this.userId)}/${this.sections[0].id}`, replace: true}})
     }
 
     this.querySelector('ctzn-posts-feed')?.load()
@@ -372,7 +370,7 @@ class CtznUser extends LitElement {
                 <app-button
                   btn-class="font-semibold py-1 text-base block w-full rounded-lg sm:px-10 sm:inline sm:w-auto sm:rounded-full"
                   @click=${this.onClickFollow}
-                  label="Follow ${this.userProfile?.value.displayName || this.userId}"
+                  label="Follow ${this.userProfile?.value.displayName || this.niceUserId}"
                   ?spinner=${this.isProcessingSocialAction}
                   ?disabled=${this.isProcessingSocialAction}
                   primary
@@ -405,7 +403,7 @@ class CtznUser extends LitElement {
         <div>
           <div id="right-nav-profile" class="relative">
             <div class="absolute" style="top: -70px; right: 75px;">
-              <a href="/${this.userId}" title=${this.userProfile?.value.displayName}>
+              <a href="${USER_URL(this.userId)}" title=${this.userProfile?.value.displayName}>
                 <img
                   class="border-2 border-white inline-block object-cover rounded-3xl shadow-md bg-white"
                   src=${AVATAR_URL(this.userId)}
@@ -418,15 +416,15 @@ class CtznUser extends LitElement {
               <h2 class="text-2xl font-semibold">
                 <a
                   class="inline-block"
-                  href="/${this.userId}"
+                  href="${USER_URL(this.userId)}"
                   title=${this.userProfile?.value.displayName}
                 >
                   ${unsafeHTML(emojify(makeSafe(this.userProfile?.value.displayName), 'w-6', '0'))}
                 </a>
               </h2>
               <h2 class="text-gray-600 font-semibold mb-4">
-                <a href="/${this.userId}" title="${this.userId}">
-                  ${this.userId}
+                <a href="${USER_URL(this.userId)}" title="${this.niceUserId}">
+                  ${this.niceUserId}
                 </a>
               </h2>
               ${this.userProfile?.value.description ? html`
@@ -471,7 +469,7 @@ class CtznUser extends LitElement {
                   <app-button
                     btn-class="font-semibold py-1 text-base block w-full rounded-lg"
                     @click=${this.onClickFollow}
-                    label="Follow ${this.userProfile?.value.displayName || this.userId}"
+                    label="Follow ${this.userProfile?.value.displayName || this.niceUserId}"
                     ?spinner=${this.isProcessingSocialAction}
                     ?disabled=${this.isProcessingSocialAction}
                     primary
@@ -502,7 +500,7 @@ class CtznUser extends LitElement {
               "
             >
               <div class="flex items-center">
-                <a href="/${this.userId}" title=${this.userProfile?.value.displayName}>
+                <a href="${USER_URL(this.userId)}" title=${this.userProfile?.value.displayName}>
                   <img
                     class="inline-block object-cover rounded-md mr-2"
                     src=${AVATAR_URL(this.userId)}
@@ -513,7 +511,7 @@ class CtznUser extends LitElement {
                 <h2 class="text-xl font-semibold flex-1 truncate">
                   <a
                     class="inline-block"
-                    href="/${this.userId}"
+                    href="${USER_URL(this.userId)}"
                     title=${this.userProfile?.value.displayName}
                   >
                     ${unsafeHTML(emojify(makeSafe(this.userProfile?.value.displayName), 'w-6', '0'))}
@@ -629,7 +627,7 @@ class CtznUser extends LitElement {
             </app-img-fallbacks>
           </div>
           <div class="absolute text-center w-full" style="top: 130px">
-            <a href="/${this.userId}" title=${this.userProfile?.value.displayName}>
+            <a href="${USER_URL(this.userId)}" title=${this.userProfile?.value.displayName}>
               <img
                 class="border-4 border-white inline-block object-cover rounded-3xl shadow-md bg-white"
                 src=${AVATAR_URL(this.userId)}
@@ -642,7 +640,7 @@ class CtznUser extends LitElement {
             <h2 class="text-3xl font-semibold">
               <a
                 class="inline-block"
-                href="/${this.userId}"
+                href="${USER_URL(this.userId)}"
                 title=${this.userProfile?.value.displayName}
                 style="max-width: 320px"
               >
@@ -650,7 +648,7 @@ class CtznUser extends LitElement {
               </a>
             </h2>
             <h2 class="text-gray-500 font-semibold">
-              <a href="/${this.userId}" title="${this.userId}">
+              <a href="${USER_URL(this.userId)}" title="${this.userId}">
                 ${this.userId}
               </a>
             </h2>
@@ -670,7 +668,7 @@ class CtznUser extends LitElement {
             ${session.info.userId === this.userId ? html`
               <app-button
                 btn-class="font-medium px-5 py-1 rounded-full text-base text-white"
-                href="/${this.userId}/settings"
+                href="${USER_URL(this.userId)}/settings"
                 label="Edit profile"
                 transparent
                 btn-style=${btnStyle}
@@ -898,7 +896,7 @@ class CtznUser extends LitElement {
     e.stopPropagation()
 
     const setView = (view) => {
-      emit(this, 'navigate-to', {detail: {url: `/${this.userId}/${view}`}})
+      emit(this, 'navigate-to', {detail: {url: `${USER_URL(this.userId)}/${view}`}})
     }
 
     let items = []

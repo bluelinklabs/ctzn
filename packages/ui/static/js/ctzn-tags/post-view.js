@@ -1,7 +1,7 @@
 import { LitElement, html } from '../../vendor/lit/lit.min.js'
 import { unsafeHTML } from '../../vendor/lit/directives/unsafe-html.js'
 import { repeat } from '../../vendor/lit/directives/repeat.js'
-import { POST_URL, ITEM_CLASS_ICON_URL, FULL_POST_URL, AVATAR_URL, BLOB_URL } from '../lib/const.js'
+import { USER_URL, POST_URL, ITEM_CLASS_ICON_URL, FULL_POST_URL, AVATAR_URL, BLOB_URL } from '../lib/const.js'
 import * as session from '../lib/session.js'
 import { TransferItemRelatedPopup } from '../com/popups/transfer-item-related.js'
 import { ReactionsListPopup } from '../com/popups/reactions-list.js'
@@ -203,7 +203,7 @@ export class PostView extends LitElement {
         @mousemove=${this.onMousemoveCard}
       >
         <div class="pl-2 pt-2">
-          <a class="block" href="/${this.post.author.userId}" title=${this.post.author.displayName}>
+          <a class="block" href="${USER_URL(this.post.author.userId)}" title=${this.post.author.displayName}>
             <img
               class="block object-cover rounded-full mt-1 w-11 h-11"
               src=${AVATAR_URL(this.post.author.userId)}
@@ -214,7 +214,7 @@ export class PostView extends LitElement {
           <div class="pl-2 pr-2 py-2 min-w-0">
             <div class="pr-2.5 text-gray-600 truncate sm:mb-2">
               <span class="sm:mr-1 whitespace-nowrap">
-                <a class="hov:hover:underline" href="/${this.post.author.userId}" title=${this.post.author.displayName}>
+                <a class="hov:hover:underline" href="${USER_URL(this.post.author.userId)}" title=${this.post.author.displayName}>
                   <span class="text-gray-800 font-semibold">${displayNames.render(this.post.author.userId)}</span>
                 </a>
               </span>
@@ -266,7 +266,7 @@ export class PostView extends LitElement {
         @mousemove=${this.onMousemoveCard}
       >
         <div class="pl-2 pt-2">
-          <a class="block" href="/${this.post.author.userId}" title=${this.post.author.displayName}>
+          <a class="block" href="${USER_URL(this.post.author.userId)}" title=${this.post.author.displayName}>
             <img
               class="block object-cover rounded-full mt-1 w-11 h-11"
               src=${AVATAR_URL(this.post.author.userId)}
@@ -277,7 +277,7 @@ export class PostView extends LitElement {
           <div class="pr-2 py-2 min-w-0">
             <div class="pl-1 pr-2.5 text-sm text-gray-600 truncate">
               <span class="sm:mr-1 whitespace-nowrap">
-                <a class="hov:hover:underline" href="/${this.post.author.userId}" title=${this.post.author.displayName}>
+                <a class="hov:hover:underline" href="${USER_URL(this.post.author.userId)}" title=${this.post.author.displayName}>
                   <span class="text-black font-bold" style="font-size: 15px; letter-spacing: 0.1px;">${displayNames.render(this.post.author.userId)}</span>
                 </a>
               </span>

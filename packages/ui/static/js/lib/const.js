@@ -1,24 +1,37 @@
-import { parseUserId, joinPath } from './strings.js'
+import { joinPath } from './strings.js'
 
 export const DEBUG_ENDPOINTS = {
-  'dev1.localhost': 'localhost:15001',
-  'dev2.localhost': 'localhost:15002',
-  'dev3.localhost': 'localhost:15003',
-  'dev4.localhost': 'localhost:15004'
+  'dev1.localhost': 'localhost:3000',
+  'dev2.localhost': 'localhost:4000',
+  'dev3.localhost': 'localhost:5000',
+  'dev4.localhost': 'localhost:6000'
 }
+
+function getDebugDomain () {
+  for (let [hostname, endpoint] of Object.entries(DEBUG_ENDPOINTS)) {
+    if (endpoint.endsWith(window.location.port)) {
+      return hostname
+    }
+  }
+  return window.location.hostname
+}
+
+export const OUR_DOMAIN = window.location.hostname === 'localhost' ? getDebugDomain() : window.location.hostname
 
 export function HTTP_ENDPOINT (domain) {
   return DEBUG_ENDPOINTS[domain] ? `http://${DEBUG_ENDPOINTS[domain]}` : `https://${domain}`
 }
 
 export function AVATAR_URL (userId) {
-  const {domain, username} = parseUserId(userId)
-  return joinPath(HTTP_ENDPOINT(domain), '.view/ctzn.network/avatar-view', username)
+  return '/' + joinPath('.view/ctzn.network/avatar-view', userId)
 }
 
 export function ITEM_CLASS_ICON_URL (userId, classId) {
-  const {domain, username} = parseUserId(userId)
-  return joinPath(HTTP_ENDPOINT(domain), '.view/ctzn.network/item-class-icon-view', username, classId)
+  return '/' + joinPath('.view/ctzn.network/item-class-icon-view', userId, classId)
+}
+
+export function USER_URL (userId) {
+  return `/${userId}`
 }
 
 export function POST_URL (post) {
@@ -38,8 +51,7 @@ export function FULL_COMMENT_URL (comment) {
 }
 
 export function BLOB_URL (userId, blobName) {
-  const {domain, username} = parseUserId(userId)
-  return joinPath(HTTP_ENDPOINT(domain), '.view/ctzn.network/blob-view', userId, blobName)
+  return '/' + joinPath('.view/ctzn.network/blob-view', userId, blobName)
 }
 
 export const PERM_DESCRIPTIONS = {

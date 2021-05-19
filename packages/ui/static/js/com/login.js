@@ -21,7 +21,7 @@ class CtznLogin extends LitElement {
   }
 
   firstUpdated () {
-    this.querySelector('input#userid').focus()
+    this.querySelector('input#username').focus()
   }
 
   // rendering
@@ -33,12 +33,12 @@ class CtznLogin extends LitElement {
         <form @submit=${this.onSubmit}>
           <h2 class="mb-6 text-xl font-semibold">Login</h2>
           <div class="mb-6">
-            <label class="block w-full box-border mb-1" for="userid">Your UserID</label>
-            <input class="block w-full box-border mb-1 p-4 border border-gray-300 rounded" id="userid" name="userid" required placeholder="E.g. bob@home.com">
+            <label class="block w-full box-border mb-1" for="username">Your Username</label>
+            <input class="block w-full box-border mb-1 p-4 border border-gray-300 rounded" id="username" name="username" required placeholder="Username">
           </div>
           <div class="mb-6">
             <label class="block w-full box-border mb-1" for="password">Password</label>
-            <input class="block w-full box-border mb-1 p-4 border border-gray-300 rounded" id="password" type="password" name="password" required>
+            <input class="block w-full box-border mb-1 p-4 border border-gray-300 rounded" id="password" type="password" name="password" required placeholder="********">
           </div>
           ${this.currentError ? html`
             <div class="bg-red-100 p-6 mb-4 text-red-600">${this.currentError}</div>
@@ -70,23 +70,15 @@ class CtznLogin extends LitElement {
     this.isLoggingIn = true
     this.currentError = undefined
     let creds = {
-      userId: e.target.userid.value,
+      username: e.target.username.value,
       password: e.target.password.value
     }
-    if (!creds.userId.includes('@')) {
-      this.currentError = html`
-        <div class="mb-2 font-medium">Invalid UserID</div>
-        <div class="mb-2 text-sm">Don't forget your server! Your UserID should look like an email.</div>
-        <div class="text-sm">(Was it ${creds.userId}@ctzn.one?)</div>
-      `
-    } else {
-      try {
-        await session.doLogin(creds)
-        window.location = '/'
-      } catch (e) {
-        console.log(e)
-        this.currentError = e.data || e.message
-      }
+    try {
+      await session.doLogin(creds)
+      window.location = '/'
+    } catch (e) {
+      console.log(e)
+      this.currentError = e.data || e.message
     }
     this.isLoggingIn = false
   }

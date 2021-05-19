@@ -155,7 +155,7 @@ export class PostsFeed extends LitElement {
     if (this.view === 'ctzn.network/feed-view') {
       results = results.concat((await session.ctzn.view(this.view, {limit: 15, reverse: true, lt}))?.feed)
     } else {
-      results = results.concat((await session.ctzn.viewByHomeServer(this.userId, this.view, this.userId, {limit: 15, reverse: true, lt}))?.posts)
+      results = results.concat((await session.ctzn.view(this.view, this.userId, {limit: 15, reverse: true, lt}))?.posts)
     }
     this.hasReachedEnd = orgLen === results.length
     if (this.limit > 0 && results.length > this.limit) {
@@ -192,7 +192,7 @@ export class PostsFeed extends LitElement {
     if (this.view === 'ctzn.network/feed-view') {
       results = (await session.ctzn.view(this.view, {limit: 1, reverse: true}))?.feed
     } else {
-      results = (await session.ctzn.viewByHomeServer(this.userId, this.view, this.userId, {limit: 1, reverse: true}))?.posts
+      results = (await session.ctzn.view(this.view, this.userId, {limit: 1, reverse: true}))?.posts
     }
     emit(this, 'fetched-latest')
     this.hasNewItems = (results[0] && results[0].key !== this.results[0].key)

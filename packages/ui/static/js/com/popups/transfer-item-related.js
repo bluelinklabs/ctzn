@@ -178,7 +178,7 @@ export class TransferItemRelatedPopup extends BasePopup {
 
     let recp
     try {
-      recp = await session.ctzn.lookupUser(this.subject.author.userId)
+      recp = await session.ctzn.getProfile(this.subject.author.userId)
       if (!recp.userId || !recp.dbUrl) throw new Error('webfinger lookup failed')
     } catch (e) {
       this.currentError = `Failed to lookup recp details: ${e.toString()}`

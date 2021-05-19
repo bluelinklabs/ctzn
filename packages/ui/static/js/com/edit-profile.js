@@ -84,7 +84,7 @@ export class EditProfile extends LitElement {
       for (let section of this.profile.value.sections) {
         if (!section.html) {
           try {
-            let base64buf = (await session.ctzn.getBlobByHomeServer(this.userId, `ui:profile:${section.id}`))?.buf
+            let base64buf = (await session.ctzn.blob.get(this.userId, `ui:profile:${section.id}`))?.buf
             if (base64buf) section.html = decodeBase64(base64buf)
           } catch (e) {
             console.log('Failed to load blob', e)
@@ -101,8 +101,7 @@ export class EditProfile extends LitElement {
 
   async loadCommunity () {
     if (!this.isCommunity) return
-    this.communityPerms = session.isActive ? (await session.ctzn.viewByHomeServer(
-      this.userId,
+    this.communityPerms = session.isActive() ? (await session.ctzn.view(
       'ctzn.network/community-user-permissions-view',
       this.userId,
       session.info.userId

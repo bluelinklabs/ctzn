@@ -5,7 +5,7 @@ import { emit } from './lib/dom.js'
 import * as gestures from './lib/gestures.js'
 import * as toast from './com/toast.js'
 import * as contextMenu from './com/context-menu.js'
-import { DRIVE_KEY_REGEX } from './lib/strings.js'
+import { PUBKEY_REGEX } from './lib/strings.js'
 import { BasePopup } from './com/popups/base.js'
 import './com/header.js'
 import './views/account.js'
@@ -19,12 +19,12 @@ import './views/signup.js'
 import './views/topic.js'
 import './views/user.js'
 
-const PAGE_PATH_REGEX = new RegExp('/([^/]+@[^/]+)/ctzn.network/page/([^/]+)', 'i')
-const POST_PATH_REGEX = new RegExp('/([^/]+@[^/]+)/ctzn.network/post/([^/]+)', 'i')
-const COMMENT_PATH_REGEX = new RegExp('/([^/]+@[^/]+)/ctzn.network/comment/([^/]+)', 'i')
+const PAGE_PATH_REGEX = new RegExp('/([^/]+)/ctzn.network/page/([^/]+)', 'i')
+const POST_PATH_REGEX = new RegExp('/([^/]+)/ctzn.network/post/([^/]+)', 'i')
+const COMMENT_PATH_REGEX = new RegExp('/([^/]+)/ctzn.network/comment/([^/]+)', 'i')
 const TOPIC_PATH_REGEX = new RegExp('/topic/([^/]+)')
-const USER_PATH_REGEX = new RegExp('/([^/]+@[^/]+)')
-const USER_PAGE_REGEX = new RegExp('^/([^/]+@[^/]+)/([^/]+)$')
+const USER_PATH_REGEX = new RegExp('/([^/]+)')
+const USER_PAGE_REGEX = new RegExp('^/([^/]+)/([^/]+)$')
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
@@ -322,7 +322,7 @@ class CtznApp extends LitElement {
   }
 
   onViewThread (e) {
-    let [_, path] = e.detail.subject.dbUrl.split(DRIVE_KEY_REGEX)
+    let [_, path] = e.detail.subject.dbUrl.split(PUBKEY_REGEX)
     this.navigateTo(`/${e.detail.subject.authorId}${path}`)
   }
 

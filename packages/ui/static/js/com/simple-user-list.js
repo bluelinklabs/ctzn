@@ -97,7 +97,7 @@ export class SimpleUserList extends LitElement {
 
   async onClickFollow (e, userId) {
     e.preventDefault()
-    const userInfo = await session.ctzn.lookupUser(userId)
+    const userInfo = await session.ctzn.getProfile(userId)
     console.log(userInfo)
     await session.ctzn.user.table('ctzn.network/follow').create({
       subject: {userId, dbUrl: userInfo.dbUrl}

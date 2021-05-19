@@ -154,7 +154,7 @@ export class CreateItemPopup extends BasePopup {
 
     let owner
     try {
-      owner = await session.ctzn.lookupUser(value.owner)
+      owner = await session.ctzn.getProfile(value.owner)
       if (!owner.userId || !owner.dbUrl) throw new Error('webfinger lookup failed')
     } catch (e) {
       this.currentError = `Failed to lookup owner details: ${e.toString()}`

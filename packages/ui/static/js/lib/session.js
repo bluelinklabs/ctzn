@@ -56,15 +56,14 @@ export async function loadSecondaryState () {
   emitter.dispatchEvent(new Event('secondary-state'))
 }
 
-export async function doLogin ({userId, password}) {
-  const [username, domain] = userId.split('@')
-  const newApi = await connectApi(domain)
+export async function doLogin ({username, password}) {
+  const newApi = await connectApi()
   const newSessionInfo = await newApi.accounts.login({username, password})
   if (newSessionInfo) {
     // override a couple items to be safe
-    newSessionInfo.userId = userId
+    newSessionInfo.userId = `${username}@${window.location.hostname}`
     newSessionInfo.username = username
-    newSessionInfo.domain = domain
+    newSessionInfo.domain = window.location.hostname
 
     localStorage.setItem('session-info', JSON.stringify(newSessionInfo))
     info = newSessionInfo
@@ -163,8 +162,8 @@ export function onSecondaryState (cb, opts) {
 }
 
 let _sessionRecoverPromise = undefined
-async function connectApi (domain) {
-  const wsEndpoint = (domain in DEBUG_ENDPOINTS) ? `ws://${DEBUG_ENDPOINTS[domain]}/` : `wss://${domain}/`
+async function connectApi (domain = window.location.hostname) {
+  const wsEndpoint = domain.includes('localhost') ? `ws://localhost:${window.location.port}/` : `wss://${domain}/`
   return createRpcApi(wsEndpoint, async () => {
     if (_sessionRecoverPromise) return _sessionRecoverPromise
     if (api && hasOneSaved()) {

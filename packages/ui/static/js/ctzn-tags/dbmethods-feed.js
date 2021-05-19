@@ -252,7 +252,7 @@ export class DbmethodsFeed extends LitElement {
     
     const viewRes = (this.view === 'ctzn.network/dbmethod-feed-view')
       ? await session.ctzn.view(this.view, {limit: 25, lt})
-      : await session.ctzn.viewByHomeServer(this.userId, this.view, this.userId, {limit: 25, reverse: true, lt})
+      : await session.ctzn.view(this.view, this.userId, {limit: 25, reverse: true, lt})
     let newEntries
     if (viewRes.results) {
       newEntries = viewRes.results.map(resultToGeneric)

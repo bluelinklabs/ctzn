@@ -1,20 +1,18 @@
-export const DRIVE_KEY_REGEX = /[0-9a-f]{64}/i
+import { OUR_DOMAIN } from './const.js'
+
+export const HYPER_URL_REGEX = /^(hyper:\/\/)?([0-9a-f]{64})/i
+export const PUBKEY_REGEX = /[0-9a-f]{64}/i
+
+export function isHyperUrl (str = '') {
+  return HYPER_URL_REGEX.test(str)
+}
 
 export function urlToKey (str) {
   try {
-    return DRIVE_KEY_REGEX.exec(str)[0]
+    return PUBKEY_REGEX.exec(str)[0]
   } catch (e) {
     return ''
   }
-}
-
-export function parseUserId (userId) {
-  if (!userId) return {username: undefined, domain: undefined}
-  if (userId.includes('@')) {
-    const [username, domain] = userId.split('@')
-    return {username, domain}
-  }
-  return {username: userId, domain: userId}
 }
 
 export function ucfirst (str) {
@@ -62,7 +60,7 @@ export function toDomain (str) {
 
 export function toNiceDomain (str, len=4) {
   var domain = str.includes('://') ? toDomain(str) : str
-  if (DRIVE_KEY_REGEX.test(domain)) {
+  if (PUBKEY_REGEX.test(domain)) {
     domain = `${domain.slice(0, len)}..${domain.slice(-2)}`
   }
   return domain
@@ -72,7 +70,7 @@ export function toNiceUrl (str) {
   if (!str) return ''
   try {
     var urlParsed = new URL(str)
-    if (DRIVE_KEY_REGEX.test(urlParsed.hostname)) {
+    if (PUBKEY_REGEX.test(urlParsed.hostname)) {
       urlParsed.hostname = `${urlParsed.hostname.slice(0, 4)}..${urlParsed.hostname.slice(-2)}`
     }
     return urlParsed.toString()
@@ -160,7 +158,7 @@ export function linkify (str = '') {
 
 export function extractSchemaId (str = '') {
   try {
-    const pathParts = str.split(DRIVE_KEY_REGEX)[1]?.split('/').filter(Boolean)
+    const pathParts = str.split(PUBKEY_REGEX)[1]?.split('/').filter(Boolean)
     return pathParts.slice(0, 2).join('/')
   } catch (e) {
     return undefined

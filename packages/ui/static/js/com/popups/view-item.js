@@ -267,7 +267,7 @@ export class ViewItemPopup extends BasePopup {
 
     let recp
     try {
-      recp = await session.ctzn.lookupUser(this.recipient)
+      recp = await session.ctzn.getProfile(this.recipient)
       if (!recp.userId || !recp.dbUrl) throw new Error('webfinger lookup failed')
     } catch (e) {
       this.currentError = `Failed to lookup recp details: ${e.toString()}`
