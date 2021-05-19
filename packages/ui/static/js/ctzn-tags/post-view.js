@@ -1,11 +1,9 @@
 import { LitElement, html } from '../../vendor/lit/lit.min.js'
 import { unsafeHTML } from '../../vendor/lit/directives/unsafe-html.js'
 import { repeat } from '../../vendor/lit/directives/repeat.js'
-import { USER_URL, POST_URL, ITEM_CLASS_ICON_URL, FULL_POST_URL, AVATAR_URL, BLOB_URL } from '../lib/const.js'
+import { USER_URL, POST_URL, FULL_POST_URL, AVATAR_URL, BLOB_URL } from '../lib/const.js'
 import * as session from '../lib/session.js'
-import { TransferItemRelatedPopup } from '../com/popups/transfer-item-related.js'
 import { ReactionsListPopup } from '../com/popups/reactions-list.js'
-import { RelatedItemTransfersListPopup } from '../com/popups/related-item-transfers-list.js'
 import { ViewMediaPopup } from '../com/popups/view-media.js'
 import { emit } from '../lib/dom.js'
 import { makeSafe, linkify, pluralize, parseSrcAttr } from '../lib/strings.js'
@@ -122,22 +120,12 @@ export class PostView extends LitElement {
     })
   }
 
-  get hasReactionsOrGifts () {
-    return (
-      this.post.relatedItemTransfers?.length > 0
-      || (this.post.reactions && Object.keys(this.post.reactions).length > 0)
-    )
+  get hasReactions () {
+    return (this.post.reactions && Object.keys(this.post.reactions).length > 0)
   }
 
   async reloadSignals () {
     this.post.reactions = (await session.ctzn.view('ctzn.network/reactions-to-view', this.post.url))?.reactions
-    if (this.communityUserId) {
-      this.post.relatedItemTransfers = (
-        await session.ctzn.db(`server@${this.communityUserId.split('@')[1]}`)
-          .table('ctzn.network/item-tfx-relation-idx')
-          .get(this.post.url)
-      )?.value.transfers
-    }
     this.requestUpdate()
   }
 
@@ -237,16 +225,14 @@ export class PostView extends LitElement {
             ${this.renderMedia()}
             ${this.renderPostExtendedText()}
             ${this.noctrls ? '' : html`
-              ${this.hasReactionsOrGifts ? html`
+              ${this.hasReactions ? html`
                 <div class="my-1.5">
-                  ${this.renderGiftedItems()}
                   ${this.renderReactions()}
                 </div>
               ` : ''}
               <div class="flex items-center justify-around text-sm text-gray-600 px-1 pt-1 pr-8 sm:pr-60">
                 ${this.renderRepliesCtrl()}
                 ${this.renderReactionsBtn()}
-                ${this.renderGiftItemBtn()}
                 ${this.renderActionsSummary()}
               </div>
             `}
@@ -295,16 +281,14 @@ export class PostView extends LitElement {
             </div>
             ${this.renderPostTextNonFull()}
             ${this.renderMedia()}
-            ${this.hasReactionsOrGifts ? html`
+            ${this.hasReactions ? html`
               <div class="flex items-center my-1.5 mx-0.5 text-gray-500 text-sm truncate">
-                ${this.renderGiftedItems()}
                 ${this.renderReactions()}
               </div>
             ` : ''}
             <div class="flex pl-1 mt-1.5 text-gray-500 text-sm items-center justify-between pr-12 sm:w-72">
               ${this.renderRepliesCtrl()}
               ${this.renderReactionsBtn()}
-              ${this.renderGiftItemBtn()}
               <div>
                 <a class="hov:hover:bg-gray-200 px-1 rounded" @click=${this.onClickMenu}>
                   <span class="fas fa-fw fa-ellipsis-h"></span>
@@ -390,17 +374,11 @@ export class PostView extends LitElement {
   
   renderActionsSummary () {
     const reactionsCount = this.post.reactions ? Object.values(this.post.reactions).reduce((acc, v) => acc + v.length, 0) : 0
-    const giftsCount = this.post.relatedItemTransfers?.length || 0
     let reactionsCls = `inline-block ml-1 rounded text-gray-500 ${reactionsCount ? 'cursor-pointer hov:hover:underline' : ''}`
     return html`
       <a class=${reactionsCls} @click=${reactionsCount ? this.onClickViewReactions : undefined}>
-        ${reactionsCount} ${pluralize(reactionsCount, 'reaction')}${giftsCount > 0 ? ', ' : ''}
+        ${reactionsCount} ${pluralize(reactionsCount, 'reaction')}
       </a>
-      ${giftsCount > 0 ? html`
-        <a class="inline-block rounded text-gray-500 cursor-pointer hov:hover:underline" @click=${this.onClickViewGifts}>
-          ${giftsCount} ${pluralize(giftsCount, 'gift')}
-        </a>
-      ` : ''}
     `
   }
 
@@ -431,47 +409,6 @@ export class PostView extends LitElement {
       <a class=${aCls} @click=${this.canInteract ? this.onClickReactBtn : undefined}>
         <span class="far fa-fw fa-heart"></span>
       </a>
-    `
-  }
-
-  renderGiftItemBtn () {
-    let aCls = `inline-block ml-1 mr-6 px-1 rounded`
-    if (this.communityUserId && this.canInteract && !this.isMyPost) {
-      return html`
-        <a class="${aCls} text-gray-500 hov:hover:bg-gray-200" @click=${this.onClickGiftItem}>
-          <span class="fas fa-fw fa-gift"></span>
-        </a>
-      `
-    } else {
-      const tooltip = this.isMyPost
-        ? `Can't gift to yourself`
-        : this.communityUserId
-          ? `Must be a member of the community`
-          : `Must be a community post`
-      return html`
-        <a class="${aCls} text-gray-300 tooltip-top" data-tooltip=${tooltip}>
-          <span class="fas fa-fw fa-gift"></span>
-        </a>
-      `
-    }
-  }
-
-  renderGiftedItems () {
-    if (!this.post.relatedItemTransfers?.length) {
-      return ''
-    }
-    return html`
-      ${repeat(this.post.relatedItemTransfers, item => html`
-        <span
-          class="flex-shrink-0 inline-flex items-center border border-gray-300 px-1 py-0.5 rounded mr-1.5 text-sm font-semibold"
-        >
-          <img
-            class="block w-4 h-4 object-cover mr-1"
-            src=${ITEM_CLASS_ICON_URL(this.communityUserId, item.itemClassId)}
-          >
-          ${item.qty}
-        </span>
-      `)}
     `
   }
 
@@ -630,13 +567,6 @@ export class PostView extends LitElement {
     this.isReactionsOpen = false
   }
 
-  async onClickGiftItem () {
-    await TransferItemRelatedPopup.create({
-      communityId: this.communityUserId,
-      subject: this.post
-    })
-    this.reloadSignals()
-  }
 
   onClickMenu (e) {
     e.preventDefault()
@@ -710,13 +640,6 @@ export class PostView extends LitElement {
   onClickViewReactions (e) {
     ReactionsListPopup.create({
       reactions: this.post.reactions
-    })
-  }
-
-  onClickViewGifts (e) {
-    RelatedItemTransfersListPopup.create({
-      communityId: this.communityUserId,
-      relatedItemTransfers: this.post.relatedItemTransfers
     })
   }
 

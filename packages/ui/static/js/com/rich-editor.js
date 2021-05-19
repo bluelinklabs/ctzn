@@ -9,8 +9,6 @@ import * as communityMembersList from '../ctzn-tags-editor/community-members-lis
 import * as communityMembershipsList from '../ctzn-tags-editor/community-memberships-list.js'
 import * as followersList from '../ctzn-tags-editor/followers-list.js'
 import * as followingList from '../ctzn-tags-editor/following-list.js'
-import * as itemClassesList from '../ctzn-tags-editor/item-classes-list.js'
-import * as ownedItemsList from '../ctzn-tags-editor/owned-items-list.js'
 import * as iframe from '../ctzn-tags-editor/iframe.js'
 import * as code from '../ctzn-tags-editor/code.js'
 import * as card from '../ctzn-tags-editor/card.js'
@@ -32,8 +30,6 @@ const PROFILE_TAGS = [
   communityMembershipsList,
   followersList,
   followingList,
-  itemClassesList,
-  ownedItemsList,
   iframe,
   code,
   card
@@ -80,7 +76,7 @@ export class RichEditor extends LitElement {
       return 'undo redo | formatselect | bold italic underline strikethrough | link | post-embeds | bullist numlist | ctzn-code | table | removeformat | code'
     }
     if (this.context === 'profile' || this.context === 'page') {
-      return 'undo redo | formatselect | bold italic underline strikethrough | link | content-widgets user-widgets item-widgets | bullist numlist | ctzn-code | table | removeformat | code'
+      return 'undo redo | formatselect | bold italic underline strikethrough | link | content-widgets user-widgets | bullist numlist | ctzn-code | table | removeformat | code'
     }
   }
 
@@ -174,7 +170,6 @@ export class RichEditor extends LitElement {
       setup: (editor) => {
         this.isLoading = false
         editor.ui.registry.addIcon('user-widgets', '<svg width="20" height="20" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="user-friends" class="svg-inline--fa fa-user-friends fa-w-20" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path fill="currentColor" d="M192 256c61.9 0 112-50.1 112-112S253.9 32 192 32 80 82.1 80 144s50.1 112 112 112zm76.8 32h-8.3c-20.8 10-43.9 16-68.5 16s-47.6-6-68.5-16h-8.3C51.6 288 0 339.6 0 403.2V432c0 26.5 21.5 48 48 48h288c26.5 0 48-21.5 48-48v-28.8c0-63.6-51.6-115.2-115.2-115.2zM480 256c53 0 96-43 96-96s-43-96-96-96-96 43-96 96 43 96 96 96zm48 32h-3.8c-13.9 4.8-28.6 8-44.2 8s-30.3-3.2-44.2-8H432c-20.4 0-39.2 5.9-55.7 15.4 24.4 26.3 39.7 61.2 39.7 99.8v38.4c0 2.2-.5 4.3-.6 6.4H592c26.5 0 48-21.5 48-48 0-61.9-50.1-112-112-112z"></path></svg>')
-        editor.ui.registry.addIcon('item-widgets', '<svg width="20" height="20" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="gem" class="svg-inline--fa fa-gem fa-w-18" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path fill="currentColor" d="M485.5 0L576 160H474.9L405.7 0h79.8zm-128 0l69.2 160H149.3L218.5 0h139zm-267 0h79.8l-69.2 160H0L90.5 0zM0 192h100.7l123 251.7c1.5 3.1-2.7 5.9-5 3.3L0 192zm148.2 0h279.6l-137 318.2c-1 2.4-4.5 2.4-5.5 0L148.2 192zm204.1 251.7l123-251.7H576L357.3 446.9c-2.3 2.7-6.5-.1-5-3.2z"></path></svg>')
         editor.on('PreInit', () => {
           const win = editor.getWin()
           const doc = editor.getDoc()
@@ -229,16 +224,6 @@ export class RichEditor extends LitElement {
               {type: 'separator'},
               {type: 'menuitem', text: 'Community Members List', onAction: () => communityMembersList.insert(editor)},
               {type: 'menuitem', text: 'User\'s Communities List', onAction: () => communityMembershipsList.insert(editor)}
-            ])
-          }
-        })
-        editor.ui.registry.addMenuButton('item-widgets', {
-          icon: 'item-widgets',
-          tooltip: 'Insert item widget',
-          fetch: cb => {
-            cb([
-              {type: 'menuitem', text: 'Owned Items List', onAction: () => ownedItemsList.insert(editor)},
-              {type: 'menuitem', text: 'Community Items List', onAction: () => itemClassesList.insert(editor)}
             ])
           }
         })

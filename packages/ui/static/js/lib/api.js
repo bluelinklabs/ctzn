@@ -93,11 +93,6 @@ export class CtznAPI {
     // return union(mine?.followers, theirs?.followers)
   }
   
-  async listOwnedItems (userId, opts = {}) {
-    return (await this.view('ctzn.network/owned-items-view', userId, opts))?.items
-    // return (await httpGet(domain, `.view/ctzn.network/owned-items-view/${encodeURIComponent(userId)}`, opts))?.items
-  }
-  
   async getCommunityUserPermission (communityId, citizenId, permId) {
     return (await this.view('ctzn.network/community-user-permission-view', communityId, citizenId, permId))
     // const e = encodeURIComponent
