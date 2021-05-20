@@ -436,7 +436,7 @@ class TestCommunity {
       displayName: this.username.slice(0, 1).toUpperCase() + this.username.slice(1)
     })
     this.dbKey = dbKey
-    this.profile = await this.inst.api.view.get('ctzn.network/views/profile', dbKey)
+    this.profile = await this.inst.api.view.get('ctzn.network/views/profile', {dbId: dbKey})
   }
 }
 

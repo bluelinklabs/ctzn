@@ -8,25 +8,26 @@ export function setup () {
       const sessionRecord = await privateServerDb.accountSessions.get(req.cookies.session).catch(e => undefined)
       if (sessionRecord) {
         auth = {
-          username: sessionRecord.value.username,
           sessionId: sessionRecord.value.sessionId,
-          dbUrl: sessionRecord.value.dbUrl
+          username: sessionRecord.value.username,
+          dbKey: sessionRecord.value.dbKey
         }
       }
     }
     req.session = {
       auth,
-      async create ({username, dbUrl}) {
+      async create ({username, dbKey}) {
         const sess = {
           sessionId: uuidv4(),
           username,
-          dbUrl,
+          dbKey,
           createdAt: (new Date()).toISOString()
         }
         await privateServerDb.accountSessions.put(sess.sessionId, sess)
         req.session.auth = {
+          sessionId: sess.sessionId,
           username,
-          dbUrl
+          dbKey
         }
         res.cookie('session', sess.sessionId, {
           httpOnly: true,
