@@ -20,7 +20,7 @@
     "required": ["url", "dbKey", "username"],
     "properties": {
       "url": {"type": "string", "format": "uri"},
-      "dbKey": {"type": "string", "pattern": "[0-9a-f]{64}"},
+      "dbKey": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
       "username": {"type": "string", "minLength": 3}
     }
   }

@@ -10,8 +10,7 @@ import { PublicCommunityDB } from './community.js'
 import * as diskusageTracker from './diskusage-tracker.js'
 import * as schemas from '../lib/schemas.js'
 import * as views from './views.js'
-import { RESERVED_USERNAMES, HYPER_KEY, hyperUrlToKey, getDomain } from '../lib/strings.js'
-import { fetchDbUrl } from '../lib/network.js'
+import { RESERVED_USERNAMES, HYPER_KEY, hyperUrlToKey } from '../lib/strings.js'
 import { hashPassword } from '../lib/crypto.js'
 import * as perf from '../lib/perf.js'
 import * as issues from '../lib/issues.js'
@@ -39,7 +38,7 @@ export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simu
   configPath = path.join(configDir, 'dbconfig.json')
   await readDbConfig()
 
-  publicServerDb = new PublicServerDB('server', config.publicServer)
+  publicServerDb = new PublicServerDB(config.publicServer, 'server')
   await publicServerDb.setup()
   publicDbs.set(publicServerDb.dbKey, publicServerDb)
   publicDbs.set(publicServerDb.username, publicServerDb)
@@ -75,7 +74,7 @@ export async function createUser ({type, username, email, password, profile}) {
     const account = {
       email,
       hashedPassword: password ? (await hashPassword(password)) : undefined,
-      privateDbUrl: `hyper://${'0'.repeat(64)}/`
+      privateDbKey: '0'.repeat(64)
     }
     const user = {
       type,
@@ -100,12 +99,12 @@ export async function createUser ({type, username, email, password, profile}) {
       publicDb.watch(onDatabaseChange)
       publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
       await catchupIndexes(publicDb)
-      user.dbUrl = publicDb.url
+      user.dbKey = publicDb.dbKey
 
       privateDb = new PrivateCitizenDB(null, username, publicServerDb, publicDb)
       await privateDb.setup()
       await catchupIndexes(privateDb)
-      account.privateDbUrl = privateDb.url
+      account.privateDbKey = privateDb.dbKey
     } else if (type === 'community') {
       publicDb = new PublicCommunityDB(null, username)
       await publicDb.setup()

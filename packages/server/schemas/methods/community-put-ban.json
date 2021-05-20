@@ -13,7 +13,7 @@
         "properties": {
           "dbKey": {
             "type": "string",
-            "pattern": "[0-9a-f]{64}"
+            "pattern": "^[0-9a-f]{64}$"
           }
         }
       },
@@ -23,10 +23,10 @@
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["key", "url"],
+    "required": ["key", "dbUrl"],
     "properties": {
       "key": {"type": "string"},
-      "url": {"type": "string", "format": "uri"}
+      "dbUrl": {"type": "string", "format": "uri"}
     }
   }
 }

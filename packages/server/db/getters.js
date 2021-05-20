@@ -1,6 +1,6 @@
 import { publicServerDb, publicDbs } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
-import { fetchUserInfo } from '../lib/network.js'
+import { resolveDbId } from '../lib/network.js'
 import {
   dbGet,
   fetchAuthor,
@@ -18,7 +18,7 @@ export async function getPost (db, key, authorDbId, auth = undefined) {
   if (!postEntry) {
     throw new Error('Post not found')
   }
-  postEntry.url = constructEntryUrl(db.url, 'ctzn.network/post', postEntry.key)
+  postEntry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/post', postEntry.key)
   postEntry.author = await fetchAuthor(authorDbId)
   postEntry.reactions = (await fetchReactions(postEntry)).reactions
   postEntry.replyCount = await fetchReplyCount(postEntry)
@@ -44,7 +44,7 @@ export async function listPosts (db, opts, authorDbId) {
     const entries = await db.posts.list(opts)
     const authorsCache = {}
     for (let entry of entries) {
-      entry.url = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
+      entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
       entry.author = await fetchAuthor(authorDbId, authorsCache)
       entry.reactions = (await fetchReactions(entry)).reactions
       entry.replyCount = await fetchReplyCount(entry)
@@ -68,35 +68,35 @@ export async function getComment (db, key, authorDbId, auth = undefined) {
   if (!commentEntry) {
     throw new Error('Post not found')
   }
-  commentEntry.url = constructEntryUrl(db.url, 'ctzn.network/comment', commentEntry.key)
+  commentEntry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/comment', commentEntry.key)
   commentEntry.author = await fetchAuthor(authorDbId)
   commentEntry.reactions = (await fetchReactions(commentEntry)).reactions
   commentEntry.replyCount = await fetchReplyCount(commentEntry)
   return commentEntry
 }
 
-export async function getThread (subjectUrl, auth = undefined) {
+export async function getThread (subjectUrl) {
   const subject = await dbGet(subjectUrl)
   if (!subject?.entry) throw new Error('Thread subject not found')
-  subject.entry.url = subjectUrl
+  subject.entry.dbUrl = subjectUrl
   subject.entry.author = {dbKey: subject.db.dbKey}
   const replies = await fetchReplies(subject.entry)
   const commentEntries = await fetchIndexedComments(replies)
   return commentEntriesToThread(commentEntries)
 }
 
-export async function listFollowers (dbKey, auth = undefined) {
-  const userInfo = await fetchUserInfo(dbKey)
+export async function listFollowers (dbId) {
+  const userInfo = await resolveDbId(dbId)
   return {
-    subject: userInfo,
-    followers: await fetchIndexedFollowerDbKeys(dbKey)
+    subject: {dbKey: userInfo.dbKey},
+    followers: await fetchIndexedFollowerDbKeys(userInfo.dbKey)
   }
 }
 
 export async function listFollows (db, opts) {
   const entries = await db.follows.list(opts)
   for (let entry of entries) {
-    entry.url = constructEntryUrl(db.url, 'ctzn.network/follow', entry.key)
+    entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/follow', entry.key)
   }
   return entries
 }
@@ -104,7 +104,7 @@ export async function listFollows (db, opts) {
 export async function listCommunityMembers (db, opts) {
   const entries = await db.members.list(opts)
   for (let entry of entries) {
-    entry.url = constructEntryUrl(db.url, 'ctzn.network/community-member', entry.key)
+    entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/community-member', entry.key)
   }
   return entries
 }
@@ -112,7 +112,7 @@ export async function listCommunityMembers (db, opts) {
 export async function listCommunityMemberships (db, opts) {
   const entries = await db.memberships.list(opts)
   for (let entry of entries) {
-    entry.url = constructEntryUrl(db.url, 'ctzn.network/community-membership', entry.key)
+    entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/community-membership', entry.key)
   }
   return entries
 }
@@ -120,7 +120,7 @@ export async function listCommunityMemberships (db, opts) {
 export async function listCommunityRoles (db, opts) {
   const entries = await db.roles.list(opts)
   for (let entry of entries) {
-    entry.url = constructEntryUrl(db.url, 'ctzn.network/community-role', entry.key)
+    entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/community-role', entry.key)
   }
   return entries
 }
@@ -128,7 +128,7 @@ export async function listCommunityRoles (db, opts) {
 export async function listCommunityBans (db, opts) {
   const entries = await db.bans.list(opts)
   for (let entry of entries) {
-    entry.url = constructEntryUrl(db.url, 'ctzn.network/community-ban', entry.key)
+    entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/community-ban', entry.key)
   }
   return entries
 }
@@ -149,7 +149,7 @@ async function fetchIndexedPosts (postsFeedEntries, {includeReplyCount} = {inclu
       if (!postEntry) {
         return undefined
       }
-      postEntry.url = constructEntryUrl(publicDb.url, 'ctzn.network/post', key)
+      postEntry.dbUrl = constructEntryUrl(publicDb.url, 'ctzn.network/post', key)
       postEntry.author = await fetchAuthor(origin, authorsCache)
       postEntry.reactions = (await fetchReactions(postEntry)).reactions
       if (includeReplyCount) postEntry.replyCount = await fetchReplyCount(postEntry)
@@ -173,7 +173,7 @@ async function fetchIndexedComments (comments, {includeReplyCount} = {includeRep
 
       const commentEntry = await publicDb.comments.get(key)
       if (!commentEntry) return undefined
-      commentEntry.url = constructEntryUrl(publicDb.url, 'ctzn.network/comment', key)
+      commentEntry.dbUrl = constructEntryUrl(publicDb.url, 'ctzn.network/comment', key)
       commentEntry.author = await fetchAuthor(origin, authorsCache)
       commentEntry.reactions = (await fetchReactions(commentEntry)).reactions
       if (includeReplyCount) commentEntry.replyCount = await fetchReplyCount(commentEntry)

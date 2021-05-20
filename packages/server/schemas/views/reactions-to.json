@@ -6,9 +6,9 @@
   "parameters": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["url"],
+    "required": ["dbUrl"],
     "properties": {
-      "url": {"type": "string", "format": "uri"}
+      "dbUrl": {"type": "string", "format": "uri"}
     }
   },
   "definition": {

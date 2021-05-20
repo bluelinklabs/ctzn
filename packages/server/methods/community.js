@@ -100,7 +100,7 @@ export function setup (define) {
     if (existingInviteRecord) {
       return {
         key: invitedUserInfo.dbKey,
-        url: db.invites.constructEntryUrl(invitedUserInfo.dbKey)
+        dbUrl: db.invites.constructEntryUrl(invitedUserInfo.dbKey)
       }
     }
     await db.invites.put(invitedUserInfo.dbKey, {
@@ -111,7 +111,7 @@ export function setup (define) {
   
     return {
       key: invitedUserInfo.dbKey,
-      url: db.invites.constructEntryUrl(invitedUserInfo.dbKey)
+      dbUrl: db.invites.constructEntryUrl(invitedUserInfo.dbKey)
     }
   })
 
@@ -145,7 +145,7 @@ export function setup (define) {
       return {
         membershipRecord: {
           key: communityInfo.userId,
-          url: constructEntryUrl(publicCitizenDb.url, 'ctzn.network/community-membership', communityInfo.userId)
+          dbUrl: constructEntryUrl(publicCitizenDb.url, 'ctzn.network/community-membership', communityInfo.userId)
         },
         memberRecord: remoteJoinRes.memberRecord
       }*/
@@ -183,11 +183,11 @@ export function setup (define) {
       return {
         membershipRecord: {
           key: communityInfo.dbKey,
-          url: constructEntryUrl(publicCitizenDb.url, 'ctzn.network/community-membership', communityInfo.dbKey)
+          dbUrl: constructEntryUrl(publicCitizenDb.url, 'ctzn.network/community-membership', communityInfo.dbKey)
         },
         memberRecord: {
           key: auth.dbKey,
-          url: constructEntryUrl(publicCommunityDb.url, 'ctzn.network/community-member', auth.dbKey)
+          dbUrl: constructEntryUrl(publicCommunityDb.url, 'ctzn.network/community-member', auth.dbKey)
         }
       }
     }
@@ -242,7 +242,7 @@ export function setup (define) {
   
     return {
       key: bannedUserInfo.dbKey,
-      url: db.bans.constructEntryUrl(bannedUserInfo.dbKey)
+      dbUrl: db.bans.constructEntryUrl(bannedUserInfo.dbKey)
     }
   })
 
@@ -265,7 +265,7 @@ export function setup (define) {
   
     return {
       key: roleId,
-      url: db.roles.constructEntryUrl(roleId)
+      dbUrl: db.roles.constructEntryUrl(roleId)
     }
   })
 
@@ -335,7 +335,7 @@ export function setup (define) {
     return {
       banRecord: ban ? {
         key: memberInfo.dbKey,
-        url: db.bans.constructEntryUrl(memberInfo.dbKey)
+        dbUrl: db.bans.constructEntryUrl(memberInfo.dbKey)
       } : undefined
     }
   })
@@ -357,7 +357,7 @@ export function setup (define) {
 
     return {
       key: memberInfo.dbKey,
-      url: db.members.constructEntryUrl(memberInfo.dbKey)
+      dbUrl: db.members.constructEntryUrl(memberInfo.dbKey)
     }
   })
 

@@ -186,7 +186,7 @@ export function setup () {
     const subject = await dbGet(dbUrl).catch(e => undefined)
     const subjectEntry = subject ? subject.entry : {}
     if (subject) subjectEntry.author = {dbKey: subject.db.dbKey}
-    subjectEntry.url = dbUrl
+    subjectEntry.dbUrl = dbUrl
     const res = await fetchReactions(subjectEntry)
     return {subject: res.subject, reactions: res.reactions}
   })

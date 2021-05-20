@@ -14,7 +14,7 @@
         "properties": {
           "dbKey": {
             "type": "string",
-            "pattern": "[0-9a-f]{64}"
+            "pattern": "^[0-9a-f]{64}$"
           }
         }
       }
@@ -26,10 +26,10 @@
     "properties": {
       "inviteRecord": {
         "type": "object",
-        "required": ["key", "url"],
+        "required": ["key", "dbUrl"],
         "properties": {
           "key": {"type": "string"},
-          "url": {"type": "string", "format": "uri"}
+          "dbUrl": {"type": "string", "format": "uri"}
         }
       }
     }

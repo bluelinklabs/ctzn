@@ -1,6 +1,7 @@
 import lexint from 'lexicographic-integer-encoding'
 import { publicServerDb, publicDbs, loadExternalDb } from '../db/index.js'
-import { constructUserUrl, parseEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
+import { parseEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
+import { resolveDbId } from '../lib/network.js'
 import { debugLog } from '../lib/debug-log.js'
 
 const lexintEncoder = lexint('hex')
@@ -52,7 +53,8 @@ export async function blobGet (dbKey, blobName, opts = undefined) {
   return db.blobs.get(blobName, opts?.encoding)
 }
 
-export async function fetchAuthor (dbKey, cache = undefined) {
+export async function fetchAuthor (dbId, cache = undefined) {
+  let {dbKey} = resolveDbId(dbId)
   if (cache && cache[dbKey]) {
     return cache[dbKey]
   } else {
@@ -60,7 +62,7 @@ export async function fetchAuthor (dbKey, cache = undefined) {
     let profileEntry
     if (publicDb) profileEntry = await publicDb.profile.get('self')
     let author = {
-      dbKey: dbKey,
+      dbKey,
       displayName: profileEntry?.value?.displayName
     }
     if (cache) cache[dbKey] = author
@@ -68,7 +70,7 @@ export async function fetchAuthor (dbKey, cache = undefined) {
   }
 }
 
-export async function fetchIndexedFollowerIds (subjectDbKey) {
+export async function fetchIndexedFollowerDbKeys (subjectDbKey) {
   const followsIdxEntry = await publicServerDb.followsIdx.get(subjectDbKey)
   return followsIdxEntry?.value?.followerDbKeys || []
 }

@@ -6,9 +6,9 @@
   "parameters": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["url"],
+    "required": ["dbUrl"],
     "properties": {
-      "url": {"type": "string", "format": "uri"}
+      "dbUrl": {"type": "string", "format": "uri"}
     }
   },
   "definition": {
@@ -24,7 +24,7 @@
     "definitions": {
       "comment": {
         "type": "object",
-        "required": ["author", "key", "seq", "url", "value"],
+        "required": ["author", "key", "seq", "dbUrl", "value"],
         "properties": {
           "author": {
             "type": "object",
@@ -32,7 +32,7 @@
             "properties": {
               "dbKey": {
                 "type": "string",
-                "pattern": "[0-9a-f]{64}"
+                "pattern": "^[0-9a-f]{64}$"
               }
             }
           },
@@ -52,7 +52,7 @@
             "items": {"$ref": "#/definitions/comment"}
           },
           "seq": {"type": "number"},
-          "url": {"type": "string", "format": "uri"},
+          "dbUrl": {"type": "string", "format": "uri"},
           "value": {
             "type": "object",
             "properties": {
@@ -65,7 +65,7 @@
                 "properties": {
                   "dbKey": {
                     "type": "string",
-                    "pattern": "[0-9a-f]{64}"
+                    "pattern": "^[0-9a-f]{64}$"
                   }
                 }
               },

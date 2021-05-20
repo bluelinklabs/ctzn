@@ -18,18 +18,18 @@
     "properties": {
       "membershipRecord": {
         "type": "object",
-        "required": ["key", "url"],
+        "required": ["key", "dbUrl"],
         "properties": {
           "key": {"type": "string"},
-          "url": {"type": "string", "format": "uri"}
+          "dbUrl": {"type": "string", "format": "uri"}
         }
       },
       "memberRecord": {
         "type": "object",
-        "required": ["key", "url"],
+        "required": ["key", "dbUrl"],
         "properties": {
           "key": {"type": "string"},
-          "url": {"type": "string", "format": "uri"}
+          "dbUrl": {"type": "string", "format": "uri"}
         }
       }
     }

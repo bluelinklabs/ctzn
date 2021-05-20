@@ -13,7 +13,6 @@ import lock from '../lib/lock.js'
 import * as perf from '../lib/perf.js'
 import * as issues from '../lib/issues.js'
 import { debugLog } from '../lib/debug-log.js'
-import { ValidationError } from '../lib/errors.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import { DbIndexingIssue } from '../lib/issues/db-indexing.js'
 

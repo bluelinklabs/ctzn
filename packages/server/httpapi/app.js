@@ -72,8 +72,8 @@ export function setup (app, config) {
       }
       cache.onDatabaseChange(req.session.auth.username, schemaId)
 
-      const url = constructEntryUrl(db.url, schemaId, key)
-      res.status(200).json({key, url})
+      const dbUrl = constructEntryUrl(db.url, schemaId, key)
+      res.status(200).json({key, dbUrl})
     } catch (e) {
       error(res, e, config)
     }
@@ -104,8 +104,8 @@ export function setup (app, config) {
         await onDatabaseChange(db)
         cache.onDatabaseChange(req.session.auth.username, schemaId)
 
-        const url = constructEntryUrl(db.url, schemaId, key)
-        res.status(200).json({key, url})
+        const dbUrl = constructEntryUrl(db.url, schemaId, key)
+        res.status(200).json({key, dbUrl})
       } finally {
         release()
       }

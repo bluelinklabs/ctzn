@@ -22,13 +22,13 @@
         "properties": {
           "dbKey": {
             "type": "string",
-            "pattern": "[0-9a-f]{64}"
+            "pattern": "^[0-9a-f]{64}$"
           }
         }
       },
       "followers": {
         "type": "array",
-        "items": {"type": "string", "pattern": "[0-9a-f]{64}"}
+        "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
       }
     }
   }

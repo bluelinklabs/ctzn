@@ -183,18 +183,18 @@ export class TestFramework {
 
   testPost (t, entry, desc) {
     const user = desc[0]
-    t.truthy(entry.url.startsWith(user.profile.dbUrl))
+    t.truthy(entry.dbUrl.startsWith(user.profile.dbUrl))
     t.is(entry.author.dbKey, user.dbKey)
     t.is(entry.value.text, desc[1])
   }
 
   testComment (t, entry, desc, reply) {
     const user = desc[0]
-    t.truthy(entry.url.startsWith(user.profile.dbUrl))
+    t.truthy(entry.dbUrl.startsWith(user.profile.dbUrl))
     t.is(entry.author.dbKey, user.dbKey)
     t.is(entry.value.text, desc[1])
-    t.is(entry.value.reply.root.dbUrl, reply.root.url)
-    if (reply.parent) t.is(entry.value.reply.parent.dbUrl, reply.parent.url)
+    t.is(entry.value.reply.root.dbUrl, reply.root.dbUrl)
+    if (reply.parent) t.is(entry.value.reply.parent.dbUrl, reply.parent.dbUrl)
   }
 
   testThread (t, entries, descs) {
@@ -206,7 +206,7 @@ export class TestFramework {
 
   testThreadItem (t, entry, desc) {
     const user = desc[0]
-    t.truthy(entry.url.startsWith(user.profile.dbUrl), `expected comment to be authored by ${user.username}\n${commentDescToString(desc)}`)
+    t.truthy(entry.dbUrl.startsWith(user.profile.dbUrl), `expected comment to be authored by ${user.username}\n${commentDescToString(desc)}`)
     t.is(entry.author.dbKey, user.dbKey, `expected author dbKey to be ${user.dbKey}\n${commentDescToString(desc)}`)
     t.is(entry.value.text, desc[1], `expected comment text to be ${desc[1]}\n${commentDescToString(desc)}`)
 
@@ -263,7 +263,7 @@ export class TestFramework {
     if (Array.isArray(inst)) {
       inst = inst[randRange(0, inst.length - 1)]
     }
-    let comments = flattenThread((await inst.api.view.get('ctzn.network/thread-view', post.url)).comments)
+    let comments = flattenThread((await inst.api.view.get('ctzn.network/thread-view', post.dbUrl)).comments)
     return comments[randRange(0, comments.length - 1)]
   }
   
@@ -271,17 +271,17 @@ export class TestFramework {
     let users = [user].concat(Object.values(user.following))
     let posts = users.map(user => user.posts).flat()
     posts.sort((a, b) => (new Date(b.value.createdAt)) - (new Date(a.value.createdAt)))
-    return posts.map(p => p.url)
+    return posts.map(p => p.dbUrl)
   }
   
   getExpectedUserFeedUrls (user) {
-    return user.posts.slice().map(p => p.url)
+    return user.posts.slice().map(p => p.dbUrl)
   }
 
   getExpectedReactorIds (subject, reaction) {
     var ids = []
     for (let username in this.users) {
-      if (this.users[username].reactions[subject.url][reaction]) {
+      if (this.users[username].reactions[subject.dbUrl][reaction]) {
         ids.push(this.users[username].dbKey)
       }
     }
@@ -290,7 +290,7 @@ export class TestFramework {
 
   getThread (post, filterFn) {
     const comments = this.allComments.filter(c => {
-      return (c.value.subject.dbUrl === post.url && (!filterFn || filterFn(c)))
+      return (c.value.subject.dbUrl === post.dbUrl && (!filterFn || filterFn(c)))
     })
     return commentEntriesToThread(comments) || []
   }
@@ -313,14 +313,14 @@ export class TestFramework {
         case 'comment':
           t.is(schemaId, 'ctzn.network/comment', itemDesc)
           t.is(entry.item.text, desc[2].text, itemDesc)
-          t.is(entry.item.reply.root.dbUrl, desc[2].reply.root.url, itemDesc)
-          if (desc[2].reply.parent) t.is(entry.item.reply.parent.dbUrl, desc[2].reply.parent.url, itemDesc)
+          t.is(entry.item.reply.root.dbUrl, desc[2].reply.root.dbUrl, itemDesc)
+          if (desc[2].reply.parent) t.is(entry.item.reply.parent.dbUrl, desc[2].reply.parent.dbUrl, itemDesc)
           else t.falsy(entry.item.reply.parent, itemDesc)
           break
         case 'reaction':
           t.is(schemaId, 'ctzn.network/reaction', itemDesc)
           t.is(entry.item.reaction, desc[3], itemDesc)
-          t.is(entry.item.subject.dbUrl, desc[2].url, itemDesc)
+          t.is(entry.item.subject.dbUrl, desc[2].dbUrl, itemDesc)
           break
       }
     }
@@ -362,29 +362,29 @@ class TestCitizen {
 
   async createPost ({text, extendedText, community}) {
     await this.login()
-    const {url} = await this.inst.api.table.create(
+    const {dbUrl} = await this.inst.api.table.create(
       this.username,
       'ctzn.network/post',
       {text, extendedText, community, createdAt: (new Date()).toISOString()}
     )
-    this.posts.push(await this.inst.api.view.get('ctzn.network/views/post', {url}))
+    this.posts.push(await this.inst.api.view.get('ctzn.network/views/post', {dbUrl}))
     return this.posts[this.posts.length - 1]
   }
 
   async createComment ({text, community, reply}) {
     await this.login()
     if (reply) {
-      reply.root = {dbUrl: reply.root.url}
+      reply.root = {dbUrl: reply.root.dbUrl}
       if (reply.parent) {
-        reply.parent = {dbUrl: reply.parent.url}
+        reply.parent = {dbUrl: reply.parent.dbUrl}
       }
     }
-    const {url} = await this.inst.api.table.create(
+    const {dbUrl} = await this.inst.api.table.create(
       this.username,
       'ctzn.network/comment',
       {text, community, reply}
     )
-    this.comments.push(await this.inst.api.view.get('ctzn.network/comment-view', url))
+    this.comments.push(await this.inst.api.view.get('ctzn.network/comment-view', {dbUrl}))
     return this.comments[this.comments.length - 1]
   }
 
@@ -408,18 +408,18 @@ class TestCitizen {
       this.username,
       'ctzn.network/reaction',
       {
-        subject: {dbUrl: subject.url},
+        subject: {dbUrl: subject.dbUrl},
         reaction
       }
     )
-    this.reactions[subject.url] = this.reactions[subject.url] || {}
-    this.reactions[subject.url][reaction] = true
+    this.reactions[subject.dbUrl] = this.reactions[subject.dbUrl] || {}
+    this.reactions[subject.dbUrl][reaction] = true
   }
 
   async unreact ({subject, reaction}) {
     await this.login()
-    await this.inst.api.table.delete(this.dbKey, 'ctzn.network/reaction', `${reaction}:${subject.url}`)
-    delete this.reactions[subject.url][reaction]
+    await this.inst.api.table.delete(this.dbKey, 'ctzn.network/reaction', `${reaction}:${subject.dbUrl}`)
+    delete this.reactions[subject.dbUrl][reaction]
   }
 }
 
@@ -460,7 +460,7 @@ function commentEntriesToThread (commentEntries) {
   commentEntries = JSON.parse(JSON.stringify(commentEntries)) // deep clone
 
   const commentEntriesByUrl = {}
-  commentEntries.forEach(commentEntry => { commentEntriesByUrl[commentEntry.url] = commentEntry })
+  commentEntries.forEach(commentEntry => { commentEntriesByUrl[commentEntry.dbUrl] = commentEntry })
 
   const rootCommentEntries = []
   commentEntries.forEach(commentEntry => {

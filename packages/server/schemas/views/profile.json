@@ -15,8 +15,8 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
-      "url": {"type": "string", "format": "uri"},
-      "dbKey": {"type": "string", "pattern": "[0-9a-f]{64}"},
+      "dbUrl": {"type": "string", "format": "uri"},
+      "dbKey": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
       "value": {
         "type": "object",
         "properties": {
