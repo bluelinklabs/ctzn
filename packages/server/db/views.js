@@ -2,13 +2,13 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { fileURLToPath } from 'url'
 import * as db from './index.js'
-import { constructUserUrl, constructEntryUrl, isHyperUrl, parseEntryUrl } from '../lib/strings.js'
+import { constructUserUrl, isHyperUrl, parseEntryUrl } from '../lib/strings.js'
 import { fetchUserId } from '../lib/network.js'
 import * as dbGetters from './getters.js'
 import * as schemas from '../lib/schemas.js'
 import * as errors from '../lib/errors.js'
-import { listHomeFeed, listDbmethodFeed } from './feed-getters.js'
-import { fetchNotications, countNotications, dbGet, fetchReactions, addPrefixToRangeOpts, fetchAuthor } from './util.js'
+import { listHomeFeed } from './feed-getters.js'
+import { fetchNotications, countNotications, dbGet, fetchReactions } from './util.js'
 
 const DEFAULT_USER_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'frontend', 'static', 'img', 'default-user-avatar.jpg')
 const DEFAULT_COMMUNITY_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'frontend', 'static', 'img', 'default-community-avatar.jpg')
@@ -27,19 +27,19 @@ export function getType (schemaId) {
   return view.schema?.schemaObject?.type
 }
 
-export async function exec (schemaId, auth, ...args) {
+export async function exec (schemaId, auth, params) {
   const view = _views.get(schemaId)
   if (!view) {
     throw new Error(`View "${schemaId}" not found`)
   }
-  view.validateParameters.assert(args)
-  const res = await view.fn(auth, ...args)
+  view.validateParameters.assert(params)
+  const res = await view.fn(auth, params)
   if (res) view.validateResponse.assert(res)
   return res
 }
 
 export function setup () {
-  define('ctzn.network/avatar-view', async (auth, userId) => {
+  define('ctzn.network/views/avatar', async (auth, {userId}) => {
     let userDb
     try {
       userId = await fetchUserId(userId)
@@ -74,7 +74,7 @@ export function setup () {
     }
   })
 
-  define('ctzn.network/blob-view', async (auth, userId, blobname) => {
+  define('ctzn.network/views/blob', async (auth, {userId, blobname}) => {
     userId = await fetchUserId(userId)
     const userDb = db.publicDbs.get(userId)
     if (!userDb) throw 'Not found'
@@ -90,7 +90,7 @@ export function setup () {
     }
   })
 
-  define('ctzn.network/comment-view', async (auth, userId, commentKey) => {
+  define('ctzn.network/views/comment', async (auth, {userId, commentKey}) => {
     if (!commentKey && isHyperUrl(userId)) {
       let {origin, schemaId, key} = parseEntryUrl(userId)
       if (schemaId !== 'ctzn.network/comment') {
@@ -105,7 +105,7 @@ export function setup () {
     return dbGetters.getComment(commentDb, commentKey, userId, auth)
   })
 
-  define('ctzn.network/community-user-permission-view', async (auth, communityId, citizenId, permId) => {
+  define('ctzn.network/views/community-user-permission', async (auth, {communityId, citizenId, permId}) => {
     communityId = await fetchUserId(communityId)
     citizenId = await fetchUserId(citizenId)
     const communityDb = getDb(communityId)
@@ -122,7 +122,7 @@ export function setup () {
     return undefined
   })
 
-  define('ctzn.network/community-user-permissions-view', async (auth, communityId, citizenId) => {
+  define('ctzn.network/views/community-user-permissions', async (auth, {communityId, citizenId}) => {
     communityId = await fetchUserId(communityId)
     citizenId = await fetchUserId(citizenId)
     const communityDb = getDb(communityId)
@@ -135,85 +135,38 @@ export function setup () {
     return {permissions: roleRecords.map(roleRecord => roleRecord.value.permissions || []).flat()}
   })
 
-  define('ctzn.network/dbmethod-calls-view', async (auth, databaseId, opts) => {
-    databaseId = await fetchUserId(databaseId)
-    const callsDb = getDb(databaseId)
-    const table = callsDb.getTable('ctzn.network/dbmethod-call')
-    const entries = await table.list(getListOpts(opts))
-    for (let entry of entries) {
-      entry.url = table.constructEntryUrl(entry.key)
-      let resultUrl = constructEntryUrl(entry.value.database.dbUrl, 'ctzn.network/dbmethod-result', entry.url)
-      entry.result = (await dbGet(resultUrl))?.entry
-      if (entry.result) {
-        entry.result.url = resultUrl
-      }
-    }
-    return {calls: entries}
-  })
-
-  define('ctzn.network/dbmethod-feed-view', async (auth, opts) => {
-    return {feed: await listDbmethodFeed(opts, auth)}
-  })
-
-  define('ctzn.network/dbmethod-results-view', async (auth, databaseId, opts) => {
-    databaseId = await fetchUserId(databaseId)
-    const resultsDb = getDb(databaseId)
-    const resultsIdx = db.publicServerDb.getTable('ctzn.network/dbmethod-result-chron-idx')
-    const resultsTable = resultsDb.getTable('ctzn.network/dbmethod-result')
-    const idxEntries = await resultsIdx.list(addPrefixToRangeOpts(databaseId, getListOpts(opts)))
-    return {
-      results: await Promise.all(idxEntries.map(async (idxEntry) => {
-        const resultEntry = await resultsTable.get(idxEntry.value.resultKey)
-        if (!resultEntry) return undefined
-        resultEntry.key = idxEntry.value.idxkey
-        resultEntry.url = resultsTable.constructEntryUrl(resultEntry.key)
-        resultEntry.call = (await dbGet(resultEntry.value.call.dbUrl))?.entry
-        if (resultEntry.call) {
-          resultEntry.call.url = resultEntry.value.call.dbUrl
-        }
-        return resultEntry
-      }))
-    }
-  })
-
-  define('ctzn.network/feed-view', async (auth, opts) => {
+  define('ctzn.network/views/feed', async (auth, opts) => {
     return {feed: await listHomeFeed(opts, auth)}
   })
 
-  define('ctzn.network/followers-view', async (auth, userId) => {
+  define('ctzn.network/views/followers', async (auth, {userId}) => {
     userId = await fetchUserId(userId)
     return dbGetters.listFollowers(userId, auth)
   })
 
-  define('ctzn.network/notifications-view', async (auth, opts) => {
+  define('ctzn.network/views/notifications', async (auth, opts) => {
     if (!auth) throw new errors.SessionError()
     return {notifications: await fetchNotications(auth, opts)}
   })
 
-  define('ctzn.network/notifications-cleared-at-view', async (auth) => {
+  define('ctzn.network/views/notifications-cleared-at', async (auth) => {
     if (!auth) throw new errors.SessionError()
     const accountRecord = await db.privateServerDb.accounts.get(auth.username)
     if (!accountRecord) throw new errors.NotFoundError('User account record not found')
     return {notificationsClearedAt: accountRecord.value.notificationsClearedAt || undefined}
   })
 
-  define('ctzn.network/notifications-count-view', async (auth, opts) => {
+  define('ctzn.network/views/notifications-count', async (auth, opts) => {
     if (!auth) throw new errors.SessionError()
     return {count: await countNotications(auth, opts)}
   })
 
-  define('ctzn.network/reactions-to-view', async (auth, subjectUrl) => {
-    const subject = await dbGet(subjectUrl).catch(e => undefined)
-    const subjectEntry = subject ? subject.entry : {}
-    if (subject) subjectEntry.author = {userId: subject.db.userId, dbUrl: subject.db.url}
-    subjectEntry.url = subjectUrl
-    const res = await fetchReactions(subjectEntry)
-    return {subject: res.subject, reactions: res.reactions}
-  })
-
-  define('ctzn.network/post-view', async (auth, userId, postKey) => {
-    if (!postKey && isHyperUrl(userId)) {
-      let {origin, schemaId, key} = parseEntryUrl(userId)
+  define('ctzn.network/views/post', async (auth, {userId, postKey, url}) => {
+    if (!url && !userId) {
+      throw new errors.ValidationError('Must provide url or userId/postKey')
+    }
+    if (url) {
+      let {origin, schemaId, key} = parseEntryUrl(url)
       if (schemaId !== 'ctzn.network/post') {
         return undefined
       }
@@ -225,12 +178,12 @@ export function setup () {
     return dbGetters.getPost(getDb(userId), postKey, userId, auth)
   })
 
-  define('ctzn.network/posts-view', async (auth, userId, opts) => {
-    userId = await fetchUserId(userId)
-    return {posts: await dbGetters.listPosts(getDb(userId), getListOpts(opts), userId, auth)}
+  define('ctzn.network/views/posts', async (auth, opts) => {
+    const userId = await fetchUserId(opts.userId)
+    return {posts: await dbGetters.listPosts(getDb(userId), getListOpts(opts), userId)}
   })
 
-  define('ctzn.network/profile-view', async (auth, userId) => {
+  define('ctzn.network/views/profile', async (auth, {userId}) => {
     userId = await fetchUserId(userId)
     const profileDb = getDb(userId)
     const profileEntry = await profileDb.profile.get('self')
@@ -246,60 +199,17 @@ export function setup () {
     }
   })
 
-  define('ctzn.network/thread-view', async (auth, url) => {
-    return {comments: await dbGetters.getThread(url, auth)}
+  define('ctzn.network/views/reactions-to', async (auth, {url}) => {
+    const subject = await dbGet(url).catch(e => undefined)
+    const subjectEntry = subject ? subject.entry : {}
+    if (subject) subjectEntry.author = {userId: subject.db.userId, dbUrl: subject.db.url}
+    subjectEntry.url = url
+    const res = await fetchReactions(subjectEntry)
+    return {subject: res.subject, reactions: res.reactions}
   })
 
-  define('ctzn.network/topic-records-view', async (auth, topic, source) => {
-    if (!auth) throw new errors.SessionError()
-    const publicDb = db.publicDbs.get(auth.userId)
-    if (!publicDb) throw new errors.NotFoundError('User database not found')
-
-    if (!source) source = 'follows'
-    if (source !== 'follows' && !/(.*)@(.*)/.test(source)) {
-      throw new errors.ValidationError('Source must be "follows" or a user ID')
-    }
-
-    let sourceDbs = []
-    if (source === 'follows') {
-      const followEntries = await publicDb.follows.list()
-      followEntries.unshift({value: {subject: auth}})
-      sourceDbs = followEntries.map(f => db.publicDbs.get(f.value.subject.userId))
-    } else {
-      sourceDbs.push(db.publicDbs.get(source))
-    }
-    sourceDbs = sourceDbs.filter(Boolean)
-
-    const taggedBysBySubjectUrl = {}
-    await Promise.all(sourceDbs.map(async (db) => {
-      const tagRecords = await db.tags.list(addPrefixToRangeOpts(topic))
-      for (let tagRecord of tagRecords) {
-        const subjectUrl = tagRecord.value.subject.dbUrl
-        taggedBysBySubjectUrl[subjectUrl] = taggedBysBySubjectUrl[subjectUrl] || []
-        taggedBysBySubjectUrl[subjectUrl].push(db.userId)
-      }
-    }))
-    
-    const authorCache = {}
-    const recordsBySchemaIds = {}
-    for (let [subjectUrl, taggedBy] of Object.entries(taggedBysBySubjectUrl)) {
-      let {schemaId, key} = parseEntryUrl(subjectUrl)
-      let {entry, db} = await dbGet(subjectUrl)
-      recordsBySchemaIds[schemaId] = recordsBySchemaIds[schemaId] || []
-      recordsBySchemaIds[schemaId].push({
-        seq: entry.seq,
-        key,
-        url: subjectUrl,
-        author: await fetchAuthor(db.userId, authorCache),
-        value: entry.value,
-        taggedBy
-      })
-    }
-
-    return {
-      topic,
-      records: recordsBySchemaIds
-    }
+  define('ctzn.network/views/thread', async (auth, {url}) => {
+    return {comments: await dbGetters.getThread(url, auth)}
   })
 }
 

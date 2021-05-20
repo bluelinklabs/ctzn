@@ -1,0 +1,35 @@
+{
+  "id": "ctzn.network/methods/community-put-role",
+  "title": "Put role method",
+  "description": "Write a role-record to a community.",
+  "type": "method",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["roleId"],
+    "properties": {
+      "roleId": {"type": "string"},
+      "permissions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["permId"],
+          "properties": {
+            "permId": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["key", "url"],
+    "properties": {
+      "key": {"type": "string"},
+      "url": {"type": "string", "format": "uri"}
+    }
+  }
+}

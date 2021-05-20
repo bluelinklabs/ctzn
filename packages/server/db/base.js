@@ -9,7 +9,6 @@ import concat from 'concat-stream'
 import through2 from 'through2'
 import bytes from 'bytes'
 import { catchupIndexes, getAllDbs } from './index.js'
-import dbmethods from './dbmethods.js'
 import lock from '../lib/lock.js'
 import * as perf from '../lib/perf.js'
 import * as issues from '../lib/issues.js'
@@ -17,7 +16,6 @@ import { debugLog } from '../lib/debug-log.js'
 import { ValidationError } from '../lib/errors.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import { DbIndexingIssue } from '../lib/issues/db-indexing.js'
-import { DbmethodBadResponse } from '../lib/issues/dbmethod-bad-response.js'
 
 const FIRST_HYPERBEE_BLOCK = 2
 const READ_TIMEOUT = 10e3
@@ -63,7 +61,6 @@ export class BaseHyperbeeDB extends EventEmitter {
     this.blobs = new Blobs(this, {isPrivate})
     this.tables = {}
     this.indexers = []
-    this.dbmethods = {}
     this.lastAccess = 0
     this.lock = (id = '') => lock(`${this.key?.toString('hex') || 'newdb'}:${id}`)
   }
@@ -141,15 +138,6 @@ export class BaseHyperbeeDB extends EventEmitter {
       } else {
         this.desc = {
           blobsFeedKey: null
-        }
-      }
-
-      this.dbmethodCalls = this.getTable('ctzn.network/dbmethod-call')
-      this.dbmethodResults = this.getTable('ctzn.network/dbmethod-result')
-      this.dbmethodResultsChronIdx = this.getTable('ctzn.network/dbmethod-result-chron-idx')
-      if (this.writable) {
-        for (let method of this.supportedMethods) {
-          this.createDbMethod(`ctzn.network/${method}-method`, dbmethods[method])
         }
       }
     } finally {
@@ -243,12 +231,6 @@ export class BaseHyperbeeDB extends EventEmitter {
   createIndexer (schemaId, targetSchemaIds, indexFn) {
     if (!this.writable) return
     this.indexers.push(new Indexer(this, schemaId, targetSchemaIds, indexFn))
-  }
-
-  createDbMethod (methodId, handler) {
-    if (!this.writable) return
-    let schema = schemas.get(methodId)
-    this.dbmethods[methodId] = new DbMethod(this, methodId, schema, handler)
   }
 
   async lockAllIndexes () {
@@ -717,37 +699,6 @@ class Table {
       }
       return false
     })
-  }
-}
-
-class DbMethod {
-  constructor (db, methodId, schema, handler) {
-    this.db = db
-    this.methodId = methodId
-    this.schema = schema
-    this.handler = handler
-  }
-
-  validateCallArgs (args) {
-    if (this.schema.validateParams) {
-      const valid = this.schema.validateParams(args)
-      if (!valid) {
-        throw new ValidationError(this.schema.validateParams.errors[0])
-      }
-    }
-  }
-
-  validateResponse (res) {
-    if (this.schema.validate) {
-      const valid = this.schema.validate(res)
-      if (!valid) {
-        issues.add(new DbmethodBadResponse({
-          error: JSON.stringify(this.schema.validate.errors[0], null, 2),
-          handlingDb: this.db,
-          method: this.methodId
-        }))
-      }
-    }
   }
 }
 

@@ -1,4 +1,4 @@
-import { Client as WsClient } from 'rpc-websockets'
+import fetch from 'node-fetch'
 import tmp from 'tmp-promise'
 import { parseEntryUrl, DEBUG_MODE_PORTS_MAP } from '../lib/strings.js'
 import { spawn } from 'child_process'
@@ -24,15 +24,18 @@ export async function createServer () {
     }
   )
 
-  const client = new WsClient(`ws://localhost:${port}/`)
-  const api = await createRpcApi(client)
-  await api.debug.whenServerReady()
+  const api = createApi(`http://localhost:${port}`)
+  let isReady = false
+  for (let i = 0; i < 15; i++) {
+    isReady = await api.get('debug/when-server-ready').then(() => true, () => false)
+    if (isReady) break
+    await new Promise(r => setTimeout(r, 1e3))
+  }
+  if (!isReady) throw new Error('Server failed to start')
 
   return {
     url: `http://localhost:${port}/`,
     domain,
-    serverUserId: `server@${domain}`,
-    client,
     api,
     process: serverProcess,
     close: async () => {
@@ -47,32 +50,109 @@ export async function createServer () {
   }
 }
 
-async function createRpcApi (ws) {
-  await new Promise(resolve => ws.on('open', resolve))
+function createApi (origin) {
+  let cookies = {}
 
-  return new Proxy({url: ws.address}, {
-    get (target, prop) {
-      // generate rpc calls as needed
-      if (!(prop in target)) {
-        target[prop] = new Proxy({}, {
-          get (target, prop2) {
-            if (!(prop2 in target)) {
-              target[prop2] = async (...params) => {
-                try {
-                  return await ws.call(`${prop}.${prop2}`, params)
-                } catch (e) {
-                  throw new Error(e.data || e.message)
-                }
-              }
-            }
-            return target[prop2]
-          }
-        })
+  const url = (path, query) => {
+    const u = new URL(`/_api/${path}`, origin)
+    if (query) {
+      for (let k in query) {
+        u.searchParams.set(k, query[k])
       }
-
-      return target[prop]
     }
-  })
+    return u
+  }
+  const cookieHeader = () => {
+    return Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ')
+  }
+  const setCookies = (res) => {
+    const setCookie = res.headers.raw()['set-cookie']
+    if (setCookie) {
+      setCookie.forEach(str => {
+        let kv = str.split('; ')[0]
+        let [k, v] = kv.split('=')
+        cookies[k] = v
+      })
+    }
+  }
+
+  const api = {
+    async get (path, query) {
+      const res = await fetch(url(path, query), {
+        headers: {Cookie: cookieHeader()}
+      })
+      const resbody = await res.json()
+      if (!res.ok || resbody.error) {
+        throw new Error(resbody.message || res.statusText || res.status)
+      }
+      setCookies(res)
+      return resbody
+    },
+    async post (path, body) {
+      const res = await fetch(url(path), {
+        method: 'POST',
+        headers: {Cookie: cookieHeader(), 'Content-Type': 'application/json'},
+        body: JSON.stringify(body || {})
+      })
+      const resbody = await res.json()
+      if (!res.ok || resbody.error) {
+        throw new Error(resbody.message || res.statusText || res.status)
+      }
+      setCookies(res)
+      return resbody
+    },
+    async put (path, body) {
+      const res = await fetch(url(path), {
+        method: 'PUT',
+        headers: {Cookie: cookieHeader(), 'Content-Type': 'application/json'},
+        body: JSON.stringify(body || {})
+      })
+      const resbody = await res.json()
+      if (!res.ok || resbody.error) {
+        throw new Error(resbody.message || res.statusText || res.status)
+      }
+      setCookies(res)
+      return resbody
+    },
+    async delete (path) {
+      const res = await fetch(url(path), {
+        method: 'DELETE',
+        headers: {Cookie: cookieHeader()}
+      })
+      const resbody = await res.json()
+      if (!res.ok || resbody.error) {
+        throw new Error(resbody.message || res.statusText || res.status)
+      }
+      setCookies(res)
+      return resbody
+    },
+    async method (path, params) {
+      return api.post(`method/${path}`, params)
+    }
+  }
+  api.view = {
+    async get (path, params) {
+      return api.get(`view/${path}`, params)
+    }
+  }
+  api.table = {
+    async list (userId, schemaId, opts) {
+      return api.get(`table/${userId}/${schemaId}`, opts)
+    },
+    async get (userId, schemaId, key) {
+      return api.get(`table/${userId}/${schemaId}/${key}`)
+    },
+    async create (userId, schemaId, value) {
+      return api.post(`table/${userId}/${schemaId}`, value)
+    },
+    async update (userId, schemaId, key, value) {
+      return api.put(`table/${userId}/${schemaId}/${key}`, value)
+    },
+    async delete (userId, schemaId, key) {
+      return api.delete(`table/${userId}/${schemaId}/${key}`)
+    }
+  }
+  return api
 }
 
 export class TestFramework {
@@ -92,14 +172,6 @@ export class TestFramework {
     await user.setup()
     this.users[username] = user
     return user
-  }
-
-  async dbmethod (inst, database, method, args) {
-    var res = await inst.api.dbmethod.call({database, method, args})
-    if (res.result.code !== 'success') {
-      throw new Error(res.result.details?.message || res.result.code)
-    }
-    return res
   }
 
   testFeed (t, entries, desc) {
@@ -259,7 +331,6 @@ class TestCitizen {
   constructor (inst, username) {
     this.inst = inst
     this.username = username
-    this.userId = undefined
     this.dbUrl = undefined
     this.posts = []
     this.comments = []
@@ -273,7 +344,7 @@ class TestCitizen {
   }
 
   async setup () {
-    const {userId, dbUrl} = await this.inst.api.debug.createUser({
+    const res = await this.inst.api.post('debug/create-user', {
       type: 'citizen',
       username: this.username,
       email: `${this.username}@email.com`,
@@ -282,23 +353,24 @@ class TestCitizen {
         displayName: this.username.slice(0, 1).toUpperCase() + this.username.slice(1)
       }
     })
+    const {userId, dbUrl} = res
     this.userId = userId
     this.dbUrl = dbUrl
-    this.profile = await this.inst.api.view.get('ctzn.network/profile-view', userId)
+    this.profile = await this.inst.api.view.get('ctzn.network/views/profile', {userId})
   }
 
   async login () {
-    await this.inst.api.accounts.login({username: this.username, password: 'password'})
+    await this.inst.api.method('ctzn.network/methods/login', {username: this.username, password: 'password'})
   }
 
   async createPost ({text, extendedText, community}) {
     await this.login()
     const {url} = await this.inst.api.table.create(
-      this.userId,
+      this.username,
       'ctzn.network/post',
       {text, extendedText, community, createdAt: (new Date()).toISOString()}
     )
-    this.posts.push(await this.inst.api.view.get('ctzn.network/post-view', url))
+    this.posts.push(await this.inst.api.view.get('ctzn.network/views/post', {url}))
     return this.posts[this.posts.length - 1]
   }
 
@@ -311,7 +383,7 @@ class TestCitizen {
       }
     }
     const {url} = await this.inst.api.table.create(
-      this.userId,
+      this.username,
       'ctzn.network/comment',
       {text, community, reply}
     )
@@ -339,7 +411,7 @@ class TestCitizen {
   async react ({subject, reaction}) {
     await this.login()
     await this.inst.api.table.create(
-      this.userId,
+      this.username,
       'ctzn.network/reaction',
       {
         subject: {dbUrl: subject.url, authorId: subject.author.userId},
@@ -355,43 +427,22 @@ class TestCitizen {
     await this.inst.api.table.delete(this.userId, 'ctzn.network/reaction', `${reaction}:${subject.url}`)
     delete this.reactions[subject.url][reaction]
   }
-
-  async tag ({subject, topic}) {
-    await this.login()
-    await this.inst.api.table.create(
-      this.userId,
-      'ctzn.network/tag',
-      {
-        subject: {dbUrl: subject.url, authorId: subject.author.userId},
-        topic
-      }
-    )
-    this.tags[topic] = this.tags[topic] || {}
-    this.tags[topic][subject.url] = true
-  }
-
-  async untag ({subject, topic}) {
-    await this.login()
-    await this.inst.api.table.delete(this.userId, 'ctzn.network/tag', `${topic}:${subject.url}`)
-    delete this.tags[topic][subject.url]
-  }
 }
 
 class TestCommunity {
   constructor (inst, username) {
     this.inst = inst
     this.username = username
-    this.userId = undefined
     this.members = {}
   }
 
   async setup () {
-    const {userId} = await this.inst.api.communities.create({
+    const {userId} = await this.inst.api.method('ctzn.network/methods/community-create', {
       username: this.username,
       displayName: this.username.slice(0, 1).toUpperCase() + this.username.slice(1)
     })
     this.userId = userId
-    this.profile = await this.inst.api.view.get('ctzn.network/profile-view', userId)
+    this.profile = await this.inst.api.view.get('ctzn.network/views/profile', userId)
   }
 }
 

@@ -1,0 +1,20 @@
+{
+  "id": "ctzn.network/methods/logout",
+  "title": "Logout method",
+  "description": "Ends the current session with the server.",
+  "type": "method",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "TODO": true
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "TODO": true
+    }
+  }
+}

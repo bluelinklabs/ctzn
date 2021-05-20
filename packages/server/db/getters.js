@@ -25,9 +25,9 @@ export async function getPost (db, key, authorId, auth = undefined) {
   return postEntry
 }
 
-export async function listPosts (db, opts, authorId, auth = undefined) {
-  const didSpecifyLt = !!opts?.lt
-  if (!didSpecifyLt) {
+export async function listPosts (db, opts, authorId) {
+  const canUseCache = !opts?.lt && opts?.reverse
+  /*if (canUseCache) {
     let cached = cache.getUserFeed(authorId, opts?.limit || 100)
     if (cached) {
       debugLog.cacheHit('user-feed', authorId)
@@ -38,7 +38,7 @@ export async function listPosts (db, opts, authorId, auth = undefined) {
       }
       return cachedEntries
     }
-  }
+  }*/
 
   if (db.dbType === 'ctzn.network/public-citizen-db') {
     const entries = await db.posts.list(opts)
@@ -49,14 +49,14 @@ export async function listPosts (db, opts, authorId, auth = undefined) {
       entry.reactions = (await fetchReactions(entry)).reactions
       entry.replyCount = await fetchReplyCount(entry)
     }
-    if (!didSpecifyLt) {
+    if (canUseCache) {
       cache.setUserFeed(authorId, entries, entries.length)
     }
     return entries
   } else if (db.dbType === 'ctzn.network/public-community-db') {
     const entries = await publicServerDb.feedIdx.list(addPrefixToRangeOpts(db.userId, opts))
     const entries2 = await fetchIndexedPosts(entries, {includeReplyCount: true})
-    if (!didSpecifyLt) {
+    if (canUseCache) {
       cache.setUserFeed(authorId, entries2, entries2.length)
     }
     return entries2

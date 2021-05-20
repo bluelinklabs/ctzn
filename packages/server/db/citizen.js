@@ -15,7 +15,6 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
   async setup () {
     await super.setup()
     await this.blobs.setup()
-    this.dbmethodCalls = this.getTable('ctzn.network/dbmethod-call')
     this.profile = this.getTable('ctzn.network/profile')
     this.posts = this.getTable('ctzn.network/post')
     this.comments = this.getTable('ctzn.network/comment')

@@ -18,8 +18,15 @@ export const get = schemas.get.bind(schemas)
 
 export async function setup () {
   const schemasPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'schemas')
-  const schemaFilenames = await fsp.readdir(schemasPath)
+  let schemaFilenames = await fsp.readdir(schemasPath)
+  schemaFilenames = schemaFilenames.concat(
+    (await fsp.readdir(path.join(schemasPath, 'methods'))).map(filename => path.join('methods', filename))
+  )
+  schemaFilenames = schemaFilenames.concat(
+    (await fsp.readdir(path.join(schemasPath, 'views'))).map(filename => path.join('views', filename))
+  )
   for (let filename of schemaFilenames) {
+    if (!filename.endsWith('.json')) continue
     try {
       const str = await fsp.readFile(path.join(schemasPath, filename), 'utf8')
       const obj = JSON.parse(str)
@@ -78,7 +85,7 @@ class Schema {
       // no further setup needed
     } else if (this.schemaObject.type === 'json-view' || this.schemaObject.type === 'blob-view') {
       // no further setup needed
-    } else if (this.schemaObject.type === 'dbmethod') {
+    } else if (this.schemaObject.type === 'method') {
       // no further setup needed
     } else {
       console.error('Unknown table type:', this.schemaObject.type)

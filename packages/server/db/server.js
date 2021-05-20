@@ -41,57 +41,6 @@ export class PublicServerDB extends BaseHyperbeeDB {
       return
     }
 
-    this.createIndexer('ctzn.network/dbmethod-result', ['ctzn.network/dbmethod-call'], async (batch, db, diff) => {
-      if (!diff.right) return // ignore deletes
-
-      const {database, method, args} = diff.right.value
-      const handlerDb = publicDbs.get(database.userId)
-      if (!handlerDb) return // not one of our databases
-
-      const writeDbMethodResult = async (code, details) => {
-        const value = {
-          call: {
-            dbUrl: diff.right.url,
-            authorId: db.userId
-          },
-          code,
-          details,
-          createdAt: (new Date()).toISOString()
-        }
-        const key = handlerDb.dbmethodResults.schema.generateKey(value)
-        return handlerDb.dbmethodResults.put(key, value)
-      }
-
-      const methodDefinition = handlerDb.dbmethods[method]
-      if (!methodDefinition) {
-        return writeDbMethodResult('method-not-found')
-      }
-      try {
-        methodDefinition.validateCallArgs(args)
-        const res = await methodDefinition.handler(handlerDb, db, args, diff.right)
-        methodDefinition.validateResponse(res)
-        return await writeDbMethodResult('success', res)
-      } catch (e) {
-        return await writeDbMethodResult(e.code || 'error', {message: e.toString()})
-      }
-    })
-
-    this.createIndexer('ctzn.network/dbmethod-result-chron-idx', ['ctzn.network/dbmethod-result'], async (batch, db, diff) => {
-      if (!diff.right) return // ignore deletes
-      if (diff.left && diff.right) return // ignore updates
-
-      const value = {
-        database: {
-          userId: db.userId,
-          dbUrl: db.url
-        },
-        idxkey: mlts(),
-        resultKey: diff.right.key
-      }
-      const key = this.dbmethodResultsChronIdx.schema.generateKey(value)
-      return this.dbmethodResultsChronIdx.put(key, value)
-    })
-
     const NOTIFICATIONS_SCHEMAS = [
       'ctzn.network/follow',
       'ctzn.network/comment',

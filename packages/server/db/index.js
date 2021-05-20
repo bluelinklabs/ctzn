@@ -119,6 +119,7 @@ export async function createUser ({type, username, email, password, profile}) {
     await onDatabaseChange(publicServerDb, [privateServerDb])
     
     publicDbs.set(userId, publicDb)
+    publicDbs.set(username, publicDb) // TODO
     if (privateDb) {
       privateDbs.set(userId, privateDb)
       privateDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
@@ -210,6 +211,7 @@ async function loadMemberUserDbs () {
         let publicDb = new PublicCitizenDB(userId, hyperUrlToKey(user.value.dbUrl))
         await publicDb.setup()
         publicDbs.set(userId, publicDb)
+        publicDbs.set(user.key, publicDb) // TODO
         publicDb.watch(onDatabaseChange)
         publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
 
@@ -232,6 +234,7 @@ async function loadMemberUserDbs () {
         let publicDb = new PublicCommunityDB(userId, hyperUrlToKey(user.value.dbUrl))
         await publicDb.setup()
         publicDbs.set(userId, publicDb)
+        publicDbs.set(user.key, publicDb) // TODO
         publicDb.watch(onDatabaseChange)
         publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
         numLoaded++

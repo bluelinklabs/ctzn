@@ -3,7 +3,6 @@ import { promises as dns } from 'dns'
 import { isHyperUrl, toOrigin, domainToOrigin, parseUserId, domainToWsEndpoint, usernameToUserId } from './strings.js'
 import { publicDbs, privateServerDb } from '../db/index.js'
 import fetch from 'node-fetch'
-import { Client as WebSocketClient } from 'rpc-websockets'
 import { ConfigurationError } from './errors.js'
 
 export async function webfinger (userId) {

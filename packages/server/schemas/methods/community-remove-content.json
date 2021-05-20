@@ -1,0 +1,14 @@
+{
+  "id": "ctzn.network/methods/community-remove-content",
+  "title": "Remove content method",
+  "description": "Remove content from a community's indexes.",
+  "type": "method",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["contentUrl"],
+    "properties": {
+      "contentUrl": {"type": "string", "format": "uri"}
+    }
+  }
+}

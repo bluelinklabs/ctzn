@@ -1,5 +1,4 @@
 import blessed from 'blessed'
-import { Client as WebSocketClient } from 'rpc-websockets'
 import { Config } from '../../lib/config.js'
 
 export class BaseView {

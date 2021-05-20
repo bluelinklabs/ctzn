@@ -1,0 +1,20 @@
+{
+  "id": "ctzn.network/methods/register",
+  "title": "Register method",
+  "description": "Create a new account on the server.",
+  "type": "method",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "TODO": true
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "TODO": true
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "ctzn.network/views/avatar",
+  "title": "Avatar view",
+  "description": "The avatar image of a given user.",
+  "type": "blob-view",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["userId"],
+    "properties": {
+      "userId": {"type": "string"}
+    }
+  }
+}

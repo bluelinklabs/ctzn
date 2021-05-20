@@ -1,0 +1,20 @@
+{
+  "id": "ctzn.network/methods/community-create",
+  "title": "Community create method",
+  "description": "Creates a new community account.",
+  "type": "method",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "TODO": true
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "TODO": true
+    }
+  }
+}
