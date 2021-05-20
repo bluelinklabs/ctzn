@@ -6,9 +6,9 @@
   "parameters": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["userId", "commentKey"],
+    "required": ["dbId", "commentKey"],
     "properties": {
-      "userId": {"type": "string"},
+      "dbId": {"type": "string"},
       "commentKey": {"type": "string"}
     }
   },
@@ -19,9 +19,12 @@
     "properties": {
       "author": {
         "type": "object",
+        "required": ["dbKey"],
         "properties": {
-          "userId": {"type": "string", "pattern": ".+@.+"},
-          "displayName": {"type": "string"}
+          "dbKey": {
+            "type": "string",
+            "pattern": "[0-9a-f]{64}"
+          }
         }
       },
       "key": {"type": "string"},
@@ -45,15 +48,11 @@
           },
           "community": {
             "type": "object",
-            "required": ["dbUrl", "userId"],
+            "required": ["dbKey"],
             "properties": {
-              "dbUrl": {
+              "dbKey": {
                 "type": "string",
-                "format": "uri"
-              },
-              "userId": {
-                "type": "string",
-                "pattern": ".+@.+"
+                "pattern": "[0-9a-f]{64}"
               }
             }
           },
@@ -63,29 +62,21 @@
             "properties": {
               "root": {
                 "type": "object",
-                "required": ["dbUrl", "authorId"],
+                "required": ["dbUrl"],
                 "properties": {
                   "dbUrl": {
                     "type": "string",
                     "format": "uri"
-                  },
-                  "authorId": {
-                    "type": "string",
-                    "pattern": ".+@.+"
                   }
                 }
               },
               "parent": {
                 "type": "object",
-                "required": ["dbUrl", "authorId"],
+                "required": ["dbUrl"],
                 "properties": {
                   "dbUrl": {
                     "type": "string",
                     "format": "uri"
-                  },
-                  "authorId": {
-                    "type": "string",
-                    "pattern": ".+@.+"
                   }
                 }
               }

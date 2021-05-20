@@ -6,9 +6,9 @@
   "parameters": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["userId"],
+    "required": ["dbId"],
     "properties": {
-      "userId": {"type": "string"}
+      "dbId": {"type": "string"}
     }
   },
   "definition": {
@@ -18,21 +18,17 @@
     "properties": {
       "subject": {
         "type": "object",
-        "required": ["dbUrl", "userId"],
+        "required": ["dbKey"],
         "properties": {
-          "dbUrl": {
+          "dbKey": {
             "type": "string",
-            "format": "uri"
-          },
-          "userId": {
-            "type": "string",
-            "pattern": ".+@.+"
+            "pattern": "[0-9a-f]{64}"
           }
         }
       },
       "followers": {
         "type": "array",
-        "items": {"type": "string", "pattern": ".+@.+"}
+        "items": {"type": "string", "pattern": "[0-9a-f]{64}"}
       }
     }
   }

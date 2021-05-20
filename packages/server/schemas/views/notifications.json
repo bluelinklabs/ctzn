@@ -27,11 +27,11 @@
           "properties": {
             "author": {
               "type": "object",
-              "required": ["userId"],
+              "required": ["dbKey"],
               "properties": {
-                "userId": {
+                "dbKey": {
                   "type": "string",
-                  "pattern": ".+@.+"
+                  "pattern": "[0-9a-f]{64}"
                 }
               }
             },

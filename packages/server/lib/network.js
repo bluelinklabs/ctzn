@@ -1,64 +1,20 @@
 import ip from 'ip'
 import { promises as dns } from 'dns'
-import { isHyperUrl, toOrigin, domainToOrigin, parseUserId, domainToWsEndpoint, usernameToUserId } from './strings.js'
-import { publicDbs, privateServerDb } from '../db/index.js'
-import fetch from 'node-fetch'
+import { domainToWsEndpoint, HYPER_KEY } from './strings.js'
+import { publicDbs, publicServerDb } from '../db/index.js'
 import { ConfigurationError } from './errors.js'
 
-export async function webfinger (userId) {
-  const userIdp = parseUserId(userId)
-  const url = `${domainToOrigin(userIdp.domain)}.well-known/webfinger?resource=${userId}`
-  let jrd
-  try {
-    jrd = await (await fetch(url)).json()
-  } catch (e) {
-    throw new Error('Failed to lookup userid: ' + e.message)
+export function resolveDbId (dbId) {
+  if (dbId === 'server' || dbId === publicServerDb.dbKey) {
+    return {username: 'server', dbKey: publicServerDb.dbKey}
   }
-  let href
-  try {
-    href = jrd.links.find(l => l.rel === 'self' && l.href.startsWith('hyper://')).href
-    if (!href) throw new Error('Hyper URL not found')
-  } catch (e) {
-    throw new Error('Failed to read user identity document: ' + e.message)
+  if (publicDbs.get(dbId)) {
+    return {username: publicDbs.get(dbId).username, dbKey: publicDbs.get(dbId).dbKey}
   }
-  return href
-}
-
-export async function fetchDbUrl (userId) {
-  if (isHyperUrl(userId)) return userId
-  const publicDb = publicDbs.get(userId)
-  if (publicDb) return publicDb.url
-  return webfinger(userId)
-}
-
-export async function fetchUserId (dbUrl) {
-  if (!isHyperUrl(dbUrl)) {
-    return usernameToUserId(dbUrl, false)
+  if (HYPER_KEY.test(dbId)) {
+    return {username: undefined, dbKey: dbId}
   }
-  const origin = toOrigin(dbUrl)
-
-  for (let userDb of publicDbs.values()) {
-    if (userDb.url === origin) return userDb.userId
-  }
-
-  return (await privateServerDb?.userDbIdx.get(origin))?.value?.userId
-}
-
-export async function fetchUserInfo (str) {
-  if (str && typeof str === 'object') {
-    return str
-  }
-
-  let dbUrl
-  let userId
-  if (isHyperUrl(str)) {
-    dbUrl = str
-    userId = await fetchUserId(str)
-  } else {
-    userId = str
-    dbUrl = await fetchDbUrl(str)
-  }
-  return {userId, dbUrl}
+  throw new Error(`Unknown database ID: ${dbId}`)
 }
 
 export async function reverseDns (client, debugHandler) {

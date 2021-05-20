@@ -2,7 +2,7 @@ import { publicDbs, createUser, catchupIndexes } from '../db/index.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import { assertUserPermission } from './_util.js'
 import _pick from 'lodash.pick'
-import { fetchUserInfo } from '../lib/network.js'
+import { resolveDbId } from '../lib/network.js'
 import { dbGet, addPrefixToRangeOpts } from '../db/util.js'
 import { publicServerDb } from '../db/index.js'
 import { parseEntryUrl } from '../lib/strings.js'
@@ -26,8 +26,8 @@ export function setup (define) {
       }
     })
     const communityInfo = {
-      userId: communityUser.userId,
-      dbUrl: communityUser.publicDb.url
+      username: communityUser.username,
+      dbKey: communityUser.publicDb.dbKey
     }
     const ts = (new Date()).toISOString()
 
@@ -45,26 +45,28 @@ export function setup (define) {
     // add membership records for the creator of the community
     const membershipValue = {community: communityInfo, joinDate: ts}
     const memberValue = {
-      user: {userId: auth.userId, dbUrl: publicCitizenDb.url},
+      user: {dbKey: publicCitizenDb.dbKey},
       roles: ['admin'],
       joinDate: ts
     }
-    await publicCitizenDb.memberships.put(communityInfo.userId, membershipValue)
-    await communityUser.publicDb.members.put(auth.userId, memberValue)
+    await publicCitizenDb.memberships.put(communityInfo.dbKey, membershipValue)
+    await communityUser.publicDb.members.put(auth.dbKey, memberValue)
     /* dont await */ catchupIndexes(communityUser.publicDb)
-    metrics.communityCreated({user: auth.userId, community: communityInfo.userId})
+    metrics.communityCreated({user: auth.username, community: communityInfo.username})
 
     return communityInfo
   })
 
   define('ctzn.network/methods/community-delete-ban', async (auth, {bannedUser}) => {
-    await assertUserPermission(db, auth.userId, 'ctzn.network/perm-community-ban')
-    await db.bans.del(bannedUser.userId)
+    // TODO get db
+    await assertUserPermission(db, auth.dbKey, 'ctzn.network/perm-community-ban')
+    await db.bans.del(bannedUser.dbKey)
   })
 
   define('ctzn.network/methods/community-delete-role', async (auth, {roleId}) => {
     if (roleId === 'admin') throw new errors.PermissionsError('Cannot edit the admin role')
-    await assertUserPermission(db, auth.userId, 'ctzn.network/perm-community-manage-roles')
+    // TODO get db
+    await assertUserPermission(db, auth.dbKey, 'ctzn.network/perm-community-manage-roles')
   
     const release = await db.lock('roles')
     try {
@@ -89,43 +91,46 @@ export function setup (define) {
     }
   })
 
-  define('ctzn.network/methods/community-invite-member', async (auth, {invitedUser}) => {
-    await assertUserPermission(db, auth.userId, 'ctzn.network/perm-community-invite')
+  define('ctzn.network/methods/community-invite-member', async (auth, {invitedDbId}) => {
+    // TODO get db
+    await assertUserPermission(db, auth.dbKey, 'ctzn.network/perm-community-invite')
   
-    const existingInviteRecord = await db.invites.get(invitedUser.userId)
+    const invitedUserInfo = resolveDbId(invitedDbId)
+    const existingInviteRecord = await db.invites.get(invitedUserInfo.dbKey)
     if (existingInviteRecord) {
       return {
-        key: invitedUser.userId,
-        url: db.invites.constructEntryUrl(invitedUser.userId)
+        key: invitedUserInfo.dbKey,
+        url: db.invites.constructEntryUrl(invitedUserInfo.dbKey)
       }
     }
-    const invitedUserInfo = await fetchUserInfo(invitedUser.userId)
-    await db.invites.put(invitedUser.userId, {
-      invitedUser: invitedUserInfo,
-      createdBy: {userId: auth.userId, dbUrl: auth.url},
+    await db.invites.put(invitedUserInfo.dbKey, {
+      invitedUser: {dbKey: invitedUserInfo.dbKey},
+      createdBy: {dbKey: auth.dbKey},
       createdAt: (new Date()).toISOString()
     })
   
     return {
-      key: invitedUser.userId,
-      url: db.invites.constructEntryUrl(invitedUser.userId)
+      key: invitedUserInfo.dbKey,
+      url: db.invites.constructEntryUrl(invitedUserInfo.dbKey)
     }
   })
 
-  define('ctzn.network/methods/community-join', async (auth, {communityId}) => {
+  define('ctzn.network/methods/community-join', async (auth, {communityDbId}) => {
     if (!auth) throw new errors.SessionError()
 
-    const publicCitizenDb = publicDbs.get(auth.userId)
+    const publicCitizenDb = publicDbs.get(auth.username)
     if (!publicCitizenDb) throw new errors.NotFoundError('User database not found')
 
-    const communityInfo = await fetchUserInfo(communityId)
-    const publicCommunityDb = publicDbs.get(communityInfo.userId)
+    const communityInfo = resolveDbId(communityDbId)
+    const publicCommunityDb = publicDbs.get(communityInfo.dbKey)
     if (!publicCommunityDb || !publicCommunityDb.writable) {
+      throw new Error('todo')
+      /* TODO
       // remote join
       const ws = await connectWs(parseUserId(communityInfo.userId).domain)
       const remoteJoinOpts = {
         communityId,
-        user: {userId: auth.userId, dbUrl: publicCitizenDb.url}
+        user: {userId: auth.dbKey, dbUrl: publicCitizenDb.url}
       }
       const remoteJoinRes = await ws.call('communities.remoteJoin', [remoteJoinOpts])
       if (!remoteJoinRes?.memberRecord?.url) {
@@ -143,12 +148,12 @@ export function setup (define) {
           url: constructEntryUrl(publicCitizenDb.url, 'ctzn.network/community-membership', communityInfo.userId)
         },
         memberRecord: remoteJoinRes.memberRecord
-      }
+      }*/
     } else {
       // local join
 
       // check for a ban
-      const ban = await publicCommunityDb.bans.get(auth.userId)
+      const ban = await publicCommunityDb.bans.get(auth.dbKey)
       if (ban) {
         throw new errors.PermissionsError(`You have been banned from this community. ${ban.value.reason ? `Reason: ${ban.value.reason}` : ''}`)
       }
@@ -156,7 +161,7 @@ export function setup (define) {
       // check for invites if it's a closed community
       const configEntry = await publicCommunityDb.communityConfig.get('self')
       if (configEntry?.value?.joinMode === 'closed') {
-        const inviteEntry = await publicCommunityDb.invites.get(auth.userId)
+        const inviteEntry = await publicCommunityDb.invites.get(auth.dbKey)
         if (!inviteEntry) {
           throw new errors.PermissionsError(`You must be invited to join this community.`)
         }
@@ -164,82 +169,87 @@ export function setup (define) {
 
       // create member and membership records
       const joinDate = (new Date()).toISOString()
-      const membershipValue = {community: communityInfo, joinDate}
-      const memberValue = {user: {userId: auth.userId, dbUrl: publicCitizenDb.url}, joinDate}
+      const membershipValue = {community: {dbKey: communityInfo.dbKey}, joinDate}
+      const memberValue = {user: {dbKey: auth.dbKey}, joinDate}
 
       // validate before writing to avoid partial transactions
       publicCitizenDb.memberships.schema.assertValid(membershipValue)
       publicCommunityDb.members.schema.assertValid(memberValue)
 
-      await publicCitizenDb.memberships.put(communityInfo.userId, membershipValue)
-      await publicCommunityDb.members.put(auth.userId, memberValue)
+      await publicCitizenDb.memberships.put(communityInfo.dbKey, membershipValue)
+      await publicCommunityDb.members.put(auth.dbKey, memberValue)
       /* dont await */ catchupIndexes(publicCommunityDb)
       
       return {
         membershipRecord: {
-          key: communityInfo.userId,
-          url: constructEntryUrl(publicCitizenDb.url, 'ctzn.network/community-membership', communityInfo.userId)
+          key: communityInfo.dbKey,
+          url: constructEntryUrl(publicCitizenDb.url, 'ctzn.network/community-membership', communityInfo.dbKey)
         },
         memberRecord: {
-          key: auth.userId,
-          url: constructEntryUrl(publicCommunityDb.url, 'ctzn.network/community-member', auth.userId)
+          key: auth.dbKey,
+          url: constructEntryUrl(publicCommunityDb.url, 'ctzn.network/community-member', auth.dbKey)
         }
       }
     }
   })
 
-  define('ctzn.network/methods/community-leave', async (auth, {communityId}) => {
+  define('ctzn.network/methods/community-leave', async (auth, {communityDbId}) => {
     if (!auth) throw new errors.SessionError()
 
-    const publicCitizenDb = publicDbs.get(auth.userId)
+    const publicCitizenDb = publicDbs.get(auth.dbKey)
     if (!publicCitizenDb) throw new errors.NotFoundError('User database not found')
     
-    const communityInfo = await fetchUserInfo(communityId)
-    const publicCommunityDb = publicDbs.get(communityInfo.userId)
+    const communityInfo = resolveDbId(communityDbId)
+    const publicCommunityDb = publicDbs.get(communityInfo.dbKey)
     if (!publicCommunityDb || !publicCommunityDb.writable) {
+      throw 'todo'
+      /* TODO
       // remote leave
       const ws = await connectWs(parseUserId(communityInfo.userId).domain)
       const remoteLeaveOpts = {
         communityId,
-        user: {userId: auth.userId, dbUrl: publicCitizenDb.url}
+        user: {userId: auth.dbKey, dbUrl: publicCitizenDb.url}
       }
       await ws.call('communities.remoteLeave', [remoteLeaveOpts])
 
       // remote leave succeeded, delete citizen's membership record
       await publicCitizenDb.memberships.del(communityInfo.userId)
+      */
     } else {
       // local leave
       const release = await publicCommunityDb.lock('members')
       try {
-        await publicCitizenDb.memberships.del(communityInfo.userId)
-        await publicCommunityDb.members.del(auth.userId)
+        await publicCitizenDb.memberships.del(communityInfo.dbKey)
+        await publicCommunityDb.members.del(auth.dbKey)
       } finally {
         release()
       }
     }
   })
 
-  define('ctzn.network/methods/community-put-ban', async (auth, {bannedUser, reason}) => {
-    await assertUserPermission(db, auth.userId, 'ctzn.network/perm-community-ban')
+  define('ctzn.network/methods/community-put-ban', async (auth, {bannedUserDbId, reason}) => {
+    // TODO get db
+    await assertUserPermission(db, auth.dbKey, 'ctzn.network/perm-community-ban')
   
-    const exstingBanRecord = await db.bans.get(bannedUser.userId)
-    const bannedUserInfo = await fetchUserInfo(bannedUser.userId)
-    await db.bans.put(bannedUser.userId, {
-      bannedUser: bannedUserInfo,
-      createdBy: {userId: auth.userId, dbUrl: auth.url},
+    const bannedUserInfo = resolveDbId(bannedUserDbId)
+    const exstingBanRecord = await db.bans.get(bannedUserInfo.dbKey)
+    await db.bans.put(bannedUserInfo.dbKey, {
+      bannedUser: {dbKey: bannedUserInfo.dbKey},
+      createdBy: {dbKey: auth.dbKey, dbUrl: auth.url},
       reason: reason,
       createdAt: exstingBanRecord?.value?.createdAt || (new Date()).toISOString()
     })
   
     return {
-      key: bannedUser.userId,
-      url: db.bans.constructEntryUrl(bannedUser.userId)
+      key: bannedUserInfo.dbKey,
+      url: db.bans.constructEntryUrl(bannedUserInfo.dbKey)
     }
   })
 
   define('ctzn.network/methods/community-put-role', async (auth, {roleId, permissions}) => {
     if (roleId === 'admin') throw new errors.PermissionsError('Cannot edit the admin role')
-    await assertUserPermission(db, auth.userId, 'ctzn.network/perm-community-manage-roles')
+    // TODO get db
+    await assertUserPermission(db, auth.dbKey, 'ctzn.network/perm-community-manage-roles')
   
     const release = await db.lock('roles')
     try {
@@ -259,20 +269,21 @@ export function setup (define) {
     }
   })
 
-  define('ctzn.network/methods/community-remove-content', async (auth, {contentUrl}) => {
-    const { schemaId } = parseEntryUrl(contentUrl)
+  define('ctzn.network/methods/community-remove-content', async (auth, {contentDbUrl}) => {
+    // TODO get db
+    const { schemaId } = parseEntryUrl(contentDbUrl)
     if (schemaId === 'ctzn.network/post') {
-      await assertUserPermission(db, auth.userId, 'ctzn.network/perm-community-remove-post')
-      const feedIdxEntry = await publicServerDb.feedIdx.scanFind(addPrefixToRangeOpts(db.userId, {reverse: true}), entry => (
-        entry.value.item.dbUrl === contentUrl
+      await assertUserPermission(db, auth.dbKey, 'ctzn.network/perm-community-remove-post')
+      const feedIdxEntry = await publicServerDb.feedIdx.scanFind(addPrefixToRangeOpts(db.dbKey, {reverse: true}), entry => (
+        entry.value.item.dbUrl === contentDbUrl
       )).catch(e => undefined)
       if (!feedIdxEntry) {
         throw new Error('Unable to find post in the community feed')
       }
       await publicServerDb.feedIdx.del(feedIdxEntry.key)
     } else if (schemaId === 'ctzn.network/comment') {
-      await assertUserPermission(db, auth.userId, 'ctzn.network/perm-community-remove-comment')
-      const res = await dbGet(contentUrl)
+      await assertUserPermission(db, auth.dbKey, 'ctzn.network/perm-community-remove-comment')
+      const res = await dbGet(contentDbUrl)
       if (!res?.entry) {
         throw new Error('Unable to lookup comment')
       }
@@ -283,10 +294,10 @@ export function setup (define) {
       if (!rootRes || !threadIdxEntry) {
         throw new Error('Unable to find thread the comment is a part of')
       }
-      if (rootRes.entry?.value?.community?.userId !== db.userId) {
+      if (rootRes.entry?.value?.community?.dbKey !== db.dbKey) {
         throw new Error('Thread is not a part of this community')
       }
-      let commentIndex = threadIdxEntry.value.items?.findIndex(c => c.dbUrl === contentUrl)
+      let commentIndex = threadIdxEntry.value.items?.findIndex(c => c.dbUrl === contentDbUrl)
       if (commentIndex !== -1) {
         threadIdxEntry.value.items.splice(commentIndex, 1)
         await publicServerDb.threadIdx.put(threadIdxEntry.key, threadIdxEntry.value)
@@ -298,15 +309,16 @@ export function setup (define) {
     }
   })
 
-  define('ctzn.network/methods/community-remove-member', async (auth, {member, ban, banReason}) => {
-    await assertUserPermission(db, auth.userId, 'ctzn.network/perm-community-ban')
+  define('ctzn.network/methods/community-remove-member', async (auth, {memberDbId, ban, banReason}) => {
+    // TODO get db
+    await assertUserPermission(db, auth.dbKey, 'ctzn.network/perm-community-ban')
+    let memberInfo = resolveDbId(memberDbId)
   
     // (optionally) create ban record
     if (ban) {
-      let bannedUserInfo = await fetchUserInfo(member.userId)
-      await db.bans.put(member.userId, {
-        bannedUser: bannedUserInfo,
-        createdBy: {userId: auth.userId, dbUrl: auth.url},
+      await db.bans.put(memberInfo.dbKey, {
+        bannedUser: {dbKey: memberInfo.dbKey},
+        createdBy: {dbKey: auth.dbKey},
         reason: banReason,
         createdAt: (new Date()).toISOString()
       })
@@ -315,40 +327,43 @@ export function setup (define) {
     const release = await db.lock('members')
     try {
       // delete member record
-      await db.members.del(member.userId)
+      await db.members.del(memberInfo.dbKey)
     } finally {
       release()
     }
   
     return {
       banRecord: ban ? {
-        key: member.userId,
-        url: db.bans.constructEntryUrl(member.userId)
+        key: memberInfo.dbKey,
+        url: db.bans.constructEntryUrl(memberInfo.dbKey)
       } : undefined
     }
   })
 
-  define('ctzn.network/methods/community-set-member-roles', async (auth, {member, roles}) => {
-    await assertUserPermission(db, auth.userId, 'ctzn.network/perm-community-assign-roles')
+  define('ctzn.network/methods/community-set-member-roles', async (auth, {memberDbId, roles}) => {
+    // TODO get db
+    await assertUserPermission(db, auth.dbKey, 'ctzn.network/perm-community-assign-roles')
+    let memberInfo = resolveDbId(memberDbId)
 
     const release = await db.lock('members')
     try {
-      let memberRecord = await db.members.get(member.userId)
-      if (!memberRecord) throw new Error(`${member.userId} is not a member of this group`)
+      let memberRecord = await db.members.get(memberInfo.dbKey)
+      if (!memberRecord) throw new Error(`${memberInfo.dbKey} is not a member of this group`)
       memberRecord.value.roles = roles || []
-      await db.members.put(member.userId, memberRecord.value)
+      await db.members.put(memberInfo.dbKey, memberRecord.value)
     } finally {
       release()
     }
 
     return {
-      key: member.userId,
-      url: db.members.constructEntryUrl(member.userId)
+      key: memberInfo.dbKey,
+      url: db.members.constructEntryUrl(memberInfo.dbKey)
     }
   })
 
   define('ctzn.network/methods/community-update-config', async (auth, args) => {
-    await assertUserPermission(db, auth.userId, 'ctzn.network/perm-community-update-config')
+    // TODO get db
+    await assertUserPermission(db, auth.dbKey, 'ctzn.network/perm-community-update-config')
     const release = await db.communityConfig.lock()
     try {
       const configEntry = await db.communityConfig.get('self')

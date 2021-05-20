@@ -4,18 +4,18 @@
   "description": "An index of activity relevant to a given user",
   "type": "json-table",
   "keyTemplate": [
-    {"type": "json-pointer", "value": "/subjectUserId"},
+    {"type": "json-pointer", "value": "/subjectDbKey"},
     {"type": "string", "value": ":"},
     {"type": "json-pointer", "value": "/idxkey"}
   ],
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["subjectUserId", "idxkey", "itemUrl", "createdAt"],
+    "required": ["subjectDbKey", "idxkey", "itemUrl", "createdAt"],
     "properties": {
-      "subjectUserId": {
+      "subjectDbKey": {
         "type": "string",
-        "pattern": ".+@.+"
+        "pattern": "[0-9a-f]{64}"
       },
       "idxkey": {
         "type": "string"

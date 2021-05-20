@@ -4,33 +4,29 @@
   "description": "Aggregated content feed",
   "type": "json-table",
   "keyTemplate": [
-    {"type": "json-pointer", "value": "/feedUserId"},
+    {"type": "json-pointer", "value": "/feedDbKey"},
     {"type": "string", "value": ":"},
     {"type": "json-pointer", "value": "/idxkey"}
   ],
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["feedUserId", "idxkey", "item", "createdAt"],
+    "required": ["feedDbKey", "idxkey", "item", "createdAt"],
     "properties": {
-      "feedUserId": {
+      "feedDbKey": {
         "type": "string",
-        "pattern": ".+@.+"
+        "pattern": "[0-9a-f]{64}"
       },
       "idxkey": {
         "type": "string"
       },
       "item": {
         "type": "object",
-        "required": ["dbUrl", "authorId"],
+        "required": ["dbUrl"],
         "properties": {
           "dbUrl": {
             "type": "string",
             "format": "uri"
-          },
-          "authorId": {
-            "type": "string",
-            "pattern": ".+@.+"
           }
         }
       },

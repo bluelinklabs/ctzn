@@ -6,9 +6,9 @@
   "parameters": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["userId"],
+    "required": ["dbId"],
     "properties": {
-      "userId": {"type": "string"}
+      "dbId": {"type": "string"}
     }
   },
   "definition": {
@@ -16,8 +16,7 @@
     "type": "object",
     "properties": {
       "url": {"type": "string", "format": "uri"},
-      "userId": {"type": "string", "pattern": ".+@.+"},
-      "dbUrl": {"type": "string", "format": "uri"},
+      "dbKey": {"type": "string", "pattern": "[0-9a-f]{64}"},
       "value": {
         "type": "object",
         "properties": {

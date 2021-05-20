@@ -1,11 +1,9 @@
 import { BaseHyperbeeDB } from './base.js'
-import * as perf from '../lib/perf.js'
-
 
 export class PublicCitizenDB extends BaseHyperbeeDB {
-  constructor (userId, key) {
-    super(`public:${userId}`, key)
-    this.userId = userId
+  constructor (key, username) {
+    super(`public:${username || key}`, key)
+    this.username = username
   }
 
   get dbType () {
@@ -31,9 +29,9 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
 }
 
 export class PrivateCitizenDB extends BaseHyperbeeDB {
-  constructor (userId, key, publicServerDb, publicDb) {
-    super(`private:${userId}`, key, {isPrivate: true})
-    this.userId = userId
+  constructor (key, username, publicServerDb, publicDb) {
+    super(`private:${username || key}`, key, {isPrivate: true})
+    this.username = username
     this.publicServerDb = publicServerDb
     this.publicDb = publicDb
   }

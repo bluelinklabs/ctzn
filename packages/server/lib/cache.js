@@ -1,58 +1,58 @@
 const homeFeedCache = {}
 const userFeedCache = {}
 
-export function invalidateHomeFeed (userId) {
-  delete homeFeedCache[userId]
+export function invalidateHomeFeed (username) {
+  delete homeFeedCache[username]
 }
 
-export function getHomeFeed (userId, limit) {
-  let entry = homeFeedCache[userId]
+export function getHomeFeed (username, limit) {
+  let entry = homeFeedCache[username]
   if (!entry || entry.expires < Date.now() || entry.limit < limit) {
     return undefined
   }
   return entry.value
 }
 
-export function setHomeFeed (userId, value, limit, ttl) {
-  if (homeFeedCache[userId] && limit < homeFeedCache[userId].limit) {
+export function setHomeFeed (username, value, limit, ttl) {
+  if (homeFeedCache[username] && limit < homeFeedCache[username].limit) {
     return
   }
-  homeFeedCache[userId] = {
+  homeFeedCache[username] = {
     expires: Date.now() + ttl,
     limit,
     value
   }
 }
 
-export function invalidateUserFeed (userId) {
-  delete userFeedCache[userId]
+export function invalidateUserFeed (username) {
+  delete userFeedCache[username]
 }
 
-export function getUserFeed (userId, limit) {
-  let entry = userFeedCache[userId]
+export function getUserFeed (username, limit) {
+  let entry = userFeedCache[username]
   if (!entry || entry.limit < limit) {
     return undefined
   }
   return entry.value
 }
 
-export function setUserFeed (userId, value, limit, ttl) {
-  if (userFeedCache[userId] && limit < userFeedCache[userId].limit) {
+export function setUserFeed (username, value, limit, ttl) {
+  if (userFeedCache[username] && limit < userFeedCache[username].limit) {
     return
   }
-  userFeedCache[userId] = {
+  userFeedCache[username] = {
     limit,
     value
   }
 }
 
-export function onDatabaseChange (userId, schemaId) {
+export function onDatabaseChange (username, schemaId) {
   if (
     schemaId === 'ctzn.network/post' ||
     schemaId === 'ctzn.network/follow' ||
     schemaId === 'ctzn.network/community-membership'
   ) {
-    invalidateHomeFeed(userId)
-    invalidateUserFeed(userId)
+    invalidateHomeFeed(username)
+    invalidateUserFeed(username)
   }
 }

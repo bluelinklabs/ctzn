@@ -2,7 +2,7 @@ import createMlts from 'monotonic-lexicographic-timestamp'
 import { BaseHyperbeeDB } from './base.js'
 import { publicDbs } from './index.js'
 import { dbGet } from './util.js'
-import { constructUserId, constructEntryUrl } from '../lib/strings.js'
+import { constructEntryUrl } from '../lib/strings.js'
 import * as perf from '../lib/perf.js'
 import _intersectionBy from 'lodash.intersectionby'
 
@@ -13,9 +13,9 @@ const INDEXED_DB_TYPES = [
 const mlts = createMlts()
 
 export class PublicServerDB extends BaseHyperbeeDB {
-  constructor (userId, key) {
+  constructor (key, username) {
     super('public:server', key)
-    this.userId = userId
+    this.username = username
   }
 
   get dbType () {
@@ -52,37 +52,37 @@ export class PublicServerDB extends BaseHyperbeeDB {
       const createdAt = new Date()
       const value = diff.right.value
       const itemCreatedAt = new Date(value.createdAt)
-      const genKey = userId => {
+      const genKey = dbKey => {
         const idxkey = mlts(Math.min(+createdAt, (+itemCreatedAt) || (+createdAt)))
-        return {idxkey, key: this.notificationsIdx.constructBeeKey(`${userId}:${idxkey}`)}
+        return {idxkey, key: this.notificationsIdx.constructBeeKey(`${dbKey}:${idxkey}`)}
       }
       switch (diff.right.schemaId) {
         case 'ctzn.network/reaction':
         case 'ctzn.network/follow': {
-          const subjectUserId = value.subject.userId || value.subject.authorId
-          const subjectDb = publicDbs.get(subjectUserId)
+          const subjectDbKey = value.subject.dbKey || value.subject.authorDbKey
+          const subjectDb = publicDbs.get(subjectDbKey)
           if (!subjectDb) return // not one of our users
 
-          if (subjectUserId === db.userId) {
+          if (subjectDbKey === db.dbKey) {
             return // acting on own content, ignore
           }
 
-          const followEntry = await subjectDb.getTable('ctzn.network/follow').get(db.userId)
+          const followEntry = await subjectDb.getTable('ctzn.network/follow').get(db.dbKey)
           if (!followEntry) {
             const [subjectMemberships, authorMemberships] = await Promise.all([
               subjectDb.getTable('ctzn.network/community-membership').list(),
               db.getTable('ctzn.network/community-membership').list(),
             ])
-            const sharedMemberships = _intersectionBy(subjectMemberships, authorMemberships, m => m.value.community.userId)
+            const sharedMemberships = _intersectionBy(subjectMemberships, authorMemberships, m => m.value.community.dbKey)
             // TODO verify membership so that banned users can't take advantage of this -prf
             if (sharedMemberships.length === 0) {
               return // author is not followed by subject or in the same community
             }
           }
 
-          const {key, idxkey} = genKey(subjectUserId)
+          const {key, idxkey} = genKey(subjectDbKey)
           await batch.put(key, {
-            subjectUserId,
+            subjectDbKey,
             idxkey,
             itemUrl: diff.right.url,
             createdAt: createdAt.toISOString()
@@ -90,24 +90,24 @@ export class PublicServerDB extends BaseHyperbeeDB {
           break
         }
         case 'ctzn.network/comment': {
-          const rootSubjectDb = value.reply.root ? publicDbs.get(value.reply.root.authorId) : undefined
-          const parentSubjectDb = value.reply.parent ? publicDbs.get(value.reply.parent.authorId) : undefined
+          const rootSubjectDb = value.reply.root ? publicDbs.get(value.reply.root.authorDbKey) : undefined
+          const parentSubjectDb = value.reply.parent ? publicDbs.get(value.reply.parent.authorDbKey) : undefined
           if (!rootSubjectDb && !parentSubjectDb) return // not one of our users
           if (value.community) {
             // comment on a community
             const [rootSubjectMemberEntry, parentSubjectMemberEntry, authorMemberEntry] = await Promise.all([
-              rootSubjectDb ? dbGet(constructEntryUrl(value.community.dbUrl, 'ctzn.network/community-member', rootSubjectDb.userId)) : undefined,
-              parentSubjectDb ? dbGet(constructEntryUrl(value.community.dbUrl, 'ctzn.network/community-member', rootSubjectDb.userId)) : undefined,
-              dbGet(constructEntryUrl(value.community.dbUrl, 'ctzn.network/community-member', db.userId))
+              rootSubjectDb ? dbGet(constructEntryUrl(value.community.dbUrl, 'ctzn.network/community-member', rootSubjectDb.dbKey)) : undefined,
+              parentSubjectDb ? dbGet(constructEntryUrl(value.community.dbUrl, 'ctzn.network/community-member', rootSubjectDb.dbKey)) : undefined,
+              dbGet(constructEntryUrl(value.community.dbUrl, 'ctzn.network/community-member', db.dbKey))
             ])
             if (!authorMemberEntry) {
               return // author is not a member of the community
             }
             if (rootSubjectMemberEntry && rootSubjectDb.url !== db.url) {
               // notification for root post author
-              const {key, idxkey} = genKey(rootSubjectDb.userId)
+              const {key, idxkey} = genKey(rootSubjectDb.dbKey)
               await batch.put(key, {
-                subjectUserId: rootSubjectDb.userId,
+                subjectDbKey: rootSubjectDb.dbKey,
                 idxkey,
                 itemUrl: diff.right.url,
                 createdAt: createdAt.toISOString()
@@ -115,9 +115,9 @@ export class PublicServerDB extends BaseHyperbeeDB {
             }
             if (parentSubjectMemberEntry && parentSubjectDb.url !== db.url && rootSubjectDb?.url !== parentSubjectDb.url) {
               // notification for parent post author
-              const {key, idxkey} = genKey(parentSubjectDb.userId)
+              const {key, idxkey} = genKey(parentSubjectDb.dbKey)
               await batch.put(key, {
-                subjectUserId: parentSubjectDb.userId,
+                subjectDbKey: parentSubjectDb.dbKey,
                 idxkey,
                 itemUrl: diff.right.url,
                 createdAt: createdAt.toISOString()
@@ -126,14 +126,14 @@ export class PublicServerDB extends BaseHyperbeeDB {
           } else {
             // comment on a self-post
             const [rootSubjectFollowEntry, parentSubjectFollowEntry] = await Promise.all([
-              rootSubjectDb ? rootSubjectDb.getTable('ctzn.network/follow').get(db.userId) : undefined,
-              parentSubjectDb ? parentSubjectDb.getTable('ctzn.network/follow').get(db.userId) : undefined
+              rootSubjectDb ? rootSubjectDb.getTable('ctzn.network/follow').get(db.dbKey) : undefined,
+              parentSubjectDb ? parentSubjectDb.getTable('ctzn.network/follow').get(db.dbKey) : undefined
             ])
             if (rootSubjectFollowEntry && rootSubjectDb.url !== db.url) {
               // notification for root post author
-              const {key, idxkey} = genKey(rootSubjectDb.userId)
+              const {key, idxkey} = genKey(rootSubjectDb.dbKey)
               await batch.put(key, {
-                subjectUserId: rootSubjectDb.userId,
+                subjectDbKey: rootSubjectDb.dbKey,
                 idxkey,
                 itemUrl: diff.right.url,
                 createdAt: createdAt.toISOString()
@@ -141,9 +141,9 @@ export class PublicServerDB extends BaseHyperbeeDB {
             }
             if (parentSubjectFollowEntry && parentSubjectDb.url !== db.url && rootSubjectDb?.url !== parentSubjectDb.url) {
               // notification for parent post author
-              const {key, idxkey} = genKey(parentSubjectDb.userId)
+              const {key, idxkey} = genKey(parentSubjectDb.dbKey)
               await batch.put(key, {
-                subjectUserId: parentSubjectDb.userId,
+                subjectDbKey: parentSubjectDb.dbKey,
                 idxkey,
                 itemUrl: diff.right.url,
                 createdAt: createdAt.toISOString()
@@ -171,8 +171,8 @@ export class PublicServerDB extends BaseHyperbeeDB {
       if (!replyRootValue) {
         throw new Error(`Failed to fetch thread root of comment ${commentUrl}`)
       }
-      if (!(await isCommunityMember(replyRootValue.community, db.userId))) {
-        throw new Error(`Author of ${commentUrl} is not a member of the "${replyRootValue.community.userId}" community`)
+      if (!(await isCommunityMember(replyRootValue.community, db.dbKey))) {
+        throw new Error(`Author of ${commentUrl} is not a member of the "${replyRootValue.community.dbKey}" community`)
       }
 
       for (let target of targets) {
@@ -191,8 +191,8 @@ export class PublicServerDB extends BaseHyperbeeDB {
           let itemUrlIndex = threadIdxEntry.value.items.findIndex(c => c.dbUrl === commentUrl)
           if (diff.right) {
             if (itemUrlIndex === -1) {
-              const authorId = db.userId
-              threadIdxEntry.value.items.push({dbUrl: commentUrl, authorId})
+              const authorDbKey = db.dbKey
+              threadIdxEntry.value.items.push({dbUrl: commentUrl, authorDbKey})
               await batch.put(this.threadIdx.constructBeeKey(threadIdxEntry.key), threadIdxEntry.value)
             }
           } else if (diff.left) {
@@ -212,45 +212,45 @@ export class PublicServerDB extends BaseHyperbeeDB {
       if (!diff.right.value.community) {
         return // only index community posts
       }
-      const communityDb = publicDbs.get(diff.right.value.community.userId)
+      const communityDb = publicDbs.get(diff.right.value.community.dbKey)
       if (!communityDb || !communityDb.writable) {
         return // only index communities we run
       }
 
-      if (!(await isCommunityMember(diff.right.value.community, db.userId))) {
-        throw new Error(`Author of ${diff.right.url} is not a member of the "${diff.right.value.community.userId}" community`)
+      if (!(await isCommunityMember(diff.right.value.community, db.dbKey))) {
+        throw new Error(`Author of ${diff.right.url} is not a member of the "${diff.right.value.community.dbKey}" community`)
       }
 
       const itemCreatedAt = new Date(diff.right.value.createdAt)
       const indexCreatedAt = new Date()
       const idxkey = mlts(Math.min(+indexCreatedAt, (+itemCreatedAt) || (+indexCreatedAt)))
       const value = {
-        feedUserId: diff.right.value.community.userId,
+        feedDbKey: diff.right.value.community.dbKey,
         idxkey,
         item: {
           dbUrl: diff.right.url,
-          authorId: db.userId
+          authorDbKey: db.dbKey
         },
         createdAt: indexCreatedAt
       }
-      await batch.put(this.feedIdx.constructBeeKey(`${value.feedUserId}:${value.idxkey}`), value)
+      await batch.put(this.feedIdx.constructBeeKey(`${value.feedDbKey}:${value.idxkey}`), value)
     })
 
     this.createIndexer('ctzn.network/follow-idx', ['ctzn.network/follow'], async (batch, db, diff) => {
       const subject = diff.right?.value?.subject || diff.left?.value?.subject
-      const release = await this.followsIdx.lock(subject.userId)
+      const release = await this.followsIdx.lock(subject.dbKey)
       try {
-        let followsIdxEntry = await this.followsIdx.get(subject.userId)
+        let followsIdxEntry = await this.followsIdx.get(subject.dbKey)
         if (!followsIdxEntry) {
           followsIdxEntry = {
-            key: subject.userId,
+            key: subject.dbKey,
             value: {
-              subjectId: subject.userId,
+              subjectId: subject.dbKey,
               followerIds: []
             }
           }
         }
-        const followerId = db.userId
+        const followerId = db.dbKey
         const followerIdIndex = followsIdxEntry.value.followerIds.indexOf(followerId)
         if (diff.right) {
           if (followerIdIndex === -1) {
@@ -278,8 +278,8 @@ export class PublicServerDB extends BaseHyperbeeDB {
         if (!subjectValue) {
           throw new Error(`Failed to fetch thread root of comment ${reactionUrl}`)
         }
-        if (!(await isCommunityMember(subjectValue.community, db.userId))) {
-          throw new Error(`Author of ${diff.right.url} is not a member of the "${subjectValue.community.userId}" community`)
+        if (!(await isCommunityMember(subjectValue.community, db.dbKey))) {
+          throw new Error(`Author of ${diff.right.url} is not a member of the "${subjectValue.community.dbKey}" community`)
         }
 
         let reactionsIdxEntry = await this.reactionsIdx.get(subject.dbUrl)
@@ -351,29 +351,7 @@ export class PrivateServerDB extends BaseHyperbeeDB {
     await super.setup()
     this.indexState = this.getTable('ctzn.network/index-state')
     this.accounts = this.getTable('ctzn.network/account')
-    this.accountSessions = this.getTable('ctzn.network/account-session')
-    this.userDbIdx = this.getTable('ctzn.network/user-db-idx')
-
-    this.createIndexer('ctzn.network/user-db-idx', ['ctzn.network/user'], async (batch, db, diff) => {
-      const pend = perf.measure(`privateServerDb:user-db-indexer`)
-      const release = await this.lock('user-db-idx')
-      try {
-        if (diff.left?.value?.dbUrl) {
-          await batch.del(this.userDbIdx.constructBeeKey(diff.left?.value?.dbUrl))
-        }
-        if (diff.right?.value) {
-          await batch.put(this.userDbIdx.constructBeeKey(diff.right.value.dbUrl), {
-            dbUrl: diff.right.value.dbUrl,
-            userId: constructUserId(diff.right.value.username)
-          })
-        }
-      } finally {
-        release()
-        pend()
-      }
-    })
-
-    
+    this.accountSessions = this.getTable('ctzn.network/account-session')    
   }
 
   async getSubscribedDbUrls () {
@@ -385,9 +363,9 @@ export class PrivateServerDB extends BaseHyperbeeDB {
   }
 }
 
-async function isCommunityMember (community, authorId) {
+async function isCommunityMember (community, authorDbKey) {
   if (community) {
-    const authorMemberUrl = constructEntryUrl(community.dbUrl, 'ctzn.network/community-member', authorId)
+    const authorMemberUrl = constructEntryUrl(community.dbUrl, 'ctzn.network/community-member', authorDbKey)
     const authorMemberEntry = (await dbGet(authorMemberUrl))?.entry
     return !!authorMemberEntry
   }

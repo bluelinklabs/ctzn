@@ -3,7 +3,7 @@
   "title": "Community invite",
   "description": "An invite to join a community.",
   "type": "json-table",
-  "keyTemplate": [{"type": "json-pointer", "value": "/invitedUser/userId"}],
+  "keyTemplate": [{"type": "json-pointer", "value": "/invitedUser/dbKey"}],
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
@@ -11,29 +11,21 @@
     "properties": {
       "invitedUser": {
         "type": "object",
-        "required": ["dbUrl", "userId"],
+        "required": ["dbKey"],
         "properties": {
-          "dbUrl": {
+          "dbKey": {
             "type": "string",
-            "format": "uri"
-          },
-          "userId": {
-            "type": "string",
-            "pattern": ".+@.+"
+            "pattern": "[0-9a-f]{64}"
           }
         }
       },
       "createdBy": {
         "type": "object",
-        "required": ["dbUrl", "userId"],
+        "required": ["dbKey"],
         "properties": {
-          "dbUrl": {
+          "dbKey": {
             "type": "string",
-            "format": "uri"
-          },
-          "userId": {
-            "type": "string",
-            "pattern": ".+@.+"
+            "pattern": "[0-9a-f]{64}"
           }
         }
       },

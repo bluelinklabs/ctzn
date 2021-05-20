@@ -1,7 +1,6 @@
 import lexint from 'lexicographic-integer-encoding'
 import { publicServerDb, publicDbs, loadExternalDb } from '../db/index.js'
-import { constructUserUrl, parseEntryUrl } from '../lib/strings.js'
-import { fetchUserId } from '../lib/network.js'
+import { constructUserUrl, parseEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
 import { debugLog } from '../lib/debug-log.js'
 
 const lexintEncoder = lexint('hex')
@@ -13,19 +12,15 @@ export async function dbGet (dbUrl, opts = undefined) {
   debugLog.dbCall('dbGet', undefined, undefined, dbUrl)
   const wait = typeof opts?.wait === 'boolean' ? opts.wait : true
   const urlp = new URL(dbUrl)
-  const origin = `hyper://${urlp.hostname}/`
-  let userId = await fetchUserId(origin)
-  let db = userId ? publicDbs.get(userId) : undefined
+  const dbKey = urlp.hostname
+  let db = publicDbs.get(dbKey)
   if (!db) {
-    if (!opts?.userId) {
-      throw new Error(`Unable to load ${dbUrl}, user ID not known`)
-    }
     if (opts?.noLoadExternal) {
-      throw new Error(`Database "${userId}" not found`)
+      throw new Error(`Database "${dbKey}" not found`)
     }
-    db = await loadExternalDb(opts?.userId)
+    db = await loadExternalDb(dbKey)
     if (!db) {
-      throw new Error(`Database "${opts?.userId}" not found`)
+      throw new Error(`Database "${dbKey}" not found`)
     }
   }
   const pathParts = urlp.pathname.split('/').filter(Boolean)
@@ -41,56 +36,54 @@ export async function dbGet (dbUrl, opts = undefined) {
   }
 }
 
-export async function blobGet (dbId, blobName, opts = undefined) {
-  debugLog.dbCall('blobGet', dbId, undefined, blobName)
+export async function blobGet (dbKey, blobName, opts = undefined) {
+  debugLog.dbCall('blobGet', dbKey, undefined, blobName)
   if (typeof opts === 'string') {
     opts = {encoding: opts}
   }
   if (!blobName) throw new Error('Must specify a blob name')
-  dbId = await fetchUserId(dbId)
-  let db = publicDbs.get(dbId)
+  let db = publicDbs.get(dbKey)
   if (!db) {
     if (opts?.noLoadExternal) {
-      throw new Error(`Database "${dbId}" not found`)
+      throw new Error(`Database "${dbKey}" not found`)
     }
-    db = await loadExternalDb(dbId)
+    db = await loadExternalDb(dbKey)
   }
   return db.blobs.get(blobName, opts?.encoding)
 }
 
-export async function fetchAuthor (authorId, cache = undefined) {
-  if (cache && cache[authorId]) {
-    return cache[authorId]
+export async function fetchAuthor (dbKey, cache = undefined) {
+  if (cache && cache[dbKey]) {
+    return cache[dbKey]
   } else {
-    let publicDb = publicDbs.get(authorId)
+    let publicDb = publicDbs.get(dbKey)
     let profileEntry
     if (publicDb) profileEntry = await publicDb.profile.get('self')
     let author = {
-      url: constructUserUrl(authorId),
-      userId: authorId,
-      displayName: profileEntry?.value?.displayName || authorId
+      dbKey: dbKey,
+      displayName: profileEntry?.value?.displayName
     }
-    if (cache) cache[authorId] = author
+    if (cache) cache[dbKey] = author
     return author
   }
 }
 
-export async function fetchIndexedFollowerIds (subjectUserId) {
-  const followsIdxEntry = await publicServerDb.followsIdx.get(subjectUserId)
-  return followsIdxEntry?.value?.followerIds || []
+export async function fetchIndexedFollowerIds (subjectDbKey) {
+  const followsIdxEntry = await publicServerDb.followsIdx.get(subjectDbKey)
+  return followsIdxEntry?.value?.followerDbKeys || []
 }
 
 export async function fetchReactions (subject) {
   const reactionsIdxEntry = await publicServerDb.reactionsIdx.get(subject.url)
 
-  // go from {reaction: [urls]} to [reaction,[userIds]]
+  // go from {reaction: [urls]} to [reaction,[dbKeys]]
   let reactionsIdsPairs
   if (reactionsIdxEntry?.value?.reactions) {
     reactionsIdsPairs = await Promise.all(
       Object.entries(reactionsIdxEntry.value.reactions).map(async ([reaction, urls]) => {
         return [
           reaction,
-          (await Promise.all(urls.map(fetchUserId))).filter(Boolean)
+          (await Promise.all(urls.map(hyperUrlToKeyStr))).filter(Boolean)
         ]
       })
     )
@@ -120,8 +113,8 @@ async function fetchNotificationsInner (userInfo, {lt, gt, after, before, limit}
   const gtKey = gt ? gt : after ? lexintEncoder.encode(Number(new Date(after))) : undefined
 
   notificationEntries = await publicServerDb.notificationsIdx.list({
-    lt: ltKey ? `${userInfo.userId}:${ltKey}` : `${userInfo.userId}:\xff`,
-    gt: gtKey ? `${userInfo.userId}:${gtKey}` : `${userInfo.userId}:\x00`,
+    lt: ltKey ? `${userInfo.dbKey}:${ltKey}` : `${userInfo.dbKey}:\xff`,
+    gt: gtKey ? `${userInfo.dbKey}:${gtKey}` : `${userInfo.dbKey}:\x00`,
     limit,
     reverse: true
   })
@@ -157,9 +150,9 @@ export function addPrefixToRangeOpts (prefix, opts) {
 
 async function fetchNotification (notificationEntry) {
   const itemUrlp = parseEntryUrl(notificationEntry.value.itemUrl)
-  const userId = await fetchUserId(itemUrlp.origin).catch(e => undefined)
-  if (!userId) return undefined
-  const db = userId ? publicDbs.get(userId) : undefined
+  const dbKey = itemUrlp.hostname
+  if (!dbKey) return undefined
+  const db = publicDbs.get(dbKey)
   let item
   if (db) {
     try {
@@ -174,8 +167,7 @@ async function fetchNotification (notificationEntry) {
       ? (item.value.createdAt < notificationEntry.value.createdAt ? item.value.createdAt : notificationEntry.value.createdAt)
       : notificationEntry.value.createdAt,
     author: {
-      userId,
-      url: constructUserUrl(userId)
+      dbKey
     },
     item: item?.value
   }

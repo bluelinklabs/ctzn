@@ -2,19 +2,19 @@ import { BaseIssue } from './base.js'
 import { loadExternalDb } from '../../db/index.js'
 
 export class LoadExternalUserDbIssue extends BaseIssue {
-  constructor ({userId, cause, error}) {
+  constructor ({dbKey, cause, error}) {
     super()
-    this.userId = userId
+    this.dbKey = dbKey
     this._cause = cause
     this._error = error
   }
 
   get id () {
-    return `load-external-user-db-issue::${this.userId}`
+    return `load-external-user-db-issue::${this.dbKey}`
   }
 
   get description () {
-    return `Failed to load the external user database for ${this.userId}.`
+    return `Failed to load the external user database for ${this.dbKey}.`
   }
 
   get cause () {
@@ -30,6 +30,6 @@ export class LoadExternalUserDbIssue extends BaseIssue {
   }
 
   async recover () {
-    await loadExternalDb(this.userId)
+    await loadExternalDb(this.dbKey)
   }
 }

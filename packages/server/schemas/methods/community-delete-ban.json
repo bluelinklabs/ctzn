@@ -10,15 +10,11 @@
     "properties": {
       "bannedUser": {
         "type": "object",
-        "required": ["dbUrl", "userId"],
+        "required": ["dbKey"],
         "properties": {
-          "dbUrl": {
+          "dbKey": {
             "type": "string",
-            "format": "uri"
-          },
-          "userId": {
-            "type": "string",
-            "pattern": ".+@.+"
+            "pattern": "[0-9a-f]{64}"
           }
         }
       }

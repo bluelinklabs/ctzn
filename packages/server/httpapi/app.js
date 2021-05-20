@@ -2,7 +2,7 @@ import pump from 'pump'
 import { debugLog } from '../lib/debug-log.js'
 import * as methods from '../methods/index.js'
 import * as dbViews from '../db/views.js'
-import { getDomain, usernameToUserId } from '../lib/strings.js'
+import { getDomain } from '../lib/strings.js'
 import { publicServerDb, publicDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import * as errors from '../lib/errors.js'
@@ -66,11 +66,11 @@ export function setup (app, config) {
       await onDatabaseChange(db)
 
       if (schemaId === 'ctzn.network/post') {
-        metrics.postCreated({user: req.session.auth.userId})
+        metrics.postCreated({user: req.session.auth.username})
       } else if (schemaId === 'ctzn.network/comment') {
-        metrics.commentCreated({user: req.session.auth.userId})
+        metrics.commentCreated({user: req.session.auth.username})
       }
-      cache.onDatabaseChange(req.session.auth.userId, schemaId)
+      cache.onDatabaseChange(req.session.auth.username, schemaId)
 
       const url = constructEntryUrl(db.url, schemaId, key)
       res.status(200).json({key, url})
@@ -102,7 +102,7 @@ export function setup (app, config) {
         
         await table.put(key, value)
         await onDatabaseChange(db)
-        cache.onDatabaseChange(req.session.auth.userId, schemaId)
+        cache.onDatabaseChange(req.session.auth.username, schemaId)
 
         const url = constructEntryUrl(db.url, schemaId, key)
         res.status(200).json({key, url})
@@ -130,7 +130,7 @@ export function setup (app, config) {
       try {
         await table.del(key)
         await onDatabaseChange(db)
-        cache.onDatabaseChange(req.session.auth.userId, schemaId)
+        cache.onDatabaseChange(req.session.auth.username, schemaId)
         res.status(200).json({})
       } finally {
         release()
@@ -213,13 +213,11 @@ function getListOpts (req) {
   return opts
 }
 
-function getDb (username) {
-  if (username === getDomain()) {
+function getDb (dbId) {
+  if (dbId === 'server' || dbId === publicServerDb.dbKey) {
     return publicServerDb
   }
-  // TODO key-based lookup
-  const userId = usernameToUserId(username)
-  const publicDb = publicDbs.get(userId)
+  const publicDb = publicDbs.get(dbId)
   if (!publicDb) throw new Error('User database not found')
   return publicDb
 }

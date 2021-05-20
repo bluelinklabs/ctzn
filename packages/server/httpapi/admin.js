@@ -9,7 +9,6 @@ import * as diskusage from '../db/diskusage-tracker.js'
 import * as issues from '../lib/issues.js'
 import * as metrics from '../lib/metrics.js'
 import * as debugLog from '../lib/debug-log.js'
-import { constructUserId } from '../lib/strings.js'
 
 let _inspectorSession
 let _inspectorTimeout
@@ -60,9 +59,9 @@ export function setup (app) {
     return {
       dbType: db.dbType,
       writable: db.writable,
-      key: db.key.toString('hex'),
-      dkey: db.discoveryKey.toString('hex'),
-      userId: db.userId,
+      dbKey: db.key.toString('hex'),
+      dbDkey: db.discoveryKey.toString('hex'),
+      username: db.username,
       isPrivate: db.isPrivate,
       peerCount: db.peers?.length || 0,
       peers: all ? db.peers : undefined,
@@ -134,13 +133,17 @@ export function setup (app) {
   })
 
   app.post('_api/admin/rebuild-database-indexes', async (req, res) => {
-    let targetDb = db.publicDbs.get(req.body.userId)
-    if (!targetDb && req.body.userId === db.publicServerDb.userId) {
+    let targetDb = db.publicDbs.get(req.body.dbKey)
+    if (!targetDb && req.body.dbKey === db.publicServerDb.dbKey) {
       targetDb = db.publicServerDb
     }
     if (!targetDb) {
-      console.error('Unable to rebuild indexes for', req.body.userId, '- database not found')
+      console.error('Unable to rebuild indexes for', req.body.dbKey, '- database not found')
       return res.status(404).json({error: true, message: 'Database not found'})
+    }
+    if (!targetDb.writable) {
+      console.error('Unable to rebuild indexes for', req.body.dbKey, '- database not writable')
+      return res.status(400).json({error: true, message: 'Database not writable'})
     }
     try {
       await targetDb.rebuildIndexes(req.body.indexIds)
@@ -188,14 +191,12 @@ export function setup (app) {
       const userRecords = await db.publicServerDb.users.list()
       const fullUserRecords = await Promise.all(userRecords.map(async userRecord => {
         if (!userRecord) return {}
-        const userId = constructUserId(userRecord.key)
-        const publicDb = db.publicDbs.get(userId)
+        const publicDb = db.publicDbs.get(userRecord.key)
         const profile = publicDb ? await publicDb.profile.get('self') : undefined
         return {
-          key: publicDb?.key?.toString('hex'),
-          dkey: publicDb?.discoveryKey?.toString('hex'),
+          dbKey: publicDb?.key?.toString('hex'),
+          dbDkey: publicDb?.discoveryKey?.toString('hex'),
           username: userRecord.key,
-          userId,
           type: userRecord.value.type,
           displayName: profile?.value?.displayName || ''
         }
@@ -209,18 +210,16 @@ export function setup (app) {
   app.get('_api/admin/account', async (req, res) => {
     try {
       let userRecord = await db.publicServerDb.users.get(req.query.username)
-      const userId = constructUserId(userRecord.key)
-      const publicDb = db.publicDbs.get(userId)
+      const publicDb = db.publicDbs.get(userRecord.key)
       const profile = publicDb ? await publicDb.profile.get('self') : undefined
       let members
       if (userRecord.value.type === 'community') {
         members = await publicDb.members.list()
       }
       res.status(200).json({
-        key: publicDb.key.toString('hex'),
-        dkey: publicDb.discoveryKey.toString('hex'),
+        dbKey: publicDb.key.toString('hex'),
+        dbDkey: publicDb.discoveryKey.toString('hex'),
         username: userRecord.key,
-        userId,
         type: userRecord.value.type,
         profile: profile?.value,
         members
@@ -237,10 +236,11 @@ export function setup (app) {
         let profile = await db.profile.get('self')
         let members = await db.members.list()
         return {
-          userId: db.userId,
+          dbKey: db.dbKey,
+          username: db.username,
           displayName: profile?.value?.displayName || '',
           numMembers: members?.length,
-          admins: members?.filter(m => m.value.roles?.includes('admin')).map(m => m.value.user.userId)
+          admins: members?.filter(m => m.value.roles?.includes('admin')).map(m => m.value.user.dbKey)
         }
       }))
       res.status(200).json({communities})
@@ -251,7 +251,7 @@ export function setup (app) {
 
   app.post('_api/admin/add-community-admin', async (req, res) => {
     try {
-      await updateCommunityMemberRole(req.body.communityUserId, req.body.adminUserId, memberRecordValue => {
+      await updateCommunityMemberRole(req.body.communityDbId, req.body.adminDbId, memberRecordValue => {
         memberRecordValue.roles = memberRecordValue.roles || []
         if (!memberRecordValue.roles.includes('admin')) {
           memberRecordValue.roles.push('admin')
@@ -265,7 +265,7 @@ export function setup (app) {
 
   app.post('_api/admin/remove-community-admin', async (req, res) => {
     try {
-      await updateCommunityMemberRole(req.body.communityUserId, req.body.adminUserId, memberRecordValue => {
+      await updateCommunityMemberRole(req.body.communityDbId, req.body.adminDbId, memberRecordValue => {
         memberRecordValue.roles = memberRecordValue.roles || []
         if (memberRecordValue.roles.includes('admin')) {
           memberRecordValue.roles = memberRecordValue.roles.filter(r => r !== 'admin')
@@ -364,19 +364,19 @@ export function setup (app) {
   })
 }
 
-async function updateCommunityMemberRole (communityUserId, memberUserId, fn) {
-  const publicCommunityDb = db.publicDbs.get(communityUserId)
-  const publicCitizenDb = db.publicDbs.get(memberUserId)
+async function updateCommunityMemberRole (communityDbId, memberDbId, fn) {
+  const publicCommunityDb = db.publicDbs.get(communityDbId)
+  const publicCitizenDb = db.publicDbs.get(memberDbId)
 
   if (!publicCommunityDb) throw new Error('Community DB not found')
   if (!publicCitizenDb) throw new Error('Citizen DB not found')
 
-  let memberRecord = await publicCommunityDb.members.get(memberUserId)
+  let memberRecord = await publicCommunityDb.members.get(publicCitizenDb.dbKey)
   if (!memberRecord) {
     // create member and membership records
     const joinDate = (new Date()).toISOString()
-    const membershipValue = {community: {userId: communityUserId, dbUrl: publicCommunityDb.url}, joinDate}
-    const memberValue = {user: {userId: memberUserId, dbUrl: publicCitizenDb.url}, joinDate}
+    const membershipValue = {community: {dbKey: publicCommunityDb.dbKey}, joinDate}
+    const memberValue = {user: {dbKey: publicCitizenDb.dbKey}, joinDate}
 
     fn(memberValue)
 
@@ -384,11 +384,11 @@ async function updateCommunityMemberRole (communityUserId, memberUserId, fn) {
     publicCitizenDb.memberships.schema.assertValid(membershipValue)
     publicCommunityDb.members.schema.assertValid(memberValue)
 
-    await publicCitizenDb.memberships.put(communityUserId, membershipValue)
-    await publicCommunityDb.members.put(memberUserId, memberValue)
+    await publicCitizenDb.memberships.put(publicCommunityDb.dbKey, membershipValue)
+    await publicCommunityDb.members.put(publicCitizenDb.dbKey, memberValue)
   } else {
     // update existing record
     fn(memberRecord.value)
-    await publicCommunityDb.members.put(memberUserId, memberRecord.value)
+    await publicCommunityDb.members.put(publicCitizenDb.dbKey, memberRecord.value)
   }
 }

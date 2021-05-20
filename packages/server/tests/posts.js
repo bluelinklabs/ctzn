@@ -21,14 +21,14 @@ test.before(async () => {
   // TODO
   // const {alice, bob, carla, folks, ppl} = sim.users
   // await alice.login()
-  // await api.method('ctzn.network/methods/community-join', {communityId: folks.userId})
-  // await api.method('ctzn.network/methods/community-join', {communityId: ppl.userId})
+  // await api.method('ctzn.network/methods/community-join', {communityDbId: folks.userId})
+  // await api.method('ctzn.network/methods/community-join', {communityDbId: ppl.userId})
   // await bob.login()
-  // await api.method('ctzn.network/methods/community-join', {communityId: folks.userId})
-  // await api.method('ctzn.network/methods/community-join', {communityId: ppl.userId})
+  // await api.method('ctzn.network/methods/community-join', {communityDbId: folks.userId})
+  // await api.method('ctzn.network/methods/community-join', {communityDbId: ppl.userId})
   // await carla.login()
-  // await api.method('ctzn.network/methods/community-join', {communityId: folks.userId})
-  // await api.method('ctzn.network/methods/community-join', {communityId: ppl.userId})
+  // await api.method('ctzn.network/methods/community-join', {communityDbId: folks.userId})
+  // await api.method('ctzn.network/methods/community-join', {communityDbId: ppl.userId})
 })
 
 test.after.always(async t => {

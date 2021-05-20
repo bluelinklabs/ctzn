@@ -1,7 +1,7 @@
 import * as errors from '../lib/errors.js'
 
-export async function assertUserPermission (publicCommunityDb, userId, permId) {
-  const memberRecord = await publicCommunityDb.members.get(userId)
+export async function assertUserPermission (publicCommunityDb, userDbKey, permId) {
+  const memberRecord = await publicCommunityDb.members.get(userDbKey)
   if (!memberRecord?.value?.roles?.length) throw new errors.PermissionsError(`Permission denied: ${permId}`)
   const roles = memberRecord.value.roles
   if (roles.includes('admin')) {

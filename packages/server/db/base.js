@@ -56,6 +56,7 @@ export class BaseHyperbeeDB extends EventEmitter {
     this.isPrivate = isPrivate
     this.desc = undefined
     this.key = key || null
+    this.dbKey = this.key?.toString('hex')
     this.bee = null
     this.beeInfo = {writable: undefined, discoveryKey: undefined}
     this.blobs = new Blobs(this, {isPrivate})
@@ -124,6 +125,7 @@ export class BaseHyperbeeDB extends EventEmitter {
       if (!this.key) {
         hyperspaceLog.createBee(this.discoveryKey.toString('hex'))
         this.key = this.bee.feed.key
+        this.dbKey = this.key.toString('hex')
         await this.updateDesc()
         this.onDatabaseCreated()
       }

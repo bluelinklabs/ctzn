@@ -16,7 +16,6 @@ export const debugLog = {
   disable,
   isEnabled: () => isEnabled,
   updateIndexes: noop2,
-  wsCall: noop3,
   httpCall: noop4,
   dbCall: noop4,
   rateLimitError: noop2,
@@ -26,7 +25,6 @@ export const debugLog = {
 function enable () {
   if (isEnabled) return
   debugLog.updateIndexes = updateIndexes
-  debugLog.wsCall = wsCall
   debugLog.httpCall = httpCall
   debugLog.dbCall = dbCall
   debugLog.rateLimitError = rateLimitError
@@ -38,7 +36,6 @@ function disable () {
   events = []
   if (!isEnabled) return
   debugLog.updateIndexes = noop2
-  debugLog.wsCall = noop3
   debugLog.httpCall = noop4
   debugLog.dbCall = noop4
   debugLog.rateLimitError = noop2
@@ -54,13 +51,6 @@ function noop4 (_1, _2, _3, _4) {}
 
 function updateIndexes (indexingDb, targetDb) {
   return events.push({event: 'update-index', indexingDb, targetDb, ts: Date.now()})
-}
-function wsCall (method, authedUserId, params) {
-  if (WS_SAFE_TO_LOG_PARAMS.includes(method)) {
-    return events.push({event: `ws:${method}`, authedUserId, params, ts: Date.now()})
-  } else {
-    return events.push({event: `ws:${method}`, authedUserId, ts: Date.now()})
-  }
 }
 function httpCall (method, ip, params, query) {
   return events.push({event: `http:${method}`, ip, params, query, ts: Date.now()})

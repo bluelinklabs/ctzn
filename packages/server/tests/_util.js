@@ -136,20 +136,20 @@ function createApi (origin) {
     }
   }
   api.table = {
-    async list (userId, schemaId, opts) {
-      return api.get(`table/${userId}/${schemaId}`, opts)
+    async list (dbId, schemaId, opts) {
+      return api.get(`table/${dbId}/${schemaId}`, opts)
     },
-    async get (userId, schemaId, key) {
-      return api.get(`table/${userId}/${schemaId}/${key}`)
+    async get (dbId, schemaId, key) {
+      return api.get(`table/${dbId}/${schemaId}/${key}`)
     },
-    async create (userId, schemaId, value) {
-      return api.post(`table/${userId}/${schemaId}`, value)
+    async create (dbId, schemaId, value) {
+      return api.post(`table/${dbId}/${schemaId}`, value)
     },
-    async update (userId, schemaId, key, value) {
-      return api.put(`table/${userId}/${schemaId}/${key}`, value)
+    async update (dbId, schemaId, key, value) {
+      return api.put(`table/${dbId}/${schemaId}/${key}`, value)
     },
-    async delete (userId, schemaId, key) {
-      return api.delete(`table/${userId}/${schemaId}/${key}`)
+    async delete (dbId, schemaId, key) {
+      return api.delete(`table/${dbId}/${schemaId}/${key}`)
     }
   }
   return api
@@ -184,14 +184,14 @@ export class TestFramework {
   testPost (t, entry, desc) {
     const user = desc[0]
     t.truthy(entry.url.startsWith(user.profile.dbUrl))
-    t.is(entry.author.userId, user.userId)
+    t.is(entry.author.dbKey, user.dbKey)
     t.is(entry.value.text, desc[1])
   }
 
   testComment (t, entry, desc, reply) {
     const user = desc[0]
     t.truthy(entry.url.startsWith(user.profile.dbUrl))
-    t.is(entry.author.userId, user.userId)
+    t.is(entry.author.dbKey, user.dbKey)
     t.is(entry.value.text, desc[1])
     t.is(entry.value.reply.root.dbUrl, reply.root.url)
     if (reply.parent) t.is(entry.value.reply.parent.dbUrl, reply.parent.url)
@@ -206,8 +206,8 @@ export class TestFramework {
 
   testThreadItem (t, entry, desc) {
     const user = desc[0]
-    t.truthy(entry.url.startsWith(user.profile.dbUrl), `expected comment to be authored by ${user.userId}\n${commentDescToString(desc)}`)
-    t.is(entry.author.userId, user.userId, `expected author userId to be ${user.userId}\n${commentDescToString(desc)}`)
+    t.truthy(entry.url.startsWith(user.profile.dbUrl), `expected comment to be authored by ${user.username}\n${commentDescToString(desc)}`)
+    t.is(entry.author.dbKey, user.dbKey, `expected author dbKey to be ${user.dbKey}\n${commentDescToString(desc)}`)
     t.is(entry.value.text, desc[1], `expected comment text to be ${desc[1]}\n${commentDescToString(desc)}`)
 
     if (desc[2] && desc[2].length) {
@@ -216,12 +216,12 @@ export class TestFramework {
   }
 
   testFollows (t, entries, users) {
-    t.is(entries.length, users.length, `expected ${users.length} follows ${users.map(u=>u.userId).join(', ')} got ${entries.map(e=>e.value.subject.userId).join(', ')}`)
+    t.is(entries.length, users.length, `expected ${users.length} follows ${users.map(u=>u.dbKey).join(', ')} got ${entries.map(e=>e.value.subject.dbKey).join(', ')}`)
     for (let user of users) {
       t.is(
-        entries.find(f => f.value.subject.userId === user.userId).value.subject.dbUrl,
+        entries.find(f => f.value.subject.dbKey === user.dbKey).value.subject.dbUrl,
         user.profile.dbUrl,
-        `expected to be following ${user.userId}`
+        `expected to be following ${user.username}`
       )
     }
   }
@@ -229,7 +229,7 @@ export class TestFramework {
   listFollowers (user) {
     let followers = []
     for (let username in this.users) {
-      if (this.users[username].following[user.userId]) {
+      if (this.users[username].following[user.dbKey]) {
         followers.push(this.users[username])
       }
     }
@@ -282,7 +282,7 @@ export class TestFramework {
     var ids = []
     for (let username in this.users) {
       if (this.users[username].reactions[subject.url][reaction]) {
-        ids.push(this.users[username].userId)
+        ids.push(this.users[username].dbKey)
       }
     }
     return ids
@@ -301,14 +301,14 @@ export class TestFramework {
       const itemDesc = `notification ${i}`
       const entry = entries[i]
       const desc = descs[i]
-      t.is(entry.author.userId, desc[0].userId, itemDesc)
+      t.is(entry.author.dbKey, desc[0].dbKey, itemDesc)
       
       const {schemaId} = parseEntryUrl(entry.itemUrl)
       switch (desc[1]) {
         case 'follow':
           t.is(schemaId, 'ctzn.network/follow', itemDesc)
           t.is(entry.item.subject.dbUrl, desc[2].profile.dbUrl, itemDesc)
-          t.is(entry.item.subject.userId, desc[2].userId, itemDesc)
+          t.is(entry.item.subject.dbKey, desc[2].dbKey, itemDesc)
           break
         case 'comment':
           t.is(schemaId, 'ctzn.network/comment', itemDesc)
@@ -352,10 +352,8 @@ class TestCitizen {
         displayName: this.username.slice(0, 1).toUpperCase() + this.username.slice(1)
       }
     })
-    const {userId, dbUrl} = res
-    this.userId = userId
-    this.dbUrl = dbUrl
-    this.profile = await this.inst.api.view.get('ctzn.network/views/profile', {userId})
+    this.dbKey = res.dbKey
+    this.profile = await this.inst.api.view.get('ctzn.network/views/profile', {dbId: res.dbKey})
   }
 
   async login () {
@@ -376,9 +374,9 @@ class TestCitizen {
   async createComment ({text, community, reply}) {
     await this.login()
     if (reply) {
-      reply.root = {dbUrl: reply.root.url, authorId: reply.root.author.userId}
+      reply.root = {dbUrl: reply.root.url}
       if (reply.parent) {
-        reply.parent = {dbUrl: reply.parent.url, authorId: reply.parent.author.userId}
+        reply.parent = {dbUrl: reply.parent.url}
       }
     }
     const {url} = await this.inst.api.table.create(
@@ -392,19 +390,16 @@ class TestCitizen {
 
   async follow (testCitizen) {
     await this.login()
-    await this.inst.api.table.create(this.userId, 'ctzn.network/follow', {
-      subject: {
-        userId: testCitizen.userId,
-        dbUrl: testCitizen.dbUrl
-      }
+    await this.inst.api.table.create(this.dbKey, 'ctzn.network/follow', {
+      subject: {dbKey: testCitizen.dbKey}
     })
-    this.following[testCitizen.userId] = testCitizen
+    this.following[testCitizen.dbKey] = testCitizen
   }
 
   async unfollow (testCitizen) {
     await this.login()
-    await this.inst.api.table.delete(this.userId, 'ctzn.network/follow', testCitizen.userId)
-    delete this.following[testCitizen.userId]
+    await this.inst.api.table.delete(this.dbKey, 'ctzn.network/follow', testCitizen.dbKey)
+    delete this.following[testCitizen.dbKey]
   }
 
   async react ({subject, reaction}) {
@@ -413,7 +408,7 @@ class TestCitizen {
       this.username,
       'ctzn.network/reaction',
       {
-        subject: {dbUrl: subject.url, authorId: subject.author.userId},
+        subject: {dbUrl: subject.url},
         reaction
       }
     )
@@ -423,7 +418,7 @@ class TestCitizen {
 
   async unreact ({subject, reaction}) {
     await this.login()
-    await this.inst.api.table.delete(this.userId, 'ctzn.network/reaction', `${reaction}:${subject.url}`)
+    await this.inst.api.table.delete(this.dbKey, 'ctzn.network/reaction', `${reaction}:${subject.url}`)
     delete this.reactions[subject.url][reaction]
   }
 }
@@ -436,12 +431,12 @@ class TestCommunity {
   }
 
   async setup () {
-    const {userId} = await this.inst.api.method('ctzn.network/methods/community-create', {
+    const {dbKey} = await this.inst.api.method('ctzn.network/methods/community-create', {
       username: this.username,
       displayName: this.username.slice(0, 1).toUpperCase() + this.username.slice(1)
     })
-    this.userId = userId
-    this.profile = await this.inst.api.view.get('ctzn.network/views/profile', userId)
+    this.dbKey = dbKey
+    this.profile = await this.inst.api.view.get('ctzn.network/views/profile', dbKey)
   }
 }
 
@@ -492,7 +487,7 @@ function commentEntriesToThread (commentEntries) {
 function threadDescToString (descs, prefix = '') {
   let items = []
   for (let desc of descs) {
-    items.push(`${prefix}${desc[0].userId} ${desc[1]}`)
+    items.push(`${prefix}${desc[0].username} ${desc[1]}`)
     if (desc[2]) items = items.concat(threadDescToString(desc[2], `  ${prefix}`))
   }
   return items.join('\n')
@@ -500,7 +495,7 @@ function threadDescToString (descs, prefix = '') {
 
 function commentDescToString (desc, prefix = '') {
   let items = []
-  items.push(`${prefix}${desc[0].userId} ${desc[1]}`)
+  items.push(`${prefix}${desc[0].username} ${desc[1]}`)
   if (desc[2]) items = items.concat(threadDescToString(desc[2], `  ${prefix}`))
   return items.join('\n')
 }

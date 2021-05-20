@@ -6,10 +6,10 @@
   "parameters": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["communityId", "citizenId", "permId"],
+    "required": ["communityDbId", "citizenDbId", "permId"],
     "properties": {
-      "communityId": {"type": "string"},
-      "citizenId": {"type": "string"},
+      "communityDbId": {"type": "string"},
+      "citizenDbId": {"type": "string"},
       "permId": {"type": "string"}
     }
   },

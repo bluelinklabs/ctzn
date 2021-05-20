@@ -3,7 +3,7 @@
   "title": "Follow",
   "description": "A social subscription",
   "type": "json-table",
-  "keyTemplate": [{"type": "json-pointer", "value": "/subject/userId"}],
+  "keyTemplate": [{"type": "json-pointer", "value": "/subject/dbKey"}],
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
@@ -11,15 +11,11 @@
     "properties": {
       "subject": {
         "type": "object",
-        "required": ["dbUrl", "userId"],
+        "required": ["dbKey"],
         "properties": {
-          "dbUrl": {
+          "dbKey": {
             "type": "string",
-            "format": "uri"
-          },
-          "userId": {
-            "type": "string",
-            "pattern": ".+@.+"
+            "pattern": "[0-9a-f]{64}"
           }
         }
       },

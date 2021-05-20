@@ -1,9 +1,9 @@
 import { BaseHyperbeeDB } from './base.js'
 
 export class PublicCommunityDB extends BaseHyperbeeDB {
-  constructor (userId, key) {
-    super(`public:${userId}`, key)
-    this.userId = userId
+  constructor (key, username) {
+    super(`public:${username || key}`, key)
+    this.username = username
   }
 
   get dbType () {

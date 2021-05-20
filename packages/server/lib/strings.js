@@ -75,46 +75,10 @@ export function parseEntryUrl (url) {
   const pathParts = urlp.pathname.split('/')
   return {
     origin: `hyper://${urlp.hostname}/`,
+    dbKey: urlp.hostname,
     schemaId: pathParts.slice(1, 3).join('/'),
     key: pathParts.slice(3).map(decodeURIComponent).join('/')
   }
-}
-
-export function constructUserId (username) {
-  return `${username}@${_domain}`
-}
-
-export function parseUserId (userId) {
-  const parts = userId.split('@')
-  return {
-    username: parts[0],
-    domain: parts[1]
-  }
-}
-
-export function getServerIdForUserId (userId) {
-  return `server@${parseUserId(userId).domain}`
-}
-
-export function isUserIdOurs (userId) {
-  return userId.endsWith(`@${getDomain()}`)
-}
-
-export function userIdToUserName (userId, oursOnly = true) {
-  if (!userId.includes('@')) return userId
-  const {username, domain} = parseUserId(userId)
-  if (oursOnly && domain !== getDomain()) {
-    throw new Error(`${userId} is not a member of ${getDomain()}`)
-  }
-  return username
-}
-
-export function usernameToUserId (username, oursOnly = true) {
-  const userId = (!username.includes('@')) ? `${username}@${getDomain()}` : username
-  if (oursOnly && !isUserIdOurs(userId)) {
-    throw new Error(`${userId} is not a member of ${getDomain()}`)
-  }
-  return userId
 }
 
 export function constructUserUrl (username) {

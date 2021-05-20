@@ -1,6 +1,6 @@
 import lexint from 'lexicographic-integer-encoding'
 import { publicDbs } from './index.js'
-import { constructEntryUrl, getServerIdForUserId } from '../lib/strings.js'
+import { constructEntryUrl } from '../lib/strings.js'
 import { dbGet, fetchAuthor, fetchReactions, fetchReplyCount, addPrefixToRangeOpts } from './util.js'
 import * as errors from '../lib/errors.js'
 import * as cache from '../lib/cache.js'
@@ -15,13 +15,13 @@ export async function listHomeFeed (opts, auth) {
   opts.lt = opts.lt && typeof opts.lt === 'string' ? opts.lt : lexintEncoder.encode(Date.now())
 
   if (!auth) throw new errors.SessionError()
-  const publicDb = publicDbs.get(auth.userId)
+  const publicDb = publicDbs.get(auth.username)
   if (!publicDb) throw new errors.NotFoundError('User database not found')
 
   if (!didSpecifyLt) {
-    let cached = cache.getHomeFeed(auth.userId, limit)
+    let cached = cache.getHomeFeed(auth.username, limit)
     if (cached) {
-      debugLog.cacheHit('home-feed', auth.userId)
+      debugLog.cacheHit('home-feed', auth.username)
       let cachedEntries = opts.limit ? cached.slice(0, limit) : cached
       for (let entry of cachedEntries) {
         entry.reactions = (await fetchReactions(entry)).reactions
@@ -35,23 +35,22 @@ export async function listHomeFeed (opts, auth) {
   followEntries.unshift({value: {subject: auth}})
   const membershipEntries = await publicDb.memberships.list()
   const sourceDbs = [
-    ...followEntries.map(f => ({db: publicDbs.get(f.value.subject.userId)})),
+    ...followEntries.map(f => ({db: publicDbs.get(f.value.subject.dbKey)})),
     ...membershipEntries.map(m => {
-      const serverId = getServerIdForUserId(m.value.community.userId)
       return {
-        communityId: m.value.community.userId,
-        db: publicDbs.get(serverId)
+        communityDbKey: m.value.community.dbKey,
+        db: undefined // TODO- where stored? publicDbs.get(serverId)
       }
     })
   ]
   
-  const cursors = sourceDbs.map(({db, communityId}) => {
+  const cursors = sourceDbs.map(({db, communityDbKey}) => {
     if (!db) return undefined
     if (db.dbType === 'ctzn.network/public-citizen-db') {
       return db.posts.cursorRead({lt: opts?.lt, reverse: true, wait: false})
-    } else if (communityId) {
-      const cursor = db.feedIdx.cursorRead(addPrefixToRangeOpts(communityId, {lt: opts?.lt, reverse: true}))
-      cursor.prefixLength = communityId.length + 1
+    } else if (communityDbKey) {
+      const cursor = db.feedIdx.cursorRead(addPrefixToRangeOpts(communityDbKey, {lt: opts?.lt, reverse: true}))
+      cursor.prefixLength = communityDbKey.length + 1
       return cursor
     }
   })
@@ -77,7 +76,7 @@ export async function listHomeFeed (opts, auth) {
       continue // entry not found
     }
     entry.url = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
-    entry.author = await fetchAuthor(db.userId, authorsCache)
+    entry.author = await fetchAuthor(db.dbKey, authorsCache)
     entry.reactions = (await fetchReactions(entry)).reactions
     entry.replyCount = await fetchReplyCount(entry)
     postEntries.push(entry)
@@ -87,7 +86,7 @@ export async function listHomeFeed (opts, auth) {
   }
 
   if (!didSpecifyLt) {
-    cache.setHomeFeed(auth.userId, postEntries, limit, 60e3)
+    cache.setHomeFeed(auth.username, postEntries, limit, 60e3)
   }
 
   return postEntries

@@ -16,10 +16,9 @@
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["userId", "dbUrl"],
+    "required": ["dbKey"],
     "properties": {
-      "userId": {"type": "string"},
-      "dbUrl": {"type": "string", "format": "uri"}
+      "dbKey": {"type": "string", "pattern": "[0-9a-f]{64}"}
     }
   }
 }

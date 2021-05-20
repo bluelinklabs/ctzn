@@ -1,5 +1,5 @@
 import { publicServerDb, privateServerDb, createUser } from '../db/index.js'
-import { constructUserUrl, constructUserId } from '../lib/strings.js'
+import { constructUserUrl } from '../lib/strings.js'
 import { hashPassword, verifyPassword, generateRecoveryCode } from '../lib/crypto.js'
 import * as errors from '../lib/errors.js'
 import * as metrics from '../lib/metrics.js'
@@ -44,14 +44,12 @@ export function setup (define) {
     if (!user) {
       throw new errors.NotFoundError('User not found')
     }
-    const userId = constructUserId(username)
-    await req.session.create({username, dbUrl: user.value.dbUrl})
-    metrics.loggedIn({user: userId})
+    await req.session.create({username, dbKey: user.value.dbKey})
+    metrics.loggedIn({user: username})
 
     return {
-      userId,
       url: constructUserUrl(username),
-      dbUrl: user.value.dbUrl,
+      dbKey: user.value.dbKey,
       username
     }
   })
@@ -73,14 +71,12 @@ export function setup (define) {
     })
 
     const username = params.username
-    const userId = constructUserId(username)
-    const dbUrl = citizenUser.publicDb.url
-    await req.session.create({username, dbUrl})
-    metrics.signedUp({user: userId})
+    const dbKey = citizenUser.publicDb.dbKey
+    await req.session.create({username, dbKey})
+    metrics.signedUp({user: username})
     return {
-      userId,
       url: constructUserUrl(username),
-      dbUrl,
+      dbKey,
       username
     }
   })

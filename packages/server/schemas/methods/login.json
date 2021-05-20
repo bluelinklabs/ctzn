@@ -15,11 +15,10 @@
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["userId", "url", "dbUrl", "username"],
+    "required": ["url", "dbKey", "username"],
     "properties": {
-      "userId": {"type": "string"},
       "url": {"type": "string", "format": "uri"},
-      "dbUrl": {"type": "string", "format": "uri"},
+      "dbKey": {"type": "string", "pattern": "[0-9a-f]{64}"},
       "username": {"type": "string", "minLength": 3}
     }
   }
