@@ -40,7 +40,6 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
     this.invites = this.getTable('ctzn.network/community-invite')
     this.bans = this.getTable('ctzn.network/community-ban')
     this.pages = this.getTable('ctzn.network/page')
-    this.tags = this.getTable('ctzn.network/tag')
 
     this.members.onPut(() => this.emit('subscriptions-changed'))
     this.members.onDel(() => this.emit('subscriptions-changed'))

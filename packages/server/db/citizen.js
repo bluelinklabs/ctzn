@@ -22,7 +22,6 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
     this.pages = this.getTable('ctzn.network/page')
     this.follows = this.getTable('ctzn.network/follow')
     this.memberships = this.getTable('ctzn.network/community-membership')
-    this.tags = this.getTable('ctzn.network/tag')
 
     this.memberships.onPut(() => this.emit('subscriptions-changed'))
     this.memberships.onDel(() => this.emit('subscriptions-changed'))

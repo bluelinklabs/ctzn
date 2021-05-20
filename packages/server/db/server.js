@@ -35,7 +35,6 @@ export class PublicServerDB extends BaseHyperbeeDB {
     this.notificationsIdx = this.getTable('ctzn.network/notification-idx')
     this.reactionsIdx = this.getTable('ctzn.network/reaction-idx')
     this.feedIdx = this.getTable('ctzn.network/feed-idx')
-    this.tagsForRecordIdx = this.getTable('ctzn.network/tags-for-record-idx')
 
     if (!this.writable) {
       return
@@ -316,51 +315,6 @@ export class PublicServerDB extends BaseHyperbeeDB {
         }
   
         await batch.put(this.reactionsIdx.constructBeeKey(reactionsIdxEntry.key), reactionsIdxEntry.value)
-      } finally {
-        release()
-      }
-    })
-
-    this.createIndexer('ctzn.network/tags-for-record-idx', ['ctzn.network/tag'], async (batch, db, diff) => {
-      const subjectUrl = (diff.right || diff.left).value.subject.dbUrl
-      const release = await this.tagsForRecordIdx.lock(subjectUrl)
-      try {
-        const tagUrl = (diff.right || diff.left).url
-        const subject = (diff.right || diff.left).value.subject
-
-        let idxRecord = await this.tagsForRecordIdx.get(subject.dbUrl)
-        if (!idxRecord) {
-          idxRecord = {
-            key: subjectUrl,
-            value: {
-              subject,
-              tags: {}
-            }
-          }
-        }
-  
-        if (diff.right) {
-          let i = -1
-          if (idxRecord.value.tags[diff.right.value.topic]) {
-            i = idxRecord.value.tags[diff.right.value.topic].indexOf(tagUrl)
-          }
-          if (i === -1) {
-            if (!idxRecord.value.tags[diff.right.value.topic]) {
-              idxRecord.value.tags[diff.right.value.topic] = []
-            }
-            idxRecord.value.tags[diff.right.value.topic].push(tagUrl)
-          }
-        } else if (diff.left) {
-          let i = idxRecord.value.tags[diff.left.value.topic]?.indexOf(tagUrl)
-          if (i !== -1) {
-            idxRecord.value.tags[diff.left.value.topic].splice(i, 1)
-            if (!idxRecord.value.tags[diff.left.value.topic].length) {
-              delete idxRecord.value.tags[diff.left.value.topic]
-            }
-          }
-        }
-  
-        await batch.put(this.tagsForRecordIdx.constructBeeKey(idxRecord.key), idxRecord.value)
       } finally {
         release()
       }
