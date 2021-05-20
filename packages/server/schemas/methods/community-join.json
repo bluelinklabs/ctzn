@@ -6,15 +6,32 @@
   "parameters": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
+    "required": ["communityId"],
     "properties": {
-      "TODO": true
+      "communityId": {"type": "string"}
     }
   },
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
+    "required": ["membershipRecord", "memberRecord"],
     "properties": {
-      "TODO": true
+      "membershipRecord": {
+        "type": "object",
+        "required": ["key", "url"],
+        "properties": {
+          "key": {"type": "string"},
+          "url": {"type": "string", "format": "uri"}
+        }
+      },
+      "memberRecord": {
+        "type": "object",
+        "required": ["key", "url"],
+        "properties": {
+          "key": {"type": "string"},
+          "url": {"type": "string", "format": "uri"}
+        }
+      }
     }
   }
 }

@@ -336,7 +336,6 @@ class TestCitizen {
     this.comments = []
     this.following = {}
     this.reactions = {}
-    this.tags = {}
   }
 
   get replies () {

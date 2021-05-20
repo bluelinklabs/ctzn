@@ -6,15 +6,20 @@
   "parameters": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
+    "required": ["username", "displayName"],
     "properties": {
-      "TODO": true
+      "username": {"type": "string", "pattern": "^([a-zA-Z][a-zA-Z0-9-]{1,62}[a-zA-Z0-9])$"},
+      "displayName": {"type": "string", "minLength": 1, "maxLength": 64},
+      "description": {"type": "string", "maxLength": 256}
     }
   },
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
+    "required": ["userId", "dbUrl"],
     "properties": {
-      "TODO": true
+      "userId": {"type": "string"},
+      "dbUrl": {"type": "string", "format": "uri"}
     }
   }
 }

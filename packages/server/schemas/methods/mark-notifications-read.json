@@ -6,15 +6,13 @@
   "parameters": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "properties": {
-      "TODO": true
-    }
+    "properties": {}
   },
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
-      "TODO": true
+      "clearedAt": {"type": "string", "format": "datetime"}
     }
   }
 }

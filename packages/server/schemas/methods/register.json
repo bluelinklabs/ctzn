@@ -6,15 +6,23 @@
   "parameters": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
+    "required": ["username", "email", "password", "displayName"],
     "properties": {
-      "TODO": true
+      "username": {"type": "string", "pattern": "^([a-zA-Z][a-zA-Z0-9-]{1,62}[a-zA-Z0-9])$"},
+      "email": {"type": "string", "format": "email"},
+      "password": {"type": "string", "minLength": 1},
+      "displayName": {"type": "string", "minLength": 1, "maxLength": 64},
+      "description": {"type": "string", "maxLength": 256}
     }
   },
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
+    "required": ["userId", "url", "dbUrl", "username"],
     "properties": {
-      "TODO": true
+      "userId": {"type": "string"},
+      "url": {"type": "string", "format": "uri"},
+      "dbUrl": {"type": "string", "format": "uri"},
+      "username": {"type": "string", "minLength": 3}
     }
   }
 }

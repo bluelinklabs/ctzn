@@ -13,17 +13,16 @@ export function setup (define) {
   define('ctzn.network/methods/whoami', async (auth, params) => {
     if (auth) {
       return {
+        hasSession: true,
         url: constructUserUrl(auth.username),
         dbUrl: auth.dbUrl,
         username: auth.username
       }
     }
-    return null
+    return {hasSession: false}
   })
 
-  define('ctzn.network/methods/login', async (auth, params, req) => {
-    let {username, password} = params
-
+  define('ctzn.network/methods/login', async (auth, {username, password}, req) => {
     // TODO
     // if (username === 'loopback' && ip.isPrivate(client._socket.remoteAddress)) {
     //   if (password === config.getLocalAuthToken()) {

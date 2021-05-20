@@ -11,7 +11,9 @@ export function setup (define) {
       if (!accountRecord) throw new errors.NotFoundError('User account record not found')
       accountRecord.value.notificationsClearedAt = (new Date()).toISOString()
       await privateServerDb.accounts.put(auth.username, accountRecord.value)
-      return accountRecord.value.notificationsClearedAt
+      return {
+        clearedAt: accountRecord.value.notificationsClearedAt
+      }
     } finally {
       release()
     }
