@@ -9,7 +9,7 @@ import deindent from 'deindent'
 
 const PASSWORD_CHANGE_CODE_LIFETIME = 1e3 * 60 * 60 * 24 // 24 hours
 
-export function setup (define) {
+export function setup (define, config) {
   define('ctzn.network/methods/whoami', async (auth, params) => {
     if (auth) {
       return {

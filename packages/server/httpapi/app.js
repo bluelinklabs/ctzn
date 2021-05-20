@@ -169,7 +169,7 @@ export function setup (app, config) {
     try {
       const auth = req.session.auth
       const methodres = await methods.exec(schemaId, auth, req.body, req, res)
-      res.status(200).json(methodres)
+      res.status(200).json(methodres || {})
     } catch (e) {
       error(res, e, config)
     }

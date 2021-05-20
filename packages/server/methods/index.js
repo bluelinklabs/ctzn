@@ -11,10 +11,10 @@ const _methods = new Map()
 // exported api
 // =
 
-export function setup () {
-  account.setup(define)
-  community.setup(define)
-  notifications.setup(define)
+export function setup (config) {
+  account.setup(define, config)
+  community.setup(define, config)
+  notifications.setup(define, config)
 }
 
 export async function exec (schemaId, auth, params, req, res) {

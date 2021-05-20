@@ -54,7 +54,7 @@ export async function start (opts) {
 
   await email.setup(config)
   await db.setup(config)
-  await methods.setup()
+  await methods.setup(config)
 
   // process.on('SIGINT', close)
   // process.on('SIGTERM', close)
