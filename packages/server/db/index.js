@@ -6,7 +6,6 @@ import Hyperbee from 'hyperbee'
 import * as hyperspace from './hyperspace.js'
 import { PublicServerDB, PrivateServerDB } from './server.js'
 import { PublicCitizenDB, PrivateCitizenDB } from './citizen.js'
-import { PublicCommunityDB } from './community.js'
 import * as diskusageTracker from './diskusage-tracker.js'
 import * as schemas from '../lib/schemas.js'
 import * as views from './views.js'
@@ -62,8 +61,8 @@ export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simu
 }
 
 export async function createUser ({type, username, email, password, profile}) {
-  if (type !== 'citizen' && type !== 'community') {
-    throw new Error(`Invalid type "${type}": must be 'citizen' or 'community'`)
+  if (type !== 'citizen') {
+    throw new Error(`Invalid type "${type}": must be 'citizen'`)
   }
   if (RESERVED_USERNAMES.includes(username)) {
     throw new Error(`Username is reserved: ${username}`)
@@ -105,12 +104,6 @@ export async function createUser ({type, username, email, password, profile}) {
       await privateDb.setup()
       await catchupIndexes(privateDb)
       account.privateDbKey = privateDb.dbKey
-    } else if (type === 'community') {
-      publicDb = new PublicCommunityDB(null, username)
-      await publicDb.setup()
-      publicDb.watch(onDatabaseChange)
-      publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
-      user.dbUrl = publicDb.url
     }
 
     await publicDb.profile.put('self', profile)
@@ -229,18 +222,6 @@ async function loadMemberUserDbs () {
         // privateDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
 
         numLoaded++
-      } else if (user.value.type === 'community') {
-        if (publicDbs.has(user.key)) {
-          console.error('Skipping db load due to duplicate username', user.key)
-          return
-        }
-        let publicDb = new PublicCommunityDB(hyperUrlToKey(user.value.dbUrl), user.key)
-        await publicDb.setup()
-        publicDbs.set(publicDb.dbKey, publicDb)
-        publicDbs.set(user.key, publicDb)
-        publicDb.watch(onDatabaseChange)
-        publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
-        numLoaded++
       } else {
         issues.add(new UnknownUserTypeIssue(user))
       }
@@ -350,8 +331,6 @@ async function loadDbByType (dbUrl) {
   if (!dbDesc) throw new Error('Failed to load database description')
   if (dbDesc.value?.dbType === 'ctzn.network/public-citizen-db') {
     return new PublicCitizenDB(key) 
-  } else if (dbDesc.value?.dbType === 'ctzn.network/public-community-db') {
-    return new PublicCommunityDB(key) 
   } else if (dbDesc.value?.dbType === 'ctzn.network/public-server-db') {
     return new PublicServerDB(key)
   }
@@ -363,28 +342,11 @@ async function getAllExternalDbKeys () {
   for (let db of publicDbs.values()) {
     if (!db.writable) continue
     if (db.dbType === 'ctzn.network/public-citizen-db') {
-      const [follows, memberships] = await Promise.all([
-        db.follows.list(),
-        db.memberships.list()
-      ])
+      const follows = await db.follows.list()
       for (let follow of follows) {
         const dbKey = follow.value.subject.dbKey
         if (!publicDbs.has(dbKey) || !publicDbs.get(dbKey).writable) {
           dbKeys.add(follow.value.subject.dbKey)
-        }
-      }
-      for (let membership of memberships) {
-        const dbKey = membership.value.community.dbKey
-        if (!publicDbs.has(dbKey) || !publicDbs.get(dbKey).writable) {
-          dbKeys.add(membership.value.community.dbKey)
-        }
-      }
-    } else if (db.dbType === 'ctzn.network/public-community-db') {
-      const members = await db.members.list()
-      for (let member of members) {
-        const dbKey = member.value.user.dbKey
-        if (!publicDbs.has(dbKey) || !publicDbs.get(dbKey).writable) {
-          dbKeys.add(member.value.user.dbKey)
         }
       }
     }

@@ -33,11 +33,7 @@ export async function listHomeFeed (opts, auth) {
 
   const followEntries = await publicDb.follows.list()
   followEntries.unshift({value: {subject: auth}})
-  const membershipEntries = await publicDb.memberships.list()
-  const sourceDbs = [
-    ...followEntries.map(f => publicDbs.get(f.value.subject.dbKey)),
-    ...membershipEntries.map(m => publicDbs.get(m.value.community.dbKey))
-  ]
+  const sourceDbs = followEntries.map(f => publicDbs.get(f.value.subject.dbKey))
   
   const cursors = sourceDbs.map(db => {
     if (!db) return undefined
@@ -48,11 +44,6 @@ export async function listHomeFeed (opts, auth) {
   const authorsCache = {}
   const mergedCursor = mergeCursors(cursors)
   for await (let [db, entry] of mergedCursor) {
-    if (db.dbType === 'ctzn.network/public-citizen-db') {
-      if (entry.value.community) {
-        continue // filter out community posts by followed users
-      }
-    }
     if (entry.value.source?.dbUrl) {
       // TODO verify source authenticity
       entry.dbUrl = entry.value.source.dbUrl

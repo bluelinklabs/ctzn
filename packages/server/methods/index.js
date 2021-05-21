@@ -1,6 +1,5 @@
 import * as schemas from '../lib/schemas.js'
 import * as account from './account.js'
-import * as community from './community.js'
 import * as notifications from './notifications.js'
 
 // globals
@@ -13,7 +12,6 @@ const _methods = new Map()
 
 export function setup (config) {
   account.setup(define, config)
-  community.setup(define, config)
   notifications.setup(define, config)
 }
 

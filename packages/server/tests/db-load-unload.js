@@ -42,11 +42,3 @@ test('external citizen databases are loaded and unloaded by follows', async t =>
   await new Promise(r => setTimeout(r, 500))
   await t.throwsAsync(() => inst2.api.view.get('ctzn.network/posts-view', user(0).userId))
 })
-
-test.skip('external community databases are loaded and unloaded by community joins', async t => {
-  // TODO run this test when remote community joins are supported
-})
-
-test.skip('external citizen databases are loaded and unloaded by community joins', async t => {
-  // TODO run this test when remote community joins are supported
-})

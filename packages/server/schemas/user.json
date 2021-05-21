@@ -14,7 +14,7 @@
       },
       "type": {
         "type": "string",
-        "description": "Current values: 'citizen' or 'community'"
+        "description": "Current values: 'citizen'"
       },
       "dbKey": {
         "type": "string",

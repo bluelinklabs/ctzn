@@ -13,20 +13,14 @@ test.before(async () => {
   await sim.createCitizen(inst, 'alice')
   await sim.createCitizen(inst, 'bob')
   await sim.createCitizen(inst, 'carla')
-  await sim.users.alice.login()
-  await sim.createCommunity(inst, 'folks')
 
-  const {alice, bob, carla, folks} = sim.users
-  await alice.login()
-  await api.communities.join(folks.userId)
-  await bob.login()
-  await api.communities.join(folks.userId)
+  const {alice, bob, carla} = sim.users
   await bob.follow(alice)
   await bob.follow(carla)
 
   await bob.createPost({text: '1'})
   await bob.createPost({text: '2'})
-  await bob.createPost({text: '3', community: {userId: folks.userId, dbUrl: folks.profile.dbUrl}})
+  await bob.createPost({text: '3'}})
   await alice.createPost({text: '4'})
 })
 
@@ -92,31 +86,4 @@ test('self indexes', async t => {
   t.is(res.subject.dbUrl, bob.posts[0].url)
   t.falsy(res.reactions.like)
   t.falsy(res.reactions.woah)
-})
-
-test('community indexes', async t => {
-  const {alice, bob, carla} = sim.users
-
-  await alice.react({subject: bob.posts[2], reaction: 'like'})
-  await bob.react({subject: bob.posts[2], reaction: 'like'})
-  await carla.react({subject: bob.posts[2], reaction: 'woah'})
-
-  await bob.login()
-  let res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[2].url)
-  t.is(res.subject.dbUrl, bob.posts[2].url)
-  t.is(res.reactions.like.length, 2)
-  t.falsy(res.reactions.woah?.length)
-
-  await carla.login()
-  res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[2].url)
-  t.is(res.subject.dbUrl, bob.posts[2].url)
-  t.is(res.reactions.like.length, 2)
-  t.falsy(res.reactions.woah?.length)
-
-  await bob.login()
-  await bob.unreact({subject: bob.posts[2], reaction: 'like'})
-  res = await api.view.get('ctzn.network/reactions-to-view', bob.posts[2].url)
-  t.is(res.subject.dbUrl, bob.posts[2].url)
-  t.is(res.reactions.like.length, 1)
-  t.falsy(res.reactions.woah?.length)
 })

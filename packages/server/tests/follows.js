@@ -14,12 +14,9 @@ test.before(async () => {
   await sim.createCitizen(inst, 'bob')
   await sim.createCitizen(inst, 'carla')
   await sim.createCitizen(inst, 'dan')
-  await sim.users.alice.login()
-  await sim.createCommunity(inst, 'folks')
 
-  const {alice, bob, carla, folks} = sim.users
+  const {alice, bob, carla} = sim.users
   await bob.login()
-  await api.communities.join(folks.userId)
   await bob.follow(alice)
   await bob.follow(carla)
 })
@@ -29,13 +26,7 @@ test.after.always(async t => {
 })
 
 test('basic CRUD', async t => {
-  const {alice, bob, carla, dan, folks} = sim.users
-  await alice.login()
-  await api.communities.join(folks.userId)
-  await bob.login()
-  await api.communities.join(folks.userId)
-  await dan.login()
-  await api.communities.join(folks.userId)
+  const {alice, bob, carla, dan} = sim.users
 
   // bob, alice, and carla all follow each other
   await bob.follow(alice)

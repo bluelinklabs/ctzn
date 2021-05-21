@@ -13,20 +13,15 @@ test.before(async () => {
   await sim.createCitizen(inst, 'alice')
   await sim.createCitizen(inst, 'bob')
   await sim.createCitizen(inst, 'carla')
-  await sim.users.alice.login()
-  await sim.createCommunity(inst, 'folks')
 
-  const {alice, bob, carla, folks} = sim.users
-  await alice.login()
-  await api.communities.join(folks.userId)
+  const {alice, bob, carla} = sim.users
   await bob.login()
-  await api.communities.join(folks.userId)
   await bob.follow(alice)
   await bob.follow(carla)
 
   await bob.createPost({text: '1'})
   await bob.createPost({text: '2'})
-  await bob.createPost({text: '3', community: {userId: folks.userId, dbUrl: folks.profile.dbUrl}})
+  await bob.createPost({text: '3'})
   await alice.createPost({text: '4'})
 })
 
@@ -151,55 +146,6 @@ test('multiple users w/follows', async t => {
     [alice, 'Test 1'],
     [bob, 'Test 2'],
     [carla, 'Test 3']
-  ])
-})
-
-test('community', async t => {
-  const {alice, bob, carla, folks} = sim.users
-  await alice.createComment({
-    community: {userId: folks.userId, dbUrl: folks.profile.dbUrl},
-    reply: {root: bob.posts[2]},
-    text: 'Alice Comment 1'
-  })
-  await alice.createComment({
-    community: {userId: folks.userId, dbUrl: folks.profile.dbUrl},
-    reply: {root: bob.posts[2], parent: alice.comments[alice.comments.length - 1]},
-    text: 'Alice Reply 1'
-  })
-  await alice.createComment({
-    // community isnt included but indexer still works
-    reply: {root: bob.posts[2]},
-    text: 'Alice Comment 2'
-  })
-  await bob.createComment({
-    community: {userId: folks.userId, dbUrl: folks.profile.dbUrl},
-    reply: {root: bob.posts[2]},
-    text: 'Bob Comment 1'
-  })
-  await carla.createComment({
-    community: {userId: folks.userId, dbUrl: folks.profile.dbUrl},
-    reply: {root: bob.posts[2]},
-    text: 'Carla Comment 1'
-  })
-
-  await bob.login()
-  let thread1 = (await api.view.get('ctzn.network/thread-view', bob.posts[2].url)).comments
-  sim.testThread(t, thread1, [
-    [alice, 'Alice Comment 1', [
-      [alice, 'Alice Reply 1'],
-    ]],
-    [alice, 'Alice Comment 2'],
-    [bob, 'Bob Comment 1']
-  ])
-
-  await carla.login()
-  let thread2 = (await api.view.get('ctzn.network/thread-view', bob.posts[2].url)).comments
-  sim.testThread(t, thread2, [
-    [alice, 'Alice Comment 1', [
-      [alice, 'Alice Reply 1'],
-    ]],
-    [alice, 'Alice Comment 2'],
-    [bob, 'Bob Comment 1']
   ])
 })
 

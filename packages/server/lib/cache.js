@@ -49,8 +49,7 @@ export function setUserFeed (username, value, limit, ttl) {
 export function onDatabaseChange (username, schemaId) {
   if (
     schemaId === 'ctzn.network/post' ||
-    schemaId === 'ctzn.network/follow' ||
-    schemaId === 'ctzn.network/community-membership'
+    schemaId === 'ctzn.network/follow'
   ) {
     invalidateHomeFeed(username)
     invalidateUserFeed(username)

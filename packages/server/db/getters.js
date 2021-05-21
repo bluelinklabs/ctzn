@@ -102,38 +102,6 @@ export async function listFollows (db, opts) {
   return entries
 }
 
-export async function listCommunityMembers (db, opts) {
-  const entries = await db.members.list(opts)
-  for (let entry of entries) {
-    entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/community-member', entry.key)
-  }
-  return entries
-}
-
-export async function listCommunityMemberships (db, opts) {
-  const entries = await db.memberships.list(opts)
-  for (let entry of entries) {
-    entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/community-membership', entry.key)
-  }
-  return entries
-}
-
-export async function listCommunityRoles (db, opts) {
-  const entries = await db.roles.list(opts)
-  for (let entry of entries) {
-    entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/community-role', entry.key)
-  }
-  return entries
-}
-
-export async function listCommunityBans (db, opts) {
-  const entries = await db.bans.list(opts)
-  for (let entry of entries) {
-    entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/community-ban', entry.key)
-  }
-  return entries
-}
-
 async function fetchIndexedComments (comments, {includeReplyCount} = {includeReplyCount: false}) {
   const authorsCache = {}
   const commentEntries = await Promise.all(comments.map(async (post) => {

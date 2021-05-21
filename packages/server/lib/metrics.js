@@ -24,9 +24,6 @@ export function signedUp ({user}) {
 export function loggedIn ({user}) {
   return metricEventsLog.append({event: 'logged-in', user})
 }
-export function communityCreated ({user, community}) {
-  return metricEventsLog.append({event: 'community-created', user, community})
-}
 export function postCreated ({user}) {
   return metricEventsLog.append({event: 'post-created', user})
 }

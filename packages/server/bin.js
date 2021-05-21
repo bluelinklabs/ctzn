@@ -89,30 +89,6 @@ const match = subcommand({
         }
         process.exit(0)
       }
-    },
-    {
-      name: 'create-community',
-      command: async args => {
-        // TODO- this needs to work without starting the server
-        const inst = await server.start({
-          debugMode: true,
-          port: 3000,
-          domain: args.domain,
-          configDir: args.configDir,
-          hyperspaceHost: args.hyperspaceHost,
-          hyperspaceStorage: args.hyperspaceStorage
-        })
-        await inst.db.createUser({
-          type: 'community',
-          username: args.username,
-          profile: {
-            displayName: args.displayName,
-            description: args.description
-          }
-        })
-        console.log(args.username, 'created')
-        process.exit(0)
-      }
     }
   ],
   root: {

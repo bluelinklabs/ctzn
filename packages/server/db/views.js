@@ -10,7 +10,6 @@ import { listHomeFeed } from './feed-getters.js'
 import { fetchNotications, countNotications, dbGet, fetchReactions } from './util.js'
 
 const DEFAULT_USER_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'frontend', 'static', 'img', 'default-user-avatar.jpg')
-const DEFAULT_COMMUNITY_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'frontend', 'static', 'img', 'default-community-avatar.jpg')
 
 // globals
 // =
@@ -54,20 +53,11 @@ export function setup () {
         createStream: () => userDb.blobs.createReadStreamFromPointer(ptr)
       }
     } catch (e) {
-      if (userDb?.dbType === 'ctzn.network/public-community-db') {
-        return {
-          ptr: null,
-          etag: `W/default-community-avatar`,
-          mimeType: 'image/jpeg',
-          createStream: () => fs.createReadStream(DEFAULT_COMMUNITY_AVATAR_PATH)
-        }
-      } else {
-        return {
-          ptr: null,
-          etag: `W/default-citizen-avatar`,
-          mimeType: 'image/jpeg',
-          createStream: () => fs.createReadStream(DEFAULT_USER_AVATAR_PATH)
-        }
+      return {
+        ptr: null,
+        etag: `W/default-citizen-avatar`,
+        mimeType: 'image/jpeg',
+        createStream: () => fs.createReadStream(DEFAULT_USER_AVATAR_PATH)
       }
     }
   })
@@ -97,32 +87,6 @@ export function setup () {
       commentKey = urlp.key
     }
     return dbGetters.getComment(getDb(dbId), commentKey, dbId)
-  })
-
-  define('ctzn.network/views/community-user-permission', async (auth, {communityDbId, citizenDbId, permId}) => {
-    const communityDb = getDb(communityDbId)
-    const memberRecord = await communityDb.members.get(citizenDbId)
-    if (!memberRecord) return undefined
-    if (memberRecord.value.roles?.includes('admin')) {
-      return {permId: 'ctzn.network/perm-admin'}
-    }
-    const roleRecords = await Promise.all(memberRecord.value.roles?.map(roleId => communityDb.roles.get(roleId)) || [])
-    for (let roleRecord of roleRecords) {
-      const perm = roleRecord.value.permissions?.find(p => p.permId === permId)
-      if (perm) return perm
-    }
-    return undefined
-  })
-
-  define('ctzn.network/views/community-user-permissions', async (auth, {communityDbId, citizenDbId}) => {
-    const communityDb = getDb(communityDbId)
-    const memberRecord = await communityDb.members.get(citizenDbId)
-    if (!memberRecord) return {permissions: []}
-    if (memberRecord.value.roles?.includes('admin')) {
-      return {permissions: [{permId: 'ctzn.network/perm-admin'}]}
-    }
-    const roleRecords = await Promise.all(memberRecord.value.roles?.map(roleId => communityDb.roles.get(roleId)) || [])
-    return {permissions: roleRecords.map(roleRecord => roleRecord.value.permissions || []).flat()}
   })
 
   define('ctzn.network/views/feed', async (auth, opts) => {

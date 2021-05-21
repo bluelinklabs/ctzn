@@ -46,16 +46,6 @@
           "text": {
             "type": "string"
           },
-          "community": {
-            "type": "object",
-            "required": ["dbKey"],
-            "properties": {
-              "dbKey": {
-                "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
-              }
-            }
-          },
           "reply": {
             "type": "object",
             "required": ["root"],

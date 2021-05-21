@@ -360,18 +360,18 @@ class TestCitizen {
     await this.inst.api.method('ctzn.network/methods/login', {username: this.username, password: 'password'})
   }
 
-  async createPost ({text, extendedText, community}) {
+  async createPost ({text, extendedText}) {
     await this.login()
     const {dbUrl} = await this.inst.api.table.create(
       this.username,
       'ctzn.network/post',
-      {text, extendedText, community, createdAt: (new Date()).toISOString()}
+      {text, extendedText, createdAt: (new Date()).toISOString()}
     )
     this.posts.push(await this.inst.api.view.get('ctzn.network/views/post', {dbUrl}))
     return this.posts[this.posts.length - 1]
   }
 
-  async createComment ({text, community, reply}) {
+  async createComment ({text, reply}) {
     await this.login()
     if (reply) {
       reply.root = {dbUrl: reply.root.dbUrl}
@@ -382,7 +382,7 @@ class TestCitizen {
     const {dbUrl} = await this.inst.api.table.create(
       this.username,
       'ctzn.network/comment',
-      {text, community, reply}
+      {text, reply}
     )
     this.comments.push(await this.inst.api.view.get('ctzn.network/comment-view', {dbUrl}))
     return this.comments[this.comments.length - 1]
@@ -420,23 +420,6 @@ class TestCitizen {
     await this.login()
     await this.inst.api.table.delete(this.dbKey, 'ctzn.network/reaction', `${reaction}:${subject.dbUrl}`)
     delete this.reactions[subject.dbUrl][reaction]
-  }
-}
-
-class TestCommunity {
-  constructor (inst, username) {
-    this.inst = inst
-    this.username = username
-    this.members = {}
-  }
-
-  async setup () {
-    const {dbKey} = await this.inst.api.method('ctzn.network/methods/community-create', {
-      username: this.username,
-      displayName: this.username.slice(0, 1).toUpperCase() + this.username.slice(1)
-    })
-    this.dbKey = dbKey
-    this.profile = await this.inst.api.view.get('ctzn.network/views/profile', {dbId: dbKey})
   }
 }
 

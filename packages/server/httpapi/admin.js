@@ -212,67 +212,15 @@ export function setup (app) {
       let userRecord = await db.publicServerDb.users.get(req.query.username)
       const publicDb = db.publicDbs.get(userRecord.key)
       const profile = publicDb ? await publicDb.profile.get('self') : undefined
-      let members
-      if (userRecord.value.type === 'community') {
-        members = await publicDb.members.list()
-      }
       res.status(200).json({
         dbKey: publicDb.key.toString('hex'),
         dbDkey: publicDb.discoveryKey.toString('hex'),
         username: userRecord.key,
         type: userRecord.value.type,
-        profile: profile?.value,
-        members
+        profile: profile?.value
       })
     } catch (e) {
       res.status(500).json({error: true, message: e.message || e.toString()})      
-    }
-  })
-
-  app.get('_api/admin/communities', async (req, res) => {
-    try {
-      let communityDbs = Array.from(db.publicDbs.values()).filter(db => db.dbType === 'ctzn.network/public-community-db')
-      const communities = await Promise.all(communityDbs.map(async db => {
-        let profile = await db.profile.get('self')
-        let members = await db.members.list()
-        return {
-          dbKey: db.dbKey,
-          username: db.username,
-          displayName: profile?.value?.displayName || '',
-          numMembers: members?.length,
-          admins: members?.filter(m => m.value.roles?.includes('admin')).map(m => m.value.user.dbKey)
-        }
-      }))
-      res.status(200).json({communities})
-    } catch (e) {
-      res.status(500).json({error: true, message: e.message || e.toString()})     
-    }
-  })
-
-  app.post('_api/admin/add-community-admin', async (req, res) => {
-    try {
-      await updateCommunityMemberRole(req.body.communityDbId, req.body.adminDbId, memberRecordValue => {
-        memberRecordValue.roles = memberRecordValue.roles || []
-        if (!memberRecordValue.roles.includes('admin')) {
-          memberRecordValue.roles.push('admin')
-        }
-      })
-      res.status(200).json({})
-    } catch (e) {
-      res.status(500).json({error: true, message: e.message || e.toString()})
-    }
-  })
-
-  app.post('_api/admin/remove-community-admin', async (req, res) => {
-    try {
-      await updateCommunityMemberRole(req.body.communityDbId, req.body.adminDbId, memberRecordValue => {
-        memberRecordValue.roles = memberRecordValue.roles || []
-        if (memberRecordValue.roles.includes('admin')) {
-          memberRecordValue.roles = memberRecordValue.roles.filter(r => r !== 'admin')
-        }
-      })
-    } catch (e) {
-      res.status(500).json({error: true, message: e.message || e.toString()})
     }
   })
 
@@ -362,33 +310,4 @@ export function setup (app) {
   app.get('_api/admin/debug-log', (req, res) => {
     res.status(200).json({log: debugLog.fetchAndClear()})
   })
-}
-
-async function updateCommunityMemberRole (communityDbId, memberDbId, fn) {
-  const publicCommunityDb = db.publicDbs.get(communityDbId)
-  const publicCitizenDb = db.publicDbs.get(memberDbId)
-
-  if (!publicCommunityDb) throw new Error('Community DB not found')
-  if (!publicCitizenDb) throw new Error('Citizen DB not found')
-
-  let memberRecord = await publicCommunityDb.members.get(publicCitizenDb.dbKey)
-  if (!memberRecord) {
-    // create member and membership records
-    const joinDate = (new Date()).toISOString()
-    const membershipValue = {community: {dbKey: publicCommunityDb.dbKey}, joinDate}
-    const memberValue = {user: {dbKey: publicCitizenDb.dbKey}, joinDate}
-
-    fn(memberValue)
-
-    // validate before writing to avoid partial transactions
-    publicCitizenDb.memberships.schema.assertValid(membershipValue)
-    publicCommunityDb.members.schema.assertValid(memberValue)
-
-    await publicCitizenDb.memberships.put(publicCommunityDb.dbKey, membershipValue)
-    await publicCommunityDb.members.put(publicCitizenDb.dbKey, memberValue)
-  } else {
-    // update existing record
-    fn(memberRecord.value)
-    await publicCommunityDb.members.put(publicCitizenDb.dbKey, memberRecord.value)
-  }
 }

@@ -101,16 +101,6 @@
                 "extendedTextMimeType": {
                   "type": "string"
                 },
-                "community": {
-                  "type": "object",
-                  "required": ["dbKey"],
-                  "properties": {
-                    "dbKey": {
-                      "type": "string",
-                      "pattern": "^[0-9a-f]{64}$"
-                    }
-                  }
-                },
                 "createdAt": {
                   "type": "string",
                   "format": "date-time"

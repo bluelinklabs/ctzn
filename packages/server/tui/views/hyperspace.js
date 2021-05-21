@@ -101,7 +101,7 @@ export class HyperspaceView extends BaseView {
   async fetchLatest () {
     this.databases = await this.api.call('server.listDatabases', []).catch(e => [])
     this.dbsListed = this.databases
-      .filter(db => ['ctzn.network/public-server-db', 'ctzn.network/public-citizen-db', 'ctzn.network/public-community-db'].includes(db.dbType))
+      .filter(db => ['ctzn.network/public-server-db', 'ctzn.network/public-citizen-db'].includes(db.dbType))
       .sort((a, b) => {
         if (!a.userId) return -1
         if (!b.userId) return 1
@@ -113,8 +113,7 @@ export class HyperspaceView extends BaseView {
       ...this.dbsListed.map(db => ([
         ({
           'ctzn.network/public-server-db': 'Server',
-          'ctzn.network/public-citizen-db': 'Citizen',
-          'ctzn.network/public-community-db': 'Community'
+          'ctzn.network/public-citizen-db': 'Citizen'
         })[db.dbType],
         db.userId || 'Server',
         String(db.peerCount),
@@ -221,8 +220,7 @@ export class HyperspaceView extends BaseView {
 
       const typeLabel = ({
         'ctzn.network/public-server-db': 'Server',
-        'ctzn.network/public-citizen-db': 'Citizen',
-        'ctzn.network/public-community-db': 'Community'
+        'ctzn.network/public-citizen-db': 'Citizen'
       })[pub.dbType]
       this.infopane.append(blessed.text({
         left: 0,
