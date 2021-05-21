@@ -34,6 +34,7 @@ export class PublicCommunityDB extends BaseHyperbeeDB {
     await super.setup()
     await this.blobs.setup()
     this.profile = this.getTable('ctzn.network/profile')
+    this.posts = this.getTable('ctzn.network/post')
     this.communityConfig = this.getTable('ctzn.network/community-config')
     this.members = this.getTable('ctzn.network/community-member')
     this.roles = this.getTable('ctzn.network/community-role')

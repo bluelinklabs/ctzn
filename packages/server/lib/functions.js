@@ -11,3 +11,7 @@ export async function timeoutRace (time, fallback, promise) {
   p.then(cleanup, cleanup)
   return p
 }
+
+export function deepClone (v) {
+  return JSON.parse(JSON.stringify(v))
+}

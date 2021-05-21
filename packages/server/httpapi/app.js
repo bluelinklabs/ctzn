@@ -53,7 +53,7 @@ export function setup (app, config) {
       const table = db.tables[schemaId]
       const value = req.body
 
-      if (req.session.auth?.username !== req.params.username) {
+      if (req.session.auth?.dbKey !== db.dbKey) {
         throw new errors.PermissionsError()
       }
       // TODO blobs
@@ -88,7 +88,7 @@ export function setup (app, config) {
       const table = db.tables[schemaId]
       const value = req.body
 
-      if (req.session.auth?.username !== req.params.username) {
+      if (req.session.auth?.dbKey !== db.dbKey) {
         throw new errors.PermissionsError()
       }
       // TODO blobs
@@ -122,7 +122,7 @@ export function setup (app, config) {
       const key = req.params.key
       const table = db.tables[schemaId]
 
-      if (req.session.auth?.username !== req.params.username) {
+      if (req.session.auth?.dbKey !== db.dbKey) {
         throw new errors.PermissionsError()
       }
 
@@ -146,7 +146,7 @@ export function setup (app, config) {
       const schemaId = `${req.params.schemaNs}/views/${req.params.schemaName}`
       const args = getQuery(req)
       if (dbViews.getType(schemaId) === 'blob-view') {
-        const {etag, createStream, mimeType} = await dbViews.exec(schemaId, undefined, args)
+        const {etag, createStream, mimeType} = await dbViews.exec(schemaId, req.session.auth, args)
           if (req.headers['if-none-match'] === etag) {
           return res.status(304).end()
         }
@@ -156,7 +156,7 @@ export function setup (app, config) {
         pump(await createStream(), res, () => res.end())
       } else {
         res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
-        res.status(200).json(await dbViews.exec(schemaId, undefined, args))
+        res.status(200).json(await dbViews.exec(schemaId, req.session.auth, args))
       }
     } catch (e) {
       error(res, e, config)

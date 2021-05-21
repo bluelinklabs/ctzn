@@ -3,7 +3,7 @@ import { BaseHyperbeeDB } from './base.js'
 import { publicDbs } from './index.js'
 import { dbGet } from './util.js'
 import { constructEntryUrl } from '../lib/strings.js'
-import * as perf from '../lib/perf.js'
+import { deepClone } from '../lib/functions.js'
 import _intersectionBy from 'lodash.intersectionby'
 
 const INDEXED_DB_TYPES = [
@@ -34,7 +34,6 @@ export class PublicServerDB extends BaseHyperbeeDB {
     this.followsIdx = this.getTable('ctzn.network/follow-idx')
     this.notificationsIdx = this.getTable('ctzn.network/notification-idx')
     this.reactionsIdx = this.getTable('ctzn.network/reaction-idx')
-    this.feedIdx = this.getTable('ctzn.network/feed-idx')
 
     if (!this.writable) {
       return
@@ -207,33 +206,61 @@ export class PublicServerDB extends BaseHyperbeeDB {
       }
     })
     
-    this.createIndexer('ctzn.network/feed-idx', ['ctzn.network/post'], async (batch, db, diff) => {
-      if (diff.left || !diff.right) return // ignore edits and deletes
-      if (!diff.right.value.community) {
+    this.createIndexer('ctzn.network/etc/community-posts', ['ctzn.network/post'], async (batch, db, diff) => {
+      if (!diff.left?.value?.community && !diff.right?.value?.community) {
         return // only index community posts
       }
-      const communityDb = publicDbs.get(diff.right.value.community.dbKey)
-      if (!communityDb || !communityDb.writable) {
-        return // only index communities we run
+      const leftCommunityDb = diff.left?.value?.community?.dbKey ? publicDbs.get(diff.left.value.community.dbKey) : undefined
+      const rightCommunityDb = diff.right?.value?.community?.dbKey ? publicDbs.get(diff.right.value.community.dbKey) : undefined
+      if (db === leftCommunityDb || db === rightCommunityDb) {
+        return // ignore updates to community posts table because that's probably the copy
       }
 
-      if (!(await isCommunityMember(diff.right.value.community, db.dbKey))) {
-        throw new Error(`Author of ${diff.right.url} is not a member of the "${diff.right.value.community.dbKey}" community`)
-      }
-
-      const itemCreatedAt = new Date(diff.right.value.createdAt)
-      const indexCreatedAt = new Date()
-      const idxkey = mlts(Math.min(+indexCreatedAt, (+itemCreatedAt) || (+indexCreatedAt)))
-      const value = {
-        feedDbKey: diff.right.value.community.dbKey,
-        idxkey,
-        item: {
+      const isCreate = !diff.left && diff.right
+      const isEdit = diff.left && diff.right
+      const isDelete = diff.left && !diff.right
+      const didCommunityChange = isEdit && leftCommunityDb.dbKey !== rightCommunityDb.dbKey
+      let newValue
+      if (isCreate || isEdit) {
+        newValue = deepClone(diff.right.value)
+        // TODO include a proof of authorship
+        newValue.source = {
           dbUrl: diff.right.url,
-          authorDbKey: db.dbKey
-        },
-        createdAt: indexCreatedAt
+          author: {
+            displayName: (await db.profile.get('self').catch(e => undefined))?.value.displayName
+          }
+        }
       }
-      await batch.put(this.feedIdx.constructBeeKey(`${value.feedDbKey}:${value.idxkey}`), value)
+
+      if ((isDelete || didCommunityChange) && leftCommunityDb?.writable) {
+        if (await isCommunityMember(leftCommunityDb, db.dbKey)) {
+          const postEntry = await leftCommunityDb.posts.scanFind({reverse: true}, entry => (
+            entry.value.source?.dbUrl === diff.left.url
+          )).catch(e => undefined)
+          if (postEntry) {
+            await leftCommunityDb.posts.del(postEntry.key)
+          }
+        }
+      }
+      if ((isCreate || didCommunityChange) && rightCommunityDb?.writable) {
+        if (await isCommunityMember(leftCommunityDb, db.dbKey)) {
+          await rightCommunityDb.posts.put(
+            rightCommunityDb.posts.schema.generateKey(newValue),
+            newValue
+          )
+        }
+      }
+      if (isEdit && !didCommunityChange) {
+        const postEntry = await rightCommunityDb.posts.scanFind({reverse: true}, entry => (
+          entry.value.source?.dbUrl === diff.left.url
+        )).catch(e => undefined)
+        if (postEntry) {
+          await rightCommunityDb.posts.put(
+            postEntry.key,
+            newValue
+          )
+        }
+      }
     })
 
     this.createIndexer('ctzn.network/follow-idx', ['ctzn.network/follow'], async (batch, db, diff) => {
@@ -365,7 +392,7 @@ export class PrivateServerDB extends BaseHyperbeeDB {
 
 async function isCommunityMember (community, authorDbKey) {
   if (community) {
-    const authorMemberUrl = constructEntryUrl(community.dbUrl, 'ctzn.network/community-member', authorDbKey)
+    const authorMemberUrl = constructEntryUrl(`hyper://${community.dbKey}`, 'ctzn.network/community-member', authorDbKey)
     const authorMemberEntry = (await dbGet(authorMemberUrl))?.entry
     return !!authorMemberEntry
   }

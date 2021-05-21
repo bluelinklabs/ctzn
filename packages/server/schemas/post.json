@@ -71,6 +71,19 @@
           }
         }
       },
+      "source": {
+        "type": "object",
+        "required": ["dbUrl"],
+        "properties": {
+          "dbUrl": {"type": "string", "format": "uri"},
+          "author": {
+            "type": "object",
+            "properties": {
+              "displayName": {"type": "string"}
+            }
+          }
+        }
+      },
       "createdAt": {
         "type": "string",
         "format": "date-time"

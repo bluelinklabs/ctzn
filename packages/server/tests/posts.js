@@ -77,8 +77,7 @@ test('single user posting to self', async t => {
   ])
 })
 
-// TODO
-test.skip('multiple users posting to community', async t => {
+test('multiple users posting to community', async t => {
   const {alice, bob, carla, folks, ppl} = sim.users
   await alice.createPost({text: '1', community: {dbKey: folks.dbKey}})
   await bob.createPost({text: '2', community: {dbKey: folks.dbKey}})

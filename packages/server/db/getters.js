@@ -1,5 +1,5 @@
 import { publicServerDb, publicDbs } from '../db/index.js'
-import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
+import { constructEntryUrl, parseEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
 import { resolveDbId } from '../lib/network.js'
 import {
   dbGet,
@@ -7,8 +7,7 @@ import {
   fetchReactions,
   fetchReplyCount,
   fetchReplies,
-  fetchIndexedFollowerDbKeys,
-  addPrefixToRangeOpts
+  fetchIndexedFollowerDbKeys
 } from './util.js'
 import * as cache from '../lib/cache.js'
 import { debugLog } from '../lib/debug-log.js'
@@ -18,8 +17,14 @@ export async function getPost (db, key, authorDbId, auth = undefined) {
   if (!postEntry) {
     throw new Error('Post not found')
   }
-  postEntry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/post', postEntry.key)
-  postEntry.author = await fetchAuthor(authorDbId)
+  if (postEntry.value.source?.dbUrl) {
+    // TODO verify source authenticity
+    postEntry.dbUrl = postEntry.value.source.dbUrl
+    postEntry.author = await fetchAuthor(hyperUrlToKeyStr(postEntry.value.source.dbUrl), authorsCache)
+  } else {
+    postEntry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/post', postEntry.key)
+    postEntry.author = await fetchAuthor(db.dbKey)
+  }
   postEntry.reactions = (await fetchReactions(postEntry)).reactions
   postEntry.replyCount = await fetchReplyCount(postEntry)
   return postEntry
@@ -39,28 +44,24 @@ export async function listPosts (db, opts, authorDbId) {
       return cachedEntries
     }
   }*/
-
-  if (db.dbType === 'ctzn.network/public-citizen-db') {
-    const entries = await db.posts.list(opts)
-    const authorsCache = {}
-    for (let entry of entries) {
+  const entries = await db.posts.list(opts)
+  const authorsCache = {}
+  for (let entry of entries) {
+    if (entry.value.source?.dbUrl) {
+      // TODO verify source authenticity
+      entry.dbUrl = entry.value.source.dbUrl
+      entry.author = await fetchAuthor(hyperUrlToKeyStr(entry.value.source.dbUrl), authorsCache)
+    } else {
       entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
-      entry.author = await fetchAuthor(authorDbId, authorsCache)
-      entry.reactions = (await fetchReactions(entry)).reactions
-      entry.replyCount = await fetchReplyCount(entry)
+      entry.author = await fetchAuthor(db.dbKey, authorsCache)
     }
-    if (canUseCache) {
-      cache.setUserFeed(authorDbId, entries, entries.length)
-    }
-    return entries
-  } else if (db.dbType === 'ctzn.network/public-community-db') {
-    const entries = await publicServerDb.feedIdx.list(addPrefixToRangeOpts(db.dbKey, opts))
-    const entries2 = await fetchIndexedPosts(entries, {includeReplyCount: true})
-    if (canUseCache) {
-      cache.setUserFeed(authorDbId, entries2, entries2.length)
-    }
-    return entries2
+    entry.reactions = (await fetchReactions(entry)).reactions
+    entry.replyCount = await fetchReplyCount(entry)
   }
+  if (canUseCache) {
+    cache.setUserFeed(authorDbId, entries, entries.length)
+  }
+  return entries
 }
 
 export async function getComment (db, key, authorDbId, auth = undefined) {
@@ -131,35 +132,6 @@ export async function listCommunityBans (db, opts) {
     entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/community-ban', entry.key)
   }
   return entries
-}
-
-async function fetchIndexedPosts (postsFeedEntries, {includeReplyCount} = {includeReplyCount: false}) {
-  const authorsCache = {}
-  const postEntries = await Promise.all(postsFeedEntries.map(async (postFeedEntry) => {
-    try {
-      const post = postFeedEntry.value.item
-      const {origin, key} = parseEntryUrl(post.dbUrl)
-
-      const publicDb = publicDbs.get(origin)
-      if (!publicDb) {
-        return undefined
-      }
-
-      const postEntry = await publicDb.posts.get(key)
-      if (!postEntry) {
-        return undefined
-      }
-      postEntry.dbUrl = constructEntryUrl(publicDb.url, 'ctzn.network/post', key)
-      postEntry.author = await fetchAuthor(origin, authorsCache)
-      postEntry.reactions = (await fetchReactions(postEntry)).reactions
-      if (includeReplyCount) postEntry.replyCount = await fetchReplyCount(postEntry)
-      return postEntry
-    } catch (e) {
-      console.log(e)
-      return undefined
-    }
-  }))
-  return postEntries.filter(Boolean)
 }
 
 async function fetchIndexedComments (comments, {includeReplyCount} = {includeReplyCount: false}) {

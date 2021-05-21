@@ -130,7 +130,7 @@ export function setup () {
   })
 
   define('ctzn.network/views/followers', async (auth, {dbId}) => {
-    return dbGetters.listFollowers(dbId, auth)
+    return dbGetters.listFollowers(dbId)
   })
 
   define('ctzn.network/views/notifications', async (auth, opts) => {

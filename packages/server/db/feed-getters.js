@@ -1,7 +1,7 @@
 import lexint from 'lexicographic-integer-encoding'
 import { publicDbs } from './index.js'
-import { constructEntryUrl } from '../lib/strings.js'
-import { dbGet, fetchAuthor, fetchReactions, fetchReplyCount, addPrefixToRangeOpts } from './util.js'
+import { constructEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
+import { fetchAuthor, fetchReactions, fetchReplyCount } from './util.js'
 import * as errors from '../lib/errors.js'
 import * as cache from '../lib/cache.js'
 import { debugLog } from '../lib/debug-log.js'
@@ -35,48 +35,32 @@ export async function listHomeFeed (opts, auth) {
   followEntries.unshift({value: {subject: auth}})
   const membershipEntries = await publicDb.memberships.list()
   const sourceDbs = [
-    ...followEntries.map(f => ({db: publicDbs.get(f.value.subject.dbKey)})),
-    ...membershipEntries.map(m => {
-      return {
-        communityDbKey: m.value.community.dbKey,
-        db: undefined // TODO- where stored? publicDbs.get(serverId)
-      }
-    })
+    ...followEntries.map(f => publicDbs.get(f.value.subject.dbKey)),
+    ...membershipEntries.map(m => publicDbs.get(m.value.community.dbKey))
   ]
   
-  const cursors = sourceDbs.map(({db, communityDbKey}) => {
+  const cursors = sourceDbs.map(db => {
     if (!db) return undefined
-    if (db.dbType === 'ctzn.network/public-citizen-db') {
-      return db.posts.cursorRead({lt: opts?.lt, reverse: true, wait: false})
-    } else if (communityDbKey) {
-      const cursor = db.feedIdx.cursorRead(addPrefixToRangeOpts(communityDbKey, {lt: opts?.lt, reverse: true}))
-      cursor.prefixLength = communityDbKey.length + 1
-      return cursor
-    }
+    return db.posts.cursorRead({lt: opts?.lt, reverse: true, wait: false})
   })
 
   const postEntries = []
   const authorsCache = {}
   const mergedCursor = mergeCursors(cursors)
   for await (let [db, entry] of mergedCursor) {
-    if (db.dbType === 'ctzn.network/public-server-db') {
-      const res = await dbGet(entry.value.item.dbUrl, {
-        noLoadExternal: true,
-        wait: false
-      }).catch(e => undefined)
-      if (!res) continue
-      entry = res.entry
-      db = res.db
-    } else {
+    if (db.dbType === 'ctzn.network/public-citizen-db') {
       if (entry.value.community) {
         continue // filter out community posts by followed users
       }
     }
-    if (!entry) {
-      continue // entry not found
+    if (entry.value.source?.dbUrl) {
+      // TODO verify source authenticity
+      entry.dbUrl = entry.value.source.dbUrl
+      entry.author = await fetchAuthor(hyperUrlToKeyStr(entry.value.source.dbUrl), authorsCache)
+    } else {
+      entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
+      entry.author = await fetchAuthor(db.dbKey, authorsCache)
     }
-    entry.url = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
-    entry.author = await fetchAuthor(db.dbKey, authorsCache)
     entry.reactions = (await fetchReactions(entry)).reactions
     entry.replyCount = await fetchReplyCount(entry)
     postEntries.push(entry)
