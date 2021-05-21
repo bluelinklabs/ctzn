@@ -113,6 +113,26 @@ class Schema {
       throw new ValidationError(this.validate.errors[0])
     }
   }
+
+  assertBlobMimeTypeValid (blobName, mimeType) {
+    const def = this.schemaObject?.blobs?.[blobName]
+    if (!def) {
+      throw new ValidationError(`Invalid blob name: ${blobName}`)
+    }
+    if (def.mimeTypes && !def.mimeTypes.includes(mimeType)) {
+      throw new ValidationError(`Blob mime-type (${mimeType}) is invalid, must be one of ${def.mimeTypes.join(', ')}`)
+    }
+  }
+
+  assertBlobSizeValid (blobName, size) {
+    const def = this.schemaObject?.blobs?.[blobName]
+    if (!def) {
+      throw new ValidationError(`Invalid blob name: ${blobName}`)
+    }
+    if (def.maxSize && size > def.maxSize) {
+      throw new ValidationError(`Blob size (${size}) is larger than allowed (${def.maxSize})`)
+    }
+  }
 }
 
 export function compileKeyGenerator (keyTemplate) {

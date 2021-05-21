@@ -27,27 +27,22 @@ test.after.always(async t => {
 	await inst.close()
 })
 
-test('basic CRUD', async t => {
-  await inst.api.table.create(
-    `bob`,
-    'ctzn.network/profile',
-    {
-      displayName: 'Bobo Roberts',
-      description: 'Some citizen',
-      homepageUrl: 'http://example.com'
-    }
-  )
-
-  let profile1 = await inst.api.view.get('ctzn.network/views/profile', {dbId: `bob`})
-  t.truthy(/^hyper:\/\/([0-9a-f]{64})\/$/.test(profile1.dbUrl))
-  t.is(profile1.value.displayName, 'Bobo Roberts')
-  t.is(profile1.value.description, 'Some citizen')
-  t.is(profile1.value.homepageUrl, 'http://example.com')
-})
-
-test('avatar', async t => {
+test('upload and delete blobs', async t => {
   const testImgBuf = fs.readFileSync(TEST_IMAGE_PATH)
   await inst.api.table.putBlob('bob', 'ctzn.network/profile', 'self', 'avatar', testImgBuf, 'image/jpeg')
   const uploadedBuf = await inst.api.table.getBlob('bob', 'ctzn.network/profile', 'self', 'avatar')
   t.is(testImgBuf.compare(uploadedBuf), 0)
+
+  await inst.api.table.delBlob('bob', 'ctzn.network/profile', 'self', 'avatar')
+  await t.throwsAsync(() => inst.api.table.getBlob('bob', 'ctzn.network/profile', 'self', 'avatar'))
+})
+
+test('size limit enforced', async t => {
+  const bigBuf = Buffer.allocUnsafe(1e6)
+  await t.throwsAsync(() => inst.api.table.putBlob('bob', 'ctzn.network/profile', 'self', 'avatar', bigBuf, 'image/jpeg'))
+})
+
+test('mime type enforced', async t => {
+  const bigBuf = Buffer.allocUnsafe(1e3)
+  await t.throwsAsync(() => inst.api.table.putBlob('bob', 'ctzn.network/profile', 'self', 'avatar', bigBuf, 'application/json'))
 })

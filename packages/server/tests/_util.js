@@ -4,6 +4,7 @@ import { parseEntryUrl, DEBUG_MODE_PORTS_MAP } from '../lib/strings.js'
 import { spawn } from 'child_process'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
+import arrayBufferToBuffer from 'arraybuffer-to-buffer'
 
 const INSPECTOR_ENABLED = false
 
@@ -88,6 +89,16 @@ function createApi (origin) {
       setCookies(res)
       return resbody
     },
+    async getBuf (path, query) {
+      const res = await fetch(url(path, query), {
+        headers: {Cookie: cookieHeader()}
+      })
+      if (!res.ok) {
+        throw new Error(res.statusText || res.status)
+      }
+      setCookies(res)
+      return arrayBufferToBuffer(await res.arrayBuffer())
+    },
     async post (path, body) {
       const res = await fetch(url(path), {
         method: 'POST',
@@ -106,6 +117,19 @@ function createApi (origin) {
         method: 'PUT',
         headers: {Cookie: cookieHeader(), 'Content-Type': 'application/json'},
         body: JSON.stringify(body || {})
+      })
+      const resbody = await res.json()
+      if (!res.ok || resbody.error) {
+        throw new Error(resbody.message || res.statusText || res.status)
+      }
+      setCookies(res)
+      return resbody
+    },
+    async putBuf (path, body, mimeType) {
+      const res = await fetch(url(path), {
+        method: 'PUT',
+        headers: {Cookie: cookieHeader(), 'Content-Type': mimeType},
+        body
       })
       const resbody = await res.json()
       if (!res.ok || resbody.error) {
@@ -150,7 +174,16 @@ function createApi (origin) {
     },
     async delete (dbId, schemaId, key) {
       return api.delete(`table/${dbId}/${schemaId}/${key}`)
-    }
+    },
+    async getBlob (dbId, schemaId, key, blobName) {
+      return api.getBuf(`table/${dbId}/${schemaId}/${key}/blobs/${blobName}`)
+    },
+    async putBlob (dbId, schemaId, key, blobName, buf, mimeType) {
+      return api.putBuf(`table/${dbId}/${schemaId}/${key}/blobs/${blobName}`, buf, mimeType)
+    },
+    async delBlob (dbId, schemaId, key, blobName) {
+      return api.delete(`table/${dbId}/${schemaId}/${key}/blobs/${blobName}`)
+    },
   }
   return api
 }

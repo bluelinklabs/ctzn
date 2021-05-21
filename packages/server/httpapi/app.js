@@ -1,8 +1,9 @@
 import pump from 'pump'
+import concat from 'concat-stream'
 import { debugLog } from '../lib/debug-log.js'
 import * as methods from '../methods/index.js'
 import * as dbViews from '../db/views.js'
-import { getDomain } from '../lib/strings.js'
+import { joinPath } from '../lib/strings.js'
 import { publicServerDb, publicDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import * as errors from '../lib/errors.js'
@@ -19,7 +20,7 @@ export function setup (app, config) {
       if (!table) throw new Error('Table not found')
       const entries = await table.list(getListOpts(req))
       for (let entry of entries) {
-        entry.url = table.constructEntryUrl(entry.key)
+        entry.dbUrl = table.constructEntryUrl(entry.key)
       }
       res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
       res.status(200).json({entries})
@@ -36,10 +37,35 @@ export function setup (app, config) {
       if (!table) throw new Error('Table not found')
       const entry = await table.get(req.params.key)
       if (entry) {
-        entry.url = table.constructEntryUrl(entry.key)
+        entry.dbUrl = table.constructEntryUrl(entry.key)
       }
       res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
       res.status(200).json(entry)
+    } catch (e) {
+      error(res, e, config)
+    }
+  })
+
+  app.get('/_api/table/:username([^\/]{3,})/:schemaNs/:schemaName/:key/blobs/:blobName', async (req, res) => {
+    try {
+      debugLog.httpCall('table.getBlob', req.ip, req.params, req.query)
+      const db = getDb(req.params.username)
+      const table = db.tables[`${req.params.schemaNs}/${req.params.schemaName}`]
+      if (!table) throw new Error('Table not found')
+
+      const ptr = await table.getBlobPointer(req.params.key, req.params.blobName)
+      if (!ptr) throw 'Not found'      
+  
+      const etag = `W/block-${ptr.value.start}`
+      const mimeType = ptr.value.mimeType
+      if (req.headers['if-none-match'] === etag) {
+        return res.status(304).end()
+      }
+      const {buf} = await table.getBlob(req.params.key, req.params.blobName)
+      res.setHeader('ETag', etag)
+      if (mimeType) res.setHeader('Content-Type', mimeType)
+      res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
+      res.status(200).end(buf)
     } catch (e) {
       error(res, e, config)
     }
@@ -56,7 +82,6 @@ export function setup (app, config) {
       if (req.session.auth?.dbKey !== db.dbKey) {
         throw new errors.PermissionsError()
       }
-      // TODO blobs
 
       const key = table.schema.generateKey(value)
       if (!value?.createdAt && table.schema.hasCreatedAt) {
@@ -91,7 +116,6 @@ export function setup (app, config) {
       if (req.session.auth?.dbKey !== db.dbKey) {
         throw new errors.PermissionsError()
       }
-      // TODO blobs
       
       const release = await table.lock(key)
       try {
@@ -109,6 +133,28 @@ export function setup (app, config) {
       } finally {
         release()
       }
+    } catch (e) {
+      error(res, e, config)
+    }
+  })
+
+  app.put('/_api/table/:username([^\/]{3,})/:schemaNs/:schemaName/:key/blobs/:blobName', async (req, res) => {
+    try {
+      debugLog.httpCall('table.putBlob', req.ip, req.params, req.query)
+      const db = getDb(req.params.username)
+      const table = db.tables[`${req.params.schemaNs}/${req.params.schemaName}`]
+      if (!table) throw new Error('Table not found')
+
+      if (req.session.auth?.dbKey !== db.dbKey) {
+        throw new errors.PermissionsError()
+      }
+
+      const buf = await new Promise((resolve, reject) => {
+        pump(req, concat(resolve), reject)
+      })
+      const mimeType = req.headers['content-type']
+      await table.putBlob(req.params.key, req.params.blobName, buf, {mimeType})
+      res.status(200).json({})
     } catch (e) {
       error(res, e, config)
     }
@@ -135,6 +181,24 @@ export function setup (app, config) {
       } finally {
         release()
       }
+    } catch (e) {
+      error(res, e, config)
+    }
+  })
+
+  app.delete('/_api/table/:username([^\/]{3,})/:schemaNs/:schemaName/:key/blobs/:blobName', async (req, res) => {
+    try {
+      debugLog.httpCall('table.deleteBlob', req.ip, req.params, req.query)
+      const db = getDb(req.params.username)
+      const table = db.tables[`${req.params.schemaNs}/${req.params.schemaName}`]
+      if (!table) throw new Error('Table not found')
+
+      if (req.session.auth?.dbKey !== db.dbKey) {
+        throw new errors.PermissionsError()
+      }
+
+      await table.delBlob(req.params.key, req.params.blobName)
+      res.status(200).json({})
     } catch (e) {
       error(res, e, config)
     }

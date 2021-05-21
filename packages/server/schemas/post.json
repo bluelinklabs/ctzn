@@ -4,6 +4,14 @@
   "description": "A top-level post",
   "type": "json-table",
   "keyTemplate": [{"type": "auto"}],
+  "blobs": {
+    "media1": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media2": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media3": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media4": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media5": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media6": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]}
+  },
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",

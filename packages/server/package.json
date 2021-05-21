@@ -21,6 +21,7 @@
     "@bluelinklabs/ctzn-ui": "^0.0.1",
     "ajv": "^7.0.3",
     "ajv-formats": "^1.5.1",
+    "arraybuffer-to-buffer": "^0.0.7",
     "ava": "^3.15.0",
     "await-lock": "^2.1.0",
     "blessed": "^0.1.81",

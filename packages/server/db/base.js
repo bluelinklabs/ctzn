@@ -38,6 +38,7 @@ const dbDescription = schemas.createValidator({
 
 const blobPointer = schemas.createValidator({
   type: 'object',
+  required: ['start', 'end', 'mimeType'],
   properties: {
     start: {type: 'number'},
     end: {type: 'number'},
@@ -351,7 +352,6 @@ export class BaseHyperbeeDB extends EventEmitter {
 class Blobs {
   constructor (db, {isPrivate}) {
     this.db = db
-    this._kv = undefined
     this.feed = undefined
     this.feedInfo = undefined
     this.isPrivate = isPrivate
@@ -371,14 +371,6 @@ class Blobs {
 
   get discoveryKey () {
     return this.feedInfo?.discoveryKey
-  }
-
-  get kv () {
-    if (!this._kv || this._kv.feed !== this.db.bee?.feed) {
-      // bee was unloaded since last cache, recreate from current bee
-      this._kv = this.db.bee.sub('_blobs')
-    }
-    return this._kv
   }
 
   async setup () {
@@ -406,8 +398,6 @@ class Blobs {
     if (!this.isPrivate) {
       client.replicate(this.feed)
     }
-
-    // TODO track which ranges in the feed are actively pointed to and cache/decache accordingly
   }
 
   async teardown ({unswarm} = {unswarm: false}) {
@@ -421,69 +411,36 @@ class Blobs {
     this.feed = undefined
   }
 
-  async getPointer (key) {
-    debugLog.dbCall('getPointer', this.db._ident, 'blobs', key)
+  async createReadStream (pointerValue) {
     await this.db.touch()
-    const pointer = await this.kv.get(key, {timeout: READ_TIMEOUT})
-    debugLog.dbCall('bee.get', this.db._ident, 'blobs', key)
-    if (!pointer) throw new Error('Blob not found')
-    blobPointer.assert(pointer.value)
-    return pointer.value
-  }
-
-  async createReadStream (key) {
-    debugLog.dbCall('createReadStream', this.db._ident, 'blobs', key)
-    await this.db.touch()
-    const pointer = await this.kv.get(key, {timeout: READ_TIMEOUT})
-    debugLog.dbCall('bee.get', this.db._ident, 'blobs', key)
-    if (!pointer) throw new Error('Blob not found')
-    blobPointer.assert(pointer.value)
-    debugLog.dbCall('feed.createReadStream', this.db._ident, 'blobs')
     return this.feed.createReadStream({
-      start: pointer.value.start,
-      end: pointer.value.end,
+      start: pointerValue.start,
+      end: pointerValue.end,
       timeout: READ_TIMEOUT
     })
   }
 
-  async get (key, encoding = undefined) {
-    debugLog.dbCall('get', this.db._ident, 'blobs', key)
-    // no need to touch() because getPointer() does it
-    const ptr = await this.getPointer(key)
-    const stream = await this.createReadStreamFromPointer(ptr)
+  async get (pointerValue) {
+    const stream = await this.createReadStream(pointerValue)
     return new Promise((resolve, reject) => {
       pump(
         stream,
-        concat({encoding: 'buffer'}, buf => {
-          resolve({
-            mimeType: ptr.mimeType,
-            buf: encoding && encoding !== 'buffer' ? buf.toString(encoding) : buf
-          })
-        }),
+        concat({encoding: 'buffer'}, resolve),
         reject
       )
     })
   }
 
-  async createReadStreamFromPointer (pointer) {
-    await this.db.touch()
-    return this.feed.createReadStream({
-      start: pointer.start,
-      end: pointer.end,
-      timeout: READ_TIMEOUT
-    })
-  }
-
-  async put (key, buf, {mimeType} = {mimeType: undefined}) {
-    debugLog.dbCall('put', this.db._ident, 'blobs', key)
-    await this.db.touch()
+  async put (buf) {
     const chunks = chunkify(buf, BLOB_CHUNK_SIZE)
     debugLog.dbCall('feed.append', this.db._ident, 'blobs')
     const start = await this.feed.append(chunks)
-    const pointer = {start, end: start + chunks.length, mimeType}
-    blobPointer.assert(pointer)
-    debugLog.dbCall('bee.put', this.db._ident, 'blobs', key)
-    await this.kv.put(key, pointer)
+    return {start, end: start + chunks.length}
+  }
+
+  async decache (pointerValue) {
+    // TODO hyperspace needs to export a clear command to do this
+    // await this.feed.clear(pointerValue.start, pointerValue.end)
   }
 }
 
@@ -511,6 +468,10 @@ class Table {
     return this._bee
   }
 
+  getBlobsSub (key) {
+    return this.bee.sub(key).sub('blobs')
+  }
+
   constructBeeKey (key) {
     return this.bee.keyEncoding.encode(key)
   }
@@ -532,6 +493,62 @@ class Table {
     return entry
   }
 
+  async listBlobPointers (key) {
+    debugLog.dbCall('listBlobPointers', this.db._ident, this.schema.id, key)
+    const pend = perf.measure('table.listBlobPointers')
+    await this.db.touch()
+    return new Promise((resolve, reject) => {
+      pump(
+        this.getBlobsSub(key).createReadStream({timeout: READ_TIMEOUT}),
+        through2.obj(function (entry, enc, cb) {
+          const valid = blobPointer(entry.value)
+          if (valid) this.push(entry)
+          cb()
+        }),
+        concat(resolve),
+        err => {
+          pend()
+          if (err) reject(err)
+        }
+      )
+    })
+  }
+
+  async getBlobPointer (key, blobName) {
+    debugLog.dbCall('getBlob', this.db._ident, this.schema.id, key, blobName)
+    await this.db.touch()
+    const pend = perf.measure('table.getBlob')
+    const pointer = await this.getBlobsSub(key).get(blobName)
+    if (!pointer) throw new Error('Blob not found')
+    this.schema.assertBlobMimeTypeValid(blobName, pointer.value.mimeType)
+    blobPointer.assert(pointer.value)
+    pend()
+    return pointer
+  }
+
+  async getBlob (key, blobNameOrPointer, encoding = undefined) {
+    let pointer = blobNameOrPointer
+    if (typeof pointer === 'string') {
+      pointer = await this.getBlobPointer(key, blobNameOrPointer)
+    }
+    const buf = await this.db.blobs.get(pointer.value, encoding)
+    if (typeof blobNameOrPointer === 'string') {
+      this.schema.assertBlobSizeValid(blobNameOrPointer, buf.length)
+    }
+    return {
+      mimeType: pointer.value.mimeType,
+      buf: encoding && encoding !== 'buffer' ? buf.toString(encoding) : buf
+    }
+  }
+
+  async createBlobReadStream (key, blobNameOrPointer) {
+    let pointer = blobNameOrPointer
+    if (typeof pointer === 'string') {
+      pointer = await this.getBlobPointer(key, blobNameOrPointer)
+    }
+    return this.db.blobs.createReadStream(pointer.value)
+  }
+
   async put (key, value) {
     debugLog.dbCall('put', this.db._ident, this.schema.id, key)
     await this.db.touch()
@@ -546,17 +563,44 @@ class Table {
     return res
   }
 
+  async putBlob (key, blobName, buf, {mimeType}) {
+    debugLog.dbCall('putBlob', this.db._ident, this.schema.id, key, blobName)
+    await this.db.touch()
+    this.schema.assertBlobMimeTypeValid(blobName, mimeType)
+    this.schema.assertBlobSizeValid(blobName, buf.length)
+    const pointerValue = await this.db.blobs.put(buf)
+    pointerValue.mimeType = mimeType
+    blobPointer.assert(pointerValue)
+    await this.getBlobsSub(key).put(blobName, pointerValue)
+  }
+
   async del (key) {
     debugLog.dbCall('del', this.db._ident, this.schema.id, key)
     await this.db.touch()
     const pend = perf.measure('table.del')
     debugLog.dbCall('bee.del', this.db._ident, this.schema.id, key)
     const res = await this.bee.del(String(key))
+    /* dont await */ this.delAllBlobs(String(key))
     pend()
     if (this._onDelCbs) {
       this._onDelCbs.forEach(cb => cb(key))
     }
     return res
+  }
+
+  async delBlob (key, blobName) {
+    blobName = String(blobName)
+    const pointer = await this.getBlobPointer(key, blobName)
+    await this.db.blobs.decache(pointer.value)
+    await this.getBlobsSub(key).del(blobName)
+  }
+
+  async delAllBlobs (key) {
+    const pointers = await this.listBlobPointers(key)
+    for (let pointer of pointers) {
+      await this.db.blobs.decache(pointer.value)
+      await this.getBlobsSub(key).del(pointer.key)
+    }
   }
 
   async createReadStream (opts) {
@@ -576,8 +620,8 @@ class Table {
           if (valid) this.push(entry)
         }
         cb()
-      }
-    ))
+      })
+    )
   }
 
   async list (opts) {

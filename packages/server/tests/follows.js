@@ -37,7 +37,6 @@ test('basic CRUD', async t => {
   await carla.follow(bob)
 
   // dan follows everybody and gets no follow backs
-  // however, he's in "folks" with alice and bob
   await dan.follow(alice)
   await dan.follow(bob)
   await dan.follow(carla)

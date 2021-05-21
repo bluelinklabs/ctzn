@@ -42,15 +42,16 @@ export function setup () {
     try {
       userDb = db.publicDbs.get(dbId)
       if (!userDb) throw 'Not found'
+      const table = userDb.getTable('ctzn.network/profile')
       
-      const ptr = await userDb.blobs.getPointer('avatar')
+      const ptr = await table.getBlobPointer('self', 'avatar')
       if (!ptr) throw 'Not found'
 
       return {
         ptr,
-        etag: `W/block-${ptr.start}`,
-        mimeType: ptr.mimeType,
-        createStream: () => userDb.blobs.createReadStreamFromPointer(ptr)
+        etag: `W/block-${ptr.value.start}`,
+        mimeType: ptr.value.mimeType,
+        createStream: () => table.createBlobReadStream('self', ptr)
       }
     } catch (e) {
       return {
@@ -59,21 +60,6 @@ export function setup () {
         mimeType: 'image/jpeg',
         createStream: () => fs.createReadStream(DEFAULT_USER_AVATAR_PATH)
       }
-    }
-  })
-
-  define('ctzn.network/views/blob', async (auth, {dbId, blobname}) => {
-    const userDb = db.publicDbs.get(dbId)
-    if (!userDb) throw 'Not found'
-    
-    const ptr = await userDb.blobs.getPointer(blobname)
-    if (!ptr) throw 'Not found'
-
-    return {
-      ptr,
-      etag: `W/block-${ptr.start}`,
-      mimeType: ptr.mimeType,
-      createStream: () => userDb.blobs.createReadStreamFromPointer(ptr)
     }
   })
 
