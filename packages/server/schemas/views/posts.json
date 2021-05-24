@@ -44,7 +44,7 @@
               "patternProperties": {
                 ".*": {
                   "type": "array",
-                  "items": {"type": "string", "pattern": ".+@.+"}
+                  "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
                 }
               }
             },
