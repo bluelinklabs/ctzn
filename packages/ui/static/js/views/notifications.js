@@ -1,5 +1,5 @@
 import { LitElement, html } from '../../vendor/lit/lit.min.js'
-import * as toast from '../com/toast.js'
+import * as session from '../lib/session.js'
 import * as notifications from '../lib/notifications.js'
 import '../com/header.js'
 import '../com/button.js'
@@ -26,6 +26,10 @@ class CtznNotificationsView extends LitElement {
 
   async load () {
     document.title = `Notifications | CTZN`
+    if (!session.isActive()) {
+      window.location = '/'
+      return
+    }
     if (document.hasFocus()) {
       notifications.updateClearedAt()
     }

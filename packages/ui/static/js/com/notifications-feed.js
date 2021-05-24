@@ -246,7 +246,7 @@ export class NotificationsFeed extends LitElement {
       <link rel="stylesheet" href="/css/fontawesome.css">
       ${this.title ? html`<h2  class="results-header"><span>${this.title}</span></h2>` : ''}
       ${this.renderResults()}
-      ${this.results?.length && !this.hasReachedEnd ? html`
+      ${!this.results?.length && !this.hasReachedEnd ? html`
         <div class="bottom-of-feed ${this.isLoadingMore ? 'bg-white' : ''} mb-10 py-4 sm:rounded text-center">
           <span class="spinner w-6 h-6 text-gray-500"></span>
         </div>
