@@ -36,7 +36,7 @@ class CtznTopicView extends LitElement {
 
     try {
       this.records = undefined
-      const view = await session.ctzn.view('ctzn.network/topic-records-view', this.topic)
+      const view = await session.api.view.get('ctzn.network/topic-records-view', this.topic)
       console.log(view)
       this.records = view.records
     } catch (e) {

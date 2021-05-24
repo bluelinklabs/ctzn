@@ -2,15 +2,10 @@ import { LitElement, html } from '../../vendor/lit/lit.min.js'
 import { repeat } from '../../vendor/lit/directives/repeat.js'
 import { asyncReplace } from '../../vendor/lit/directives/async-replace.js'
 import * as session from '../lib/session.js'
-import { HTTP_ENDPOINT } from '../lib/const.js'
 import '../com/header.js'
 import '../com/button.js'
 
 const CANVAS_SIZE = 200
-const SERVERS = ['ctzn.one']
-const SERVER_DESCRIPTIONS = {
-  'ctzn.one': 'The first CTZN server. Welcome, trailblazers!'
-}
 
 class CtznSignup extends LitElement {
   static get properties () {
@@ -34,11 +29,7 @@ class CtznSignup extends LitElement {
     this.isProcessing = false
     this.currentError = undefined
     this.currentStage = 1
-    this.values = {
-      domain: SERVERS[0]
-    }
-    this.isServersExpanded = false
-    this.isCustomServer = false
+    this.values = {}
     this.isAvatarSet = false
   }
 
@@ -81,10 +72,9 @@ class CtznSignup extends LitElement {
       </div>
       <div class="mx-auto my-6 sm:my-12 max-w-lg px-8 sm:py-8 bg-white sm:rounded-2xl sm:border border-gray-300">
         ${this.currentStage === 1 ? this.renderAlphaForm() : ''}
-        ${this.currentStage === 2 ? this.renderServerForm() : ''}
-        ${this.currentStage === 3 ? this.renderLegalDocsForm() : ''}
-        ${this.currentStage === 4 ? this.renderAccountForm() : ''}
-        ${this.currentStage === 5 ? this.renderProfileForm() : ''}
+        ${this.currentStage === 2 ? this.renderLegalDocsForm() : ''}
+        ${this.currentStage === 3 ? this.renderAccountForm() : ''}
+        ${this.currentStage === 4 ? this.renderProfileForm() : ''}
       </div>
     `
   }
@@ -114,74 +104,6 @@ class CtznSignup extends LitElement {
             ?disabled=${this.isProcessing}
             ?spinner=${this.isProcessing}
             label="Got it, let's do this!"
-          ></app-button>
-        </div>
-      </form>
-    `
-  }
-
-  renderServerForm () {
-    return html`
-      <form @submit=${this.onNext}>
-        <h2 class="mb-6 text-2xl">Sign up</h2>
-        <div class="mb-6">
-          <label class="block w-full box-border mb-1 font-medium">Select your server</label>
-          <div class="pb-2 text-gray-500 text-sm">
-            Your server will determine your UserID and where your data is stored.
-            E.g. alice@${this.values.domain || 'server.com'}.
-          </div>
-          ${this.isServersExpanded ? html`
-            <div class="border border-gray-400 rounded w-full overflow-hidden" @click=${e => this.isServersExpanded = !this.isServersExpanded}>
-              ${repeat(SERVERS, server => html`
-                <button class="w-full border-b border-gray-300 hov:hover:bg-gray-50" @click=${e => this.onSelectServer(server)}>
-                  <span class="flex items-center justify-between pb-4 pt-4 px-4 w-full">
-                    <span>${server}</span>
-                  </span>
-                </button>
-              `)}
-              <button class="w-full hov:hover:bg-gray-50" @click=${e => this.onSelectServer('custom')}>
-                <span class="flex items-center justify-between pb-4 pt-4 px-4 w-full">
-                  <span>Custom server</span>
-                </span>
-              </button>
-            </div>
-          ` : html`
-            <button class="block border border-gray-300 rounded w-full overflow-hidden hov:hover:border-gray-400" @click=${e => this.isServersExpanded = !this.isServersExpanded}>
-              <span class="flex items-center justify-between pb-4 pt-4 px-4 w-full">
-                <span>${this.isCustomServer ? 'Custom server' : this.values.domain}</span> <span class="fas fa-fw fa-caret-down"></span>
-              </span>
-              ${!this.isCustomServer ? html`
-                <span class="bg-gray-50 border-gray-200 border-t flex text-left items-center px-4 py-4 text-gray-600 text-sm tracking-tight">
-                  <span><span class="fas fa-info-circle fa-fw text-gray-500"></span> ${SERVER_DESCRIPTIONS[this.values.domain]}</span>
-                </span>
-              ` : html`
-                <span class="bg-gray-50 border-gray-200 border-t flex text-left items-center px-4 py-4 text-gray-600 text-sm tracking-tight">
-                  <span><span class="fas fa-info-circle fa-fw text-gray-500"></span> Enter the URL of a custom server (advanced).</span>
-                </span>
-              `}
-            </button>
-            ${this.isCustomServer ? html`
-              <input
-                class="block w-full box-border my-1 p-4 border border-gray-300 rounded"
-                name="domain"
-                required
-                placeholder="E.g. home.com"
-                @keyup=${this.onKeyupCustomServer}
-              >
-            ` : ''}
-          `}
-        </div>
-        ${this.currentError ? html`
-          <div class="bg-red-100 p-6 text-red-600">${this.currentError}</div>
-        ` : ''}
-        <div class="flex justify-between items-center border-t border-gray-300 mt-10 pt-6">
-          <a href="/">Log in to an existing account</a>
-          <app-button
-            primary
-            btn-type="submit"
-            ?disabled=${this.isProcessing}
-            ?spinner=${this.isProcessing}
-            label="Next"
           ></app-button>
         </div>
       </form>
@@ -233,7 +155,7 @@ class CtznSignup extends LitElement {
       <form @submit=${this.onNext}>
         <h2 class="mb-2 text-2xl">Sign up</h2>
         <div class="mb-4 text-gray-500 text-sm">
-          Create your account on ${this.values.domain}
+          Create your account
         </div>
         <div class="mb-6">
           <label class="block w-full box-border mb-1" for="username">Username</label>
@@ -245,11 +167,6 @@ class CtznSignup extends LitElement {
             placeholder="E.g. bob"
             @keyup=${e => this.onKeyupValue(e, 'username')}
           >
-          ${this.values.username ? html`
-            <div class="text-gray-500 text-sm px-2">
-              Your UserID will be ${this.values.username}@${this.values.domain}
-            </div>
-          ` : ''}
         </div>
         <div class="mb-6">
           <label class="block w-full box-border mb-1" for="email">Your email</label>
@@ -384,19 +301,7 @@ class CtznSignup extends LitElement {
     e.preventDefault()
     this.currentError = undefined
 
-    if (this.currentStage === 2) {
-      // server
-      this.isProcessing = true
-      try {
-        const domain = await checkCtznServer(this.values.domain)
-        this.values.domain = domain
-        this.isProcessing = false
-      } catch (e) {
-        this.currentError = 'Failed to connect to server'
-        this.isProcessing = false
-        return
-      }
-    } else if (this.currentStage === 4) {
+    if (this.currentStage === 3) {
       // account
       if (!this.values.username) {
         this.currentError = 'A username is required.'
@@ -420,19 +325,6 @@ class CtznSignup extends LitElement {
 
     this.captureValues()
     this.currentStage++
-  }
-
-  onSelectServer (server) {
-    if (server === 'custom') {
-      this.isCustomServer = true
-    } else {
-      this.isCustomServer = false
-      this.values = Object.assign({}, this.values, {domain: server})
-    }
-  }
-
-  onKeyupCustomServer (e) {
-    this.values = Object.assign({}, this.values, {domain: e.currentTarget.value})
   }
 
   onKeyupValue (e, key) {
@@ -466,7 +358,7 @@ class CtznSignup extends LitElement {
     }
 
     try {
-      await session.doSignup(this.values)
+      await session.api.session.signup(this.values)
       window.location = '/'
     } catch (e) {
       console.log(e)
@@ -486,7 +378,7 @@ async function checkCtznServer (domain) {
   } catch (e) {
     // ignore
   }
-  const res = await (await fetch(`${HTTP_ENDPOINT(domain)}/ctzn/server-info`))
+  const res = await (await fetch(`/ctzn/server-info`))
   if (!res.ok) throw new Error(res.statusText)
   return domain
 }
@@ -500,7 +392,7 @@ async function* loadTermsOfService (domain) {
   } catch (e) {
     // ignore
   }
-  const res = await (await fetch(`${HTTP_ENDPOINT(domain)}/ctzn/server-terms-of-service`)).text()
+  const res = await (await fetch(`/ctzn/server-terms-of-service`)).text()
   if (res) {
     yield res
   } else {
@@ -517,7 +409,7 @@ async function* loadPrivacyPolicy (domain) {
   } catch (e) {
     // ignore
   }
-  const res = await (await fetch(`${HTTP_ENDPOINT(domain)}/ctzn/server-privacy-policy`)).text()
+  const res = await (await fetch(`/ctzn/server-privacy-policy`)).text()
   if (res) {
     yield res
   } else {

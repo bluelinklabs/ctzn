@@ -171,7 +171,7 @@ export class PageEditorPopup extends BasePopup {
 
       if (!this.pageRecord) {
         // find a free ID
-        const existingPages = await session.ctzn.db(this.userId).table('ctzn.network/page').list()
+        const existingPages = await session.api.db(this.userId).table('ctzn.network/page').list()
         const baseId = values.id
         let id = values.id
         let n = 2
@@ -182,17 +182,17 @@ export class PageEditorPopup extends BasePopup {
         values.id = id
       }
 
-      const userProfile = await session.ctzn.getProfile(this.userId)
+      const userProfile = await session.api.getProfile(this.userId)
       if (!userProfile) throw new Error('Unable to load profile information needed to create this page')
       const isCommunity = userProfile.dbType === 'ctzn.network/public-community-db'
 
       if (isCommunity) {
         let isPending = false
-        const blobRes1 = await session.ctzn.blob.create(
+        const blobRes1 = await session.api.blob.create(
           encodeBase64(values.html),
           {mimeType: 'text/html'}
         )
-        const blobRes2 = await session.ctzn.db(this.userId).method(
+        const blobRes2 = await session.api.db(this.userId).method(
           'ctzn.network/put-blob-method',
           {
             source: {
@@ -206,7 +206,7 @@ export class PageEditorPopup extends BasePopup {
           }
         )
         isPending = isPending || blobRes2.pending()
-        const recordRes = await session.ctzn.db(this.userId).method(
+        const recordRes = await session.api.db(this.userId).method(
           'ctzn.network/put-page-method',
           {
             id: values.id,
@@ -222,13 +222,13 @@ export class PageEditorPopup extends BasePopup {
           toast.create('Updates queued, check back later')
         }
       } else {
-        await session.ctzn.blob.update(
+        await session.api.blob.update(
           `ui:pages:${values.id}`,
           encodeBase64(values.html),
           {mimeType: 'text/html'}
         )
         if (this.pageRecord) {
-          await session.ctzn.db(this.userId).table('ctzn.network/page').create({
+          await session.api.db(this.userId).table('ctzn.network/page').create({
             id: values.id,
             title: values.title,
             content: {
@@ -239,10 +239,10 @@ export class PageEditorPopup extends BasePopup {
             createdAt: this.pageRecord.value.createdAt
           })
           if (values.id !== this.pageRecord.value.id) {
-            await session.ctzn.db(this.userId).table('ctzn.network/page').delete(this.pageRecord.key)
+            await session.api.db(this.userId).table('ctzn.network/page').delete(this.pageRecord.key)
           }
         } else {
-          await session.ctzn.db(this.userId).table('ctzn.network/page').create({
+          await session.api.db(this.userId).table('ctzn.network/page').create({
             id: values.id,
             title: values.title,
             content: {

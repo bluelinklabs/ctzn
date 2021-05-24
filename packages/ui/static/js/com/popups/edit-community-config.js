@@ -26,7 +26,7 @@ export class EditCommunityConfigPopup extends BasePopup {
   }
 
   async load () {
-    this.config = (await session.ctzn.db(this.communityId).table('ctzn.network/community-config').get('self'))?.value
+    this.config = (await session.api.db(this.communityId).table('ctzn.network/community-config').get('self'))?.value
     if (!this.config) this.config = {}
     console.log(this.config)
   }
@@ -134,7 +134,7 @@ export class EditCommunityConfigPopup extends BasePopup {
     let res
     this.currentError = undefined
     try {
-      res = await session.ctzn.db(this.communityId).method(
+      res = await session.api.db(this.communityId).method(
         'ctzn.network/community-update-config-method',
         values
       )

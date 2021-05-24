@@ -198,7 +198,7 @@ export class DbmethodsFeed extends LitElement {
       this.entries = undefined
     }
     if (this.userProfile?.userId !== this.userId) {
-      this.userProfile = await session.ctzn.getProfile(this.userId)
+      this.userProfile = await session.api.getProfile(this.userId)
     }
     return this.queueQuery()
   }
@@ -250,8 +250,8 @@ export class DbmethodsFeed extends LitElement {
     let lt = more ? entries[entries?.length - 1]?.key : undefined
     
     const viewRes = (this.view === 'ctzn.network/dbmethod-feed-view')
-      ? await session.ctzn.view(this.view, {limit: 25, lt})
-      : await session.ctzn.view(this.view, this.userId, {limit: 25, reverse: true, lt})
+      ? await session.api.view.get(this.view, {limit: 25, lt})
+      : await session.api.view.get(this.view, this.userId, {limit: 25, reverse: true, lt})
     let newEntries
     if (viewRes.results) {
       newEntries = viewRes.results.map(resultToGeneric)
@@ -287,8 +287,8 @@ export class DbmethodsFeed extends LitElement {
       return
     }
     const viewRes = (this.view === 'ctzn.network/dbmethod-feed-view')
-      ? await session.ctzn.view(this.view, {limit: 1})
-      : await session.ctzn.view(this.view, this.userId, {limit: 1, reverse: true})
+      ? await session.api.view.get(this.view, {limit: 1})
+      : await session.api.view.get(this.view, this.userId, {limit: 1, reverse: true})
     let entries = viewRes.calls || viewRes.results || viewRes.feed
     if (this.methodsFilter) {
       entries = entries.filter(entry => this.methodsFilter.includes(entry.call.method))
@@ -586,7 +586,7 @@ export class DbmethodsFeed extends LitElement {
     const schemaId = extractSchemaId(dbUrl)
     let record
     if (schemaId === 'ctzn.network/post') {
-      record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.ctzn.getPost(authorId, dbUrl)
+      record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.api.getPost(authorId, dbUrl)
       _itemCache[dbUrl] = record
       yield html`
         <ctzn-post-view
@@ -596,7 +596,7 @@ export class DbmethodsFeed extends LitElement {
         ></ctzn-post-view>
       `
     } else if (schemaId === 'ctzn.network/comment') {
-      record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.ctzn.getComment(authorId, dbUrl)
+      record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.api.getComment(authorId, dbUrl)
       _itemCache[dbUrl] = record
       yield html`
         <ctzn-post-view

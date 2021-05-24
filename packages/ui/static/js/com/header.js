@@ -69,7 +69,7 @@ export class Header extends LitElement {
     if (!session.isActive()) {
       return this.renderLoggedOut()
     }
-    let info = session.getSavedInfo()
+    let info = session.api.session.info
     return html`
       <div class="hidden lg:block white-glass sticky top-0 z-20 border-b border-gray-300">
         <div class="flex items-center leading-none font-medium py-2 px-2">

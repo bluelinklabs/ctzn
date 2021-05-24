@@ -62,7 +62,7 @@ export class CommunityMembersList extends LitElement {
     this.followedMembers = undefined
     this.canBan = undefined
 
-    const members = await session.ctzn.listAllMembers(this.userId)
+    const members = await session.api.listAllMembers(this.userId)
     members.sort((a, b) => b.value.joinDate.localeCompare(a.value.joinDate))
     this.members = members
     if (session.isActive() && this.userId !== session.info.userId) {
@@ -71,7 +71,7 @@ export class CommunityMembersList extends LitElement {
         this.members.map(m => m.value.user.userId)
       )
       if (this.amIAMember) {
-        let perm = await session.ctzn.getCommunityUserPermission(
+        let perm = await session.api.getCommunityUserPermission(
           this.userId,
           session.info.userId,
           'ctzn.network/perm-community-ban'

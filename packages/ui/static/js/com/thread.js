@@ -57,20 +57,20 @@ export class Thread extends LitElement {
       message: e.toString()
     })
     if (this.subject.dbUrl.includes('ctzn.network/comment')) {
-      let comment = await session.ctzn.getComment(this.subject.authorId, this.subject.dbUrl).catch(onError)
+      let comment = await session.api.getComment(this.subject.authorId, this.subject.dbUrl).catch(onError)
       if (comment.error) {
         this.post = comment
       } else {
-        this.post = await session.ctzn.getPost(comment.value.reply.root.authorId, comment.value.reply.root.dbUrl).catch(onError)
-        this.thread = await session.ctzn.getThread(
+        this.post = await session.api.getPost(comment.value.reply.root.authorId, comment.value.reply.root.dbUrl).catch(onError)
+        this.thread = await session.api.getThread(
           comment.value.reply.root.authorId,
           comment.value.reply.root.dbUrl,
           comment.value.community?.userId
         ).catch(onError)
       }
     } else {
-      this.post = await session.ctzn.getPost(this.subject.authorId, this.subject.dbUrl).catch(onError)
-      this.thread = !this.post.error ? await session.ctzn.getThread(
+      this.post = await session.api.getPost(this.subject.authorId, this.subject.dbUrl).catch(onError)
+      this.thread = !this.post.error ? await session.api.getThread(
         this.subject.authorId,
         this.subject.dbUrl,
         this.post.value.community?.userId
@@ -242,7 +242,7 @@ export class Thread extends LitElement {
 
   async onDeleteComment (e) {
     try {
-      await session.ctzn.user.table('ctzn.network/comment').delete(e.detail.comment.key)
+      await session.api.user.table('ctzn.network/comment').delete(e.detail.comment.key)
       toast.create('Comment deleted')
       this.load()
     } catch (e) {
@@ -254,7 +254,7 @@ export class Thread extends LitElement {
   async onModeratorRemoveComment (e) {
     try {
       const comment = e.detail.comment
-      await session.ctzn.db(comment.value.community.userId).method(
+      await session.api.db(comment.value.community.userId).method(
         'ctzn.network/community-remove-content-method',
         {contentUrl: comment.url}
       )

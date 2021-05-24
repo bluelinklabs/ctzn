@@ -54,7 +54,7 @@ class CtznPostView extends LitElement {
 
     try {
       this.post = undefined
-      this.authorProfile = await session.ctzn.getProfile(userId)
+      this.authorProfile = await session.api.getProfile(userId)
       this.subject = {
         authorId: userId,
         dbUrl: joinPath(this.authorProfile.dbUrl, schemaDomain, schemaName, key)
@@ -224,7 +224,7 @@ class CtznPostView extends LitElement {
     }
     if (this.communityUserId && session.isInCommunity(this.communityUserId)) {
       items.push(
-        session.ctzn.view(
+        session.api.view.get(
           'ctzn.network/community-user-permission-view',
           this.communityUserId,
           session.info.userId,
@@ -270,7 +270,7 @@ class CtznPostView extends LitElement {
 
   async onDeletePost () {
     try {
-      await session.ctzn.user.table('ctzn.network/post').delete(this.post.key)
+      await session.api.user.table('ctzn.network/post').delete(this.post.key)
       toast.create('Post deleted')
       this.load()
     } catch (e) {
@@ -285,7 +285,7 @@ class CtznPostView extends LitElement {
       return
     }
     try {
-      await session.ctzn.db(this.communityUserId).method(
+      await session.api.db(this.communityUserId).method(
         'ctzn.network/community-remove-content-method',
         {contentUrl: this.post.url}
       )

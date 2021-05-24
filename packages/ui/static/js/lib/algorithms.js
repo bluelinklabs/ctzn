@@ -10,7 +10,7 @@ export async function getFollowedUsersCommunities ({cachedOnly} = {cachedOnly: f
   const followedsMemberships = await chunkMapAsync(session.myFollowing, 5, async (userId) => {
     return {
       userId,
-      memberships: await session.ctzn.db(userId).table('ctzn.network/community-membership').list().catch(e => [])
+      memberships: await session.api.db(userId).table('ctzn.network/community-membership').list().catch(e => [])
     }
   })
   let communities = {}

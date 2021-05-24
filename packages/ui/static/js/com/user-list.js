@@ -29,7 +29,7 @@ export class UserList extends LitElement {
   async load () {
     this.profiles = []
     for (let id of this.ids) {
-      const profile = await session.ctzn.getProfile(id)
+      const profile = await session.api.getProfile(id)
       if (profile.error) {
         profile.userId = id
       }
@@ -41,8 +41,8 @@ export class UserList extends LitElement {
       }
 
       const [followers, following] = await Promise.all([
-        session.ctzn.listFollowers(id).catch(e => undefined),
-        session.ctzn.db(id).table('ctzn.network/follow').list().catch(e => undefined)
+        session.api.listFollowers(id).catch(e => undefined),
+        session.api.db(id).table('ctzn.network/follow').list().catch(e => undefined)
       ])
       profile.isFollowingMe = session.isActive() && !!following?.find(f => f.value.subject.userId === session.info.userId)
       profile.amIFollowing = session.isActive() && !!followers?.find(f => f === session.info.userId)
@@ -157,7 +157,7 @@ export class UserList extends LitElement {
 
   async onClickFollow (e, profile) {
     e.preventDefault()
-    await session.ctzn.user.table('ctzn.network/follow').create({
+    await session.api.user.table('ctzn.network/follow').create({
       subject: {userId: profile.userId, dbUrl: profile.dbUrl}
     })
     profile.amIFollowing = true
@@ -166,7 +166,7 @@ export class UserList extends LitElement {
 
   async onClickUnfollow (e, profile) {
     e.preventDefault()
-    await session.ctzn.user.table('ctzn.network/follow').delete(profile.userId)
+    await session.api.user.table('ctzn.network/follow').delete(profile.userId)
     profile.amIFollowing = false
     this.requestUpdate()
   }

@@ -194,7 +194,7 @@ class CtznUser extends LitElement {
     if (force || (this.userId !== this.userProfile?.username && this.userId !== this.userProfile?.dbUrl)) {
       this.reset()
       this.isProfileLoading = true
-      this.userProfile = await session.ctzn.getProfile(this.userId).catch(e => ({error: true, message: e.toString()}))
+      this.userProfile = await session.api.getProfile(this.userId).catch(e => ({error: true, message: e.toString()}))
       if (this.userProfile.error) {
         console.log('User profile not found for', this.userId)
         document.title = `Not Found | CTZN`
@@ -208,9 +208,9 @@ class CtznUser extends LitElement {
             : []
         ).reduce(dedupSectionsReducer, [])
         const [followers, following, memberships] = await Promise.all([
-          session.ctzn.listFollowers(this.userId),
-          session.ctzn.db(this.userId).table('ctzn.network/follow').list(),
-          session.ctzn.db(this.userId).table('ctzn.network/community-membership').list()
+          session.api.listFollowers(this.userId),
+          session.api.db(this.userId).table('ctzn.network/follow').list(),
+          session.api.db(this.userId).table('ctzn.network/community-membership').list()
         ])
         this.followers = followers
         if (session.isActive() && !this.isMe) {
@@ -232,9 +232,9 @@ class CtznUser extends LitElement {
             : []
         ).reduce(dedupSectionsReducer, [])
         const [communityConfigEntry, members, roles] = await Promise.all([
-          session.ctzn.db(this.userId).table('ctzn.network/community-config').get('self').catch(e => undefined),
+          session.api.db(this.userId).table('ctzn.network/community-config').get('self').catch(e => undefined),
           listAllMembers(this.userId),
-          session.ctzn.db(this.userId).table('ctzn.network/community-role').list().catch(e => [])
+          session.api.db(this.userId).table('ctzn.network/community-role').list().catch(e => [])
         ])
         this.communityConfig = communityConfigEntry?.value
         this.members = members
@@ -248,7 +248,7 @@ class CtznUser extends LitElement {
         console.log({userProfile: this.userProfile, members, roles})
 
         if (session.isActive() && !this.amIFollowing && this.isMembershipClosed) {
-          let inviteEntry = await session.ctzn.db(this.userId)
+          let inviteEntry = await session.api.db(this.userId)
             .table('ctzn.network/community-invite')
             .get(session.info.userId)
             .catch(e => undefined)
@@ -774,11 +774,11 @@ class CtznUser extends LitElement {
   async onClickFollow (e) {
     this.isProcessingSocialAction = true
     try {
-      await session.ctzn.user.table('ctzn.network/follow').create({
+      await session.api.user.table('ctzn.network/follow').create({
         subject: {userId: this.userId, dbUrl: this.userProfile.dbUrl}
       })
       await session.loadSecondaryState()
-      this.followers = await session.ctzn.listFollowers(this.userId)
+      this.followers = await session.api.listFollowers(this.userId)
     } catch (e) {
       console.log(e)
       toast.create('There was an error while trying to follow this user', 'error')
@@ -789,9 +789,9 @@ class CtznUser extends LitElement {
   async onClickUnfollow (e) {
     this.isProcessingSocialAction = true
     try {
-      await session.ctzn.user.table('ctzn.network/follow').delete(this.userId)
+      await session.api.user.table('ctzn.network/follow').delete(this.userId)
       await session.loadSecondaryState()
-      this.followers = await session.ctzn.listFollowers(this.userId)
+      this.followers = await session.api.listFollowers(this.userId)
     } catch (e) {
       console.log(e)
       toast.create('There was an error while trying to unfollow this user', 'error')
@@ -935,7 +935,7 @@ async function listAllMembers (userId) {
   let members = []
   let gt = undefined
   for (let i = 0; i < 1000; i++) {
-    let m = await session.ctzn.db(userId).table('ctzn.network/community-member').list({gt, limit: 100})
+    let m = await session.api.db(userId).table('ctzn.network/community-member').list({gt, limit: 100})
     members = m.length ? members.concat(m) : members
     if (m.length < 100) break
     gt = m[m.length - 1].key

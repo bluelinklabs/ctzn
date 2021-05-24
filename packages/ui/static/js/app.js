@@ -348,7 +348,7 @@ class CtznApp extends LitElement {
 
   async onDeletePost (e) {
     try {
-      await session.ctzn.user.table('ctzn.network/post').delete(e.detail.post.key)
+      await session.api.user.table('ctzn.network/post').delete(e.detail.post.key)
       toast.create('Post deleted')
       this.reloadView()
     } catch (e) {
@@ -360,7 +360,7 @@ class CtznApp extends LitElement {
   async onModeratorRemovePost (e) {
     try {
       const post = e.detail.post
-      await session.ctzn.db(post.value.community.userId).method(
+      await session.api.db(post.value.community.userId).method(
         'ctzn.network/community-remove-content-method',
         {contentUrl: post.url}
       )

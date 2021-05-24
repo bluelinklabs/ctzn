@@ -127,7 +127,7 @@ export class Inbox extends LitElement {
       lt = last.key
     }
     do {
-      let subresults = (await session.ctzn.view('ctzn.network/notifications-view', {lt}))?.notifications
+      let subresults = (await session.api.view.get('ctzn.network/views/notifications', {lt}))?.notifications
       if (subresults.length === 0) break
       
       lt = subresults[subresults.length - 1].key
@@ -159,7 +159,7 @@ export class Inbox extends LitElement {
     }
     let results = []
     while (num) {
-      let subresults = (await session.ctzn.view('ctzn.network/notifications-view', {limit: num}))?.notifications
+      let subresults = (await session.api.view.get('ctzn.network/views/notifications', {limit: num}))?.notifications
       if (!subresults?.length) break
 
       let n = subresults.length

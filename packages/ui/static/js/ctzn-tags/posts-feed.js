@@ -55,8 +55,8 @@ export class PostsFeed extends LitElement {
   }
 
   get view () {
-    if (this._view === 'posts') return 'ctzn.network/posts-view'
-    if (this._view === 'feed') return 'ctzn.network/feed-view'
+    if (this._view === 'posts') return 'ctzn.network/views/posts'
+    if (this._view === 'feed') return 'ctzn.network/views/feed'
     return this._view || 'ctzn.network/posts-view'
   }
 
@@ -152,10 +152,10 @@ export class PostsFeed extends LitElement {
     let results = more ? (this.results || []) : []
     let lt = more ? results[results?.length - 1]?.key : undefined
     const orgLen = results.length
-    if (this.view === 'ctzn.network/feed-view') {
-      results = results.concat((await session.ctzn.view(this.view, {limit: 15, reverse: true, lt}))?.feed)
+    if (this.view === 'ctzn.network/views/feed') {
+      results = results.concat((await session.api.view.get(this.view, {limit: 15, reverse: true, lt}))?.feed)
     } else {
-      results = results.concat((await session.ctzn.view(this.view, this.userId, {limit: 15, reverse: true, lt}))?.posts)
+      results = results.concat((await session.api.view.get(this.view, this.userId, {limit: 15, reverse: true, lt}))?.posts)
     }
     this.hasReachedEnd = orgLen === results.length
     if (this.limit > 0 && results.length > this.limit) {
@@ -189,10 +189,10 @@ export class PostsFeed extends LitElement {
       return
     }
     let results
-    if (this.view === 'ctzn.network/feed-view') {
-      results = (await session.ctzn.view(this.view, {limit: 1, reverse: true}))?.feed
+    if (this.view === 'ctzn.network/views/feed') {
+      results = (await session.api.view.get(this.view, {limit: 1, reverse: true}))?.feed
     } else {
-      results = (await session.ctzn.view(this.view, this.userId, {limit: 1, reverse: true}))?.posts
+      results = (await session.api.view.get(this.view, this.userId, {limit: 1, reverse: true}))?.posts
     }
     emit(this, 'fetched-latest')
     this.hasNewItems = (results[0] && results[0].key !== this.results[0].key)

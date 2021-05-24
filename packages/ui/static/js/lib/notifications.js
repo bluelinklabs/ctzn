@@ -4,7 +4,7 @@ export async function getClearedAt () {
   const cached = getCache('cleared-at')
   if (typeof cached !== 'undefined') return cached
   setCache('cleared-at', cached) // "lock" by updating the cache ttl
-  const res = await session.ctzn.view('ctzn.network/notifications-cleared-at-view')
+  const res = await session.api.view.get('ctzn.network/views/notifications-cleared-at')
   setCache('cleared-at', res?.notificationsClearedAt)
   return res?.notificationsClearedAt
 }
@@ -20,7 +20,7 @@ export async function countUnread () {
   if (typeof cached !== 'undefined') return cached
   setCache('unread', undefined) // "lock" by updating the cache ttl
   const clearedAt = await getClearedAt()
-  const count = (await session.ctzn.view('ctzn.network/notifications-count-view', {after: clearedAt})).count
+  const count = (await session.api.view.get('ctzn.network/views/notifications-count', {after: clearedAt})).count
   setCache('unread', count)
   return count
 }

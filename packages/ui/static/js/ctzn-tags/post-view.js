@@ -53,7 +53,7 @@ export class PostView extends LitElement {
   async load () {
     this.post = undefined
     const {userId, schemaId, key} = parseSrcAttr(this.src)
-    this.post = await session.ctzn.getPost(userId, key).catch(e => ({error: true, message: e.toString()}))
+    this.post = await session.api.getPost(userId, key).catch(e => ({error: true, message: e.toString()}))
   }
 
   get showDefault () {
@@ -125,7 +125,7 @@ export class PostView extends LitElement {
   }
 
   async reloadSignals () {
-    this.post.reactions = (await session.ctzn.view('ctzn.network/reactions-to-view', this.post.url))?.reactions
+    this.post.reactions = (await session.api.view.get('ctzn.network/views/reactions-to', this.post.url))?.reactions
     this.requestUpdate()
   }
 
@@ -539,11 +539,11 @@ export class PostView extends LitElement {
     if (this.haveIReacted(reaction)) {
       this.post.reactions[reaction] = this.post.reactions[reaction].filter(userId => userId !== session.info.userId)
       this.requestUpdate()
-      await session.ctzn.user.table('ctzn.network/reaction').delete(`${reaction}:${this.post.url}`)
+      await session.api.user.table('ctzn.network/reaction').delete(`${reaction}:${this.post.url}`)
     } else {
       this.post.reactions[reaction] = (this.post.reactions[reaction] || []).concat([session.info.userId])
       this.requestUpdate()
-      await session.ctzn.user.table('ctzn.network/reaction').create({
+      await session.api.user.table('ctzn.network/reaction').create({
         subject: {dbUrl: this.post.url, authorId: this.post.author.userId},
         reaction
       })
@@ -598,7 +598,7 @@ export class PostView extends LitElement {
     }
     if (this.communityUserId && session.isInCommunity(this.communityUserId)) {
       items.push(
-        session.ctzn.view(
+        session.api.view.get(
           'ctzn.network/community-user-permission-view',
           this.communityUserId,
           session.info.userId,

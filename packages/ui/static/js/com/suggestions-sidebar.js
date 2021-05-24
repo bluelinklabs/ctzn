@@ -109,7 +109,7 @@ export class SuggestionsSidebar extends LitElement {
         suggestedCommunities = suggestedCommunities.sort(() => Math.random() - 0.5).slice(0, 3)
         for (let suggestedCommunity of suggestedCommunities) {
           if (!suggestedCommunity.displayName) {
-            session.ctzn.getProfile(suggestedCommunity.userId).then(profile => {
+            session.api.getProfile(suggestedCommunity.userId).then(profile => {
               suggestedCommunity.displayName = profile.value.displayName
               suggestedCommunity.description = profile.value.description
               this.requestUpdate()

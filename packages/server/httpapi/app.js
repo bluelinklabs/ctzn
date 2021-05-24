@@ -3,7 +3,6 @@ import concat from 'concat-stream'
 import { debugLog } from '../lib/debug-log.js'
 import * as methods from '../methods/index.js'
 import * as dbViews from '../db/views.js'
-import { joinPath } from '../lib/strings.js'
 import { publicServerDb, publicDbs, onDatabaseChange } from '../db/index.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import * as errors from '../lib/errors.js'
@@ -237,6 +236,10 @@ export function setup (app, config) {
     } catch (e) {
       error(res, e, config)
     }
+  })
+
+  app.use('/_api', (req, res) => {
+    error(res, new errors.NotFoundError(), config)
   })
 }
 

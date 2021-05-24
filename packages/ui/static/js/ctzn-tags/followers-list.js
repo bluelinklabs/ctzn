@@ -58,7 +58,7 @@ export class FollowersList extends LitElement {
     this.followers = undefined
     this.sharedFollowers = undefined
 
-    this.followers = await session.ctzn.listFollowers(this.userId)
+    this.followers = await session.api.listFollowers(this.userId)
     if (session.isActive() && this.userId !== session.info.userId) {
       this.sharedFollowers = intersect(session.myFollowing, this.followers)
     }

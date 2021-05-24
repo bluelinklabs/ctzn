@@ -41,12 +41,12 @@ export class PagesList extends LitElement {
   async load () {
     this.canEdit = false
     this.pages = undefined
-    this.pages = await session.ctzn.db(this.userId).table('ctzn.network/page').list()
+    this.pages = await session.api.db(this.userId).table('ctzn.network/page').list()
     if (session.isActive()) {
       if (this.userId === session.info?.userId) {
         this.canEdit = true
       } else {
-        const perm = await session.ctzn.getCommunityUserPermission(
+        const perm = await session.api.getCommunityUserPermission(
           this.userId,
           session.info.userId,
           'ctzn.network/perm-manage-pages'

@@ -24,7 +24,7 @@ export class ManageBansPopup extends BasePopup {
   }
 
   async load () {
-    this.bans = await session.ctzn.db(this.communityId).table('ctzn.network/community-ban').list().catch(e => {
+    this.bans = await session.api.db(this.communityId).table('ctzn.network/community-ban').list().catch(e => {
       console.log('Failed to fetch bans')
       console.log(e)
       return []
@@ -116,7 +116,7 @@ export class ManageBansPopup extends BasePopup {
       return
     }
     try {
-      let res = await session.ctzn.db(this.communityId).method(
+      let res = await session.api.db(this.communityId).method(
         'ctzn.network/community-delete-ban-method',
         {bannedUser: ban.value.bannedUser}
       )

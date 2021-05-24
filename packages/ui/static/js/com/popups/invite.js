@@ -93,7 +93,7 @@ export class InvitePopup extends BasePopup {
 
     let invitedUser
     try {
-      invitedUser = await session.ctzn.getProfile(this.userId)
+      invitedUser = await session.api.getProfile(this.userId)
       if (!invitedUser.userId || !invitedUser.dbUrl) throw new Error('webfinger lookup failed')
     } catch (e) {
       this.currentError = `Failed to lookup user details: ${e.toString()}`
@@ -103,7 +103,7 @@ export class InvitePopup extends BasePopup {
 
     let res
     try {
-      res = await session.ctzn.db(this.communityId).method(
+      res = await session.api.db(this.communityId).method(
         'ctzn.network/community-invite-member-method',
         {invitedUser}
       )

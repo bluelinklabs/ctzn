@@ -185,13 +185,13 @@ export class EditRolePopup extends BasePopup {
     let res
     this.currentError = undefined
     try {
-      res = await session.ctzn.db(this.communityId).method(
+      res = await session.api.db(this.communityId).method(
         'ctzn.network/community-put-role-method',
         {roleId: this.roleId, permissions: this.permissions}
       )
       for (let memberId of memberIds) {
         if (!this.members?.find(member => member.value.user.userId === memberId)) {
-          let record = await session.ctzn
+          let record = await session.api
             .db(this.communityId)
             .table('ctzn.network/community-member')
             .get(memberId)
@@ -200,7 +200,7 @@ export class EditRolePopup extends BasePopup {
           }
           let roles = new Set(record.value.roles || [])
           roles.add(this.roleId)
-          res = await session.ctzn.db(this.communityId).method(
+          res = await session.api.db(this.communityId).method(
             'ctzn.network/community-set-member-roles-method',
             {member: record.value.user, roles: Array.from(roles)}
           )
@@ -208,7 +208,7 @@ export class EditRolePopup extends BasePopup {
       }
       for (let member of this.members) {
         if (!memberIds.includes(member.value.user.userId)) {
-          let record = await session.ctzn
+          let record = await session.api
             .db(this.communityId)
             .table('ctzn.network/community-member')
             .get(member.value.user.userId)
@@ -217,7 +217,7 @@ export class EditRolePopup extends BasePopup {
           }
           let roles = new Set(record.value.roles || [])
           roles.delete(this.roleId)
-          res = await session.ctzn.db(this.communityId).method(
+          res = await session.api.db(this.communityId).method(
             'ctzn.network/community-set-member-roles-method',
             {member: record.value.user, roles: Array.from(roles)}
           )

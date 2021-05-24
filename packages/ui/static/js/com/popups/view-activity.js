@@ -478,7 +478,7 @@ export class ViewActivityPopup extends BasePopup {
     const schemaId = extractSchemaId(dbUrl)
     let record
     if (schemaId === 'ctzn.network/post') {
-      record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.ctzn.getPost(authorId, dbUrl)
+      record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.api.getPost(authorId, dbUrl)
       _itemCache[dbUrl] = record
       yield html`
         <ctzn-post-view
@@ -488,7 +488,7 @@ export class ViewActivityPopup extends BasePopup {
         ></ctzn-post-view>
       `
     } else if (schemaId === 'ctzn.network/comment') {
-      record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.ctzn.getComment(authorId, dbUrl)
+      record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.api.getComment(authorId, dbUrl)
       _itemCache[dbUrl] = record
       yield html`
         <ctzn-post-view

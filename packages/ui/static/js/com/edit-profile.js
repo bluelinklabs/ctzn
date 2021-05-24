@@ -84,7 +84,7 @@ export class EditProfile extends LitElement {
       for (let section of this.profile.value.sections) {
         if (!section.html) {
           try {
-            let base64buf = (await session.ctzn.blob.get(this.userId, `ui:profile:${section.id}`))?.buf
+            let base64buf = (await session.api.blob.get(this.userId, `ui:profile:${section.id}`))?.buf
             if (base64buf) section.html = decodeBase64(base64buf)
           } catch (e) {
             console.log('Failed to load blob', e)
@@ -101,14 +101,14 @@ export class EditProfile extends LitElement {
 
   async loadCommunity () {
     if (!this.isCommunity) return
-    this.communityPerms = session.isActive() ? (await session.ctzn.view(
+    this.communityPerms = session.isActive() ? (await session.api.view.get(
       'ctzn.network/community-user-permissions-view',
       this.userId,
       session.info.userId
     ))?.permissions : []
-    this.communityConfig = (await session.ctzn.db(this.userId).table('ctzn.network/community-config').get('self'))?.value || {}
-    this.communityRoles = await session.ctzn.db(this.userId).table('ctzn.network/community-role').list().catch(e => undefined) || []
-    this.communityMembers = await session.ctzn.listAllMembers(this.userId)
+    this.communityConfig = (await session.api.db(this.userId).table('ctzn.network/community-config').get('self'))?.value || {}
+    this.communityRoles = await session.api.db(this.userId).table('ctzn.network/community-role').list().catch(e => undefined) || []
+    this.communityMembers = await session.api.listAllMembers(this.userId)
     this.communityConfigValues = deepClone(this.communityConfig)
   }
 
@@ -569,7 +569,7 @@ export class EditProfile extends LitElement {
       return
     }
     try {
-      let res = await session.ctzn.db(this.userId).method(
+      let res = await session.api.db(this.userId).method(
         'ctzn.network/community-delete-role-method',
         {roleId}
       )
@@ -624,7 +624,7 @@ export class EditProfile extends LitElement {
 
       // update community settings
       if (this.isCommunity && hasChanges(this.communityConfigValues, this.communityConfig)) {
-        let res = await session.ctzn.db(this.userId).method(
+        let res = await session.api.db(this.userId).method(
           'ctzn.network/community-update-config-method',
           {joinMode: this.communityConfigValues.joinMode}
         )
@@ -658,7 +658,7 @@ export class EditProfile extends LitElement {
         if (this.isCitizen) {
           // upload section blobs
           for (let update of sectionBlobUpdates) {
-            await session.ctzn.blob.update(
+            await session.api.blob.update(
               `ui:profile:${update.id}`,
               encodeBase64(update.html),
               {mimeType: 'text/html'}
@@ -673,15 +673,15 @@ export class EditProfile extends LitElement {
               ? this.values.sections.map(s => ({id: s.id, label: s.label}))
               : undefined
           }
-          await session.ctzn.user.table('ctzn.network/profile').create(record)
+          await session.api.user.table('ctzn.network/profile').create(record)
         } else if (this.isCommunity) {
           // upload section blobs to the community
           for (let update of sectionBlobUpdates) {
-            let res = await session.ctzn.blob.create(
+            let res = await session.api.blob.create(
               encodeBase64(update.html),
               {mimeType: 'text/html'}
             )
-            let res2 = await session.ctzn.db(this.userId).method(
+            let res2 = await session.api.db(this.userId).method(
               'ctzn.network/put-blob-method',
               {
                 source: {
@@ -705,7 +705,7 @@ export class EditProfile extends LitElement {
               ? this.values.sections.map(s => ({id: s.id, label: s.label}))
               : undefined
           }
-          let res = await session.ctzn.db(this.userId).method(
+          let res = await session.api.db(this.userId).method(
             'ctzn.network/put-profile-method',
             arg
           )
@@ -720,7 +720,7 @@ export class EditProfile extends LitElement {
           await uploadBlob('avatar', this.uploadedAvatar)
         } else if (this.isCommunity) {
           const blobRes = await uploadBlob(undefined, this.uploadedAvatar)
-          let res = await session.ctzn.db(this.userId).method(
+          let res = await session.api.db(this.userId).method(
             'ctzn.network/put-avatar-method',
             {
               blobSource: {userId: session.info.userId, dbUrl: session.info.dbUrl},
@@ -738,7 +738,7 @@ export class EditProfile extends LitElement {
           await uploadBlob('profile-banner', this.uploadedBanner)
         } else if (this.isCommunity) {
           const blobRes = await uploadBlob(undefined, this.uploadedBanner)
-          let res = await session.ctzn.db(this.userId).method(
+          let res = await session.api.db(this.userId).method(
             'ctzn.network/put-blob-method',
             {
               source: {
@@ -797,9 +797,9 @@ async function uploadBlob (blobName, dataUrl) {
   for (let i = 1; i < 6; i++) {
     try {
       if (blobName) {
-        res = await session.ctzn.blob.update(blobName, base64buf, {mimeType})
+        res = await session.api.blob.update(blobName, base64buf, {mimeType})
       } else {
-        res = await session.ctzn.blob.create(base64buf, {mimeType})
+        res = await session.api.blob.create(base64buf, {mimeType})
       }
     } catch (e) {
       lastError = e

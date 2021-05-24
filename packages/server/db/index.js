@@ -204,7 +204,7 @@ async function loadMemberUserDbs () {
           console.error('Skipping db load due to duplicate username', user.key)
           return
         }
-        let publicDb = new PublicCitizenDB(hyperUrlToKey(user.value.dbUrl), user.key)
+        let publicDb = new PublicCitizenDB(user.value.dbKey, user.key)
         await publicDb.setup()
         publicDbs.set(publicDb.dbKey, publicDb)
         publicDbs.set(user.key, publicDb)

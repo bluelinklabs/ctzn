@@ -139,9 +139,9 @@ export class CommentsFeed extends LitElement {
     let results = more ? (this.results || []) : []
     let lt = more ? results[results?.length - 1]?.key : undefined
 
-    const entries = await session.ctzn.db(this.userId).table("ctzn.network/comment").list({limit: 15, reverse: true, lt})
+    const entries = await session.api.db(this.userId).table("ctzn.network/comment").list({limit: 15, reverse: true, lt})
     results = results.concat(await Promise.all(entries.map(entry => (
-      session.ctzn.getComment(this.userId, entry.key)
+      session.api.getComment(this.userId, entry.key)
     ))))
     this.hasReachedEnd = entries.length === 0
     this.requestUpdate()
@@ -173,7 +173,7 @@ export class CommentsFeed extends LitElement {
     if (!this.results || this.hasHitLimit) {
       return
     }
-    const results = await session.ctzn.db(this.userId).table("ctzn.network/comment").list({limit: 1, reverse: true})
+    const results = await session.api.db(this.userId).table("ctzn.network/comment").list({limit: 1, reverse: true})
     this.hasNewItems = (results[0] && results[0].key !== this.results[0].key)
   }
 

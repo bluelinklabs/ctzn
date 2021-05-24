@@ -42,7 +42,7 @@ export class FollowingList extends LitElement {
   async load () {
     this.isExpanded = false
     this.following = undefined
-    this.following = await session.ctzn.db(this.userId).table('ctzn.network/follow').list()
+    this.following = await session.api.db(this.userId).table('ctzn.network/follow').list()
   }
 
   // rendering

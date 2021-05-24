@@ -57,7 +57,7 @@ export class CommentView extends LitElement {
   async load () {
     this.comment = undefined
     const {userId, schemaId, key} = parseSrcAttr(this.src)
-    this.comment = await session.ctzn.getComment(userId, key).catch(e => ({error: true, message: e.toString()}))
+    this.comment = await session.api.getComment(userId, key).catch(e => ({error: true, message: e.toString()}))
   }
 
   get communityUserId () {
@@ -114,7 +114,7 @@ export class CommentView extends LitElement {
   }
 
   async reloadSignals () {
-    this.comment.reactions = (await session.ctzn.view('ctzn.network/reactions-to-view', this.comment.url))?.reactions
+    this.comment.reactions = (await session.api.view.get('ctzn.network/views/reactions-to', this.comment.url))?.reactions
     this.requestUpdate()
   }
 
@@ -293,9 +293,9 @@ export class CommentView extends LitElement {
     const schemaId = extractSchemaId(parent.dbUrl)
     let record
     if (schemaId === 'ctzn.network/post') {
-      record = await session.ctzn.getPost(parent.authorId, parent.dbUrl)
+      record = await session.api.getPost(parent.authorId, parent.dbUrl)
     } else if (schemaId === 'ctzn.network/comment') {
-      record = await session.ctzn.getComment(parent.authorId, parent.dbUrl)
+      record = await session.api.getComment(parent.authorId, parent.dbUrl)
     } else {
       return html`Content by ${parent.authorId}`
     }
@@ -490,11 +490,11 @@ export class CommentView extends LitElement {
     if (this.haveIReacted(reaction)) {
       this.comment.reactions[reaction] = this.comment.reactions[reaction].filter(userId => userId !== session.info.userId)
       this.requestUpdate()
-      await session.ctzn.user.table('ctzn.network/reaction').delete(`${reaction}:${this.comment.url}`)
+      await session.api.user.table('ctzn.network/reaction').delete(`${reaction}:${this.comment.url}`)
     } else {
       this.comment.reactions[reaction] = (this.comment.reactions[reaction] || []).concat([session.info.userId])
       this.requestUpdate()
-      await session.ctzn.user.table('ctzn.network/reaction').create({
+      await session.api.user.table('ctzn.network/reaction').create({
         subject: {dbUrl: this.comment.url, authorId: this.comment.author.userId},
         reaction
       })
@@ -548,7 +548,7 @@ export class CommentView extends LitElement {
     }
     if (this.communityUserId && session.isInCommunity(this.communityUserId)) {
       items.push(
-        session.ctzn.view(
+        session.api.view.get(
           'ctzn.network/community-user-permission-view',
           this.communityUserId,
           session.info.userId,

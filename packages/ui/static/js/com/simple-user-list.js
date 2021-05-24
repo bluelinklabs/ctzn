@@ -26,7 +26,7 @@ export class SimpleUserList extends LitElement {
 
   async load () {
     if (session.isActive()) {
-      let f = await session.ctzn.user.table('ctzn.network/follow').list().catch(e => [])
+      let f = await session.api.user.table('ctzn.network/follow').list().catch(e => [])
       this.myFollows = f.map(f => f.value.subject.userId)
     }
   }
@@ -97,9 +97,9 @@ export class SimpleUserList extends LitElement {
 
   async onClickFollow (e, userId) {
     e.preventDefault()
-    const userInfo = await session.ctzn.getProfile(userId)
+    const userInfo = await session.api.getProfile(userId)
     console.log(userInfo)
-    await session.ctzn.user.table('ctzn.network/follow').create({
+    await session.api.user.table('ctzn.network/follow').create({
       subject: {userId, dbUrl: userInfo.dbUrl}
     })
     this.myFollows.push(userId)
@@ -108,7 +108,7 @@ export class SimpleUserList extends LitElement {
 
   async onClickUnfollow (e, userId) {
     e.preventDefault()
-    await session.ctzn.user.table('ctzn.network/follow').delete(userId)
+    await session.api.user.table('ctzn.network/follow').delete(userId)
     this.myFollows.splice(this.myFollows.indexOf(userId), 1)
     this.requestUpdate()
   }

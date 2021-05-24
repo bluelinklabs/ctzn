@@ -1,0 +1,24 @@
+{
+  "name": "@bluelinklabs/ctzn-api-client",
+  "version": "0.0.1",
+  "description": "API client to CTZN servers.",
+  "main": "node.js",
+  "browser": "browser.dist.js",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "prepare": "echo ''",
+    "postpublish": "echo ''",
+    "test": "echo ''"
+  },
+  "keywords": [],
+  "author": "Paul Frazee <pfrazee@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "arraybuffer-to-buffer": "^0.0.7",
+    "node-fetch": "^2.6.1"
+  },
+  "devDependencies": {
+    "rollup": "^2.36.1"
+  }
+}

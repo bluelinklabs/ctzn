@@ -58,7 +58,7 @@ export class CommunityMembershipsList extends LitElement {
     this.memberships = undefined
     this.sharedCommunities = undefined
 
-    this.memberships = await session.ctzn.db(this.userId).table('ctzn.network/community-membership').list()
+    this.memberships = await session.api.db(this.userId).table('ctzn.network/community-membership').list()
     if (session.isActive() && this.userId !== session.info.userId) {
       this.sharedCommunities = intersect(
         session.myCommunities.map(c => c.userId),

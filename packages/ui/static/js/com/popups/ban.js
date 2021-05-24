@@ -130,7 +130,7 @@ export class BanPopup extends BasePopup {
     let res
     this.currentError = undefined
     try {
-      res = await session.ctzn.db(this.communityId).method(
+      res = await session.api.db(this.communityId).method(
         'ctzn.network/community-remove-member-method',
         {
           member: this.member,

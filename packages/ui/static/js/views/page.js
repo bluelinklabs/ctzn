@@ -51,18 +51,18 @@ class CtznPageView extends LitElement {
       this.canEdit = false
       this.pageRecord = undefined
       this.pageContent = undefined
-      this.authorProfile = await session.ctzn.getProfile(userId)
+      this.authorProfile = await session.api.getProfile(userId)
       this.subject = {
         authorId: userId,
         pageId: key,
         dbUrl: joinPath(this.authorProfile.dbUrl, schemaDomain, schemaName, key)
       }
 
-      this.pageRecord = await session.ctzn.db(userId).table('ctzn.network/page').get(key)
+      this.pageRecord = await session.api.db(userId).table('ctzn.network/page').get(key)
       console.log(this.pageRecord)
       if (this.pageRecord?.value?.content?.blobName) {
         document.title = `${this.pageRecord.value.title || 'Page'} by ${this.authorProfile?.value.displayName || userId} | CTZN`
-        let base64buf = (await session.ctzn.blob.get(userId, this.pageRecord.value.content.blobName))?.buf
+        let base64buf = (await session.api.blob.get(userId, this.pageRecord.value.content.blobName))?.buf
         if (base64buf) this.pageContent = decodeBase64(base64buf)
         else this.pageContent = ''
       } else {
@@ -74,7 +74,7 @@ class CtznPageView extends LitElement {
         if (this.subject.authorId === session.info?.userId) {
           this.canEdit = true
         } else {
-          const perm = await session.ctzn.getCommunityUserPermission(
+          const perm = await session.api.getCommunityUserPermission(
             this.subject.authorId,
             session.info.userId,
             'ctzn.network/perm-manage-pages'
@@ -281,11 +281,11 @@ class CtznPageView extends LitElement {
     }
     try {
       if (this.subject.authorId === session.info.userId) {
-        await session.ctzn.user.table('ctzn.network/page').delete(this.subject.pageId)
+        await session.api.user.table('ctzn.network/page').delete(this.subject.pageId)
         toast.create('Page deleted')
         emit(this, 'navigate-to', {detail: {url: `/${this.subject.authorId}/pages`}})
       } else {
-        const res = await session.ctzn.db(this.subject.authorId).method(
+        const res = await session.api.db(this.subject.authorId).method(
           'ctzn.network/delete-page-method',
           {id: this.subject.pageId}
         )

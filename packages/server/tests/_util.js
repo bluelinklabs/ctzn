@@ -1,10 +1,9 @@
-import fetch from 'node-fetch'
+import { create as createApi } from '@bluelinklabs/ctzn-api-client'
 import tmp from 'tmp-promise'
 import { parseEntryUrl, DEBUG_MODE_PORTS_MAP } from '../lib/strings.js'
 import { spawn } from 'child_process'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
-import arrayBufferToBuffer from 'arraybuffer-to-buffer'
 
 const INSPECTOR_ENABLED = false
 
@@ -49,143 +48,6 @@ export async function createServer () {
       await tmpdir.cleanup()
     }
   }
-}
-
-function createApi (origin) {
-  let cookies = {}
-
-  const url = (path, query) => {
-    const u = new URL(`/_api/${path}`, origin)
-    if (query) {
-      for (let k in query) {
-        u.searchParams.set(k, query[k])
-      }
-    }
-    return u
-  }
-  const cookieHeader = () => {
-    return Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ')
-  }
-  const setCookies = (res) => {
-    const setCookie = res.headers.raw()['set-cookie']
-    if (setCookie) {
-      setCookie.forEach(str => {
-        let kv = str.split('; ')[0]
-        let [k, v] = kv.split('=')
-        cookies[k] = v
-      })
-    }
-  }
-
-  const api = {
-    async get (path, query) {
-      const res = await fetch(url(path, query), {
-        headers: {Cookie: cookieHeader()}
-      })
-      const resbody = await res.json()
-      if (!res.ok || resbody.error) {
-        throw new Error(resbody.message || res.statusText || res.status)
-      }
-      setCookies(res)
-      return resbody
-    },
-    async getBuf (path, query) {
-      const res = await fetch(url(path, query), {
-        headers: {Cookie: cookieHeader()}
-      })
-      if (!res.ok) {
-        throw new Error(res.statusText || res.status)
-      }
-      setCookies(res)
-      return arrayBufferToBuffer(await res.arrayBuffer())
-    },
-    async post (path, body) {
-      const res = await fetch(url(path), {
-        method: 'POST',
-        headers: {Cookie: cookieHeader(), 'Content-Type': 'application/json'},
-        body: JSON.stringify(body || {})
-      })
-      const resbody = await res.json()
-      if (!res.ok || resbody.error) {
-        throw new Error(resbody.message || res.statusText || res.status)
-      }
-      setCookies(res)
-      return resbody
-    },
-    async put (path, body) {
-      const res = await fetch(url(path), {
-        method: 'PUT',
-        headers: {Cookie: cookieHeader(), 'Content-Type': 'application/json'},
-        body: JSON.stringify(body || {})
-      })
-      const resbody = await res.json()
-      if (!res.ok || resbody.error) {
-        throw new Error(resbody.message || res.statusText || res.status)
-      }
-      setCookies(res)
-      return resbody
-    },
-    async putBuf (path, body, mimeType) {
-      const res = await fetch(url(path), {
-        method: 'PUT',
-        headers: {Cookie: cookieHeader(), 'Content-Type': mimeType},
-        body
-      })
-      const resbody = await res.json()
-      if (!res.ok || resbody.error) {
-        throw new Error(resbody.message || res.statusText || res.status)
-      }
-      setCookies(res)
-      return resbody
-    },
-    async delete (path) {
-      const res = await fetch(url(path), {
-        method: 'DELETE',
-        headers: {Cookie: cookieHeader()}
-      })
-      const resbody = await res.json()
-      if (!res.ok || resbody.error) {
-        throw new Error(resbody.message || res.statusText || res.status)
-      }
-      setCookies(res)
-      return resbody
-    },
-    async method (path, params) {
-      return api.post(`method/${path}`, params)
-    }
-  }
-  api.view = {
-    async get (path, params) {
-      return api.get(`view/${path}`, params)
-    }
-  }
-  api.table = {
-    async list (dbId, schemaId, opts) {
-      return api.get(`table/${dbId}/${schemaId}`, opts)
-    },
-    async get (dbId, schemaId, key) {
-      return api.get(`table/${dbId}/${schemaId}/${encodeURIComponent(key)}`)
-    },
-    async create (dbId, schemaId, value) {
-      return api.post(`table/${dbId}/${schemaId}`, value)
-    },
-    async update (dbId, schemaId, key, value) {
-      return api.put(`table/${dbId}/${schemaId}/${encodeURIComponent(key)}`, value)
-    },
-    async delete (dbId, schemaId, key) {
-      return api.delete(`table/${dbId}/${schemaId}/${encodeURIComponent(key)}`)
-    },
-    async getBlob (dbId, schemaId, key, blobName) {
-      return api.getBuf(`table/${dbId}/${schemaId}/${encodeURIComponent(key)}/blobs/${blobName}`)
-    },
-    async putBlob (dbId, schemaId, key, blobName, buf, mimeType) {
-      return api.putBuf(`table/${dbId}/${schemaId}/${encodeURIComponent(key)}/blobs/${blobName}`, buf, mimeType)
-    },
-    async delBlob (dbId, schemaId, key, blobName) {
-      return api.delete(`table/${dbId}/${schemaId}/${encodeURIComponent(key)}/blobs/${blobName}`)
-    },
-  }
-  return api
 }
 
 export class TestFramework {

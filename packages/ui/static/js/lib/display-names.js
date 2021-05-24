@@ -22,7 +22,7 @@ export async function* fetcher (userId) {
 
   if (!_activeFetches[userId]) {
     _activeFetches[userId] = (async () => {
-      let profile = await session.ctzn.getProfile(userId).catch(e => undefined)
+      let profile = await session.api.getProfile(userId).catch(e => undefined)
       return profile?.value?.displayName || userId
     })()
   }

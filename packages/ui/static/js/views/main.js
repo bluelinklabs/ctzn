@@ -188,7 +188,7 @@ class CtznMainView extends LitElement {
             </h2>
             <ctzn-posts-feed
               class="block sm:border border-t border-gray-300"
-              view="ctzn.network/feed-view"
+              view="ctzn.network/views/feed"
               @publish-reply=${this.onPublishReply}
               @fetched-latest=${e => {this.lastFeedFetch = (new Date()).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}}
             ></ctzn-posts-feed>
@@ -329,7 +329,7 @@ custom code</ctzn-code>
 
     const post = {
       key: '',
-      author: {userId: session.info.userId, displayName: session.info.displayName},
+      author: {dbKey: session.api.info.dbKey, displayName: session.api.info.displayName},
       value: {
         text: 'Debug',
         extendedText: testHtml,
@@ -341,7 +341,7 @@ custom code</ctzn-code>
       <h1 class="font-bold mb-1">Profile Context</h1>
       <app-custom-html
         context="profile"
-        .contextState=${{page: {userId: session.info.userId}}}
+        .contextState=${{page: {userId: session.api.info.userId}}}
         .html=${testHtml}
       ></app-custom-html>
       <h1 class="font-bold mb-1">Post Context</h1>

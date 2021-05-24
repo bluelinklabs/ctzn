@@ -92,7 +92,7 @@ export class DbmethodResultFeed extends LitElement {
     this.abortController = new AbortController()
     let results = more ? (this.results || []) : []
     let lt = more ? results[results?.length - 1]?.key : undefined
-    results = results.concat((await session.ctzn.view('ctzn.network/dbmethod-results-view', this.userId, {limit: this.limit, reverse: true, lt}))?.results)
+    results = results.concat((await session.api.view.get('ctzn.network/dbmethod-results-view', this.userId, {limit: this.limit, reverse: true, lt}))?.results)
     console.log(results)
     this.results = results
     this.activeQuery = undefined
@@ -104,7 +104,7 @@ export class DbmethodResultFeed extends LitElement {
     if (!this.results) {
       return
     }
-    let results = (await session.ctzn.view('ctzn.network/dbmethod-results-view', this.userId, {limit: 1, reverse: true}))?.results
+    let results = (await session.api.view.get('ctzn.network/dbmethod-results-view', this.userId, {limit: 1, reverse: true}))?.results
     this.hasNewItems = (results[0] && results[0].key !== this.results[0]?.key)
   }
 

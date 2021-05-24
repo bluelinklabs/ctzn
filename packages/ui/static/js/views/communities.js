@@ -96,7 +96,7 @@ class CtznCommunities extends LitElement {
   async load () {
     document.title = `Communities | CTZN`
     if (session.isActive()) {
-      this.memberships = await session.ctzn.user.table('ctzn.network/community-membership').list()
+      this.memberships = await session.api.user.table('ctzn.network/community-membership').list()
       this.memberships.sort((a, b) => a.value.community.userId.localeCompare(b.value.community.userId))
       if (!this.suggestedCommunities) {
         this.suggestedCommunities = SUGGESTED_COMMUNITIES.filter(c => !this.memberships?.find(m => c.userId === m.value.community.userId))
@@ -114,7 +114,7 @@ class CtznCommunities extends LitElement {
       this.suggestedCommunities = this.suggestedCommunities.sort(() => Math.random() - 0.5).slice(0, 40)
       for (let suggestedCommunity of this.suggestedCommunities) {
         if (!suggestedCommunity.displayName) {
-          session.ctzn.getProfile(suggestedCommunity.userId).then(profile => {
+          session.api.getProfile(suggestedCommunity.userId).then(profile => {
             suggestedCommunity.displayName = profile.value.displayName
             suggestedCommunity.description = profile.value.description
             this.requestUpdate()

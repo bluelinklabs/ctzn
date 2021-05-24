@@ -117,7 +117,7 @@ class CommentComposer extends LitElement {
       if (this.parent && this.parent.dbUrl !== root.dbUrl) {
         reply.parent = this.parent
       }
-      res = await session.ctzn.user.table('ctzn.network/comment').create({
+      res = await session.api.user.table('ctzn.network/comment').create({
         text: this.querySelector('#text').value,
         reply,
         community: this.community,
