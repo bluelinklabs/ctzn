@@ -15,13 +15,11 @@ import './views/notifications.js'
 import './views/post.js'
 import './views/page.js'
 import './views/signup.js'
-import './views/topic.js'
 import './views/user.js'
 
 const PAGE_PATH_REGEX = new RegExp('/([^/]+)/ctzn.network/page/([^/]+)', 'i')
 const POST_PATH_REGEX = new RegExp('/([^/]+)/ctzn.network/post/([^/]+)', 'i')
 const COMMENT_PATH_REGEX = new RegExp('/([^/]+)/ctzn.network/comment/([^/]+)', 'i')
-const TOPIC_PATH_REGEX = new RegExp('/topic/([^/]+)')
 const USER_PATH_REGEX = new RegExp('/([^/]+)')
 const USER_PAGE_REGEX = new RegExp('^/([^/]+)/([^/]+)$')
 
@@ -157,10 +155,6 @@ class CtznApp extends LitElement {
           this.querySelector('app-user-view').setGesturesNav()
         }
     }
-    if (TOPIC_PATH_REGEX.test(this.currentPath)) {
-      gestures.setCurrentNav([{back: true}, this.currentPath])
-      return
-    }
     if (PAGE_PATH_REGEX.test(this.currentPath)) {
       gestures.setCurrentNav([{back: true}, this.currentPath])
       return
@@ -248,9 +242,6 @@ class CtznApp extends LitElement {
           return html`<app-account-view id="view" current-path=${path}></app-account-view>`
         case '/signup':
           return html`<app-signup-view id="view" current-path=${path}></app-signup-view>`
-      }
-      if (TOPIC_PATH_REGEX.test(path)) {
-        return html`<app-topic-view id="view" current-path=${path}></app-topic-view>`
       }
       if (PAGE_PATH_REGEX.test(path)) {
         return html`<app-page-view id="view" current-path=${path}></app-page-view>`

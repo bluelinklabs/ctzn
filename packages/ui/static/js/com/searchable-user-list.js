@@ -76,9 +76,8 @@ export class SearchableUserList extends LitElement {
   get numResults () {
     const me = this.getFilteredMe()
     const users = this.getFilteredUsers()
-    const looksLikeTopic = isTopicLike(this.filter)
     const looksLikeUserId = this.filter?.includes('@') && !this.filter?.includes(' ')
-    return (!!me ? 1 : 0) + ((looksLikeTopic || looksLikeUserId) ? 1 : 0) + users?.length
+    return (!!me ? 1 : 0) + (looksLikeUserId ? 1 : 0) + users?.length
   }
 
   testUserId (userId) {
@@ -100,7 +99,6 @@ export class SearchableUserList extends LitElement {
   render () {
     const me = this.getFilteredMe()
     const users = this.getFilteredUsers()
-    const looksLikeTopic = isTopicLike(this.filter)
     const looksLikeUserId = this.filter?.includes('@') && !this.filter?.includes(' ')
     let itemIndex = 0
     const renderItem = (href, title, inner) => {
@@ -144,11 +142,6 @@ export class SearchableUserList extends LitElement {
       >
         ${looksLikeUserId ? html`
           ${renderItem(`/${this.filter}`, this.filter, html`
-            <span class="bg-gray-100 fa-arrow-right fas mr-2 py-2 rounded text-center w-8"></span>
-            Go to ${this.filter}
-          `)}
-        ` : looksLikeTopic ? html`
-          ${renderItem(`/topic/${toTopic(this.filter)}`, this.filter, html`
             <span class="bg-gray-100 fa-arrow-right fas mr-2 py-2 rounded text-center w-8"></span>
             Go to ${this.filter}
           `)}
@@ -204,11 +197,3 @@ export class SearchableUserList extends LitElement {
 }
 
 customElements.define('app-searchable-user-list', SearchableUserList)
-
-function isTopicLike (str) {
-  return /^[A-Za-z\-_ ]+$/.test(str)
-}
-
-function toTopic (str) {
-  return str.toLowerCase().replace(/ /g, '_')
-}
