@@ -237,10 +237,6 @@ export function setup (app, config) {
       error(res, e, config)
     }
   })
-
-  app.use('/_api', (req, res) => {
-    error(res, new errors.NotFoundError(), config)
-  })
 }
 
 function error (res, e, config) {

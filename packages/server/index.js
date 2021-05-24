@@ -112,6 +112,7 @@ function createAppServer (config, configDir) {
 
   appHttpAPI.setup(app, config)
   if (config.debugMode) debugHttpAPI.setup(app)
+  app.use('/_api', (req, res) => json404(res, 'Not found'))
   app.get('/', (req, res) => res.render('index'))
   app.get('/index', (req, res) => res.render('index'))
   app.get('/index.html', (req, res) => res.render('index'))
@@ -199,6 +200,7 @@ function createAdminServer (config, configDir) {
     next()
   })
   adminHttpAPI.setup(app)
+  app.use('/_api', (req, res) => json404(res, 'Not found'))
   app.get('/', (req, res) => res.render('index', {topnav: 'dashboard'}))
   app.get('/hyperspace', (req, res) => res.render('hyperspace', {topnav: 'hyperspace'}))
   app.get('/hyperspace/log', (req, res) => res.render('hyperspace-log', {topnav: 'hyperspace'}))
