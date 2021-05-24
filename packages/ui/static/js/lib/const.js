@@ -31,7 +31,7 @@ export function USER_URL (userId) {
 }
 
 export function POST_URL (post) {
-  return '/' + joinPath(post.author.userId, 'ctzn.network/post', post.key)
+  return '/' + joinPath(post.author.dbKey, 'ctzn.network/post', post.key)
 }
 
 export function FULL_POST_URL (post) {

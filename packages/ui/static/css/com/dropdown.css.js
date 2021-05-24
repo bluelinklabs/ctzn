@@ -17,21 +17,6 @@ const cssStr = css`
   --border-color--dropdown-separator: #ddd;
 }
 
-@media (prefers-color-scheme: dark) {
-  .dropdown {
-    --text-color--dropdown-default: #ccd;
-    --text-color--dropdown-section: #aaa;
-    --text-color--dropdown-icon: #eef;
-    --text-color--dropdown-btn--pressed: #2c2c31;
-    --text-color--title: gray;
-    --bg-color--dropdown: #334;
-    --bg-color--dropdown-item--hover: #445;
-    --border-color--dropdown: #556;
-    --border-color--dropdown-item: #669;
-    --border-color--dropdown-section: rgba(0,0,0,.1);
-    --border-color--dropdown-separator: #ddd;
-  }
-}
 
 .dropdown.open .toggleable:not(.primary) {
   background: var(--text-color--dropdown-btn--pressed);

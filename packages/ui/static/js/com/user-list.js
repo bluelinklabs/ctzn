@@ -44,7 +44,7 @@ export class UserList extends LitElement {
         session.api.listFollowers(id).catch(e => undefined),
         session.api.db(id).table('ctzn.network/follow').list().catch(e => undefined)
       ])
-      profile.isFollowingMe = session.isActive() && !!following?.find(f => f.value.subject.userId === session.info.userId)
+      profile.isFollowingMe = session.isActive() && !!following?.entries.find(f => f.value.subject.userId === session.info.userId)
       profile.amIFollowing = session.isActive() && !!followers?.find(f => f === session.info.userId)
       this.requestUpdate()
     }

@@ -57,22 +57,16 @@ export class Thread extends LitElement {
       message: e.toString()
     })
     if (this.subject.dbUrl.includes('ctzn.network/comment')) {
-      let comment = await session.api.getComment(this.subject.authorId, this.subject.dbUrl).catch(onError)
+      let comment = await session.api.getComment(this.subject.dbUrl).catch(onError)
       if (comment.error) {
         this.post = comment
       } else {
-        this.post = await session.api.getPost(comment.value.reply.root.authorId, comment.value.reply.root.dbUrl).catch(onError)
-        this.thread = await session.api.getThread(
-          comment.value.reply.root.authorId,
-          comment.value.reply.root.dbUrl
-        ).catch(onError)
+        this.post = await session.api.getPost(comment.value.reply.root.dbUrl).catch(onError)
+        this.thread = await session.api.getThread(comment.value.reply.root.dbUrl).catch(onError)
       }
     } else {
-      this.post = await session.api.getPost(this.subject.authorId, this.subject.dbUrl).catch(onError)
-      this.thread = !this.post.error ? await session.api.getThread(
-        this.subject.authorId,
-        this.subject.dbUrl
-      ).catch(onError) : undefined
+      this.post = await session.api.getPost(this.subject.dbUrl).catch(onError)
+      this.thread = !this.post.error ? await session.api.getThread(this.subject.dbUrl).catch(onError) : undefined
     }
     await this.updateComplete
     emit(this, 'load', {detail: {post: this.post}})

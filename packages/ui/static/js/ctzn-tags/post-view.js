@@ -52,8 +52,8 @@ export class PostView extends LitElement {
 
   async load () {
     this.post = undefined
-    const {userId, schemaId, key} = parseSrcAttr(this.src)
-    this.post = await session.api.getPost(userId, key).catch(e => ({error: true, message: e.toString()}))
+    const {dbKey, schemaId, key} = parseSrcAttr(this.src)
+    this.post = await session.api.getPost(dbKey, key).catch(e => ({error: true, message: e.toString()}))
   }
 
   get showDefault () {
@@ -79,22 +79,22 @@ export class PostView extends LitElement {
   }
 
   get isMyPost () {
-    if (!session.isActive() || !this.post?.author.userId) {
+    if (!session.isActive() || !this.post?.author.dbKey) {
       return false
     }
-    return session.info?.userId === this.post?.author.userId
+    return session.info?.dbKey === this.post?.author.dbKey
   }
 
   haveIReacted (reaction) {
     if (!session.isActive()) return
-    return this.post.reactions?.[reaction]?.includes(session.info.userId)
+    return this.post.reactions?.[reaction]?.includes(session.info.dbKey)
   }
 
   getMyReactions () {
     if (!session.isActive()) return []
     if (!this.post.reactions) return []
     return Object.keys(this.post.reactions).filter(reaction => {
-      return this.post.reactions[reaction].includes(session.info.userId)
+      return this.post.reactions[reaction].includes(session.info.dbKey)
     })
   }
 
@@ -169,10 +169,10 @@ export class PostView extends LitElement {
         @mousemove=${this.onMousemoveCard}
       >
         <div class="pl-2 pt-2">
-          <a class="block" href="${USER_URL(this.post.author.userId)}" title=${this.post.author.displayName}>
+          <a class="block" href="${USER_URL(this.post.author.dbKey)}" title=${this.post.author.displayName}>
             <img
               class="block object-cover rounded-full mt-1 w-11 h-11"
-              src=${AVATAR_URL(this.post.author.userId)}
+              src=${AVATAR_URL(this.post.author.dbKey)}
             >
           </a>
         </div>
@@ -180,8 +180,8 @@ export class PostView extends LitElement {
           <div class="pl-2 pr-2 py-2 min-w-0">
             <div class="pr-2.5 text-gray-600 truncate sm:mb-2">
               <span class="sm:mr-1 whitespace-nowrap">
-                <a class="hov:hover:underline" href="${USER_URL(this.post.author.userId)}" title=${this.post.author.displayName}>
-                  <span class="text-gray-800 font-semibold">${displayNames.render(this.post.author.userId)}</span>
+                <a class="hov:hover:underline" href="${USER_URL(this.post.author.dbKey)}" title=${this.post.author.displayName}>
+                  <span class="text-gray-800 font-semibold">${displayNames.render(this.post.author.dbKey)}</span>
                 </a>
               </span>
               <span class="mr-2 text-sm">
@@ -224,10 +224,10 @@ export class PostView extends LitElement {
         @mousemove=${this.onMousemoveCard}
       >
         <div class="pl-2 pt-2">
-          <a class="block" href="${USER_URL(this.post.author.userId)}" title=${this.post.author.displayName}>
+          <a class="block" href="${USER_URL(this.post.author.dbKey)}" title=${this.post.author.displayName}>
             <img
               class="block object-cover rounded-full mt-1 w-11 h-11"
-              src=${AVATAR_URL(this.post.author.userId)}
+              src=${AVATAR_URL(this.post.author.dbKey)}
             >
           </a>
         </div>
@@ -235,8 +235,8 @@ export class PostView extends LitElement {
           <div class="pr-2 py-2 min-w-0">
             <div class="pl-1 pr-2.5 text-sm text-gray-600 truncate">
               <span class="sm:mr-1 whitespace-nowrap">
-                <a class="hov:hover:underline" href="${USER_URL(this.post.author.userId)}" title=${this.post.author.displayName}>
-                  <span class="text-black font-bold" style="font-size: 15px; letter-spacing: 0.1px;">${displayNames.render(this.post.author.userId)}</span>
+                <a class="hov:hover:underline" href="${USER_URL(this.post.author.dbKey)}" title=${this.post.author.displayName}>
+                  <span class="text-black font-bold" style="font-size: 15px; letter-spacing: 0.1px;">${displayNames.render(this.post.author.dbKey)}</span>
                 </a>
               </span>
               <span class="mr-2">
@@ -272,7 +272,7 @@ export class PostView extends LitElement {
     if (item.blobs.original.dataUrl) {
       url = item.blobs.original.dataUrl
     } else {
-      url = BLOB_URL(this.post.author.userId, 'ctzn.network/post', this.post.key, (item.blobs.thumb || item.blobs.original).blobName)
+      url = BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, (item.blobs.thumb || item.blobs.original).blobName)
     }
     return html`
       <div
@@ -349,12 +349,7 @@ export class PostView extends LitElement {
   }
 
   renderRepliesCtrl () {
-    let aCls = `inline-block ml-1 mr-6`
-    if (this.canInteract) {
-      aCls += ` text-gray-500`
-    } else {
-      aCls += ` text-gray-400`
-    }
+    let aCls = `inline-block ml-1 mr-6 text-gray-500`
     return html`
       <span class=${aCls}>
         <span class="far fa-comment"></span>
@@ -364,15 +359,10 @@ export class PostView extends LitElement {
   }
 
   renderReactionsBtn () {
-    let aCls = `inline-block px-1 ml-1 mr-6 rounded`
-    if (this.canInteract) {
-      aCls += ` text-gray-500 hov:hover:bg-gray-200`
-    } else {
-      aCls += ` text-gray-400`
-    }
+    let aCls = `inline-block px-1 ml-1 mr-6 rounded text-gray-500 hov:hover:bg-gray-200`
     if (this.isReactionsOpen) aCls += ' bg-gray-200'
     return html`
-      <a class=${aCls} @click=${this.canInteract ? this.onClickReactBtn : undefined}>
+      <a class=${aCls} @click=${this.onClickReactBtn}>
         <span class="far fa-fw fa-heart"></span>
       </a>
     `
@@ -383,13 +373,13 @@ export class PostView extends LitElement {
       return ''
     }
     return html`
-      ${repeat(Object.entries(this.post.reactions), ([reaction, userIds]) => {
+      ${repeat(Object.entries(this.post.reactions), ([reaction, dbKeys]) => {
         const colors = this.haveIReacted(reaction) ? 'bg-blue-50 hov:hover:bg-blue-100 text-blue-600' : 'bg-gray-50 text-gray-600 hov:hover:bg-gray-100'
         return html`
           <a
             class="inline-block mr-2 px-1.5 py-0.5 rounded text-sm flex-shrink-0 ${colors}"
             @click=${e => this.onClickReaction(e, reaction)}
-          >${unsafeHTML(emojify(makeSafe(reaction)))} <sup class="font-medium">${userIds.length}</sup></a>
+          >${unsafeHTML(emojify(makeSafe(reaction)))} <sup class="font-medium">${dbKeys.length}</sup></a>
         `
       })}
     `
@@ -421,7 +411,7 @@ export class PostView extends LitElement {
         <app-custom-html
           class="block pt-4 mt-4 mb-3 text-black border-t border-dashed border-gray-200"
           context="post"
-          .contextState=${{page: {userId: this.post.author.dbKey}}}
+          .contextState=${{page: {dbKey: this.post.author.dbKey}}}
           .html=${this.post.value.extendedText}
           @click=${this.onClickText}
         ></app-custom-html>
@@ -488,7 +478,7 @@ export class PostView extends LitElement {
     if (!this.isMouseDragging) {
       e.preventDefault()
       e.stopPropagation()
-      emit(this, 'view-thread', {detail: {subject: {dbUrl: this.post.url, authorId: this.post.author.userId}}})
+      emit(this, 'view-thread', {detail: {subject: {dbUrl: this.post.dbUrl, authorId: this.post.author.dbKey}}})
     }
     this.isMouseDown = false
     this.isMouseDragging = false
@@ -503,14 +493,14 @@ export class PostView extends LitElement {
     e.stopPropagation()
 
     if (this.haveIReacted(reaction)) {
-      this.post.reactions[reaction] = this.post.reactions[reaction].filter(userId => userId !== session.info.userId)
+      this.post.reactions[reaction] = this.post.reactions[reaction].filter(dbKey => dbKey !== session.info.dbKey)
       this.requestUpdate()
-      await session.api.user.table('ctzn.network/reaction').delete(`${reaction}:${this.post.url}`)
+      await session.api.user.table('ctzn.network/reaction').delete(`${reaction}:${this.post.dbUrl}`)
     } else {
-      this.post.reactions[reaction] = (this.post.reactions[reaction] || []).concat([session.info.userId])
+      this.post.reactions[reaction] = (this.post.reactions[reaction] || []).concat([session.info.dbKey])
       this.requestUpdate()
       await session.api.user.table('ctzn.network/reaction').create({
-        subject: {dbUrl: this.post.url, authorId: this.post.author.userId},
+        subject: {dbUrl: this.post.dbUrl},
         reaction
       })
     }
@@ -584,8 +574,8 @@ export class PostView extends LitElement {
     e.preventDefault()
     e.stopPropagation()
     ViewMediaPopup.create({
-      url: BLOB_URL(this.post.author.userId, 'ctzn.network/post', this.post.key, (item.blobs.thumb || item.blobs.original).blobName),
-      urls: this.post.value.media.map(item2 => BLOB_URL(this.post.author.userId, 'ctzn.network/post', this.post.key, (item2.blobs.thumb || item2.blobs.original).blobName))
+      url: BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, (item.blobs.thumb || item.blobs.original).blobName),
+      urls: this.post.value.media.map(item2 => BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, (item2.blobs.thumb || item2.blobs.original).blobName))
     })
   }
 }
