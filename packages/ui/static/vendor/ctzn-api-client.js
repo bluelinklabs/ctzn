@@ -223,10 +223,12 @@ function createApi ({origin, fetch, arrayBufferToBuffer}) {
           try {
             info = JSON.parse(localStorage.getItem('session-info')) || undefined;
           } catch (e) {}
-          if (!info) {
+          if (!info?.hasSession) {
             info = await api.method('ctzn.network/methods/whoami');
           }
-          api.session.info = info;
+          if (info?.hasSession) {
+            api.session.info = info;
+          }
           emitter.dispatchEvent(new Event('change'));
         } catch (e) {
           console.log('Failed to setup session');

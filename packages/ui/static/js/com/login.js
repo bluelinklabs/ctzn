@@ -74,7 +74,7 @@ class CtznLogin extends LitElement {
       password: e.target.password.value
     }
     try {
-      await session.doLogin(creds)
+      await session.api.session.login(creds)
       window.location = '/'
     } catch (e) {
       console.log(e)

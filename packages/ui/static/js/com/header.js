@@ -313,7 +313,7 @@ export class Header extends LitElement {
   }
 
   async onLogOut () {
-    await session.doLogout()
+    await session.api.session.logout()
     location.reload()
   }
 }
