@@ -216,8 +216,8 @@ class PostComposer extends LitElement {
       post: {
         key: '',
         author: {
-          userId: session.info.userId,
-          displayName: session.info.displayName
+          dbKey: session.api.info.dbKey,
+          displayName: session.api.info.displayName
         },
         value: {
           text: this.draftText,

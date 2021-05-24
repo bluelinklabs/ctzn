@@ -178,7 +178,7 @@ export class Thread extends LitElement {
           <app-comment-composer
             autofocus
             class="block border border-gray-200 rounded p-2"
-            .subject=${{dbUrl: this.post.url, authorId: this.post.author.userId}}
+            .subject=${{dbUrl: this.post.url}}
             placeholder="Write your comment. Remember to always be kind!"
             @publish=${this.onPublishReply}
             @cancel=${this.onCancelReply}

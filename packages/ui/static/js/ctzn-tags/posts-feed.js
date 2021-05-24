@@ -57,7 +57,7 @@ export class PostsFeed extends LitElement {
   get view () {
     if (this._view === 'posts') return 'ctzn.network/views/posts'
     if (this._view === 'feed') return 'ctzn.network/views/feed'
-    return this._view || 'ctzn.network/posts-view'
+    return this._view || 'ctzn.network/views/posts'
   }
 
   set view (v) {
@@ -85,7 +85,7 @@ export class PostsFeed extends LitElement {
   }
 
   async load ({clearCurrent} = {clearCurrent: false}) {
-    if (!this.view || (this.view === 'ctzn.network/posts-view' && !this.userId)) {
+    if (!this.view || (this.view === 'ctzn.network/views/posts' && !this.userId)) {
       return
     }
     if (this.activeQuery) {
@@ -155,7 +155,7 @@ export class PostsFeed extends LitElement {
     if (this.view === 'ctzn.network/views/feed') {
       results = results.concat((await session.api.view.get(this.view, {limit: 15, reverse: true, lt}))?.feed)
     } else {
-      results = results.concat((await session.api.view.get(this.view, this.userId, {limit: 15, reverse: true, lt}))?.posts)
+      results = results.concat((await session.api.view.get(this.view, {dbId: this.userId, limit: 15, reverse: true, lt}))?.posts)
     }
     this.hasReachedEnd = orgLen === results.length
     if (this.limit > 0 && results.length > this.limit) {
@@ -192,7 +192,7 @@ export class PostsFeed extends LitElement {
     if (this.view === 'ctzn.network/views/feed') {
       results = (await session.api.view.get(this.view, {limit: 1, reverse: true}))?.feed
     } else {
-      results = (await session.api.view.get(this.view, this.userId, {limit: 1, reverse: true}))?.posts
+      results = (await session.api.view.get(this.view, {dbId: this.userId, limit: 1, reverse: true}))?.posts
     }
     emit(this, 'fetched-latest')
     this.hasNewItems = (results[0] && results[0].key !== this.results[0].key)
@@ -254,7 +254,7 @@ export class PostsFeed extends LitElement {
         ${this.renderHasNewItems()}
         <div class="bg-gray-100 text-gray-500 py-44 text-center">
           <div class="fas fa-stream text-6xl text-gray-300 mb-8"></div>
-          ${this.view === 'ctzn.network/posts-view' ? html`
+          ${this.view === 'ctzn.network/views/posts' ? html`
             <div>This feed is empty.</div>
           ` : html`
             <div>Follow people to see what's new.</div>

@@ -23,7 +23,7 @@ export function HTTP_ENDPOINT (domain) {
 }
 
 export function AVATAR_URL (userId) {
-  return '/' + joinPath('_api/view/ctzn.network/views/avatar', userId)
+  return '/' + joinPath(`_api/view/ctzn.network/views/avatar?dbId=${encodeURIComponent(userId)}`)
 }
 
 export function USER_URL (userId) {
@@ -46,9 +46,8 @@ export function FULL_COMMENT_URL (comment) {
   return location.origin + '/' + joinPath(comment.author.userId, 'ctzn.network/comment', comment.key)
 }
 
-export function BLOB_URL (userId, blobName) {
-  // TODO removeme
-  return '/' + joinPath('.view/ctzn.network/blob-view', userId, blobName)
+export function BLOB_URL (userId, table, key, blobName) {
+  return '/' + joinPath('_api/table', encodeURIComponent(userId), table, key, 'blobs', blobName)
 }
 
 export const SUGGESTED_REACTIONS = [

@@ -19,7 +19,7 @@ import './img-fallbacks.js'
 export class EditProfile extends LitElement {
   static get properties () {
     return {
-      userId: {type: String, attribute: 'user-id'},
+      dbKey: {type: String, attribute: 'db-key'},
       profile: {type: Object},
       _hasChanges: {type: Boolean},
       values: {type: Object},
@@ -35,10 +35,9 @@ export class EditProfile extends LitElement {
 
   constructor () {
     super()
-    this.userId = undefined
+    this.dbKey = undefined
     this.profile = undefined
 
-    
     // UI state
     this.hasChanges = false
     this.values = undefined
@@ -65,7 +64,7 @@ export class EditProfile extends LitElement {
       for (let section of this.profile.value.sections) {
         if (!section.html) {
           try {
-            let base64buf = (await session.api.blob.get(this.userId, `ui:profile:${section.id}`))?.buf
+            let base64buf = (await session.api.blob.get(this.dbKey, `ui:profile:${section.id}`))?.buf
             if (base64buf) section.html = decodeBase64(base64buf)
           } catch (e) {
             console.log('Failed to load blob', e)
@@ -101,7 +100,7 @@ export class EditProfile extends LitElement {
 
   get canEditProfile () {
     return session.isActive () && (
-      session.info.username === this.username
+      session.info.dbKey === this.dbKey
     )
   }
 
@@ -172,7 +171,7 @@ export class EditProfile extends LitElement {
                       slot="img1"
                       class="block rounded-2xl border border-gray-400 w-full object-cover cursor-pointer hov:hover:opacity-50"
                       style="width: 320px; height: 150px"
-                      src=${BLOB_URL(this.userId, 'profile-banner')} 
+                      src=${BLOB_URL(this.dbKey, 'ctzn.network/profile', 'self', 'banner')} 
                       @click=${this.onClickBanner}
                     >
                     <div
@@ -196,7 +195,7 @@ export class EditProfile extends LitElement {
                 <img 
                   class="block border border-gray-400 rounded-3xl object-cover cursor-pointer hov:hover:opacity-50"
                   style="width: 150px; height: 150px;"
-                  src=${this.uploadedAvatar || AVATAR_URL(this.userId)}
+                  src=${this.uploadedAvatar || AVATAR_URL(this.dbKey)}
                   @click=${this.onClickAvatar}
                 >
               </div>
@@ -317,7 +316,7 @@ export class EditProfile extends LitElement {
     const res = await UiEditorPopup.create({
       label: this.values.sections[index].label,
       context: 'profile',
-      contextState: {page: {userId: this.userId}},
+      contextState: {page: {userId: this.dbKey}},
       value: this.values.sections[index].html,
       placeholder: 'Build your UI here!',
       canSave: this.canEditProfile
@@ -377,40 +376,39 @@ export class EditProfile extends LitElement {
     this.isProcessing = true
 
     try {
-      let isPending = false
-
       // update profile data
       if (this.canEditProfile && hasChanges(this.values, this.profile.value)) {
-        let usedSectionIds = new Set()
-        for (let section of (this.values.sections || [])) {
-          const baseId = (slugify(section.label) || 'section').toLocaleLowerCase()
-          let id = baseId
-          let n = 2
-          while (usedSectionIds.has(id)) {
-            id = `${baseId}-${n}`
-            n++
-          }
-          usedSectionIds.add(baseId)
-          section.id = id
-        }
+        // TODO
+        // let usedSectionIds = new Set()
+        // for (let section of (this.values.sections || [])) {
+        //   const baseId = (slugify(section.label) || 'section').toLocaleLowerCase()
+        //   let id = baseId
+        //   let n = 2
+        //   while (usedSectionIds.has(id)) {
+        //     id = `${baseId}-${n}`
+        //     n++
+        //   }
+        //   usedSectionIds.add(baseId)
+        //   section.id = id
+        // }
 
-        // build a list of section blobs to update
-        let sectionBlobUpdates = []
-        for (let section of (this.values.sections || [])) {
-          let oldSection = this.profile.value.sections?.find(old => old.id === section.id)
-          if (!oldSection || oldSection.html !== section.html) {
-            sectionBlobUpdates.push({id: section.id, html: section.html})
-          }
-        }
+        // // build a list of section blobs to update
+        // let sectionBlobUpdates = []
+        // for (let section of (this.values.sections || [])) {
+        //   let oldSection = this.profile.value.sections?.find(old => old.id === section.id)
+        //   if (!oldSection || oldSection.html !== section.html) {
+        //     sectionBlobUpdates.push({id: section.id, html: section.html})
+        //   }
+        // }
 
-        // upload section blobs
-        for (let update of sectionBlobUpdates) {
-          await session.api.blob.update(
-            `ui:profile:${update.id}`,
-            encodeBase64(update.html),
-            {mimeType: 'text/html'}
-          )
-        }
+        // // upload section blobs
+        // for (let update of sectionBlobUpdates) {
+        //   await session.api.blob.update(
+        //     `ui:profile:${update.id}`,
+        //     encodeBase64(update.html),
+        //     {mimeType: 'text/html'}
+        //   )
+        // }
 
         // update profile record
         const record = {
@@ -424,7 +422,7 @@ export class EditProfile extends LitElement {
       }
 
       // update avatar
-      if (this.uploadedAvatar) {
+      if (this.canEditProfile && this.uploadedAvatar) {
         toast.create('Uploading avatar...')
         if (this.isCitizen) {
           await uploadBlob('avatar', this.uploadedAvatar)
@@ -432,10 +430,10 @@ export class EditProfile extends LitElement {
       }
 
       // update banner
-      if (this.uploadedBanner) {
+      if (this.canEditProfile && this.uploadedBanner) {
         toast.create('Uploading banner image...')
         if (this.isCitizen) {
-          await uploadBlob('profile-banner', this.uploadedBanner)
+          await uploadBlob('banner', this.uploadedBanner)
         }
       }
       toast.create('Profile updated', 'success')
@@ -476,11 +474,8 @@ async function uploadBlob (blobName, dataUrl) {
   let res, lastError
   for (let i = 1; i < 6; i++) {
     try {
-      if (blobName) {
-        res = await session.api.blob.update(blobName, base64buf, {mimeType})
-      } else {
-        res = await session.api.blob.create(base64buf, {mimeType})
-      }
+      res = await session.api.user.table('ctzn.network/profile').putBlob('self', blobName, base64buf, mimeType)
+      break
     } catch (e) {
       lastError = e
       let shrunkDataUrl = await images.shrinkImage(dataUrl, (10 - i) / 10, mimeType)

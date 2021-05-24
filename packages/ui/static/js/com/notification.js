@@ -69,8 +69,8 @@ export class Notification extends LitElement {
 
     let otherAuthors
     if (note.mergedNotes?.length) {
-      let others = new Set(note.mergedNotes.map(n => n?.author?.userId).filter(Boolean))
-      others.delete(note.author.userId)
+      let others = new Set(note.mergedNotes.map(n => n?.author?.dbKey).filter(Boolean))
+      others.delete(note.author.dbKey)
       if (others.size > 0) otherAuthors = Array.from(others)
     }
 
@@ -78,7 +78,6 @@ export class Notification extends LitElement {
     var action = ''
     if (schemaId === 'ctzn.network/comment') {
       replyCommentInfo = {
-        userId: note.author.userId,
         dbUrl: note.itemUrl
       }
       if (note.item.reply?.parent && note.item.reply?.parent.dbUrl.startsWith(session.info.dbUrl)) {
@@ -115,13 +114,13 @@ export class Notification extends LitElement {
         </div>
         <div class="flex-1 min-w-0">
           <div class="flex items-center text-sm pt-4 px-3 pb-2">
-            <a href="/${note.author.userId}" title=${note.author.userId}>
-              <img class="w-8 h-8 rounded-full object-cover mr-2" src=${AVATAR_URL(note.author.userId)}>
+            <a href="/${note.author.dbKey}">
+              <img class="w-8 h-8 rounded-full object-cover mr-2" src=${AVATAR_URL(note.author.dbKey)}>
             </a>
             ${otherAuthors?.length ? html`
-              ${repeat(otherAuthors.slice(0, 5), userId => html`
-                <a href="/${userId}" title=${userId}>
-                  <img class="w-8 h-8 rounded-full object-cover mr-2" src=${AVATAR_URL(userId)}>
+              ${repeat(otherAuthors.slice(0, 5), dbKey => html`
+                <a href="/${dbKey}">
+                  <img class="w-8 h-8 rounded-full object-cover mr-2" src=${AVATAR_URL(dbKey)}>
                 </a>
               `)}
               ${otherAuthors.length > 5 ? html`
@@ -130,8 +129,8 @@ export class Notification extends LitElement {
             ` : ''}
           </div>
           <div class="pl-3 pr-4 pb-2">
-            <a class="font-bold" href="/${note.author.userId}" title=${note.author.userId}>
-            ${displayNames.render(note.author.userId)}
+            <a class="font-bold" href="/${note.author.dbKey}">
+              ${displayNames.render(note.author.dbKey)}
             </a>
             ${otherAuthors ? html`and ${otherAuthors.length} ${pluralize(otherAuthors.length, 'other')}` : ''}
             ${action} ${target} &middot; ${relativeDate(note.blendedCreatedAt)}
@@ -192,7 +191,7 @@ export class Notification extends LitElement {
       yield html`Loading...`
     }
 
-    let record = _itemCache[commentInfo.dbUrl] ? _itemCache[commentInfo.dbUrl] : await session.api.getComment(commentInfo.userId, commentInfo.dbUrl)
+    let record = _itemCache[commentInfo.dbUrl] ? _itemCache[commentInfo.dbUrl] : await session.api.getComment(commentInfo.dbUrl)
     _itemCache[commentInfo.dbUrl] = record
     yield html`
       <ctzn-post-view
@@ -237,13 +236,13 @@ export class Notification extends LitElement {
 
     let schemaId = extractSchemaId(this.notification.itemUrl)
     if (schemaId === 'ctzn.network/post'){
-      const subject = await session.api.getPost(this.notification.author.userId, this.notification.itemUrl)
-      emit(this, 'view-thread', {detail: {subject: {dbUrl: subject.url, authorId: subject.author.userId}}})
+      const subject = await session.api.getPost(this.notification.itemUrl)
+      emit(this, 'view-thread', {detail: {subject: {dbUrl: subject.url}}})
     } else if (schemaId === 'ctzn.network/comment') {
-      const subject = await session.api.getComment(this.notification.author.userId, this.notification.itemUrl)
-      emit(this, 'view-thread', {detail: {subject: {dbUrl: subject.url, authorId: subject.author.userId}}})
+      const subject = await session.api.getComment(this.notification.itemUrl)
+      emit(this, 'view-thread', {detail: {subject: {dbUrl: subject.url}}})
     } else if (schemaId === 'ctzn.network/follow') {
-      window.location = `/${this.notification.author.userId}`
+      window.location = `/${this.notification.author.dbKey}`
     } else if (schemaId === 'ctzn.network/reaction') {
       let subject
       const subjectSchemaId = extractSchemaId(this.notification.item.subject.dbUrl)
@@ -253,7 +252,7 @@ export class Notification extends LitElement {
         subject = await session.api.getComment(this.notification.item.subject.authorId, this.notification.item.subject.dbUrl)
       }
       if (subject) {
-        emit(this, 'view-thread', {detail: {subject: {dbUrl: subject.url, authorId: subject.author.userId}}})
+        emit(this, 'view-thread', {detail: {subject: {dbUrl: subject.url}}})
       }
     }
   }

@@ -103,7 +103,7 @@ export class PostView extends LitElement {
   }
 
   async reloadSignals () {
-    this.post.reactions = (await session.api.view.get('ctzn.network/views/reactions-to', this.post.url))?.reactions
+    this.post.reactions = (await session.api.view.get('ctzn.network/views/reactions-to', {dbUrl: this.post.dbUrl}))?.reactions
     this.requestUpdate()
   }
 
@@ -272,7 +272,7 @@ export class PostView extends LitElement {
     if (item.blobs.original.dataUrl) {
       url = item.blobs.original.dataUrl
     } else {
-      url = BLOB_URL(this.post.author.userId, (item.blobs.thumb || item.blobs.original).blobName)
+      url = BLOB_URL(this.post.author.userId, 'ctzn.network/post', this.post.key, (item.blobs.thumb || item.blobs.original).blobName)
     }
     return html`
       <div
@@ -421,7 +421,7 @@ export class PostView extends LitElement {
         <app-custom-html
           class="block pt-4 mt-4 mb-3 text-black border-t border-dashed border-gray-200"
           context="post"
-          .contextState=${{page: {userId: this.post.author.userId}}}
+          .contextState=${{page: {userId: this.post.author.dbKey}}}
           .html=${this.post.value.extendedText}
           @click=${this.onClickText}
         ></app-custom-html>
@@ -584,8 +584,8 @@ export class PostView extends LitElement {
     e.preventDefault()
     e.stopPropagation()
     ViewMediaPopup.create({
-      url: BLOB_URL(this.post.author.userId, (item.blobs.thumb || item.blobs.original).blobName),
-      urls: this.post.value.media.map(item2 => BLOB_URL(this.post.author.userId, (item2.blobs.thumb || item2.blobs.original).blobName))
+      url: BLOB_URL(this.post.author.userId, 'ctzn.network/post', this.post.key, (item.blobs.thumb || item.blobs.original).blobName),
+      urls: this.post.value.media.map(item2 => BLOB_URL(this.post.author.userId, 'ctzn.network/post', this.post.key, (item2.blobs.thumb || item2.blobs.original).blobName))
     })
   }
 }

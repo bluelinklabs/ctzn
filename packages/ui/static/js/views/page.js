@@ -225,7 +225,7 @@ class CtznPageView extends LitElement {
           ` : this.pageContent ? html`
             <app-custom-html
               context="page"
-              .contextState=${{page: {userId: this.subject.authorId}}}
+              .contextState=${{page: {userId: this.subject.dbKey}}}
               .html=${this.pageContent}
             ></app-custom-html>
           ` : html`
@@ -254,7 +254,7 @@ class CtznPageView extends LitElement {
       pageRecord: this.pageRecord,
       pageContent: this.pageContent,
       context: 'page',
-      contextState: {page: {userId: this.userId}},
+      contextState: {page: {userId: this.subject.authorId}},
       placeholder: 'Create your page here!',
       canSave: this.canEdit
     })

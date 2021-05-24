@@ -4,9 +4,11 @@ let emitter = new EventTarget()
 export let myFollowers = undefined
 export let myFollowing = undefined
 export let api = createApi()
+export let info = undefined
 
 export async function setup () {
   window.api = api
+  api.session.onChange(() => {info = api.session.info})
   await api.session.setup()
   loadSecondaryState()
 }

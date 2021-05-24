@@ -323,7 +323,7 @@ custom code</ctzn-code>
 
     const post = {
       key: '',
-      author: {dbKey: session.api.info.dbKey, displayName: session.api.info.displayName},
+      author: {dbKey: session.info.dbKey, displayName: session.info.displayName},
       value: {
         text: 'Debug',
         extendedText: testHtml,
@@ -335,7 +335,7 @@ custom code</ctzn-code>
       <h1 class="font-bold mb-1">Profile Context</h1>
       <app-custom-html
         context="profile"
-        .contextState=${{page: {userId: session.api.info.userId}}}
+        .contextState=${{page: {userId: session.info.username}}}
         .html=${testHtml}
       ></app-custom-html>
       <h1 class="font-bold mb-1">Post Context</h1>

@@ -319,12 +319,12 @@ export class Inbox extends LitElement {
         <div class="py-2 pr-2">
           <img
             class="w-6 h-6 rounded-full object-cover"
-            src=${AVATAR_URL(result.author.userId)}
+            src=${AVATAR_URL(result.author.username)}
           >
         </div>
         <div class="sm:flex flex-1 truncate py-2 pl-1 pr-3">
           <div class="font-semibold truncate" style="flex: 0 0 140px">
-            ${displayNames.render(result.author.userId)}
+            ${displayNames.render(result.author.username)}
           </div>
           <div class="flex-1 truncate">
             ${result.item.text}
@@ -360,7 +360,7 @@ export class Inbox extends LitElement {
   // =
 
   onClickResult (e, result) {
-    emit(this, 'view-thread', {detail: {subject: {dbUrl: result.itemUrl, authorId: result.author.userId}}})
+    emit(this, 'view-thread', {detail: {subject: {dbUrl: result.itemUrl, authorId: result.author.username}}})
   }
 
   onToggleSelected (e, result) {

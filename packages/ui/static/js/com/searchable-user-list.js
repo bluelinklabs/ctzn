@@ -76,7 +76,7 @@ export class SearchableUserList extends LitElement {
   get numResults () {
     const me = this.getFilteredMe()
     const users = this.getFilteredUsers()
-    const looksLikeUserId = this.filter?.includes('@') && !this.filter?.includes(' ')
+    const looksLikeUserId = false // TODO this.filter?.includes('@') && !this.filter?.includes(' ')
     return (!!me ? 1 : 0) + (looksLikeUserId ? 1 : 0) + users?.length
   }
 
@@ -99,7 +99,7 @@ export class SearchableUserList extends LitElement {
   render () {
     const me = this.getFilteredMe()
     const users = this.getFilteredUsers()
-    const looksLikeUserId = this.filter?.includes('@') && !this.filter?.includes(' ')
+    const looksLikeUserId = false // TODO this.filter?.includes('@') && !this.filter?.includes(' ')
     let itemIndex = 0
     const renderItem = (href, title, inner) => {
       let isHighlighted = (this.widgetMode && itemIndex++ === this.highlightIndex)

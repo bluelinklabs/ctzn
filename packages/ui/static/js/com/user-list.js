@@ -95,7 +95,7 @@ export class UserList extends LitElement {
                     slot="img1"
                     class="rounded-t"
                     style="display: block; object-fit: cover; width: 100%; height: 80px;"
-                    src=${BLOB_URL(userId, 'profile-banner')}
+                    src=${BLOB_URL(userId, 'ctzn.network/profile', 'self', 'banner')}
                   >
                   <div slot="img2"></div>
                 </app-img-fallbacks>

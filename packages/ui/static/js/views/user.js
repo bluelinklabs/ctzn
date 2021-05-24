@@ -65,8 +65,6 @@ class CtznUser extends LitElement {
     this.followers = undefined
     this.following = undefined
     this.sharedFollowers = []
-    this.roles = undefined
-    this.isUserInvited = undefined
     this.isEmpty = false
     this.showMiniRightNavProfile = false
   }
@@ -79,7 +77,7 @@ class CtznUser extends LitElement {
   }
 
   get isMe () {
-    return session.info?.dbUrl === this.userProfile?.dbUrl
+    return session.info?.dbKey === this.userProfile?.dbKey
   }
 
   get isCitizen () {
@@ -87,11 +85,11 @@ class CtznUser extends LitElement {
   }
 
   get amIFollowing () {
-    return !!session.myFollowing?.find?.(dbUrl => dbUrl === this.userProfile?.dbUrl)
+    return !!session.myFollowing?.find?.(dbKey => dbKey === this.userProfile?.dbKey)
   }
 
   get isFollowingMe () {
-    return !!this.following?.find?.(f => f.value.subject.dbUrl === session.info?.dbUrl)
+    return !!this.following?.find?.(f => f.value.subject.dbKey === session.info?.dbKey)
   }
 
   get sections () {
@@ -151,7 +149,7 @@ class CtznUser extends LitElement {
     this.lastScrolledToUserId = this.userId
 
     // profile change?
-    if (force || (this.userId !== this.userProfile?.username && this.userId !== this.userProfile?.dbUrl)) {
+    if (force || (this.userId !== this.userProfile?.username && this.userId !== this.userProfile?.dbKey)) {
       this.reset()
       this.isProfileLoading = true
       this.userProfile = await session.api.getProfile(this.userId).catch(e => ({error: true, message: e.toString()}))
@@ -430,7 +428,7 @@ class CtznUser extends LitElement {
               <img
                 slot="img1"
                 style="display: block; object-fit: cover; width: 100%; height: 400px;"
-                src=${BLOB_URL(this.userId, 'profile-banner')}
+                src=${BLOB_URL(this.userId, 'ctzn.network/profile', 'self', 'banner')}
               >
               <div slot="img2"></div>
             </app-img-fallbacks>
@@ -467,7 +465,7 @@ class CtznUser extends LitElement {
               <img
                 slot="img1"
                 style="display: block; object-fit: cover; width: 100%; height: 200px;"
-                src=${BLOB_URL(this.userId, 'profile-banner')}
+                src=${BLOB_URL(this.userId, 'ctzn.network/profile', 'self', 'banner')}
               >
               <div slot="img2"></div>
             </app-img-fallbacks>
@@ -552,7 +550,7 @@ class CtznUser extends LitElement {
     if (this.currentView === 'settings') {
       return html`
         <app-edit-profile
-          user-id=${this.userId}
+          db-key=${this.userProfile?.dbKey}
           .profile=${this.userProfile}
           @profile-updated=${this.onProfileUpdated}
         ></app-edit-profile>
@@ -586,7 +584,7 @@ class CtznUser extends LitElement {
     this.isProcessingSocialAction = true
     try {
       await session.api.user.table('ctzn.network/follow').create({
-        subject: {userId: this.userId, dbUrl: this.userProfile.dbUrl}
+        subject: {userId: this.userId, dbKey: this.userProfile.dbKey}
       })
       await session.loadSecondaryState()
       this.followers = await session.api.listFollowers(this.userId)

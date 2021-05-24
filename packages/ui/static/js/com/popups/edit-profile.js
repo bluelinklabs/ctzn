@@ -46,7 +46,7 @@ export class EditProfilePopup extends BasePopup {
                   slot="img1"
                   class="block rounded w-full object-cover cursor-pointer hov:hover:opacity-50"
                   style="height: 130px"
-                  src=${BLOB_URL(this.userId, 'profile-banner')} 
+                  src=${BLOB_URL(this.userId, 'ctzn.network/profile', 'self', 'banner')} 
                   @click=${this.onClickBanner}
                 >
                 <div

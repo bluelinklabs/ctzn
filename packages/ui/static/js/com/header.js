@@ -114,9 +114,9 @@ export class Header extends LitElement {
             <span class="fas fa-fw fa-plus"></span>
           </a>
           <a
-            class="${this.getHeaderNavClass(`/${info.userId}`)}"
-            href="/${info.userId}"
-            title=${info.userId}
+            class="${this.getHeaderNavClass(`/${info.username}`)}"
+            href="/${info.username}"
+            title="My Profile"
             @click=${this.onClickLink}
             data-tooltip="Profile"
           >
@@ -148,9 +148,9 @@ export class Header extends LitElement {
             Notifications
           </a>
           <a
-            class="${this.getMenuNavClass(`/${info.userId}`)}"
-            href="/${info.userId}"
-            title=${info.userId}
+            class="${this.getMenuNavClass(`/${info.username}`)}"
+            href="/${info.username}"
+            title="My Profile"
             @click=${this.onClickLink}
           >
             <span class="fas mr-2 fa-fw navicon fa-user"></span>
@@ -278,14 +278,14 @@ export class Header extends LitElement {
     this.isMenuOpen = false
 
     const res = await PageEditorPopup.create({
-      userId: session.info.userId,
+      username: session.info.username,
       context: 'page',
-      contextState: {page: {userId: session.info.userId}},
+      contextState: {page: {userId: session.info.username}},
       placeholder: 'Create your page here!',
       canSave: true
     })
     console.log(res)
-    window.location = `/${session.info.userId}/ctzn.network/page/${res.id}`
+    window.location = `/${session.info.username}/ctzn.network/page/${res.id}`
   }
 
   onClickAccountMenu (e) {

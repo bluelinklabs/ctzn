@@ -95,7 +95,7 @@ export class CommentView extends LitElement {
   }
 
   async reloadSignals () {
-    this.comment.reactions = (await session.api.view.get('ctzn.network/views/reactions-to', this.comment.url))?.reactions
+    this.comment.reactions = (await session.api.view.get('ctzn.network/views/reactions-to', {dbUrl: this.comment.dbUrl}))?.reactions
     this.requestUpdate()
   }
 
