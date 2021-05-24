@@ -6,7 +6,7 @@
   "browser": "browser.dist.js",
   "type": "module",
   "scripts": {
-    "build": "rollup -c",
+    "build": "rollup -c && cp ./browser.build.js ../ui/static/vendor/ctzn-api-client.js",
     "prepare": "echo ''",
     "postpublish": "echo ''",
     "test": "echo ''"
