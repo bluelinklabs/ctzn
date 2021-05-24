@@ -76,10 +76,9 @@ export class SearchableUserList extends LitElement {
   get numResults () {
     const me = this.getFilteredMe()
     const users = this.getFilteredUsers()
-    const communities = this.getFilteredCommunities()
     const looksLikeTopic = isTopicLike(this.filter)
     const looksLikeUserId = this.filter?.includes('@') && !this.filter?.includes(' ')
-    return (!!me ? 1 : 0) + ((looksLikeTopic || looksLikeUserId) ? 1 : 0) + users?.length + communities?.length
+    return (!!me ? 1 : 0) + ((looksLikeTopic || looksLikeUserId) ? 1 : 0) + users?.length
   }
 
   testUserId (userId) {
@@ -98,16 +97,9 @@ export class SearchableUserList extends LitElement {
     return (session.myFollowing || []).filter(userId => this.testUserId(userId))
   }
 
-  getFilteredCommunities () {
-    return (session.myCommunities || [])
-      .map(c => c.userId)
-      .filter(userId => this.testUserId(userId))
-  }
-
   render () {
     const me = this.getFilteredMe()
     const users = this.getFilteredUsers()
-    const communities = this.getFilteredCommunities()
     const looksLikeTopic = isTopicLike(this.filter)
     const looksLikeUserId = this.filter?.includes('@') && !this.filter?.includes(' ')
     let itemIndex = 0
@@ -166,22 +158,6 @@ export class SearchableUserList extends LitElement {
             <img class="w-8 h-8 object-cover rounded-md mr-2" src=${AVATAR_URL(me)} style="left: 10px; top: 6px">
             ${displayNames.render(me)}
           `)}
-        ` : ''}
-        ${communities?.length ? html`
-          <h3 class="font-bold px-2 py-2 text-xs border-b border-gray-200">
-            My Communities
-          </h3>
-          <div>
-            ${communities?.length ? html`
-              ${repeat(communities, userId => userId, userId => renderItem(`/${userId}`, userId, html`
-                <img
-                  class="lazyload w-8 h-8 object-cover rounded-md mr-2"
-                  data-src=${AVATAR_URL(userId)}
-                >
-                <span class="truncate">${displayNames.render(userId)}</span>
-              `))}
-            ` : ''}
-          </div>
         ` : ''}
         ${users?.length ? html`
           <h3 class="font-bold px-2 py-2 text-xs border-b border-gray-200">

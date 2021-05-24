@@ -18,7 +18,6 @@ export class PostExpanded extends LitElement {
       asReplyParent: {type: Boolean, attribute: 'as-reply-parent'},
       asReplyChild: {type: Boolean, attribute: 'as-reply-child'},
       nometa: {type: Boolean},
-      nocommunity: {type: Boolean},
       noctrls: {type: Boolean},
       hoverBgColor: {type: String, attribute: 'hover-bg-color'},
       viewContentOnClick: {type: Boolean, attribute: 'view-content-on-click'},
@@ -36,14 +35,9 @@ export class PostExpanded extends LitElement {
     this.context = undefined
     this.searchTerms = undefined
     this.nometa = false
-    this.nocommunity = false
     this.noctrls = false
     this.hoverBgColor = 'gray-50'
     this.isReactionsOpen = false
-  }
-
-  get communityUserId () {
-    return this.post?.value?.community?.userId
   }
 
   get replyCount () {
@@ -61,21 +55,6 @@ export class PostExpanded extends LitElement {
       return false
     }
     return session.info?.userId === this.post?.author.userId
-  }
-
-  get canInteract () {
-    if (this.communityUserId) {
-      return session.isInCommunity(this.communityUserId)
-    }
-    return session.isFollowingMe(this.post.author.userId)
-  }
-
-  get ctrlTooltip () {
-    if (this.canInteract) return undefined
-    if (this.communityUserId) {
-      return `Only members of ${this.communityUserId} can interact with this post`
-    }
-    return `Only people followed by ${this.post.author.displayName} can interact with this post`
   }
 
   haveIReacted (reaction) {
@@ -142,14 +121,6 @@ export class PostExpanded extends LitElement {
             <a class="text-gray-600 hov:hover:underline" href="${POST_URL(this.post)}" data-tooltip=${(new Date(this.post.value.createdAt)).toLocaleString()}>
               ${relativeDate(this.post.value.createdAt)}
             </a>
-            ${this.post.value.community ? html`
-              <span class="text-gray-700">
-                in
-                <a href="/${this.communityUserId}" class="whitespace-nowrap font-semibold hov:hover:underline">
-                  ${displayNames.render(this.communityUserId)}
-                </a>
-              </span>
-            ` : ''}
           </div>
         </div>
       </div>

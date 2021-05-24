@@ -9,7 +9,6 @@ import { PUBKEY_REGEX } from './lib/strings.js'
 import { BasePopup } from './com/popups/base.js'
 import './com/header.js'
 import './views/account.js'
-import './views/communities.js'
 import './views/forgot-password.js'
 import './views/main.js'
 import './views/notifications.js'
@@ -72,7 +71,6 @@ class CtznApp extends LitElement {
     document.body.addEventListener('view-thread', this.onViewThread.bind(this))
     document.body.addEventListener('navigate-to', this.onNavigateTo.bind(this))
     document.body.addEventListener('delete-post', this.onDeletePost.bind(this))
-    document.body.addEventListener('moderator-remove-post', this.onModeratorRemovePost.bind(this))
     window.addEventListener('popstate', this.onHistoryPopstate.bind(this))
     window.addEventListener('beforeunload', this.onBeforeUnload.bind(this))
 
@@ -150,9 +148,6 @@ class CtznApp extends LitElement {
       case '/notifications':
       case '/search':
         gestures.setCurrentNav(['/', '/notifications', '/search'])
-        return
-      case '/communities':
-        gestures.setCurrentNav([{back: true}, '/communities'])
         return
       default:
         // NOTE: user-view specifies the gestures nav since it uses custom UIs
@@ -249,8 +244,6 @@ class CtznApp extends LitElement {
           return html`<app-notifications-view id=${id} class=${cls} current-path=${path}></app-notifications-view>`
         case '/forgot-password':
           return html`<app-forgot-password-view id="view" current-path=${path}></app-forgot-password-view>`
-        case '/communities':
-          return html`<app-communities-view id="view" current-path=${path}></app-communities-view>`
         case '/account':
           return html`<app-account-view id="view" current-path=${path}></app-account-view>`
         case '/signup':
@@ -350,21 +343,6 @@ class CtznApp extends LitElement {
     try {
       await session.api.user.table('ctzn.network/post').delete(e.detail.post.key)
       toast.create('Post deleted')
-      this.reloadView()
-    } catch (e) {
-      console.log(e)
-      toast.create(e.toString(), 'error')
-    }
-  }
-
-  async onModeratorRemovePost (e) {
-    try {
-      const post = e.detail.post
-      await session.api.db(post.value.community.userId).method(
-        'ctzn.network/community-remove-content-method',
-        {contentUrl: post.url}
-      )
-      toast.create('Post removed')
       this.reloadView()
     } catch (e) {
       console.log(e)

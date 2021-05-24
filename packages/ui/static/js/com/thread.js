@@ -64,16 +64,14 @@ export class Thread extends LitElement {
         this.post = await session.api.getPost(comment.value.reply.root.authorId, comment.value.reply.root.dbUrl).catch(onError)
         this.thread = await session.api.getThread(
           comment.value.reply.root.authorId,
-          comment.value.reply.root.dbUrl,
-          comment.value.community?.userId
+          comment.value.reply.root.dbUrl
         ).catch(onError)
       }
     } else {
       this.post = await session.api.getPost(this.subject.authorId, this.subject.dbUrl).catch(onError)
       this.thread = !this.post.error ? await session.api.getThread(
         this.subject.authorId,
-        this.subject.dbUrl,
-        this.post.value.community?.userId
+        this.subject.dbUrl
       ).catch(onError) : undefined
     }
     await this.updateComplete
@@ -161,7 +159,6 @@ export class Thread extends LitElement {
                 mode="as-reply"
                 @publish-reply=${this.onPublishReply}
                 @delete-comment=${this.onDeleteComment}
-                @moderator-remove-comment=${this.onModeratorRemoveComment}
               ></ctzn-comment-view>
             </div>
             ${reply.replies?.length ? this.renderReplies(reply.replies) : ''}
@@ -175,34 +172,12 @@ export class Thread extends LitElement {
     if (this.post?.error) {
       return ''
     }
-    if (this.post?.value?.community) {
-      if (!session.isInCommunity(this.post.value.community.userId)) {
-        return html`
-          <div class="bg-white p-3 mb-1 sm:rounded">
-            <div class="italic text-gray-500 text-sm">
-              Join <a href="/${this.post.value.community.userId}" class="hov:hover:underline">${displayNames.render(this.post.value.community.userId)}</a> to reply.
-            </div>
-          </div>
-        `
-      }
-    } else {
-      if (!session.isFollowingMe(this.post?.author?.userId)) {
-        return html`
-          <div class="bg-white p-3 mb-1 sm:rounded">
-            <div class="italic text-gray-500 text-sm">
-              Only people followed by <a href="/${this.post.author.userId}" class="hov:hover:underline">${this.post.author.displayName}</a> can reply.
-            </div>
-          </div>
-        `
-      }
-    }
     return html`
       <div class="px-3 mb-2">
         ${this.isReplying ? html`
           <app-comment-composer
             autofocus
             class="block border border-gray-200 rounded p-2"
-            .community=${this.post.value.community}
             .subject=${{dbUrl: this.post.url, authorId: this.post.author.userId}}
             placeholder="Write your comment. Remember to always be kind!"
             @publish=${this.onPublishReply}
@@ -244,20 +219,6 @@ export class Thread extends LitElement {
     try {
       await session.api.user.table('ctzn.network/comment').delete(e.detail.comment.key)
       toast.create('Comment deleted')
-      this.load()
-    } catch (e) {
-      console.log(e)
-      toast.create(e.toString(), 'error')
-    }
-  }
-
-  async onModeratorRemoveComment (e) {
-    try {
-      const comment = e.detail.comment
-      await session.api.db(comment.value.community.userId).method(
-        'ctzn.network/community-remove-content-method',
-        {contentUrl: comment.url}
-      )
       this.load()
     } catch (e) {
       console.log(e)

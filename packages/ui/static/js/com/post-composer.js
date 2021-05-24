@@ -23,8 +23,7 @@ class PostComposer extends LitElement {
       isExtendedOpen: {type: Boolean},
       isExtendedUsingHtml: {type: Boolean},
       draftText: {type: String, attribute: 'draft-text'},
-      media: {type: Array},
-      community: {type: Object},
+      media: {type: Array}
     }
   }
 
@@ -38,7 +37,6 @@ class PostComposer extends LitElement {
     this.placeholder = 'What\'s new?'
     this.draftText = ''
     this.media = []
-    this.community = undefined
   }
 
   createRenderRoot() {
@@ -50,21 +48,6 @@ class PostComposer extends LitElement {
       (this.draftText.length > 0 && this.draftText.length <= CHAR_LIMIT)
       || this.media.filter(Boolean).length > 0
     )
-  }
-
-  get communityName () {
-    return this.community?.userId ? displayNames.render(this.community.userId) : 'Self'
-  }
-
-  get communityIcon () {
-    return this.community ? html`<span class="fas fa-fw fa-users text-sm mx-1"></span>` : html`<span class="fas fa-fw fa-user text-sm ml-1"></span>`
-  }
-
-  get communityExplanation () {
-    if (this.community) {
-      return html`Only people in ${displayNames.render(this.community.userId)} can reply.`
-    }
-    return `Only people you follow can reply.`
   }
 
   firstUpdated () {
@@ -94,21 +77,6 @@ class PostComposer extends LitElement {
   render () {
     return html`
       <form @submit=${this.onSubmit}>
-        <section class="mb-2">
-          <div>
-            <button
-              class="inline-flex items-center rounded px-3 py-1 bg-white border border-gray-300 hov:hover:bg-gray-100"
-              @click=${this.onClickSelectCommunity}
-            >
-              Post to: ${this.communityIcon} ${this.communityName} <span class="fas fa-fw fa-caret-down"></span>
-            </button>
-          </div>
-          <div class="community-selector-container"></div>
-          <div class="p-1 pt-1.5 text-gray-500">
-            ${this.communityExplanation}
-          </div>
-        </section>
-
         <section class="mb-3">
           <textarea
             id="text"
@@ -293,58 +261,6 @@ class PostComposer extends LitElement {
     this.dispatchEvent(new CustomEvent('cancel'))
   }
 
-  onClickSelectCommunity (e) {
-    e.preventDefault()
-    e.stopPropagation()
-    const _this = this
-    const communities = session.myCommunities.slice()
-    communities.sort((a, b) => a.userId.toLowerCase().localeCompare(b.userId.toLowerCase()))
-    contextMenu.create({
-      parent: this.querySelector('.community-selector-container'),
-      x: 0,
-      y: 0,
-      render () {
-        return html`
-          <div class="dropdown-items left no-border" style="padding: 4px 0; max-height: 50vh; overflow-y: scroll">
-            <div class="section-header small light">
-              My Profile
-            </div>
-            <div class="dropdown-item" @click=${e => {_this.community = undefined; this.destroy()}}>
-              <div class="img-wrapper">
-                <img class="rounded" src=${AVATAR_URL(session.info.userId)}>
-                <div>
-                  <div class="label truncate">
-                    ${displayNames.render(session.info.userId)}
-                  </div>
-                  <div class="description truncate">${session.info.userId}</div>
-                </div>
-              </div>
-            </div>
-            ${session.myCommunities.length ? html`
-              <hr>
-              <div class="section-header small light">
-                My Communities
-              </div>
-              ${repeat(communities, community => html`
-                <div class="dropdown-item"  @click=${e => {_this.community = community; this.destroy()}}>
-                  <div class="img-wrapper">
-                    <img class="rounded" src=${AVATAR_URL(community.userId)}>
-                    <div>
-                      <div class="label truncate">
-                        ${displayNames.render(community.userId)}
-                      </div>
-                      <div class="description truncate">${community.userId}</div>
-                    </div>
-                  </div>
-                </div>
-              `)}
-            ` : ''}
-          </div>
-        `
-      }
-    })
-  }
-
   async onSubmit (e) {
     e?.preventDefault()
     e?.stopPropagation()
@@ -413,8 +329,7 @@ class PostComposer extends LitElement {
         text,
         media: media?.length ? media : undefined,
         extendedText,
-        extendedTextMimeType,
-        community: this.community
+        extendedTextMimeType
       })
     } catch (e) {
       this.isProcessing = false

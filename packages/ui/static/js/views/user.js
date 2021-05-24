@@ -10,7 +10,6 @@ import {
   AVATAR_URL,
   BLOB_URL,
   USER_URL,
-  FIXED_COMMUNITY_PROFILE_SECTIONS,
   FIXED_CITIZEN_PROFILE_SECTIONS
 } from '../lib/const.js'
 import * as session from '../lib/session.js'
@@ -23,8 +22,6 @@ import '../com/button.js'
 import '../com/img-fallbacks.js'
 import '../ctzn-tags/posts-feed.js'
 import '../com/simple-user-list.js'
-import '../com/members-list.js'
-import '../com/dbmethod-result-feed.js'
 import '../com/subnav.js'
 import '../com/custom-html.js'
 import '../com/edit-profile.js'
@@ -38,11 +35,6 @@ class CtznUser extends LitElement {
       currentView: {type: String},
       followers: {type: Array},
       following: {type: Array},
-      memberships: {type: Array},
-      members: {type: Array},
-      communityConfig: {type: Object},
-      roles: {type: Array},
-      isUserInvited: {type: Boolean},
       isEmpty: {type: Boolean},
       isProcessingSocialAction: {type: Boolean},
       showMiniRightNavProfile: {type: Boolean}
@@ -72,11 +64,7 @@ class CtznUser extends LitElement {
     this._sections = []
     this.followers = undefined
     this.following = undefined
-    this.members = undefined
     this.sharedFollowers = []
-    this.sharedCommunities = []
-    this.followedMembers = []
-    this.communityConfig = undefined
     this.roles = undefined
     this.isUserInvited = undefined
     this.isEmpty = false
@@ -98,24 +86,12 @@ class CtznUser extends LitElement {
     return this.userProfile?.dbType === 'ctzn.network/public-citizen-db'
   }
 
-  get isCommunity () {
-    return this.userProfile?.dbType === 'ctzn.network/public-community-db'
-  }
-
   get amIFollowing () {
     return !!session.myFollowing?.find?.(dbUrl => dbUrl === this.userProfile?.dbUrl)
   }
 
   get isFollowingMe () {
     return !!this.following?.find?.(f => f.value.subject.dbUrl === session.info?.dbUrl)
-  }
-
-  get amIAMember () {
-    return !!this.members?.find?.(m => m.value.user.dbUrl === session.info?.dbUrl)
-  }
-
-  get isMembershipClosed () {
-    return this.communityConfig?.joinMode === 'closed'
   }
 
   get sections () {
@@ -145,22 +121,6 @@ class CtznUser extends LitElement {
         rightAlign: true
       }
     ]
-  }
-
-  hasPermission (permId) {
-    let memberRecord = this.members?.find?.(m => m.value.user.userId === session.info.userId)
-    if (!memberRecord) return false
-    if (!memberRecord.value.roles?.length) return false
-    if (memberRecord.value.roles.includes('admin')) {
-      return true
-    }
-    for (let roleId of memberRecord.value.roles) {
-      let roleRecord = this.roles.find(r => r.value.roleId === roleId)
-      if (roleRecord && !!roleRecord.value.permissions?.find(p => p.permId === permId)) {
-        return true
-      }
-    }
-    return false
   }
 
   setGesturesNav () {
@@ -207,53 +167,16 @@ class CtznUser extends LitElement {
             ? this.userProfile.value.sections
             : []
         ).reduce(dedupSectionsReducer, [])
-        const [followers, following, memberships] = await Promise.all([
+        const [followers, following] = await Promise.all([
           session.api.listFollowers(this.userId),
-          session.api.db(this.userId).table('ctzn.network/follow').list(),
-          session.api.db(this.userId).table('ctzn.network/community-membership').list()
+          session.api.db(this.userId).table('ctzn.network/follow').list()
         ])
         this.followers = followers
         if (session.isActive() && !this.isMe) {
           this.sharedFollowers = intersect(session.myFollowing, followers)
         }
         this.following = following
-        this.memberships = memberships
-        if (session.isActive() && !this.isMe) {
-          this.sharedCommunities = intersect(
-            session.myCommunities.map(c => c.userId),
-            memberships.map(m => m.value.community.userId)
-          )
-        }
-        console.log({userProfile: this.userProfile, followers, following, memberships})
-      } else if (this.isCommunity) {
-        this.sections = FIXED_COMMUNITY_PROFILE_SECTIONS.concat(
-          this.userProfile?.value?.sections?.length
-            ? this.userProfile.value.sections
-            : []
-        ).reduce(dedupSectionsReducer, [])
-        const [communityConfigEntry, members, roles] = await Promise.all([
-          session.api.db(this.userId).table('ctzn.network/community-config').get('self').catch(e => undefined),
-          listAllMembers(this.userId),
-          session.api.db(this.userId).table('ctzn.network/community-role').list().catch(e => [])
-        ])
-        this.communityConfig = communityConfigEntry?.value
-        this.members = members
-        if (session.isActive() && !this.isMe) {
-          this.followedMembers = intersect(
-            session.myFollowing,
-            members.map(m => m.value.user.userId)
-          )
-        }
-        this.roles = roles
-        console.log({userProfile: this.userProfile, members, roles})
-
-        if (session.isActive() && !this.amIFollowing && this.isMembershipClosed) {
-          let inviteEntry = await session.api.db(this.userId)
-            .table('ctzn.network/community-invite')
-            .get(session.info.userId)
-            .catch(e => undefined)
-          this.isUserInvited = !!inviteEntry?.value
-        }
+        console.log({userProfile: this.userProfile, followers, following})
       }
       this.isProfileLoading = false
     }
@@ -264,8 +187,6 @@ class CtznUser extends LitElement {
 
     this.querySelector('ctzn-posts-feed')?.load()
     this.querySelector('ctzn-comments-feed')?.load()
-    this.querySelector('ctzn-dbresults-feed-feed')?.load()
-    this.querySelector('ctzn-dbmethods-feed')?.load()
 
     const rightNavProfileEl = this.querySelector('#right-nav-profile')
     if (!this.miniProfileObserver && rightNavProfileEl) {
@@ -279,8 +200,6 @@ class CtznUser extends LitElement {
   async refresh () {
     await this.querySelector('ctzn-posts-feed')?.load()
     await this.querySelector('ctzn-comments-feed')?.load()
-    await this.querySelector('ctzn-dbresults-feed-feed')?.load()
-    await this.querySelector('ctzn-dbmethods-feed')?.load()
   }
 
   get isLoading () {
@@ -309,20 +228,15 @@ class CtznUser extends LitElement {
   // =
 
   render () {
-    const nMembers = this.members?.length || 0
     const nFollowers = this.followers?.length || 0
-    const nCommunities = this.memberships?.length || 0
 
     if (this.userProfile?.error) {
       return this.renderError()
     }
 
-    const canJoin = !this.isMembershipClosed || (this.isMembershipClosed && this.isUserInvited)
-
     return html`
       <app-header
         @post-created=${e => this.load()}
-        .community=${this.isCommunity && this.amIAMember ? ({userId: this.userId, dbUrl: this.userProfile?.dbUrl}) : undefined}
       ></app-header>
       <div class="controls-menu-container"></div>
       ${this.renderDesktopHeader()}
@@ -339,27 +253,6 @@ class CtznUser extends LitElement {
                   <span class="fas fa-fw fa-user"></span>
                   ${nFollowers} ${pluralize(nFollowers, 'Follower')}
                 </span>
-                <span
-                  class="ml-1 bg-gray-50 font-semibold px-2 py-1 rounded text-gray-500 hov:hover:bg-gray-100 cursor-pointer"
-                  @click=${this.onClickViewCommunities}
-                >
-                  <span class="fas fa-fw fa-users"></span>
-                  ${nCommunities} ${nCommunities === 1 ? 'Community' : 'Communities'}
-                </span>
-              </div>
-            ` : ''}
-            ${this.isCommunity ? html`
-              <div class="bg-white text-center pb-4">
-                <span
-                  class="bg-gray-50 font-bold px-2 py-1 rounded text-gray-500 hov:hover:bg-gray-100 cursor-pointer"
-                  @click=${this.onClickViewMembers}
-                >
-                  <span class="fas fa-users"></span>
-                  ${nMembers} ${pluralize(nMembers, 'Member')}
-                </span>
-                ${this.isMembershipClosed ? html`
-                  <span class="font-semibold ml-3 py-1 rounded text-gray-600">Invite only</span>
-                ` : ''}
               </div>
             ` : ''}
             ${this.userProfile?.value.description ? html`
@@ -371,18 +264,6 @@ class CtznUser extends LitElement {
                   btn-class="font-semibold py-1 text-base block w-full rounded-lg sm:px-10 sm:inline sm:w-auto sm:rounded-full"
                   @click=${this.onClickFollow}
                   label="Follow ${this.userProfile?.value.displayName || this.niceUserId}"
-                  ?spinner=${this.isProcessingSocialAction}
-                  ?disabled=${this.isProcessingSocialAction}
-                  primary
-                ></app-button>
-              </div>
-            ` : ''}
-            ${!this.isProfileLoading && session.isActive() && this.isCommunity && this.amIAMember === false && canJoin ? html`
-              <div class="bg-white text-center pb-4 px-4">
-                <app-button
-                  btn-class="font-semibold py-1 text-base block w-full rounded-lg sm:px-10 sm:inline sm:w-auto sm:rounded-full"
-                  @click=${this.onClickJoin}
-                  label="Join community"
                   ?spinner=${this.isProcessingSocialAction}
                   ?disabled=${this.isProcessingSocialAction}
                   primary
@@ -440,29 +321,6 @@ class CtznUser extends LitElement {
                     ${nFollowers} ${pluralize(nFollowers, 'Follower')}
                   </span>
                 </div>
-                <div class="pb-2">
-                  <span
-                    class="font-semibold text-gray-500 hov:hover:underline cursor-pointer"
-                    @click=${this.onClickViewCommunities}
-                  >
-                    <span class="fas fa-fw fa-users"></span>
-                    ${nCommunities} ${nCommunities === 1 ? 'Community' : 'Communities'}
-                  </span>
-                </div>
-              ` : ''}
-              ${this.isCommunity ? html`
-                <div class="pb-2">
-                  <span
-                    class="font-semibold text-gray-500 hov:hover:underline cursor-pointer"
-                    @click=${this.onClickViewMembers}
-                  >
-                    <span class="fas fa-users"></span>
-                    ${nMembers} ${pluralize(nMembers, 'Member')}
-                  </span>
-                  ${this.isMembershipClosed ? html`
-                    <span class="font-semibold ml-3 py-1 rounded text-gray-600">Invite only</span>
-                  ` : ''}
-                </div>
               ` : ''}
               ${!this.isProfileLoading && session.isActive() && !this.isMe && this.isCitizen && this.amIFollowing === false ? html`
                 <div class="pb-2">
@@ -470,18 +328,6 @@ class CtznUser extends LitElement {
                     btn-class="font-semibold py-1 text-base block w-full rounded-lg"
                     @click=${this.onClickFollow}
                     label="Follow ${this.userProfile?.value.displayName || this.niceUserId}"
-                    ?spinner=${this.isProcessingSocialAction}
-                    ?disabled=${this.isProcessingSocialAction}
-                    primary
-                  ></app-button>
-                </div>
-              ` : ''}
-              ${!this.isProfileLoading && session.isActive() && this.isCommunity && this.amIAMember === false && canJoin ? html`
-                <div class="pt-2 pb-2">
-                  <app-button
-                    btn-class="font-semibold py-1 text-base block w-full rounded-lg"
-                    @click=${this.onClickJoin}
-                    label="Join community"
                     ?spinner=${this.isProcessingSocialAction}
                     ?disabled=${this.isProcessingSocialAction}
                     primary
@@ -700,41 +546,6 @@ class CtznUser extends LitElement {
         </div>
       `
     }
-    if (this.isCommunity) {
-      const canJoin = !this.isMembershipClosed || (this.isMembershipClosed && this.isUserInvited)
-      return html`
-        <div>
-          ${session.isActive() ? html`
-            ${this.amIAMember === true ? html`
-              <app-button
-                btn-class="font-medium px-5 py-1 rounded-full text-base text-white"
-                @click=${this.onClickCreatePost}
-                label="Create Post"
-                transparent
-                btn-style=${btnStyle}
-              ></app-button>
-            ` : this.amIAMember === false && canJoin ? html`
-              <app-button
-                btn-class="font-semibold px-5 py-1 rounded-full text-base text-white"
-                @click=${this.onClickJoin}
-                label="Join"
-                ?spinner=${this.isProcessingSocialAction}
-                ?disabled=${this.isProcessingSocialAction}
-                transparent
-                btn-style=${btnStyle}
-              ></app-button>
-            ` : ``}
-            <app-button
-              btn-class="font-semibold px-3 py-1 rounded-full text-base text-white"
-              @click=${(e) => this.onClickControlsMenu(e)}
-              icon="fas fa-fw fa-ellipsis-h"
-              transparent
-              btn-style=${btnStyle}
-            ></app-button>
-          ` : ''}
-        </div>
-      `
-    }
   }
 
   renderCurrentView () {
@@ -799,39 +610,12 @@ class CtznUser extends LitElement {
     this.isProcessingSocialAction = false
   }
 
-  async onClickJoin (e) {
-    this.isProcessingSocialAction = true
-    try {
-      await session.api.communities.join(this.userId)
-      await session.loadSecondaryState()
-      this.members = await listAllMembers(this.userId)
-    } catch (e) {
-      console.log(e)
-      toast.create(e.toString(), 'error')
-    }
-    this.isProcessingSocialAction = false
-  }
-
-  async onClickLeave (e) {
-    this.isProcessingSocialAction = true
-    try {
-      await session.api.communities.leave(this.userId)
-      await session.loadSecondaryState()
-      this.members = await listAllMembers(this.userId)
-    } catch (e) {
-      console.log(e)
-      toast.create(e.toString(), 'error')
-    }
-    this.isProcessingSocialAction = false
-  }
 
   async onClickCreatePost (e) {
     e.preventDefault()
     e.stopPropagation()
     try {
-      await ComposerPopup.create({
-        community: {userId: this.userId, dbUrl: this.userProfile?.dbUrl}
-      })
+      await ComposerPopup.create()
       toast.create('Post published', '', 10e3)
       this.querySelector('ctzn-posts-feed').load()
     } catch (e) {
@@ -853,44 +637,6 @@ class CtznUser extends LitElement {
     })
   }
 
-  onClickViewCommunities (e) {
-    e.preventDefault()
-    e.stopPropagation()
-    GeneralPopup.create({
-      render: () => html`
-        <ctzn-community-memberships-list
-          user-id=${this.userId}
-          .renderOpts=${{expandedOnly: true}}
-        ></ctzn-community-memberships-list>
-      `
-    })
-  }
-
-  onClickViewMembers (e) {
-    e.preventDefault()
-    e.stopPropagation()
-    GeneralPopup.create({
-      render: () => html`
-        <ctzn-community-members-list
-          user-id=${this.userId}
-          .renderOpts=${{expandedOnly: true}}
-        ></ctzn-community-members-list>
-      `
-    })
-  }
-
-  onClickViewAuditLog () {
-    GeneralPopup.create({
-      bodyClass: 'px-0 pt-4 lg:pb-4 pb-24',
-      render: () => html`
-        <h2 class="border-b border-gray-300 px-4 pb-2 font-semibold text-3xl">Audit log</h2>
-        <app-dbmethod-result-feed
-          user-id=${this.userId}
-        ></app-dbmethod-result-feed>
-      `
-    })
-  }
-
   onClickControlsMenu (e) {
     e.preventDefault()
     e.stopPropagation()
@@ -900,20 +646,6 @@ class CtznUser extends LitElement {
     }
 
     let items = []
-    if (this.isCommunity) {
-      if (this.hasPermission('ctzn.network/perm-community-edit-profile')) {
-        items.push({
-          label: 'Edit profile',
-          click: () => setView('settings')
-        })
-        items.push('-')
-      }
-      items.push({label: 'Audit log', click: () => this.onClickViewAuditLog()})
-      if (this.amIAMember) {
-        items.push('-')
-        items.push({label: 'Leave community', click: () => this.onClickLeave()})
-      }
-    }
     const parent = this.querySelector('.controls-menu-container')
     const rect = parent.getClientRects()[0]
     contextMenu.create({
@@ -930,18 +662,6 @@ class CtznUser extends LitElement {
 }
 
 customElements.define('app-user-view', CtznUser)
-
-async function listAllMembers (userId) {
-  let members = []
-  let gt = undefined
-  for (let i = 0; i < 1000; i++) {
-    let m = await session.api.db(userId).table('ctzn.network/community-member').list({gt, limit: 100})
-    members = m.length ? members.concat(m) : members
-    if (m.length < 100) break
-    gt = m[m.length - 1].key
-  }
-  return members
-}
 
 function intersect (a, b) {
   var arr = []

@@ -3,7 +3,6 @@ const CACHE_LIST = [
   '/',
   '/index.html',
   '/account',
-  '/communities',
   '/forgot-password',
   '/manifest.json',
   '/notifications',

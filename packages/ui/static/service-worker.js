@@ -2,7 +2,6 @@ const CACHE_NAME = 'ctznry-2fec43b9d64819d84f3c7824e76fbf1bacde5359'
 const CACHE_LIST = [
   '/',
   '/account',
-  '/communities',
   '/forgot-password',
   '/manifest.json',
   '/notifications',
@@ -16,7 +15,6 @@ const CACHE_LIST = [
   '/img/img-placeholder.png',
   '/img/spinner.gif',
   '/js/account.build.js',
-  '/js/communities.build.js',
   '/js/forgot-password.build.js',
   '/js/main.build.js',
   '/js/notifications.build.js',

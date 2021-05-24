@@ -36,10 +36,6 @@ class CtznPostView extends LitElement {
     this.scrollToOnLoad = undefined
   }
 
-  get communityUserId () {
-    return this.post?.value?.community?.userId
-  }
-
   get isMyPost () {
     if (!session.isActive() || !this.post?.author.userId) {
       return false
@@ -222,27 +218,6 @@ class CtznPostView extends LitElement {
         }
       })
     }
-    if (this.communityUserId && session.isInCommunity(this.communityUserId)) {
-      items.push(
-        session.api.view.get(
-          'ctzn.network/community-user-permission-view',
-          this.communityUserId,
-          session.info.userId,
-          'ctzn.network/perm-community-remove-post'
-        ).then(perm => {
-          if (perm) {
-            return html`
-              <div class="dropdown-item" @click=${() => this.onClickModeratorRemove()}>
-                <i class="fas fa-times fa-fw"></i>
-                Remove post (moderator)
-              </div>
-            `
-          } else {
-            return ''
-          }
-        })
-      )
-    }
 
     let parent, x, y
     if (matchMedia('(max-width: 640px)').matches) {
@@ -272,23 +247,6 @@ class CtznPostView extends LitElement {
     try {
       await session.api.user.table('ctzn.network/post').delete(this.post.key)
       toast.create('Post deleted')
-      this.load()
-    } catch (e) {
-      console.log(e)
-      toast.create(e.toString(), 'error')
-    }
-  }
-
-  async onClickModeratorRemove () {
-    contextMenu.destroy()
-    if (!confirm('Are you sure you want to remove this post?')) {
-      return
-    }
-    try {
-      await session.api.db(this.communityUserId).method(
-        'ctzn.network/community-remove-content-method',
-        {contentUrl: this.post.url}
-      )
       this.load()
     } catch (e) {
       console.log(e)

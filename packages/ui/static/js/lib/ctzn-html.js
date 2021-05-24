@@ -24,9 +24,6 @@ export function sanitize (str, context = undefined) {
         'ctzn-post-view',
         'ctzn-followers-list',
         'ctzn-following-list',
-        'ctzn-community-memberships-list',
-        'ctzn-community-members-list',
-        'ctzn-dbmethods-feed',
         'ctzn-comment-view',
         'ctzn-comments-feed',
         'ctzn-pages-list'

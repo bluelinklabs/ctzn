@@ -4,9 +4,6 @@ import * as postView from '../ctzn-tags-editor/post-view.js'
 import * as postsFeed from '../ctzn-tags-editor/posts-feed.js'
 import * as commentView from '../ctzn-tags-editor/comment-view.js'
 import * as commentsFeed from '../ctzn-tags-editor/comments-feed.js'
-import * as dbmethodsFeed from '../ctzn-tags-editor/dbmethods-feed.js'
-import * as communityMembersList from '../ctzn-tags-editor/community-members-list.js'
-import * as communityMembershipsList from '../ctzn-tags-editor/community-memberships-list.js'
 import * as followersList from '../ctzn-tags-editor/followers-list.js'
 import * as followingList from '../ctzn-tags-editor/following-list.js'
 import * as iframe from '../ctzn-tags-editor/iframe.js'
@@ -25,9 +22,6 @@ const PROFILE_TAGS = [
   postsFeed,
   commentView,
   commentsFeed,
-  dbmethodsFeed,
-  communityMembersList,
-  communityMembershipsList,
   followersList,
   followingList,
   iframe,
@@ -206,7 +200,6 @@ export class RichEditor extends LitElement {
               {type: 'separator'},
               {type: 'menuitem', text: 'Posts Feed', onAction: () => postsFeed.insert(editor)},
               {type: 'menuitem', text: 'Comments Feed', onAction: () => commentsFeed.insert(editor)},
-              {type: 'menuitem', text: 'DB Method Calls Feed', onAction: () => dbmethodsFeed.insert(editor)},
               {type: 'separator'},
               {type: 'menuitem', text: 'Embedded Post', onAction: () => postView.insert(editor)},
               {type: 'menuitem', text: 'Embedded Comment', onAction: () => commentView.insert(editor)},
@@ -221,9 +214,6 @@ export class RichEditor extends LitElement {
             cb([
               {type: 'menuitem', text: 'Followers List', onAction: () => followersList.insert(editor)},
               {type: 'menuitem', text: 'Following List', onAction: () => followingList.insert(editor)},
-              {type: 'separator'},
-              {type: 'menuitem', text: 'Community Members List', onAction: () => communityMembersList.insert(editor)},
-              {type: 'menuitem', text: 'User\'s Communities List', onAction: () => communityMembershipsList.insert(editor)}
             ])
           }
         })

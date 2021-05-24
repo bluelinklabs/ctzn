@@ -257,7 +257,7 @@ export class PostsFeed extends LitElement {
           ${this.view === 'ctzn.network/posts-view' ? html`
             <div>This feed is empty.</div>
           ` : html`
-            <div>Follow people and<br>join communities to see what's new.</div>
+            <div>Follow people to see what's new.</div>
           `}
         </div>
       `

@@ -62,7 +62,6 @@ export class CommentComposerPopup extends BasePopup {
       <app-comment-composer
         autofocus
         modal-mode
-        .community=${subject.value.community}
         .subject=${this.comment ? this.comment.value.reply.root : ({dbUrl: this.post.url, authorId: this.post.author.userId})}
         .parent=${this.comment ? ({dbUrl: this.comment.url, authorId: this.comment.author.userId}) : undefined}
         placeholder="Write your comment"

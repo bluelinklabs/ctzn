@@ -184,74 +184,36 @@ export class PageEditorPopup extends BasePopup {
 
       const userProfile = await session.api.getProfile(this.userId)
       if (!userProfile) throw new Error('Unable to load profile information needed to create this page')
-      const isCommunity = userProfile.dbType === 'ctzn.network/public-community-db'
 
-      if (isCommunity) {
-        let isPending = false
-        const blobRes1 = await session.api.blob.create(
-          encodeBase64(values.html),
-          {mimeType: 'text/html'}
-        )
-        const blobRes2 = await session.api.db(this.userId).method(
-          'ctzn.network/put-blob-method',
-          {
-            source: {
-              userId: session.info.userId,
-              dbUrl: session.info.dbUrl,
-              blobName: blobRes1.name
-            },
-            target: {
-              blobName: `ui:pages:${values.id}`
-            }
-          }
-        )
-        isPending = isPending || blobRes2.pending()
-        const recordRes = await session.api.db(this.userId).method(
-          'ctzn.network/put-page-method',
-          {
-            id: values.id,
-            title: values.title,
-            content: {
-              mimeType: 'text/html',
-              blobName: `ui:pages:${values.id}`
-            }
-          }
-        )
-        isPending = isPending || recordRes.pending()
-        if (isPending) {
-          toast.create('Updates queued, check back later')
+      await session.api.blob.update(
+        `ui:pages:${values.id}`,
+        encodeBase64(values.html),
+        {mimeType: 'text/html'}
+      )
+      if (this.pageRecord) {
+        await session.api.db(this.userId).table('ctzn.network/page').create({
+          id: values.id,
+          title: values.title,
+          content: {
+            mimeType: 'text/html',
+            blobName: `ui:pages:${values.id}`
+          },
+          updatedAt: (new Date()).toISOString(),
+          createdAt: this.pageRecord.value.createdAt
+        })
+        if (values.id !== this.pageRecord.value.id) {
+          await session.api.db(this.userId).table('ctzn.network/page').delete(this.pageRecord.key)
         }
       } else {
-        await session.api.blob.update(
-          `ui:pages:${values.id}`,
-          encodeBase64(values.html),
-          {mimeType: 'text/html'}
-        )
-        if (this.pageRecord) {
-          await session.api.db(this.userId).table('ctzn.network/page').create({
-            id: values.id,
-            title: values.title,
-            content: {
-              mimeType: 'text/html',
-              blobName: `ui:pages:${values.id}`
-            },
-            updatedAt: (new Date()).toISOString(),
-            createdAt: this.pageRecord.value.createdAt
-          })
-          if (values.id !== this.pageRecord.value.id) {
-            await session.api.db(this.userId).table('ctzn.network/page').delete(this.pageRecord.key)
-          }
-        } else {
-          await session.api.db(this.userId).table('ctzn.network/page').create({
-            id: values.id,
-            title: values.title,
-            content: {
-              mimeType: 'text/html',
-              blobName: `ui:pages:${values.id}`
-            },
-            createdAt: (new Date()).toISOString()
-          })
-        }
+        await session.api.db(this.userId).table('ctzn.network/page').create({
+          id: values.id,
+          title: values.title,
+          content: {
+            mimeType: 'text/html',
+            blobName: `ui:pages:${values.id}`
+          },
+          createdAt: (new Date()).toISOString()
+        })
       }
 
       this.dispatchEvent(new CustomEvent('resolve', {

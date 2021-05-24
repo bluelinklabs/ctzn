@@ -45,15 +45,6 @@ export class PagesList extends LitElement {
     if (session.isActive()) {
       if (this.userId === session.info?.userId) {
         this.canEdit = true
-      } else {
-        const perm = await session.api.getCommunityUserPermission(
-          this.userId,
-          session.info.userId,
-          'ctzn.network/perm-manage-pages'
-        ).catch(e => undefined)
-        if (!!perm) {
-          this.canEdit = true
-        }
       }
     }
   }

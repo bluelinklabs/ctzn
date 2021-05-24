@@ -60,30 +60,11 @@ export class CommentView extends LitElement {
     this.comment = await session.api.getComment(userId, key).catch(e => ({error: true, message: e.toString()}))
   }
 
-  get communityUserId () {
-    return this.comment?.value?.community?.userId
-  }
-
   get isMyComment () {
     if (!session.isActive() || !this.comment?.author.userId) {
       return false
     }
     return session.info?.userId === this.comment?.author.userId
-  }
-
-  get canInteract () {
-    if (this.communityUserId) {
-      return session.isInCommunity(this.communityUserId)
-    }
-    return session.isFollowingMe(this.comment.author.userId)
-  }
-
-  get ctrlTooltip () {
-    if (this.canInteract) return undefined
-    if (this.communityUserId) {
-      return `Only members of ${this.communityUserId} can interact with this comment`
-    }
-    return `Only people followed by ${this.comment.author.displayName} can interact with this comment`
   }
 
   get replyCount () {
@@ -184,12 +165,6 @@ export class CommentView extends LitElement {
                   <a class="hov:hover:underline" href="${COMMENT_URL(this.comment)}" data-tooltip=${(new Date(this.comment.value.createdAt)).toLocaleString()}>
                     ${relativeDate(this.comment.value.createdAt)}
                   </a>
-                  ${this.comment.value.community ? html`
-                    in
-                    <a href="/${this.communityUserId}" class="whitespace-nowrap font-semibold text-gray-700 hov:hover:underline">
-                      ${displayNames.render(this.communityUserId)}
-                    </a>
-                  ` : ''}
                 </span>
               </div>
               ${this.renderCommentText()}
@@ -259,7 +234,6 @@ export class CommentView extends LitElement {
             <div class="border border-gray-300 rounded py-2 px-2 my-2 mx-1 bg-white">
               <app-comment-composer
                 autofocus
-                .community=${this.comment.value.community}
                 .subject=${this.comment.value.reply.root}
                 .parent=${{dbUrl: this.comment.url, authorId: this.comment.author.userId}}
                 placeholder="Write your reply. Remember to always be kind!"
@@ -546,27 +520,6 @@ export class CommentView extends LitElement {
         }
       })
     }
-    if (this.communityUserId && session.isInCommunity(this.communityUserId)) {
-      items.push(
-        session.api.view.get(
-          'ctzn.network/community-user-permission-view',
-          this.communityUserId,
-          session.info.userId,
-          'ctzn.network/perm-community-remove-comment'
-        ).then(perm => {
-          if (perm) {
-            return html`
-              <div class="dropdown-item" @click=${() => this.onClickModeratorRemove()}>
-                <i class="fas fa-times fa-fw"></i>
-                Remove comment (moderator)
-              </div>
-            `
-          } else {
-            return ''
-          }
-        })
-      )
-    }
     contextMenu.create({
       parent: this,
       x: rect.left - parentRect.left + 30,
@@ -577,13 +530,6 @@ export class CommentView extends LitElement {
       style: `padding: 4px 0; font-size: 13px`,
       items
     })
-  }
-
-  onClickModeratorRemove () {
-    if (!confirm('Are you sure you want to remove this comment?')) {
-      return
-    }
-    emit(this, 'moderator-remove-comment', {detail: {comment: this.comment}})
   }
 
   onClickViewReactions (e) {

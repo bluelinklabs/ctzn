@@ -196,7 +196,7 @@ class CtznMainView extends LitElement {
             <div class="bg-white sm:border sm:border-t-0 border-gray-300">
               <div class="text-sm px-3 py-3 text-gray-500">
                 <span class="fas fa-info mr-1 text-xs"></span>
-                Search is limited to your communities and follows.
+                Search is limited to your follows.
               </div>
               <app-searchable-user-list></app-searchable-user-list>
             </div>
@@ -313,12 +313,6 @@ custom code</ctzn-code>
       <ctzn-followers-list></ctzn-followers-list>
       <h1>ctzn-following-list</h1>
       <ctzn-following-list></ctzn-following-list>
-      <h1>ctzn-community-memberships-list</h1>
-      <ctzn-community-memberships-list></ctzn-community-memberships-list>
-      <h1>ctzn-community-members-list</h1>
-      <ctzn-community-members-list user-id="invite-only@dev1.localhost"></ctzn-community-members-list>
-      <h1>ctzn-dbmethods-feed</h1>
-      <ctzn-dbmethods-feed limit="3"></ctzn-dbmethods-feed>
       <h1>ctzn-owned-items-list</h1>
       <ctzn-owned-items-list></ctzn-owned-items-list>
       <h1>ctzn-item-classes-list</h1>
@@ -377,10 +371,7 @@ custom code</ctzn-code>
     e.preventDefault()
     e.stopPropagation()
     try {
-      await ComposerPopup.create({
-        community: this.community,
-        ...opts
-      })
+      await ComposerPopup.create(opts)
       toast.create('Post published', '', 10e3)
       this.load()
     } catch (e) {

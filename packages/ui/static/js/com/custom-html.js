@@ -13,9 +13,6 @@ import '../ctzn-tags/posts-feed.js'
 import '../ctzn-tags/comment-view.js'
 import '../ctzn-tags/followers-list.js'
 import '../ctzn-tags/following-list.js'
-import '../ctzn-tags/community-memberships-list.js'
-import '../ctzn-tags/community-members-list.js'
-import '../ctzn-tags/dbmethods-feed.js'
 import '../ctzn-tags/pages-list.js'
 
 export class CustomHtml extends LitElement {

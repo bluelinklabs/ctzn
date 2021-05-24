@@ -10,7 +10,6 @@ class CommentComposer extends LitElement {
       autofocus: {type: Boolean},
       draftText: {type: String},
       placeholder: {type: String},
-      community: {type: Object},
       subject: {type: Object},
       parent: {type: Object},
       modalMode: {type: Boolean, attribute: 'modal-mode'}
@@ -120,7 +119,6 @@ class CommentComposer extends LitElement {
       res = await session.api.user.table('ctzn.network/comment').create({
         text: this.querySelector('#text').value,
         reply,
-        community: this.community,
         createdAt: (new Date()).toISOString()
       })
       console.log(res)

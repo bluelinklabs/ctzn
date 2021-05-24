@@ -73,15 +73,6 @@ class CtznPageView extends LitElement {
       if (session.isActive() && this.subject?.authorId) {
         if (this.subject.authorId === session.info?.userId) {
           this.canEdit = true
-        } else {
-          const perm = await session.api.getCommunityUserPermission(
-            this.subject.authorId,
-            session.info.userId,
-            'ctzn.network/perm-manage-pages'
-          ).catch(e => undefined)
-          if (!!perm) {
-            this.canEdit = true
-          }
         }
       }
     } catch (e) {

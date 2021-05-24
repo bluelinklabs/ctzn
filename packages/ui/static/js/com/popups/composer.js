@@ -16,7 +16,6 @@ export class ComposerPopup extends BasePopup {
 
   constructor (opts) {
     super()
-    this.community = opts?.community
     this.intent = opts?.intent
   }
 
@@ -56,7 +55,6 @@ export class ComposerPopup extends BasePopup {
     return html`
       <h2 class="text-3xl py-4">Create a post</h2>
       <app-post-composer
-        .community=${this.community}
         autofocus
         nocancel
         @cancel=${this.onReject}

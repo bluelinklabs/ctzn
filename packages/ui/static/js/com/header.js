@@ -4,7 +4,6 @@ import * as notifications from '../lib/notifications.js'
 import { emit } from '../lib/dom.js'
 import { ComposerPopup } from './popups/composer.js'
 import { PageEditorPopup } from '../com/popups/page-editor.js'
-import { CreateCommunityPopup } from './popups/create-community.js'
 import * as contextMenu from './context-menu.js'
 import * as toast from './toast.js'
 import './button.js'
@@ -19,8 +18,7 @@ export class Header extends LitElement {
       currentPath: {type: String, attribute: 'current-path'},
       isSearchFocused: {type: Boolean},
       isMenuOpen: {type: Boolean},
-      unreadNotificationsCount: {type: Number},
-      community: {type: Object}
+      unreadNotificationsCount: {type: Number}
     }
   }
 
@@ -34,7 +32,6 @@ export class Header extends LitElement {
     this.isSearchFocused = false
     this.isMenuOpen = false
     this.unreadNotificationsCount = 0
-    this.community = undefined
     document.body.addEventListener('open-main-menu', e => {
       this.isMenuOpen = true
     })
@@ -125,9 +122,6 @@ export class Header extends LitElement {
           >
             <span class="fas fa-fw navicon fa-user"></span>
           </a>
-          <a href="/communities" class="${this.getHeaderNavClass('/communities')}" @click=${this.onClickLink} data-tooltip="Communities">
-            <span class="fas fa-fw navicon fa-users"></span>
-          </a>
           <a class=${this.getHeaderNavClass()} @click=${this.onClickAccountMenu}>
             <span class="fas fa-fw fa-caret-down"></span>
           </a>
@@ -153,10 +147,6 @@ export class Header extends LitElement {
             <span class="fas mr-2 fa-fw navicon fa-bell"></span>
             Notifications
           </a>
-          <a href="/communities" class="${this.getMenuNavClass('/communities')}" @click=${this.onClickLink}>
-            <span class="fas mr-2 fa-fw navicon fa-users"></span>
-            Communities
-          </a>
           <a
             class="${this.getMenuNavClass(`/${info.userId}`)}"
             href="/${info.userId}"
@@ -178,11 +168,6 @@ export class Header extends LitElement {
             btn-class="text-gray-600 text-base sm:text-sm font-semibold w-full mb-2"
             label="Create Page"
             @click=${this.onClickCreatePage}
-          ></app-button>
-          <app-button
-            btn-class="text-gray-600 text-base sm:text-sm font-semibold w-full"
-            label="Create Community"
-            @click=${this.onClickCreateCommunity}
           ></app-button>
         </div>
         <div class="px-2">
@@ -259,9 +244,7 @@ export class Header extends LitElement {
     e.stopPropagation()
     this.isMenuOpen = false
     try {
-      await ComposerPopup.create({
-        community: this.community
-      })
+      await ComposerPopup.create()
       toast.create('Post published', '', 10e3)
       emit(this, 'post-created')
     } catch (e) {
@@ -285,9 +268,6 @@ export class Header extends LitElement {
       items: [{
         label: 'New Page',
         click: () => this.onClickCreatePage()
-      }, {
-        label: 'New Community',
-        click: () => this.onClickCreateCommunity()
       }]
     })
   }
@@ -306,15 +286,6 @@ export class Header extends LitElement {
     })
     console.log(res)
     window.location = `/${session.info.userId}/ctzn.network/page/${res.id}`
-  }
-
-  async onClickCreateCommunity (e) {
-    e?.preventDefault()
-    e?.stopPropagation()
-    this.isMenuOpen = false
-    const res = await CreateCommunityPopup.create()
-    console.log(res)
-    window.location = `/${res.userId}`
   }
 
   onClickAccountMenu (e) {

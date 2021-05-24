@@ -51,18 +51,6 @@ export function BLOB_URL (userId, blobName) {
   return '/' + joinPath('.view/ctzn.network/blob-view', userId, blobName)
 }
 
-export const PERM_DESCRIPTIONS = {
-  'ctzn.network/perm-community-update-config': `Can update the community settings.`,
-  'ctzn.network/perm-community-invite': `Can invite users to join the community.`,
-  'ctzn.network/perm-community-ban': `Can remove, ban, and unban members from the community.`,
-  'ctzn.network/perm-community-remove-post': `Can remove posts from the community.`,
-  'ctzn.network/perm-community-remove-comment': `Can remove comments from the community.`,
-  'ctzn.network/perm-community-edit-profile': `Can edit the profile of the community.`,
-  'ctzn.network/perm-community-manage-roles': `Can create, edit, and delete roles.`,
-  'ctzn.network/perm-community-assign-roles': `Can assign roles to community members.`,
-  'ctzn.network/perm-manage-pages': 'Can create, edit, and delete pages.'
-}
-
 export const SUGGESTED_REACTIONS = [
   'like',
   'haha',
@@ -75,24 +63,6 @@ export const SUGGESTED_REACTIONS = [
   '😢'
 ]
 
-export const FIXED_COMMUNITY_PROFILE_SECTIONS = [
-  {
-    id: 'feed',
-    label: 'Feed',
-    html: `<ctzn-posts-feed></ctzn-posts-feed>`
-  },
-  {
-    id: 'about',
-    label: 'About',
-    html: `<ctzn-community-members-list></ctzn-community-members-list>`
-  },
-  {
-    id: 'pages',
-    label: 'Pages',
-    html: `<ctzn-pages-list></ctzn-pages-list>`
-  }
-]
-
 export const FIXED_CITIZEN_PROFILE_SECTIONS = [
   {
     id: 'feed',
@@ -103,8 +73,7 @@ export const FIXED_CITIZEN_PROFILE_SECTIONS = [
     id: 'about',
     label: 'About',
     html: `<ctzn-followers-list></ctzn-followers-list>
-<ctzn-following-list></ctzn-following-list>
-<ctzn-community-memberships-list></ctzn-community-memberships-list>`
+<ctzn-following-list></ctzn-following-list>`
   },
   {
     id: 'pages',

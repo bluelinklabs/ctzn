@@ -8,13 +8,9 @@ import { deepClone } from '../lib/functions.js'
 import { emit } from '../lib/dom.js'
 import {
   AVATAR_URL,
-  BLOB_URL,
-  PERM_DESCRIPTIONS
+  BLOB_URL
 } from '../lib/const.js'
 import { UiEditorPopup } from './popups/ui-editor.js'
-import { ManageBansPopup } from '../com/popups/manage-bans.js'
-import { EditRolePopup } from '../com/popups/edit-role.js'
-import { InvitePopup } from '../com/popups/invite.js'
 import * as toast from './toast.js'
 import './button.js'
 import './code-textarea.js'
@@ -25,13 +21,8 @@ export class EditProfile extends LitElement {
     return {
       userId: {type: String, attribute: 'user-id'},
       profile: {type: Object},
-      communityPerms: {type: Object},
-      communityConfig: {type: Object},
-      communityRoles: {type: Object},
-      communityMembers: {type: Object},
       _hasChanges: {type: Boolean},
       values: {type: Object},
-      communityConfigValues: {type: Object},
       currentView: {type: String},
       currentError: {type: String},
       isProcessing: {type: Boolean}
@@ -47,16 +38,10 @@ export class EditProfile extends LitElement {
     this.userId = undefined
     this.profile = undefined
 
-    // community
-    this.communityPerms = undefined
-    this.communityConfig = undefined
-    this.communityRoles = undefined
-    this.communityMembers = undefined
     
     // UI state
     this.hasChanges = false
     this.values = undefined
-    this.communityConfigValues = undefined
     this.currentView = 'basics'
     this.currentError = undefined
     this.img = undefined
@@ -67,10 +52,6 @@ export class EditProfile extends LitElement {
 
   get isCitizen () {
     return this.profile?.dbType === 'ctzn.network/public-citizen-db'
-  }
-
-  get isCommunity () {
-    return this.profile?.dbType === 'ctzn.network/public-community-db'
   }
 
   updated (changedProperties) {
@@ -96,20 +77,6 @@ export class EditProfile extends LitElement {
       }
     }
     this.values = deepClone(this.profile.value)
-    await this.loadCommunity()
-  }
-
-  async loadCommunity () {
-    if (!this.isCommunity) return
-    this.communityPerms = session.isActive() ? (await session.api.view.get(
-      'ctzn.network/community-user-permissions-view',
-      this.userId,
-      session.info.userId
-    ))?.permissions : []
-    this.communityConfig = (await session.api.db(this.userId).table('ctzn.network/community-config').get('self'))?.value || {}
-    this.communityRoles = await session.api.db(this.userId).table('ctzn.network/community-role').list().catch(e => undefined) || []
-    this.communityMembers = await session.api.listAllMembers(this.userId)
-    this.communityConfigValues = deepClone(this.communityConfig)
   }
 
   get hasChanges () {
@@ -134,20 +101,8 @@ export class EditProfile extends LitElement {
 
   get canEditProfile () {
     return session.isActive () && (
-      session.info.userId === this.userId ||
-      this.hasPermission('ctzn.network/perm-community-edit-profile')
+      session.info.username === this.username
     )
-  }
-
-  hasPermission (permId) {
-    if (!this.communityPerms?.length) {
-      return false
-    }
-    return !!this.communityPerms.find(p => p.permId === 'ctzn.network/perm-admin' || p.permId === permId)
-  }
-
-  getMembersWithRole (roleId) {
-    return this.communityMembers?.filter?.(m => m.value.roles?.includes(roleId)) || []
   }
 
   // rendering
@@ -183,7 +138,6 @@ export class EditProfile extends LitElement {
         <div class="sm:flex">
           <div class="flex sm:block border-b sm:border-b-0 sm:border-r border-gray-200 sm:w-32">
             ${navItem('basics', 'Basics')}
-            ${this.isCommunity ? navItem('community', 'Community') : ''}
             ${navItem('advanced', 'Advanced')}
           </div>
           <div class="sm:flex-1 px-4 pt-2 pb-4">
@@ -250,10 +204,6 @@ export class EditProfile extends LitElement {
               <input id="avatar-file-input" class="hidden" type="file" accept=".jpg,.jpeg,.png,.svg" @change=${this.onChooseAvatarFile}>
             </div>
 
-            <div class="${this.currentView === 'community' ? 'block' : 'hidden'}">
-              ${this.isCommunity ? this.renderCommunityForm() : ''}
-            </div>
-
             <div class="${this.currentView === 'advanced' ? 'block' : 'hidden'}">
               <label class="block font-semibold p-1">Custom sections</label>
               <div class="px-1 pb-3 text-gray-500 text-sm font-medium">
@@ -278,128 +228,6 @@ export class EditProfile extends LitElement {
           </div>
         </div>
       </form>
-    `
-  }
-
-  renderCommunityForm () {
-    const canInvite = this.hasPermission('ctzn.network/perm-community-invite')
-    const canManageRoles = this.hasPermission('ctzn.network/perm-community-manage-roles')
-    const canBan = this.hasPermission('ctzn.network/perm-community-ban')
-    const canEditConfig = this.hasPermission('ctzn.network/perm-community-update-config')
-
-    const renderRole = (roleId, permissions) => {
-      let members = this.getMembersWithRole(roleId)
-      return html`
-        <div class="px-4 py-2 bg-white border border-gray-300 rounded mb-1">
-          <div class="flex items-center">
-            <span class="font-semibold text-lg flex-1"><span class="text-sm far fa-fw fa-user"></span> ${roleId}</span>
-            ${roleId !== 'admin' && this.hasPermission('ctzn.network/perm-community-manage-roles') ? html`
-              <app-button btn-class="px-3 py-1 text-sm" @click=${e => this.onRemoveRole(e, roleId)} label="Remove"></app-button>
-            ` : ''}
-            ${this.hasPermission('ctzn.network/perm-community-manage-roles') ? html`
-              <app-button btn-class="ml-1 px-3 py-1 text-sm" @click=${e => this.onEditRole(e, roleId, permissions)} label="Edit"></app-button>
-            ` : ''}
-          </div>
-          <div class="text-gray-500">
-            ${roleId === 'admin' ? html`
-              <div>&bull; Runs this community.</div>
-            ` : permissions.length ? html`
-              ${repeat(permissions, p => p.permId, p => html`
-                <div>&bull; ${PERM_DESCRIPTIONS[p.permId] || p.permId}</div>
-              `)}
-            ` : html`
-              <em>This role has no permissions</em>
-            `}
-          </div>
-          ${members.length > 0 ? html`
-            <div class="flex mt-2">
-              ${repeat(members, member => html`
-                <a class="block" href="/${member.value.user.userId}" data-tooltip=${member.value.user.userId}>
-                  <img class="block rounded object-cover w-10 h-10 mr-1" src=${AVATAR_URL(member.value.user.userId)}>
-                </a>
-              `)}
-            </div>
-          ` : ''}
-        </div>
-      `
-    }
-
-    return html`
-      <div class="mt-2 mb-4">
-        <app-button
-          btn-class="px-3 py-1 text-sm"
-          @click=${canInvite ? this.onCreateInvite : undefined}
-          ?disabled=${!canInvite}
-          label="Invite New Member"
-        ></app-button>
-      </div>
-
-      <h4 class="font-medium border-b border-gray-200 mb-2">Join mode</h4>
-      ${this.communityConfigValues ? html`
-        <div class="py-2">
-          <div class="flex items-baseline mb-2">
-            <input
-              id="joinMode-open"
-              type="radio"
-              name="joinMode"
-              value="open"
-              class="mx-2"
-              @click=${this.onClickJoinMode}
-              ?checked=${this.communityConfigValues.joinMode !== 'closed'}
-              ?disabled=${!canEditConfig}
-            >
-            <label for="joinMode-open" class="text-gray-600">
-              <strong class="font-medium text-black">Open.</strong>
-              Anybody can join the community.
-            </label>
-          </div>
-          <div class="flex items-baseline">
-            <input
-              id="joinMode-closed"
-              type="radio"
-              name="joinMode"
-              value="closed"
-              class="mx-2"
-              @click=${this.onClickJoinMode}
-              ?checked=${this.communityConfigValues.joinMode === 'closed'}
-              ?disabled=${!canEditConfig}
-            >
-            <label for="joinMode-closed" class="text-gray-600">
-              <strong class="font-medium text-black">Closed.</strong>
-              Members must be invited to join the community.
-            </label>
-          </div>
-          <div class="mt-2 px-2 py-1 text-gray-500 text-sm">
-            Note: Closed communities are still publicly readable.
-          </div>
-        </div>
-      ` : html`
-        <div class="text-center rounded bg-gray-50 py-12">
-          <span class="spinner"></span>
-        </div>
-      `}
-      <h4 class="font-medium border-b border-gray-200 mb-2 mt-3">Member roles</h4>
-      <div class="bg-gray-100 rounded p-2 mb-2">
-        ${renderRole('admin')}
-        ${repeat(this.communityRoles || [], r => r.value.roleId, r => renderRole(r.value.roleId, r.value.permissions))}
-        <div>
-          <app-button
-            btn-class="px-3 py-1 text-sm"
-            @click=${canManageRoles ? this.onCreateRole : undefined}
-            ?disabled=${!canManageRoles}
-            label="Create New Role"
-          ></app-button>
-        </div>
-      </div>
-      <h4 class="font-medium border-b border-gray-200 mb-2 mt-3">Banned users</h4>
-      <div>
-        <app-button
-          btn-class="px-3 py-1 text-sm"
-          @click=${canBan ? this.onClickManageBans : undefined}
-          ?disabled=${!canBan}
-          label="Manage Banned Users"
-        ></app-button>
-      </div>
     `
   }
 
@@ -541,77 +369,6 @@ export class EditProfile extends LitElement {
     fr.readAsDataURL(file)
   }
 
-  async onCreateRole (e) {
-    try {
-      await EditRolePopup.create({communityId: this.userId})
-      this.loadCommunity()
-    } catch (e) {
-      console.log(e)
-    }
-  }
-
-  async onEditRole (e, roleId, permissions) {
-    try {
-      await EditRolePopup.create({
-        communityId: this.userId,
-        roleId,
-        permissions,
-        members: this.getMembersWithRole(roleId)
-      })
-      this.loadCommunity()
-    } catch (e) {
-      console.log(e)
-    }
-  }
-
-  async onRemoveRole (e, roleId) {
-    if (!confirm('Remove this role?')) {
-      return
-    }
-    try {
-      let res = await session.api.db(this.userId).method(
-        'ctzn.network/community-delete-role-method',
-        {roleId}
-      )
-      if (!res.pending()) {
-        toast.create(`${roleId} role removed`)
-      }
-      this.loadCommunity()
-    } catch (e) {
-      console.log(e)
-      toast.create(e.toString(), 'error')
-    }
-  }
-
-  async onCreateInvite (e) {
-    try {
-      await InvitePopup.create({
-        communityId: this.userId
-      })
-      toast.create('Invite created', 'success')
-    } catch (e) {
-      if (e) {
-        console.log(e)
-        toast.create(e.toString(), 'error')
-      }
-    }
-  }
-
-  async onClickManageBans (e) {
-    try {
-      await ManageBansPopup.create({
-        communityId: this.userId
-      })
-    } catch (e) {
-      // ignore
-    }
-  }
-
-  onClickJoinMode (e) {
-    this.communityConfigValues.joinMode = e.currentTarget.value
-    this.hasChanges = true
-  }
-
   async onSubmit (e) {
     e.preventDefault()
     e.stopPropagation()
@@ -621,15 +378,6 @@ export class EditProfile extends LitElement {
 
     try {
       let isPending = false
-
-      // update community settings
-      if (this.isCommunity && hasChanges(this.communityConfigValues, this.communityConfig)) {
-        let res = await session.api.db(this.userId).method(
-          'ctzn.network/community-update-config-method',
-          {joinMode: this.communityConfigValues.joinMode}
-        )
-        isPending = isPending || res.pending()
-      }
 
       // update profile data
       if (this.canEditProfile && hasChanges(this.values, this.profile.value)) {
@@ -655,62 +403,24 @@ export class EditProfile extends LitElement {
           }
         }
 
-        if (this.isCitizen) {
-          // upload section blobs
-          for (let update of sectionBlobUpdates) {
-            await session.api.blob.update(
-              `ui:profile:${update.id}`,
-              encodeBase64(update.html),
-              {mimeType: 'text/html'}
-            )
-          }
-
-          // update profile record
-          const record = {
-            displayName: this.values.displayName,
-            description: this.values.description,
-            sections: this.values.sections?.length
-              ? this.values.sections.map(s => ({id: s.id, label: s.label}))
-              : undefined
-          }
-          await session.api.user.table('ctzn.network/profile').create(record)
-        } else if (this.isCommunity) {
-          // upload section blobs to the community
-          for (let update of sectionBlobUpdates) {
-            let res = await session.api.blob.create(
-              encodeBase64(update.html),
-              {mimeType: 'text/html'}
-            )
-            let res2 = await session.api.db(this.userId).method(
-              'ctzn.network/put-blob-method',
-              {
-                source: {
-                  userId: session.info.userId,
-                  dbUrl: session.info.dbUrl,
-                  blobName: res.name
-                },
-                target: {
-                  blobName: `ui:profile:${update.id}`
-                }
-              }
-            )
-            isPending = isPending || res2.pending()
-          }
-
-          // update the community profile
-          const arg = {
-            displayName: this.values.displayName,
-            description: this.values.description,
-            sections: this.values.sections?.length
-              ? this.values.sections.map(s => ({id: s.id, label: s.label}))
-              : undefined
-          }
-          let res = await session.api.db(this.userId).method(
-            'ctzn.network/put-profile-method',
-            arg
+        // upload section blobs
+        for (let update of sectionBlobUpdates) {
+          await session.api.blob.update(
+            `ui:profile:${update.id}`,
+            encodeBase64(update.html),
+            {mimeType: 'text/html'}
           )
-          isPending = isPending || res.pending()
         }
+
+        // update profile record
+        const record = {
+          displayName: this.values.displayName,
+          description: this.values.description,
+          sections: this.values.sections?.length
+            ? this.values.sections.map(s => ({id: s.id, label: s.label}))
+            : undefined
+        }
+        await session.api.user.table('ctzn.network/profile').create(record)
       }
 
       // update avatar
@@ -718,16 +428,6 @@ export class EditProfile extends LitElement {
         toast.create('Uploading avatar...')
         if (this.isCitizen) {
           await uploadBlob('avatar', this.uploadedAvatar)
-        } else if (this.isCommunity) {
-          const blobRes = await uploadBlob(undefined, this.uploadedAvatar)
-          let res = await session.api.db(this.userId).method(
-            'ctzn.network/put-avatar-method',
-            {
-              blobSource: {userId: session.info.userId, dbUrl: session.info.dbUrl},
-              blobName: blobRes.name
-            }
-          )
-          isPending = isPending || res.pending()
         }
       }
 
@@ -736,30 +436,10 @@ export class EditProfile extends LitElement {
         toast.create('Uploading banner image...')
         if (this.isCitizen) {
           await uploadBlob('profile-banner', this.uploadedBanner)
-        } else if (this.isCommunity) {
-          const blobRes = await uploadBlob(undefined, this.uploadedBanner)
-          let res = await session.api.db(this.userId).method(
-            'ctzn.network/put-blob-method',
-            {
-              source: {
-                userId: session.info.userId,
-                dbUrl: session.info.dbUrl,
-                blobName: blobRes.name
-              },
-              target: {
-                blobName: 'profile-banner'
-              }
-            }
-          )
-          isPending = isPending || res.pending()
         }
       }
-      if (!isPending) {
-        toast.create('Profile updated', 'success')
-        emit(this, 'profile-updated')
-      } else {
-        toast.create('Updates processing')
-      }
+      toast.create('Profile updated', 'success')
+      emit(this, 'profile-updated')
       this.isProcessing = false
       this.hasChanges = false
     } catch (e) {
