@@ -15,7 +15,7 @@
     "properties": {
       "hasSession": {"type": "boolean"},
       "url": {"type": "string", "format": "uri"},
-      "dbUrl": {"type": "string", "format": "uri"},
+      "dbKey": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
       "username": {"type": "string", "minLength": 3}
     }
   }

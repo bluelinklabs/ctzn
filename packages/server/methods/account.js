@@ -15,7 +15,7 @@ export function setup (define, config) {
       return {
         hasSession: true,
         url: constructUserUrl(auth.username),
-        dbUrl: auth.dbUrl,
+        dbKey: auth.dbKey,
         username: auth.username
       }
     }
