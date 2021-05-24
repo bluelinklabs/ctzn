@@ -52,7 +52,7 @@ class CtznAccount extends LitElement {
         <div class="mx-auto my-6 sm:my-12 max-w-lg px-8 sm:py-8 bg-white sm:rounded-2xl sm:border border-gray-300">
           <h2 class="mb-2 text-2xl">Account</h2>
           <div class="mb-4">
-            Signed in as: ${session.info.userId}
+            Signed in as: ${session.info.username}
           </div>
           ${this.isChangingPassword && this.userHasPasswordChangeCode ? html`
             <div class="bg-gray-50 bg-white p-4 rounded-2xl">
@@ -124,7 +124,7 @@ class CtznAccount extends LitElement {
   async onClickSendPasswordChangeCode (e) {
     this.isProcessing = true
     try {
-      await session.api.accounts.requestChangePasswordCode(session.info.username)
+      await session.api.session.requestPasswordChangeCode({username: session.info.username})
       toast.create('Check your inbox for the password change code', 'success')
       this.userHasPasswordChangeCode = true
     } catch (e) {
@@ -139,7 +139,11 @@ class CtznAccount extends LitElement {
     const passwordChangeCode = this.querySelector('#passwordChangeCode').value
     const newPassword = this.querySelector('#newPassword').value
     try {
-      await session.api.accounts.changePasswordUsingCode(session.info.username, passwordChangeCode, newPassword)
+      await session.api.session.changePassword({
+        username: session.info.username,
+        code: passwordChangeCode,
+        newPassword
+      })
       toast.create('Password updated', 'success')
       this.isChangingPassword = false
       this.userHasPasswordChangeCode = false

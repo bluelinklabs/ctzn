@@ -509,7 +509,7 @@ class CtznUser extends LitElement {
       return html`
         <div>
           ${session.isActive() ? html`
-            ${session.info.userId === this.userId ? html`
+            ${this.isMe ? html`
               <app-button
                 btn-class="font-medium px-5 py-1 rounded-full text-base text-white"
                 href="${USER_URL(this.userId)}/settings"
