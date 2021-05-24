@@ -1,15 +1,16 @@
 import * as path from 'path'
 import * as fs from 'fs'
 import { fileURLToPath } from 'url'
+import { resolve } from 'import-meta-resolve'
 import * as db from './index.js'
-import { constructUserUrl, isHyperUrl, parseEntryUrl } from '../lib/strings.js'
+import { constructUserUrl, parseEntryUrl } from '../lib/strings.js'
 import * as dbGetters from './getters.js'
 import * as schemas from '../lib/schemas.js'
 import * as errors from '../lib/errors.js'
 import { listHomeFeed } from './feed-getters.js'
 import { fetchNotications, countNotications, dbGet, fetchReactions } from './util.js'
 
-const DEFAULT_USER_AVATAR_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'frontend', 'static', 'img', 'default-user-avatar.jpg')
+const DEFAULT_USER_AVATAR_PATH = path.join(fileURLToPath(await resolve('@bluelinklabs/ctzn-ui/package.json', import.meta.url)), '..', 'static', 'img', 'default-user-thumb.jpg')
 
 // globals
 // =

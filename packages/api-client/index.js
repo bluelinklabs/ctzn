@@ -90,6 +90,9 @@ export function createApi ({origin, fetch, arrayBufferToBuffer}) {
     },
 
     async putBuf (path, body, mimeType) {
+      if (typeof body === 'string') {
+        body = await base64ToBufferAsync(body)
+      }
       const res = await fetch(url(path), {
         method: 'PUT',
         headers: buildHeaders({'Content-Type': mimeType}),
@@ -322,4 +325,9 @@ function parseDataUrl (url) {
   const [prelude, base64buf] = url.split(',')
   const mimeType = /data:([^\/]+\/[^;]+)/.exec(prelude)[1]
   return {mimeType, base64buf}
+}
+
+function base64ToBufferAsync (base64) {
+  var dataUrl = "data:application/octet-binary;base64," + base64;
+  return fetch(dataUrl).then(res => res.arrayBuffer())
 }
