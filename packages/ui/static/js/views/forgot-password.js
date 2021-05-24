@@ -10,7 +10,7 @@ class CtznForgotPassword extends LitElement {
       isProcessing: {type: Boolean},
       userHasPasswordChangeCode: {type: Boolean},
       isFinished: {type: Boolean},
-      userId: {type: String}
+      username: {type: String}
     }
   }
 
@@ -23,7 +23,7 @@ class CtznForgotPassword extends LitElement {
     this.isProcessing = false
     this.userHasPasswordChangeCode = false
     this.isFinished = false
-    this.userId = ''
+    this.username = ''
   }
 
   async load () {
@@ -89,16 +89,16 @@ class CtznForgotPassword extends LitElement {
             <div class="bg-white border px-6 py-4 rounded-2xl shadow-md mb-6 text-center">
               To change your password, we need to email a password-change code to you.
             </div>
-            <label class="font-medium mb-2" for="userId">User ID:</label>
+            <label class="font-medium mb-2" for="username">Username:</label>
             <input
-              id="userId"
+              id="username"
               class="block w-full box-border p-4 border border-gray-300 rounded"
-              placeholder="E.g. bob@ctzn.one"
+              placeholder="E.g. bob"
               required
-              @keyup=${e => {this.userId = e.currentTarget.value}}
+              @keyup=${e => {this.username = e.currentTarget.value}}
             >
             <div class="mb-8 px-2 py-1 text-gray-600 text-sm">
-              Note: this is your UserID, not your email address.
+              Note: this is your username, not your email address.
             </div>
             <div class="flex">
               <app-button label="Cancel" @click=${this.onClickCancel} ?disabled=${this.isProcessing}></app-button>
@@ -107,13 +107,13 @@ class CtznForgotPassword extends LitElement {
                 btn-class="mr-2"
                 label="I have a code"
                 @click=${e => {this.userHasPasswordChangeCode = true}}
-                ?disabled=${this.isProcessing || !this.userId}
+                ?disabled=${this.isProcessing || !this.username}
               ></app-button>
               <app-button
                 primary
                 label="Send code"
                 @click=${this.onClickSendPasswordChangeCode}
-                ?disabled=${this.isProcessing || !this.userId}
+                ?disabled=${this.isProcessing || !this.username}
                 ?spinner=${this.isProcessing}
               ></app-button>
             </div>
@@ -132,9 +132,9 @@ class CtznForgotPassword extends LitElement {
 
   async onClickSendPasswordChangeCode (e) {
     this.isProcessing = true
-    this.userId = this.querySelector('#userId').value
+    this.username = this.querySelector('#username').value
     try {
-      await session.doRequestPasswordChangeCode(this.userId)
+      await session.api.session.requestPasswordChangeCode({username: this.username})
       toast.create('Check your inbox for the password change code', 'success')
       this.userHasPasswordChangeCode = true
     } catch (e) {
@@ -149,7 +149,11 @@ class CtznForgotPassword extends LitElement {
     const passwordChangeCode = this.querySelector('#passwordChangeCode').value
     const newPassword = this.querySelector('#newPassword').value
     try {
-      await session.doChangePasswordUsingCode(this.userId, passwordChangeCode, newPassword)
+      await session.api.session.changePassword({
+        username: this.username,
+        code: passwordChangeCode,
+        newPassword
+      })
       toast.create('Password updated', 'success')
       this.isFinished = true
     } catch (e) {
