@@ -10,7 +10,7 @@ export async function getClearedAt () {
 }
 
 export async function updateClearedAt () {
-  await session.api.notifications.updateNotificationsClearedAt()
+  await session.api.method('ctzn.network/methods/mark-notifications-read')
   setCache('cleared-at', undefined)
   setCache('unread', 0)
 }

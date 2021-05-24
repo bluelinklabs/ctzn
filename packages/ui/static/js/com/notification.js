@@ -155,7 +155,7 @@ export class Notification extends LitElement {
   }
 
   async *renderSubject () {
-    const {authorId, dbUrl} = this.notification.item.subject
+    const {dbUrl} = this.notification.item.subject
     
     if (!_itemCache[dbUrl]) {
       yield html`Loading...`
@@ -164,7 +164,7 @@ export class Notification extends LitElement {
     const schemaId = extractSchemaId(dbUrl)
     let record
     if (schemaId === 'ctzn.network/post') {
-      record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.api.getPost(authorId, dbUrl)
+      record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.api.getPost(dbUrl)
       _itemCache[dbUrl] = record
       yield html`
         <ctzn-post-view
@@ -174,7 +174,7 @@ export class Notification extends LitElement {
         ></ctzn-post-view>
       `
     } else if (schemaId === 'ctzn.network/comment') {
-      record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.api.getComment(authorId, dbUrl)
+      record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.api.getComment(dbUrl)
       _itemCache[dbUrl] = record
       yield html`
         <ctzn-post-view
@@ -237,23 +237,14 @@ export class Notification extends LitElement {
     let schemaId = extractSchemaId(this.notification.itemUrl)
     if (schemaId === 'ctzn.network/post'){
       const subject = await session.api.getPost(this.notification.itemUrl)
-      emit(this, 'view-thread', {detail: {subject: {dbUrl: subject.url}}})
+      emit(this, 'view-thread', {detail: {subject: {dbUrl: subject.dbUrl}}})
     } else if (schemaId === 'ctzn.network/comment') {
       const subject = await session.api.getComment(this.notification.itemUrl)
-      emit(this, 'view-thread', {detail: {subject: {dbUrl: subject.url}}})
+      emit(this, 'view-thread', {detail: {subject: {dbUrl: subject.dbUrl}}})
     } else if (schemaId === 'ctzn.network/follow') {
       window.location = `/${this.notification.author.dbKey}`
     } else if (schemaId === 'ctzn.network/reaction') {
-      let subject
-      const subjectSchemaId = extractSchemaId(this.notification.item.subject.dbUrl)
-      if (subjectSchemaId === 'ctzn.network/post') {
-        subject = await session.api.getPost(this.notification.item.subject.authorId, this.notification.item.subject.dbUrl)
-      } else if (subjectSchemaId === 'ctzn.network/comment') {
-        subject = await session.api.getComment(this.notification.item.subject.authorId, this.notification.item.subject.dbUrl)
-      }
-      if (subject) {
-        emit(this, 'view-thread', {detail: {subject: {dbUrl: subject.url}}})
-      }
+      emit(this, 'view-thread', {detail: {subject: {dbUrl: this.notification.item.subject.dbUrl}}})
     }
   }
 }

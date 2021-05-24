@@ -306,8 +306,7 @@ class CtznApp extends LitElement {
   }
 
   onViewThread (e) {
-    let [_, path] = e.detail.subject.dbUrl.split(PUBKEY_REGEX)
-    this.navigateTo(`/${e.detail.subject.authorId}${path}`)
+    this.navigateTo(`/${e.detail.subject.dbUrl.slice('hyper://'.length)}`)
   }
 
   onNavigateTo (e) {
