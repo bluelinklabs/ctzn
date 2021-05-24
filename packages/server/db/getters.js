@@ -104,17 +104,17 @@ export async function listFollows (db, opts) {
 
 async function fetchIndexedComments (comments, {includeReplyCount} = {includeReplyCount: false}) {
   const authorsCache = {}
-  const commentEntries = await Promise.all(comments.map(async (post) => {
+  const commentEntries = await Promise.all(comments.map(async (comment) => {
     try {
-      const {origin, key} = parseEntryUrl(post.dbUrl)
+      const {dbKey, key} = parseEntryUrl(comment.dbUrl)
 
-      const publicDb = publicDbs.get(origin)
+      const publicDb = publicDbs.get(dbKey)
       if (!publicDb) return undefined
 
       const commentEntry = await publicDb.comments.get(key)
       if (!commentEntry) return undefined
       commentEntry.dbUrl = constructEntryUrl(publicDb.url, 'ctzn.network/comment', key)
-      commentEntry.author = await fetchAuthor(origin, authorsCache)
+      commentEntry.author = await fetchAuthor(dbKey, authorsCache)
       commentEntry.reactions = (await fetchReactions(commentEntry)).reactions
       if (includeReplyCount) commentEntry.replyCount = await fetchReplyCount(commentEntry)
       return commentEntry
@@ -128,7 +128,7 @@ async function fetchIndexedComments (comments, {includeReplyCount} = {includeRep
 
 function commentEntriesToThread (commentEntries) {
   const commentEntriesByUrl = {}
-  commentEntries.forEach(commentEntry => { commentEntriesByUrl[commentEntry.url] = commentEntry })
+  commentEntries.forEach(commentEntry => { commentEntriesByUrl[commentEntry.dbUrl] = commentEntry })
 
   const rootCommentEntries = []
   commentEntries.forEach(commentEntry => {

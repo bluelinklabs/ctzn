@@ -72,6 +72,9 @@ export function setup () {
       dbId = urlp.dbKey
       commentKey = urlp.key
     }
+    if (!dbId || !commentKey) {
+      throw new errors.ValidationError('Must provide a valid dbUrl or dbId/commentKey')
+    }
     return dbGetters.getComment(getDb(dbId), commentKey, dbId)
   })
 
@@ -109,6 +112,9 @@ export function setup () {
       dbId = urlp.dbKey
       postKey = urlp.key
     }
+    if (!dbId || !postKey) {
+      throw new errors.ValidationError('Must provide a valid dbUrl or dbId/postKey')
+    }
     return dbGetters.getPost(getDb(dbId), postKey, dbId, auth)
   })
 
@@ -142,7 +148,7 @@ export function setup () {
   })
 
   define('ctzn.network/views/thread', async (auth, {dbUrl}) => {
-    return {comments: await dbGetters.getThread(dbUrl, auth)}
+    return {comments: await dbGetters.getThread(dbUrl)}
   })
 }
 

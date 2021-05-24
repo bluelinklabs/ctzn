@@ -380,7 +380,7 @@ async function loadExternalDbInner (dbKey) {
   return publicDb
 }
 
-async function loadOrUnloadExternalUserDbs () {
+export async function loadOrUnloadExternalUserDbs () {
   // load any new follows
   const externalDbKeys = await getAllExternalDbKeys()
   for (let dbKey of externalDbKeys) {

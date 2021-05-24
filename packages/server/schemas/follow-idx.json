@@ -3,21 +3,21 @@
   "title": "Follows Index",
   "description": "Aggregated follows for users on the server",
   "type": "json-table",
-  "keyTemplate": [{"type": "json-pointer", "value": "/subjectId"}],
+  "keyTemplate": [{"type": "json-pointer", "value": "/subjectDbKey"}],
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["subjectId", "followerIds"],
+    "required": ["subjectDbKey", "followerDbKeys"],
     "properties": {
-      "subjectId": {
+      "subjectDbKey": {
         "type": "string",
-        "pattern": ".+@.+"
+        "pattern": "^[0-9a-f]{64}$"
       },
-      "followerIds": {
+      "followerDbKeys": {
         "type": "array",
         "items": {
           "type": "string",
-          "pattern": ".+@.+"
+          "pattern": "^[0-9a-f]{64}$"
         }
       }
     }

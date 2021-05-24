@@ -76,7 +76,7 @@ export async function fetchIndexedFollowerDbKeys (subjectDbKey) {
 }
 
 export async function fetchReactions (subject) {
-  const reactionsIdxEntry = await publicServerDb.reactionsIdx.get(subject.url)
+  const reactionsIdxEntry = await publicServerDb.reactionsIdx.get(subject.dbUrl)
 
   // go from {reaction: [urls]} to [reaction,[dbKeys]]
   let reactionsIdsPairs
@@ -92,13 +92,13 @@ export async function fetchReactions (subject) {
   }
 
   return {
-    subject: reactionsIdxEntry?.value?.subject || {dbUrl: subject.url},
+    subject: reactionsIdxEntry?.value?.subject || {dbUrl: subject.dbUrl},
     reactions: reactionsIdsPairs ? Object.fromEntries(reactionsIdsPairs) : {}
   }
 }
 
 export async function fetchReplies (subject) {
-  const threadIdxEntry = await publicServerDb.threadIdx.get(subject.url)
+  const threadIdxEntry = await publicServerDb.threadIdx.get(subject.dbUrl)
   return threadIdxEntry?.value.items || []
 }
 
@@ -152,7 +152,7 @@ export function addPrefixToRangeOpts (prefix, opts) {
 
 async function fetchNotification (notificationEntry) {
   const itemUrlp = parseEntryUrl(notificationEntry.value.itemUrl)
-  const dbKey = itemUrlp.hostname
+  const dbKey = itemUrlp.dbKey
   if (!dbKey) return undefined
   const db = publicDbs.get(dbKey)
   let item

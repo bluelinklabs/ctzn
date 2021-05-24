@@ -2,7 +2,7 @@ import createMlts from 'monotonic-lexicographic-timestamp'
 import { BaseHyperbeeDB } from './base.js'
 import { publicDbs } from './index.js'
 import { dbGet } from './util.js'
-import { constructEntryUrl } from '../lib/strings.js'
+import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import _intersectionBy from 'lodash.intersectionby'
 
 const INDEXED_DB_TYPES = [
@@ -54,19 +54,26 @@ export class PublicServerDB extends BaseHyperbeeDB {
         return {idxkey, key: this.notificationsIdx.constructBeeKey(`${dbKey}:${idxkey}`)}
       }
       switch (diff.right.schemaId) {
-        case 'ctzn.network/reaction':
         case 'ctzn.network/follow': {
           const subjectDbKey = value.subject.dbKey || value.subject.authorDbKey
+          const subjectDb = publicDbs.get(subjectDbKey)
+          if (!subjectDb || !subjectDb.writable) return // not one of our users
+          const {key, idxkey} = genKey(subjectDbKey)
+          await batch.put(key, {
+            subjectDbKey,
+            idxkey,
+            itemUrl: diff.right.url,
+            createdAt: createdAt.toISOString()
+          })
+          break
+        }
+        case 'ctzn.network/reaction': {
+          const {dbKey: subjectDbKey} = parseEntryUrl(value.subject.dbUrl)
           const subjectDb = publicDbs.get(subjectDbKey)
           if (!subjectDb) return // not one of our users
 
           if (subjectDbKey === db.dbKey) {
             return // acting on own content, ignore
-          }
-
-          const followEntry = await subjectDb.getTable('ctzn.network/follow').get(db.dbKey)
-          if (!followEntry) {
-            return // author is not followed by subject
           }
 
           const {key, idxkey} = genKey(subjectDbKey)
@@ -79,14 +86,10 @@ export class PublicServerDB extends BaseHyperbeeDB {
           break
         }
         case 'ctzn.network/comment': {
-          const rootSubjectDb = value.reply.root ? publicDbs.get(value.reply.root.authorDbKey) : undefined
-          const parentSubjectDb = value.reply.parent ? publicDbs.get(value.reply.parent.authorDbKey) : undefined
-          if (!rootSubjectDb && !parentSubjectDb) return // not one of our users
-          const [rootSubjectFollowEntry, parentSubjectFollowEntry] = await Promise.all([
-            rootSubjectDb ? rootSubjectDb.getTable('ctzn.network/follow').get(db.dbKey) : undefined,
-            parentSubjectDb ? parentSubjectDb.getTable('ctzn.network/follow').get(db.dbKey) : undefined
-          ])
-          if (rootSubjectFollowEntry && rootSubjectDb.url !== db.url) {
+          const rootSubjectDb = value.reply.root ? publicDbs.get(parseEntryUrl(value.reply.root.dbUrl).dbKey) : undefined
+          const parentSubjectDb = value.reply.parent ? publicDbs.get(parseEntryUrl(value.reply.parent.dbUrl).dbKey) : undefined
+          if (!rootSubjectDb?.writable && !parentSubjectDb?.writable) return // not one of our users
+          if (rootSubjectDb && rootSubjectDb.url !== db.url) {
             // notification for root post author
             const {key, idxkey} = genKey(rootSubjectDb.dbKey)
             await batch.put(key, {
@@ -96,7 +99,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
               createdAt: createdAt.toISOString()
             })
           }
-          if (parentSubjectFollowEntry && parentSubjectDb.url !== db.url && rootSubjectDb?.url !== parentSubjectDb.url) {
+          if (parentSubjectDb && parentSubjectDb.url !== db.url && rootSubjectDb?.url !== parentSubjectDb.url) {
             // notification for parent post author
             const {key, idxkey} = genKey(parentSubjectDb.dbKey)
             await batch.put(key, {
@@ -169,20 +172,20 @@ export class PublicServerDB extends BaseHyperbeeDB {
           followsIdxEntry = {
             key: subject.dbKey,
             value: {
-              subjectId: subject.dbKey,
-              followerIds: []
+              subjectDbKey: subject.dbKey,
+              followerDbKeys: []
             }
           }
         }
-        const followerId = db.dbKey
-        const followerIdIndex = followsIdxEntry.value.followerIds.indexOf(followerId)
+        const followerDbKey = db.dbKey
+        const followerDbKeyIndex = followsIdxEntry.value.followerDbKeys.indexOf(followerDbKey)
         if (diff.right) {
-          if (followerIdIndex === -1) {
-            followsIdxEntry.value.followerIds.push(followerId)
+          if (followerDbKeyIndex === -1) {
+            followsIdxEntry.value.followerDbKeys.push(followerDbKey)
           }
         } else if (diff.left) {
-          if (followerIdIndex !== -1) {
-            followsIdxEntry.value.followerIds.splice(followerIdIndex, 1)
+          if (followerDbKeyIndex !== -1) {
+            followsIdxEntry.value.followerDbKeys.splice(followerDbKeyIndex, 1)
           }
         }
         await batch.put(this.followsIdx.constructBeeKey(followsIdxEntry.key), followsIdxEntry.value)

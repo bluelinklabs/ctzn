@@ -46,6 +46,7 @@ export async function start (opts) {
   if (config.debugMode) console.log('Debug mode enabled')
   if (config.debugMode && DEBUG_MODE_PORTS_MAP[config.domain]) {
     config.overrides.port = DEBUG_MODE_PORTS_MAP[config.domain]
+    config.overrides.adminPort = DEBUG_MODE_PORTS_MAP[config.domain] + 1
   }
   setOrigin(`http://${config.domain || 'localhost'}:${config.port}`)
 
@@ -56,13 +57,15 @@ export async function start (opts) {
   await db.setup(config)
   await methods.setup(config)
 
-  // process.on('SIGINT', close)
-  // process.on('SIGTERM', close)
-  // async function close () {
-  //   console.log('Shutting down, this may take a moment...')
-  //   await db.cleanup()
-  //   server.close()
-  // }
+  process.on('SIGINT', close)
+  process.on('SIGTERM', close)
+  async function close () {
+    console.log('Shutting down, this may take a moment...')
+    await db.cleanup()
+    appServer.close()
+    adminServer.close()
+    process.exit(0)
+  }
 
   _serverReadyCb()
   return {

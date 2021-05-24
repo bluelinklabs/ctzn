@@ -41,68 +41,66 @@ test('basic CRUD', async t => {
   await dan.follow(bob)
   await dan.follow(carla)
 
-  let follow1 = await api.table.get(bob.userId, 'ctzn.network/follow', alice.userId)
-  t.is(follow1.value.subject.dbUrl, alice.profile.dbUrl)
-  t.is(follow1.value.subject.userId, alice.userId)
+  let follow1 = await api.table.get(bob.dbKey, 'ctzn.network/follow', alice.dbKey)
+  t.is(follow1.value.subject.dbKey, alice.dbKey)
 
-  let follow2 = await api.table.get(bob.userId, 'ctzn.network/follow', carla.userId)
-  t.is(follow2.value.subject.dbUrl, carla.profile.dbUrl)
-  t.is(follow2.value.subject.userId, carla.userId)
+  let follow2 = await api.table.get(bob.dbKey, 'ctzn.network/follow', carla.dbKey)
+  t.is(follow2.value.subject.dbKey, carla.dbKey)
 
-  let follows1 = (await api.table.list(bob.userId, 'ctzn.network/follow')).entries
+  let follows1 = (await api.table.list(bob.dbKey, 'ctzn.network/follow')).entries
   sim.testFollows(t, follows1, [alice, carla])
 
-  let follows2 = (await api.table.list(alice.userId, 'ctzn.network/follow')).entries
+  let follows2 = (await api.table.list(alice.dbKey, 'ctzn.network/follow')).entries
   sim.testFollows(t, follows2, [bob, carla])
 
-  let follows3 = (await api.table.list(carla.userId, 'ctzn.network/follow')).entries
+  let follows3 = (await api.table.list(carla.dbKey, 'ctzn.network/follow')).entries
   sim.testFollows(t, follows3, [alice, bob])
 
-  let follows4 = (await api.table.list(dan.userId, 'ctzn.network/follow')).entries
+  let follows4 = (await api.table.list(dan.dbKey, 'ctzn.network/follow')).entries
   sim.testFollows(t, follows4, [alice, bob, carla])
 
-  let follows5 = (await api.table.list(bob.userId, 'ctzn.network/follow', {limit: 1})).entries
+  let follows5 = (await api.table.list(bob.dbKey, 'ctzn.network/follow', {limit: 1})).entries
   t.is(follows5.length, 1)
 
   // alice viewing self
   await alice.login()
-  var followers = await api.view.get('ctzn.network/followers-view', alice.userId)
+  var followers = await api.view.get('ctzn.network/views/followers', {dbId: alice.dbKey})
   t.is(followers.followers.length, 3)
-  t.truthy(followers.followers.includes(bob.userId))
-  t.truthy(followers.followers.includes(carla.userId))
-  t.truthy(followers.followers.includes(dan.userId))
+  t.truthy(followers.followers.includes(bob.dbKey))
+  t.truthy(followers.followers.includes(carla.dbKey))
+  t.truthy(followers.followers.includes(dan.dbKey))
 
   // bob viewing alice
   await bob.login()
-  var followers = await api.view.get('ctzn.network/followers-view', alice.userId)
+  var followers = await api.view.get('ctzn.network/views/followers', {dbId: alice.dbKey})
   t.is(followers.followers.length, 3)
-  t.truthy(followers.followers.includes(bob.userId))
-  t.truthy(followers.followers.includes(carla.userId))
-  t.truthy(followers.followers.includes(dan.userId))
+  t.truthy(followers.followers.includes(bob.dbKey))
+  t.truthy(followers.followers.includes(carla.dbKey))
+  t.truthy(followers.followers.includes(dan.dbKey))
 
   // carla viewing alice
   await carla.login()
-  var followers = await api.view.get('ctzn.network/followers-view', alice.userId)
+  var followers = await api.view.get('ctzn.network/views/followers', {dbId: alice.dbKey})
   t.is(followers.followers.length, 3)
-  t.truthy(followers.followers.includes(bob.userId))
-  t.truthy(followers.followers.includes(carla.userId))
-  t.truthy(followers.followers.includes(dan.userId))
+  t.truthy(followers.followers.includes(bob.dbKey))
+  t.truthy(followers.followers.includes(carla.dbKey))
+  t.truthy(followers.followers.includes(dan.dbKey))
 
   // dan viewing alice
   await dan.login()
-  var followers = await api.view.get('ctzn.network/followers-view', alice.userId)
+  var followers = await api.view.get('ctzn.network/views/followers', {dbId: alice.dbKey})
   t.is(followers.followers.length, 3)
-  t.truthy(followers.followers.includes(bob.userId))
-  t.truthy(followers.followers.includes(carla.userId))
-  t.truthy(followers.followers.includes(dan.userId))
+  t.truthy(followers.followers.includes(bob.dbKey))
+  t.truthy(followers.followers.includes(carla.dbKey))
+  t.truthy(followers.followers.includes(dan.dbKey))
 
   // changes indexed
   await bob.unfollow(alice)
 
   // alice viewing self
   await alice.login()
-  var followers = await api.view.get('ctzn.network/followers-view', alice.userId)
+  var followers = await api.view.get('ctzn.network/views/followers', {dbId: alice.dbKey})
   t.is(followers.followers.length, 2)
-  t.truthy(followers.followers.includes(carla.userId))
-  t.truthy(followers.followers.includes(dan.userId))
+  t.truthy(followers.followers.includes(carla.dbKey))
+  t.truthy(followers.followers.includes(dan.dbKey))
 })

@@ -1,4 +1,4 @@
-import { createUser, whenAllSynced } from '../db/index.js'
+import { createUser, whenAllSynced, loadOrUnloadExternalUserDbs } from '../db/index.js'
 import { debugGetLastEmail } from '../lib/email.js'
 import { whenServerReady } from '../index.js'
 
@@ -21,6 +21,11 @@ export function setup (app) {
 
   app.get('/_api/debug/when-all-synced', async (req, res) => {
     await whenAllSynced()
+    res.status(200).json({})
+  })
+
+  app.post('/_api/debug/update-external-dbs', async (req, res) => {
+    await loadOrUnloadExternalUserDbs()
     res.status(200).json({})
   })
   

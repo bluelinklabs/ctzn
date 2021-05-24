@@ -48,22 +48,22 @@ test('single user viewing self content', async t => {
     text: 'Comment 2'
   })
 
-  let reply1 = await api.view.get('ctzn.network/comment-view', bob.userId, bob.comments[0].key)
+  let reply1 = await api.view.get('ctzn.network/views/comment', {dbId: 'bob', commentKey: bob.comments[0].key})
   sim.testComment(t, reply1, [bob, 'Comment 1'], {root: bob.posts[0]})
 
-  let reply2 = await api.view.get('ctzn.network/comment-view', bob.userId, bob.comments[1].key)
+  let reply2 = await api.view.get('ctzn.network/views/comment', {dbId: 'bob', commentKey: bob.comments[1].key})
   sim.testComment(t, reply2, [bob, 'Reply 1'], {root: bob.posts[0], parent: bob.comments[0]})
 
   await api.table.update(
-    bob.userId,
+    'bob',
     'ctzn.network/comment',
     bob.comments[0].key,
     Object.assign({}, bob.comments[0].value, {text: 'The First Comment'})
   )
-  let reply1Edited = await api.view.get('ctzn.network/comment-view', bob.userId, bob.comments[0].key)
+  let reply1Edited = await api.view.get('ctzn.network/views/comment', {dbId: 'bob', commentKey: bob.comments[0].key})
   sim.testComment(t, reply1Edited, [bob, 'The First Comment'], {root: bob.posts[0]})
 
-  let thread1 = (await api.view.get('ctzn.network/thread-view', bob.posts[0].url)).comments
+  let thread1 = (await api.view.get('ctzn.network/views/thread', {dbUrl: bob.posts[0].dbUrl})).comments
   sim.testThread(t, thread1, [
     [bob, 'The First Comment', [
       [bob, 'Reply 1'],
@@ -105,7 +105,7 @@ test('multiple users w/follows', async t => {
   })
 
   await bob.login()
-  let thread1 = (await api.view.get('ctzn.network/thread-view', bob.posts[0].url)).comments
+  let thread1 = (await api.view.get('ctzn.network/views/thread', {dbUrl: bob.posts[0].dbUrl})).comments
   sim.testThread(t, thread1, [
     [bob, 'The First Comment', [
       [bob, 'Reply 1'],
@@ -119,7 +119,7 @@ test('multiple users w/follows', async t => {
   ])
 
   await alice.login()
-  let thread2 = (await api.view.get('ctzn.network/thread-view', bob.posts[0].url)).comments
+  let thread2 = (await api.view.get('ctzn.network/views/thread', {dbUrl: bob.posts[0].dbUrl})).comments
   sim.testThread(t, thread2, [
     [bob, 'The First Comment', [
       [bob, 'Reply 1'],
@@ -133,7 +133,7 @@ test('multiple users w/follows', async t => {
   ])
 
   await bob.login()
-  let thread3 = (await api.view.get('ctzn.network/thread-view', alice.posts[0].url)).comments
+  let thread3 = (await api.view.get('ctzn.network/views/thread', {dbUrl: alice.posts[0].dbUrl})).comments
   sim.testThread(t, thread3, [
     [alice, 'Test 1'],
     [bob, 'Test 2'],
@@ -141,7 +141,7 @@ test('multiple users w/follows', async t => {
   ])
 
   await alice.login()
-  let thread4 = (await api.view.get('ctzn.network/thread-view', alice.posts[0].url)).comments
+  let thread4 = (await api.view.get('ctzn.network/views/thread', {dbUrl: alice.posts[0].dbUrl})).comments
   sim.testThread(t, thread4, [
     [alice, 'Test 1'],
     [bob, 'Test 2'],
@@ -152,9 +152,9 @@ test('multiple users w/follows', async t => {
 test('missing parent comments', async t => {
   const {alice, bob, carla} = sim.users
   await bob.login()
-  await api.table.delete(bob.userId, 'ctzn.network/comment', bob.comments[0].key)
-  await t.throwsAsync(() => api.view.get('ctzn.network/comment-view', bob.userId, bob.comments[0].key))
-  let thread2 = (await api.view.get('ctzn.network/thread-view', bob.posts[0].url)).comments
+  await api.table.delete('bob', 'ctzn.network/comment', bob.comments[0].key)
+  await t.throwsAsync(() => api.view.get('ctzn.network/views/comment', {dbId: 'bob', commentKey: bob.comments[0].key}))
+  let thread2 = (await api.view.get('ctzn.network/views/thread', {dbUrl: bob.posts[0].dbUrl})).comments
   sim.testThread(t, thread2, [
     [bob, 'Reply 1'],
     [bob, 'Reply 2'],

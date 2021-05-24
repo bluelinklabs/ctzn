@@ -164,25 +164,25 @@ function createApi (origin) {
       return api.get(`table/${dbId}/${schemaId}`, opts)
     },
     async get (dbId, schemaId, key) {
-      return api.get(`table/${dbId}/${schemaId}/${key}`)
+      return api.get(`table/${dbId}/${schemaId}/${encodeURIComponent(key)}`)
     },
     async create (dbId, schemaId, value) {
       return api.post(`table/${dbId}/${schemaId}`, value)
     },
     async update (dbId, schemaId, key, value) {
-      return api.put(`table/${dbId}/${schemaId}/${key}`, value)
+      return api.put(`table/${dbId}/${schemaId}/${encodeURIComponent(key)}`, value)
     },
     async delete (dbId, schemaId, key) {
-      return api.delete(`table/${dbId}/${schemaId}/${key}`)
+      return api.delete(`table/${dbId}/${schemaId}/${encodeURIComponent(key)}`)
     },
     async getBlob (dbId, schemaId, key, blobName) {
-      return api.getBuf(`table/${dbId}/${schemaId}/${key}/blobs/${blobName}`)
+      return api.getBuf(`table/${dbId}/${schemaId}/${encodeURIComponent(key)}/blobs/${blobName}`)
     },
     async putBlob (dbId, schemaId, key, blobName, buf, mimeType) {
-      return api.putBuf(`table/${dbId}/${schemaId}/${key}/blobs/${blobName}`, buf, mimeType)
+      return api.putBuf(`table/${dbId}/${schemaId}/${encodeURIComponent(key)}/blobs/${blobName}`, buf, mimeType)
     },
     async delBlob (dbId, schemaId, key, blobName) {
-      return api.delete(`table/${dbId}/${schemaId}/${key}/blobs/${blobName}`)
+      return api.delete(`table/${dbId}/${schemaId}/${encodeURIComponent(key)}/blobs/${blobName}`)
     },
   }
   return api
@@ -252,8 +252,8 @@ export class TestFramework {
     t.is(entries.length, users.length, `expected ${users.length} follows ${users.map(u=>u.dbKey).join(', ')} got ${entries.map(e=>e.value.subject.dbKey).join(', ')}`)
     for (let user of users) {
       t.is(
-        entries.find(f => f.value.subject.dbKey === user.dbKey).value.subject.dbUrl,
-        user.profile.dbUrl,
+        entries.find(f => f.value.subject.dbKey === user.dbKey).value.subject.dbKey,
+        user.profile.dbKey,
         `expected to be following ${user.username}`
       )
     }
@@ -296,7 +296,7 @@ export class TestFramework {
     if (Array.isArray(inst)) {
       inst = inst[randRange(0, inst.length - 1)]
     }
-    let comments = flattenThread((await inst.api.view.get('ctzn.network/thread-view', post.dbUrl)).comments)
+    let comments = flattenThread((await inst.api.view.get('ctzn.network/views/thread', {dbUrl: post.dbUrl})).comments)
     return comments[randRange(0, comments.length - 1)]
   }
   
@@ -340,7 +340,6 @@ export class TestFramework {
       switch (desc[1]) {
         case 'follow':
           t.is(schemaId, 'ctzn.network/follow', itemDesc)
-          t.is(entry.item.subject.dbUrl, desc[2].profile.dbUrl, itemDesc)
           t.is(entry.item.subject.dbKey, desc[2].dbKey, itemDesc)
           break
         case 'comment':
@@ -364,7 +363,7 @@ class TestCitizen {
   constructor (inst, username) {
     this.inst = inst
     this.username = username
-    this.dbUrl = undefined
+    this.dbKey = undefined
     this.posts = []
     this.comments = []
     this.following = {}
@@ -417,7 +416,7 @@ class TestCitizen {
       'ctzn.network/comment',
       {text, reply}
     )
-    this.comments.push(await this.inst.api.view.get('ctzn.network/comment-view', {dbUrl}))
+    this.comments.push(await this.inst.api.view.get('ctzn.network/views/comment', {dbUrl}))
     return this.comments[this.comments.length - 1]
   }
 

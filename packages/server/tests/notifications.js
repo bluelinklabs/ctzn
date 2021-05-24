@@ -65,7 +65,7 @@ test('user notifications index', async t => {
   }
 
   await bob.login()
-  var notifications = (await api.view.get('ctzn.network/notifications-view')).notifications
+  var notifications = (await api.view.get('ctzn.network/views/notifications')).notifications
   notifications.sort((a, b) => new Date(b.item.createdAt) - new Date(a.item.createdAt))
   sim.testNotifications(t, notifications, [
     [carla, 'reaction', bob.replies[0], 'woah'],
@@ -77,12 +77,13 @@ test('user notifications index', async t => {
     [carla, 'comment', {text: 'Comment 2', reply: {root: bob.posts[0]}}],
     [carla, 'comment', {text: 'Reply 1', reply: {root: bob.posts[0], parent: alice.replies[0]}}],
     [alice, 'comment', {text: 'Comment 1', reply: {root: bob.posts[0]}}],
-    [carla, 'follow', bob]
+    [carla, 'follow', bob],
+    [alice, 'follow', bob]
   ])
 
-  let notes1 = (await api.view.get('ctzn.network/notifications-view', {limit: 2})).notifications
+  let notes1 = (await api.view.get('ctzn.network/views/notifications', {limit: 2})).notifications
   t.is(notes1.length, 2)
-  let notes2 = (await api.view.get('ctzn.network/notifications-view', {limit: 2, lt: notes1[1].key})).notifications
+  let notes2 = (await api.view.get('ctzn.network/views/notifications', {limit: 2, lt: notes1[1].key})).notifications
   t.is(notes2.length, 2)
   t.truthy(notes1[1].key !== notes2[0].key)
 
