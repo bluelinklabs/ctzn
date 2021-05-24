@@ -39,7 +39,7 @@ export function FULL_POST_URL (post) {
 }
 
 export function COMMENT_URL (comment) {
-  return '/' + joinPath(comment.author.userId, 'ctzn.network/comment', comment.key)
+  return '/' + joinPath(comment.author.dbKey, 'ctzn.network/comment', comment.key)
 }
 
 export function FULL_COMMENT_URL (comment) {

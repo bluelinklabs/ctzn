@@ -56,15 +56,14 @@ export class CommentView extends LitElement {
 
   async load () {
     this.comment = undefined
-    const {userId, schemaId, key} = parseSrcAttr(this.src)
-    this.comment = await session.api.getComment(userId, key).catch(e => ({error: true, message: e.toString()}))
+    this.comment = await session.api.getComment(this.src).catch(e => ({error: true, message: e.toString()}))
   }
 
   get isMyComment () {
-    if (!session.isActive() || !this.comment?.author.userId) {
+    if (!session.isActive() || !this.comment?.author.dbKey) {
       return false
     }
-    return session.info?.userId === this.comment?.author.userId
+    return session.info?.dbKey === this.comment?.author.dbKey
   }
 
   get replyCount () {
@@ -79,14 +78,14 @@ export class CommentView extends LitElement {
 
   haveIReacted (reaction) {
     if (!session.isActive()) return
-    return this.comment.reactions?.[reaction]?.includes(session.info.userId)
+    return this.comment.reactions?.[reaction]?.includes(session.info.dbKey)
   }
 
   getMyReactions () {
     if (!session.isActive()) return []
     if (!this.comment.reactions) return []
     return Object.keys(this.comment.reactions).filter(reaction => {
-      return this.comment.reactions[reaction].includes(session.info.userId)
+      return this.comment.reactions[reaction].includes(session.info.dbKey)
     })
   }
 
@@ -142,10 +141,10 @@ export class CommentView extends LitElement {
       >
         <div class="grid grid-post">
           <div class="pl-2 pt-2">
-            <a class="block" href="/${this.comment.author.userId}" title=${this.comment.author.displayName}>
+            <a class="block" href="/${this.comment.author.dbKey}" title=${this.comment.author.displayName}>
               <img
                 class="block object-cover rounded-full mt-1 w-11 h-11"
-                src=${AVATAR_URL(this.comment.author.userId)}
+                src=${AVATAR_URL(this.comment.author.dbKey)}
               >
             </a>
           </div>
@@ -157,8 +156,8 @@ export class CommentView extends LitElement {
             <div class="pr-2 pb-2 min-w-0">
               <div class="pl-1 pr-2.5 text-gray-600 truncate">
                 <span class="sm:mr-1 whitespace-nowrap">
-                  <a class="hov:hover:underline" href="/${this.comment.author.userId}" title=${this.comment.author.displayName}>
-                    <span class="text-gray-800 font-semibold">${displayNames.render(this.comment.author.userId)}</span>
+                  <a class="hov:hover:underline" href="/${this.comment.author.dbKey}" title=${this.comment.author.displayName}>
+                    <span class="text-gray-800 font-semibold">${displayNames.render(this.comment.author.dbKey)}</span>
                   </a>
                 </span>
                 <span class="mr-2 text-sm">
@@ -200,12 +199,12 @@ export class CommentView extends LitElement {
       >
         <div class="py-2 min-w-0">
           <div class="flex pr-2.5 text-gray-500 text-xs items-center">
-            <a class="block relative" href="/${this.comment.author.userId}" title=${this.comment.author.displayName}>
-              <img class="block w-4 h-4 object-cover rounded-full mr-1" src=${AVATAR_URL(this.comment.author.userId)}>
+            <a class="block relative" href="/${this.comment.author.dbKey}" title=${this.comment.author.displayName}>
+              <img class="block w-4 h-4 object-cover rounded-full mr-1" src=${AVATAR_URL(this.comment.author.dbKey)}>
             </a>
             <div class="whitespace-nowrap">
-              <a class="hov:hover:underline" href="/${this.comment.author.userId}" title=${this.comment.author.displayName}>
-                <span class="text-gray-700 font-medium">${displayNames.render(this.comment.author.userId)}</span>
+              <a class="hov:hover:underline" href="/${this.comment.author.dbKey}" title=${this.comment.author.displayName}>
+                <span class="text-gray-700 font-medium">${displayNames.render(this.comment.author.dbKey)}</span>
               </a>
             </div>
             <span class="mx-1">&middot;</span>
@@ -235,7 +234,7 @@ export class CommentView extends LitElement {
               <app-comment-composer
                 autofocus
                 .subject=${this.comment.value.reply.root}
-                .parent=${{dbUrl: this.comment.url, authorId: this.comment.author.userId}}
+                .parent=${{dbUrl: this.comment.dbUrl}}
                 placeholder="Write your reply. Remember to always be kind!"
                 @publish=${this.onPublishReply}
                 @cancel=${this.onCancelReply}
@@ -302,10 +301,9 @@ export class CommentView extends LitElement {
         class="
           tooltip-right px-2 py-1
           ${this.mode === 'as-reply' ? 'text-xs font-bold' : ''}
-          ${this.canInteract ? 'cursor-pointer text-gray-500 hov:hover:bg-gray-100' : 'text-gray-400'}
+          cursor-pointer text-gray-500 hov:hover:bg-gray-100
         "
-        data-tooltip=${ifDefined(this.ctrlTooltip)}
-        @click=${this.canInteract ? this.onClickReply : undefined}
+        @click=${this.onClickReply}
       >
         ${this.mode === 'default' ? html`
           <span class="far fa-comment"></span> ${this.replyCount}
@@ -322,11 +320,10 @@ export class CommentView extends LitElement {
         class="
           tooltip-right pl-2 pr-1 mr-2 py-1
           ${this.mode === 'as-reply' ? 'text-xs font-bold' : ''}
-          ${this.canInteract ? 'cursor-pointer text-gray-500 hov:hover:bg-gray-100' : 'text-gray-400'}
+          cursor-pointer text-gray-500 hov:hover:bg-gray-100
           ${this.isReactionsOpen ? 'bg-gray-200' : ''}
         "
-        data-tooltip=${ifDefined(this.ctrlTooltip)}
-        @click=${this.canInteract ? this.onClickReactBtn : undefined}
+        @click=${this.onClickReactBtn}
       >
         <span class="far fa-fw fa-heart"></span>
       </a>
@@ -416,7 +413,7 @@ export class CommentView extends LitElement {
     if (!this.isMouseDragging) {
       e.preventDefault()
       e.stopPropagation()
-      emit(this, 'view-thread', {detail: {subject: {dbUrl: this.comment.url, authorId: this.comment.author.userId}}})
+      emit(this, 'view-thread', {detail: {subject: {dbUrl: this.comment.dbUrl, authorId: this.comment.author.dbKey}}})
     }
     this.isMouseDown = false
     this.isMouseDragging = false
@@ -449,7 +446,7 @@ export class CommentView extends LitElement {
     if (!this.viewContentOnClick && e.button === 0 && !e.metaKey && !e.ctrlKey) {
       e.preventDefault()
       e.stopPropagation()
-      emit(this, 'view-thread', {detail: {subject: {dbUrl: this.comment.url, authorId: this.comment.author.userId}}})
+      emit(this, 'view-thread', {detail: {subject: {dbUrl: this.comment.dbUrl, authorId: this.comment.author.dbKey}}})
     }
   }
 
@@ -462,14 +459,14 @@ export class CommentView extends LitElement {
     e.stopPropagation()
 
     if (this.haveIReacted(reaction)) {
-      this.comment.reactions[reaction] = this.comment.reactions[reaction].filter(userId => userId !== session.info.userId)
+      this.comment.reactions[reaction] = this.comment.reactions[reaction].filter(dbKey => dbKey !== session.info.dbKey)
       this.requestUpdate()
-      await session.api.user.table('ctzn.network/reaction').delete(`${reaction}:${this.comment.url}`)
+      await session.api.user.table('ctzn.network/reaction').delete(`${reaction}:${this.comment.dbUrl}`)
     } else {
-      this.comment.reactions[reaction] = (this.comment.reactions[reaction] || []).concat([session.info.userId])
+      this.comment.reactions[reaction] = (this.comment.reactions[reaction] || []).concat([session.info.dbKey])
       this.requestUpdate()
       await session.api.user.table('ctzn.network/reaction').create({
-        subject: {dbUrl: this.comment.url, authorId: this.comment.author.userId},
+        subject: {dbUrl: this.comment.dbUrl, authorId: this.comment.author.dbKey},
         reaction
       })
     }
