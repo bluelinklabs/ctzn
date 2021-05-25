@@ -16,6 +16,8 @@
   "license": "MIT",
   "dependencies": {
     "arraybuffer-to-buffer": "^0.0.7",
+    "fetch-blob": "^2.1.2",
+    "formdata-node": "^3.4.0",
     "node-fetch": "^2.6.1"
   },
   "devDependencies": {

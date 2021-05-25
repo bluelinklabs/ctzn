@@ -1,5 +1,7 @@
 import pump from 'pump'
 import concat from 'concat-stream'
+import multer from 'multer'
+import bytes from 'bytes'
 import { debugLog } from '../lib/debug-log.js'
 import * as methods from '../methods/index.js'
 import * as dbViews from '../db/views.js'
@@ -70,16 +72,37 @@ export function setup (app, config) {
     }
   })
 
-  app.post('/_api/table/:username([^\/]{3,})/:schemaNs/:schemaName', async (req, res) => {
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fieldSize: bytes('1mb'),
+      files: 12
+    }
+  })
+  app.post('/_api/table/:username([^\/]{3,})/:schemaNs/:schemaName', upload.any(), async (req, res) => {
     try {
       debugLog.httpCall('table.create', req.ip, req.params, req.query)
       const db = getDb(req.params.username)
       const schemaId = `${req.params.schemaNs}/${req.params.schemaName}`
       const table = db.tables[schemaId]
-      const value = req.body
 
       if (req.session.auth?.dbKey !== db.dbKey) {
         throw new errors.PermissionsError()
+      }
+
+      let value
+      if (req.is('json')) {
+        value = req.body
+      } else if (req.is('multipart/form-data')) {
+        let valueFile = req.files.find(f => f.fieldname === 'value')
+        if (valueFile) value = JSON.parse(valueFile.buffer.toString('utf8'))
+        else value = {}
+        for (let i = 0; i < req.files.length; i++) {
+          const file = req.files[i]
+          if (file.fieldname === 'value') continue
+          table.schema.assertBlobMimeTypeValid(file.fieldname, file.mimetype)
+          table.schema.assertBlobSizeValid(file.fieldname, file.buffer.length)
+        }
       }
 
       const key = table.schema.generateKey(value)
@@ -87,6 +110,13 @@ export function setup (app, config) {
         value.createdAt = (new Date()).toISOString()
       }
       await table.put(key, value)
+      if (req.files) {
+        for (let i = 0; i < req.files.length; i++) {
+          const file = req.files[i]
+          if (file.fieldname === 'value') continue
+          await table.putBlob(key, file.fieldname, file.buffer, {mimeType: file.mimetype})
+        }
+      }
       await onDatabaseChange(db)
 
       if (schemaId === 'ctzn.network/post') {
