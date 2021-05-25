@@ -13,7 +13,7 @@ import {
 } from '../lib/const.js'
 import * as session from '../lib/session.js'
 import * as gestures from '../lib/gestures.js'
-import { pluralize, makeSafe, linkify, isHyperUrl, toNiceDomain } from '../lib/strings.js'
+import { pluralize, makeSafe, linkify, isHyperUrl, isHyperKey, toNiceDomain } from '../lib/strings.js'
 import { emit } from '../lib/dom.js'
 import { emojify } from '../lib/emojify.js'
 import '../com/header.js'
@@ -160,7 +160,10 @@ class CtznUser extends LitElement {
     }
 
     if (!this.currentView) {
-      emit(this, 'navigate-to', {detail: {url: `${USER_URL(this.userId)}/feed`, replace: true}})
+      let userId = this.userProfile?.username || this.userId
+      emit(this, 'navigate-to', {detail: {url: `${USER_URL(userId)}/feed`, replace: true}})
+    } else if (this.userProfile?.username && isHyperKey(this.userId)) {
+      emit(this, 'navigate-to', {detail: {url: `${USER_URL(this.userProfile.username)}/${this.currentView}`, replace: true}})
     }
 
     this.querySelector('app-posts-feed')?.load()

@@ -1,7 +1,10 @@
-import { OUR_DOMAIN } from './const.js'
-
 export const HYPER_URL_REGEX = /^(hyper:\/\/)?([0-9a-f]{64})/i
 export const PUBKEY_REGEX = /[0-9a-f]{64}/i
+export const PUBKEY_ONLY_REGEX = /^[0-9a-f]{64}$/i
+
+export function isHyperKey (str = '') {
+  return PUBKEY_ONLY_REGEX.test(str)
+}
 
 export function isHyperUrl (str = '') {
   return HYPER_URL_REGEX.test(str)
