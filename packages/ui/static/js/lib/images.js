@@ -1,3 +1,5 @@
+import * as session from './session.js'
+
 // https://dev.to/taylorbeeston/resizing-images-client-side-with-vanilla-js-4ng2
 
 async function renderCanvas (dataUrl) {
@@ -54,4 +56,26 @@ export async function shrinkImage (dataUrl, factor = 0.9, mimeType = 'image/jpeg
   let canvas = await renderCanvas(dataUrl)
   canvas = scaleCanvas(canvas, factor)
   return canvas.toDataURL(mimeType)
+}
+
+export async function uploadBlob (table, key, blobName, dataUrl) {
+  let {base64buf, mimeType} = parseDataUrl(dataUrl)
+  let res, lastError
+  for (let i = 1; i < 6; i++) {
+    try {
+      res = await session.api.user.table(table).putBlob(key, blobName, base64buf, mimeType)
+      break
+    } catch (e) {
+      lastError = e
+      let shrunkDataUrl = await shrinkImage(dataUrl, (10 - i) / 10, mimeType)
+      let parsed = parseDataUrl(shrunkDataUrl)
+      base64buf = parsed.base64buf
+      mimeType = parsed.mimeType
+    }
+  }
+  if (!res) {
+    console.error(lastError)
+    throw new Error(`Failed to upload ${blobName}: ${lastError.toString()}`)
+  }
+  return res
 }

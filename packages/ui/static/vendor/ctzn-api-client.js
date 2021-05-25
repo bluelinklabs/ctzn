@@ -264,10 +264,6 @@ function createApi ({origin, fetch, arrayBufferToBuffer}) {
           password
         });
         if (newSessionInfo) {
-          if (avatar) {
-            const {mimeType, base64buf} = parseDataUrl(avatar);
-            await api.table.putBlob(username, 'ctzn.network/profile', 'self', 'avatar', base64buf, {mimeType}).catch(e => console.log(e));
-          }
           localStorage.setItem('session-info', JSON.stringify(newSessionInfo));
           api.session.info = newSessionInfo;
           emitter.dispatchEvent(new Event('change'));
@@ -322,12 +318,6 @@ function createApi ({origin, fetch, arrayBufferToBuffer}) {
 }
 
 function noop () {}
-
-function parseDataUrl (url) {
-  const [prelude, base64buf] = url.split(',');
-  const mimeType = /data:([^\/]+\/[^;]+)/.exec(prelude)[1];
-  return {mimeType, base64buf}
-}
 
 function base64ToBufferAsync (base64) {
   var dataUrl = "data:application/octet-binary;base64," + base64;

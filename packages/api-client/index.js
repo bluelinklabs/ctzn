@@ -264,10 +264,6 @@ export function createApi ({origin, fetch, arrayBufferToBuffer}) {
           password
         })
         if (newSessionInfo) {
-          if (avatar) {
-            const {mimeType, base64buf} = parseDataUrl(avatar)
-            await api.table.putBlob(username, 'ctzn.network/profile', 'self', 'avatar', base64buf, {mimeType}).catch(e => console.log(e))
-          }
           localStorage.setItem('session-info', JSON.stringify(newSessionInfo))
           api.session.info = newSessionInfo
           emitter.dispatchEvent(new Event('change'))

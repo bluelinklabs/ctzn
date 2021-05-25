@@ -1,8 +1,6 @@
 import { LitElement, html } from '../../vendor/lit/lit.min.js'
-import { repeat } from '../../vendor/lit/directives/repeat.js'
 import * as session from '../lib/session.js'
 import * as images from '../lib/images.js'
-import { encodeBase64, decodeBase64 } from '../lib/strings.js'
 import { deepClone } from '../lib/functions.js'
 import { emit } from '../lib/dom.js'
 import {
@@ -262,7 +260,7 @@ export class EditProfile extends LitElement {
       if (this.canEditProfile && this.uploadedAvatar) {
         toast.create('Uploading avatar...')
         if (this.isCitizen) {
-          await uploadBlob('avatar', this.uploadedAvatar)
+          await images.uploadBlob('ctzn.network/profile', 'self', 'avatar', this.uploadedAvatar)
         }
       }
 
@@ -270,7 +268,7 @@ export class EditProfile extends LitElement {
       if (this.canEditProfile && this.uploadedBanner) {
         toast.create('Uploading banner image...')
         if (this.isCitizen) {
-          await uploadBlob('banner', this.uploadedBanner)
+          await images.uploadBlob('ctzn.network/profile', 'self', 'banner', this.uploadedBanner)
         }
       }
       toast.create('Profile updated', 'success')
@@ -304,28 +302,6 @@ function hasChanges (left, right) {
     }
   }
   return false
-}
-
-async function uploadBlob (blobName, dataUrl) {
-  let {base64buf, mimeType} = images.parseDataUrl(dataUrl)
-  let res, lastError
-  for (let i = 1; i < 6; i++) {
-    try {
-      res = await session.api.user.table('ctzn.network/profile').putBlob('self', blobName, base64buf, mimeType)
-      break
-    } catch (e) {
-      lastError = e
-      let shrunkDataUrl = await images.shrinkImage(dataUrl, (10 - i) / 10, mimeType)
-      let parsed = images.parseDataUrl(shrunkDataUrl)
-      base64buf = parsed.base64buf
-      mimeType = parsed.mimeType
-    }
-  }
-  if (!res) {
-    console.error(lastError)
-    throw new Error(`Failed to upload ${blobName}: ${lastError.toString()}`)
-  }
-  return res
 }
 
 function getByPath (obj, path) {

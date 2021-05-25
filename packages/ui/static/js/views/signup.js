@@ -1,7 +1,7 @@
 import { LitElement, html } from '../../vendor/lit/lit.min.js'
-import { repeat } from '../../vendor/lit/directives/repeat.js'
 import { asyncReplace } from '../../vendor/lit/directives/async-replace.js'
 import * as session from '../lib/session.js'
+import * as images from '../lib/images.js'
 import '../com/header.js'
 import '../com/button.js'
 
@@ -352,13 +352,11 @@ class CtznSignup extends LitElement {
     this.isProcessing = true
     this.currentError = undefined
     this.captureValues()
-
-    if (this.isAvatarSet) {
-      this.values.avatar = document.getElementById('avatar-canvas').toDataURL()
-    }
-
     try {
       await session.api.session.signup(this.values)
+      if (this.isAvatarSet) {
+        await images.uploadBlob('ctzn.network/profile', 'self', 'avatar', document.getElementById('avatar-canvas').toDataURL())
+      }
       window.location = '/'
     } catch (e) {
       console.log(e)
@@ -370,18 +368,6 @@ class CtznSignup extends LitElement {
 }
 
 customElements.define('app-signup-view', CtznSignup)
-
-async function checkCtznServer (domain) {
-  try {
-    let urlp = new URL(domain)
-    domain = urlp.hostname
-  } catch (e) {
-    // ignore
-  }
-  const res = await (await fetch(`/ctzn/server-info`))
-  if (!res.ok) throw new Error(res.statusText)
-  return domain
-}
 
 async function* loadTermsOfService (domain) {
   yield html`Loading...`
