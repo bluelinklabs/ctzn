@@ -16,13 +16,13 @@ import * as gestures from '../lib/gestures.js'
 import { pluralize, makeSafe, linkify, isHyperUrl, isHyperKey, toNiceDomain } from '../lib/strings.js'
 import { emit } from '../lib/dom.js'
 import { emojify } from '../lib/emojify.js'
+import { writeToClipboard } from '../lib/clipboard.js'
 import '../com/header.js'
 import '../com/button.js'
 import '../com/img-fallbacks.js'
 import '../com/posts-feed.js'
 import '../com/followers-list.js'
 import '../com/following-list.js'
-import '../com/simple-user-list.js'
 import '../com/subnav.js'
 import '../com/edit-profile.js'
 
@@ -540,6 +540,15 @@ class CtznUser extends LitElement {
           class="block sm:border border-t border-gray-300 mb-2"
           user-id=${this.userId}
         ></app-following-list>
+        <div class="block sm:border border-t border-gray-300 mb-2 px-4 py-3">
+          <div class="mb-1 text-sm font-medium">Database Key (for the nerds):</div>
+          <div class="flex items-center bg-gray-100 rounded">
+            <div class="flex-1 font-mono text-sm overflow-auto py-2 px-3">${this.userProfile?.dbKey}</div>
+            <div class="py-2 px-3">
+              <a class="cursor-pointer" @click=${this.onClickCopyDbKey}><span class="far fa-clipboard"></span></a>
+            </div>
+          </div>
+        </div>
       `
     } else if (this.currentView === 'settings') {
       return html`
@@ -648,6 +657,11 @@ class CtznUser extends LitElement {
       style: `padding: 4px 0; font-size: 16px; font-weight: 500; min-width: 140px`,
       items
     })
+  }
+
+  onClickCopyDbKey (e) {
+    writeToClipboard(this.userProfile.dbKey)
+    toast.create('Copied to clipboard')
   }
 }
 
