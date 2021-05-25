@@ -1,5 +1,10 @@
 import test from 'ava'
 import { createServer, TestFramework } from './_util.js'
+import fs from 'fs'
+import * as path from 'path'
+import { fileURLToPath } from 'url'
+
+const TEST_IMAGE_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-img.jpg')
 
 let close
 let api
@@ -95,4 +100,40 @@ test('feeds', async t => {
   sim.testFeed(t, postEntries, [
     [alice, '4'],
   ])
+})
+
+test('post with images', async t => {
+  const bob = sim.users.bob
+  await bob.login()
+  const base64buf = fs.readFileSync(TEST_IMAGE_PATH, 'base64')
+  const res = await api.table.createWithBlobs('bob', 'ctzn.network/post', {
+    text: 'Images test',
+    media: [{}]
+  }, {
+    media1Thumb: {base64buf, mimeType: 'image/jpeg'},
+    media1: {base64buf, mimeType: 'image/jpeg'}
+  })
+  const uploadedBuf = await api.table.getBlob('bob', 'ctzn.network/post', res.key, 'media1')
+  t.is(uploadedBuf.toString('base64'), base64buf)
+
+  await t.throwsAsync(() => api.table.createWithBlobs('bob', 'ctzn.network/post', {
+    text: 'Images test 2',
+    media: [{}]
+  }, {
+    media1234: {base64buf, mimeType: 'image/jpeg'}
+  }))
+
+  await t.throwsAsync(() => api.table.createWithBlobs('bob', 'ctzn.network/post', {
+    text: 'Images test 3',
+    media: [{}]
+  }, {
+    media1: {base64buf, mimeType: 'application/javascript'}
+  }))
+
+  await t.throwsAsync(() => api.table.createWithBlobs('bob', 'ctzn.network/post', {
+    text: 'Images test 4',
+    media: [{}]
+  }, {
+    media1Thumb: {base64buf: '0'.repeat(400000), mimeType: 'image/jpeg'}
+  }))
 })

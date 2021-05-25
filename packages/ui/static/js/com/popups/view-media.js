@@ -110,7 +110,7 @@ export class ViewMediaPopup extends BasePopup {
             <div class="hidden sm:block text-white text-3xl px-10 cursor-pointer ${this.isLeftMost ? 'opacity-20' : ''}" @click=${e => this.onClickDir(e, -1)}>
               <span class="fas fa-angle-left"></span>
             </div>
-            <img class="block border border-white shadow-lg" src=${this.url}>
+            <img class="block border border-white shadow-lg" src=${this.url} style="max-width: 90vw;">
             <div class="hidden sm:block text-white text-3xl px-10 cursor-pointer ${this.isRightMost ? 'opacity-20' : ''}" @click=${e => this.onClickDir(e, 1)}>
               <span class="fas fa-angle-right"></span>
             </div>

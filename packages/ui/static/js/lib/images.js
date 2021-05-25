@@ -1,4 +1,5 @@
 import * as session from './session.js'
+import { base64ByteSize } from './strings.js'
 
 // https://dev.to/taylorbeeston/resizing-images-client-side-with-vanilla-js-4ng2
 
@@ -56,6 +57,20 @@ export async function shrinkImage (dataUrl, factor = 0.9, mimeType = 'image/jpeg
   let canvas = await renderCanvas(dataUrl)
   canvas = scaleCanvas(canvas, factor)
   return canvas.toDataURL(mimeType)
+}
+
+export async function ensureImageByteSize (dataUrl, maxSize, mimeType = 'image/jpeg') {
+  let resDataUrl = dataUrl
+  let factor = 0.9
+  while (base64ByteSize(parseDataUrl(resDataUrl).base64buf) > maxSize && factor > 0) {
+    resDataUrl = await shrinkImage(dataUrl, factor, mimeType)
+    if (factor === 0.1) {
+      factor = 0.05
+    } else {
+      factor -= 0.1
+    }
+  }
+  return resDataUrl
 }
 
 export async function uploadBlob (table, key, blobName, dataUrl) {

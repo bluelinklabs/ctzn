@@ -1,6 +1,6 @@
 const isBrowser = typeof window !== 'undefined';
 
-function createApi ({origin, fetch, arrayBufferToBuffer}) {
+function createApi ({origin, fetch, arrayBufferToBuffer, Blob, FormData}) {
   let cookies = {}; // node-fetch requires us to track cookies manually
   let emitter = new EventTarget();
 
@@ -66,6 +66,25 @@ function createApi ({origin, fetch, arrayBufferToBuffer}) {
         method: 'POST',
         headers: buildHeaders({'Content-Type': 'application/json'}),
         body: JSON.stringify(body || {})
+      });
+      const resbody = await res.json();
+      if (!res.ok || resbody.error) {
+        throw new Error(resbody.message || res.statusText || res.status)
+      }
+      setCookies(res);
+      return resbody
+    },
+
+    async postMultipart (path, parts) {
+      const formData = new FormData();
+      for (let k in parts) {
+        formData.append(k, parts[k], k);
+      }
+      const headers = isBrowser ? undefined : formData.headers;
+      const res = await fetch(url(path), {
+        method: 'POST',
+        headers: buildHeaders(headers),
+        body: isBrowser ? formData : FormData.toStream(formData)
       });
       const resbody = await res.json();
       if (!res.ok || resbody.error) {
@@ -142,6 +161,15 @@ function createApi ({origin, fetch, arrayBufferToBuffer}) {
       async create (dbId, schemaId, value) {
         return api.post(`table/${dbId}/${schemaId}`, value)
       },
+      async createWithBlobs (dbId, schemaId, value, blobs) {
+        const parts = {
+          value: new Blob([JSON.stringify(value)], {type: 'application/json'})
+        };
+        for (let k in blobs) {
+          parts[k] = new Blob([await base64ToBufferAsync(blobs[k].base64buf)], {type: blobs[k].mimeType});
+        }
+        return api.postMultipart(`table/${dbId}/${schemaId}`, parts)
+      },
       async update (dbId, schemaId, key, value) {
         return api.put(`table/${dbId}/${schemaId}/${encodeURIComponent(key)}`, value)
       },
@@ -175,6 +203,9 @@ function createApi ({origin, fetch, arrayBufferToBuffer}) {
             },
             async create (value) {
               return api.table.create(dbId, schemaId, value)
+            },
+            async createWithBlobs (value, blobs) {
+              return api.table.createWithBlobs(dbId, schemaId, value, blobs)
             },
             async update (key, value) {
               return api.table.update(dbId, schemaId, key, value)
@@ -318,15 +349,24 @@ function createApi ({origin, fetch, arrayBufferToBuffer}) {
 }
 
 function noop () {}
-
+ 
 function base64ToBufferAsync (base64) {
-  var dataUrl = "data:application/octet-binary;base64," + base64;
-  return fetch(dataUrl).then(res => res.arrayBuffer())
+  if (typeof fetch !== 'undefined') {
+    var dataUrl = "data:application/octet-binary;base64," + base64;
+    return fetch(dataUrl).then(res => res.arrayBuffer())
+  }
+  return Buffer.from(base64, 'base64')
 }
 
 function create (origin) {
   origin = origin || window.location.origin;
-  return createApi({origin, fetch: window.fetch, arrayBufferToBuffer: passthrough})
+  return createApi({
+    origin,
+    fetch: window.fetch,
+    arrayBufferToBuffer: passthrough,
+    Blob: window.Blob,
+    FormData: window.FormData
+  })
 }
 
 function passthrough (v) {

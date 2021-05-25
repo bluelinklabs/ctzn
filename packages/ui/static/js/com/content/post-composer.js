@@ -9,6 +9,8 @@ import '../button.js'
 
 const CHAR_LIMIT = 256
 const THUMB_WIDTH = 640
+const MAX_THUMB_BYTE_SIZE = 256000
+const MAX_ORIGINAL_BYTE_SIZE = 512000
 
 class PostComposer extends LitElement {
   static get properties () {
@@ -237,60 +239,26 @@ class PostComposer extends LitElement {
     this.uploadProgress = 0
     this.uploadTotal = this.media.filter(Boolean).length
 
-    // upload media
-    for (let i = 0; i < this.media.length; i++) {
-      try {
-        let item = this.media[i]
-        if (!item) continue // happens if the item was removed
-
-        item.caption = document.getElementById(`media-caption-${i}`).value || undefined
-        if (!item.blobs.thumb?.blobName && item.blobs.original?.dataUrl) {
-          let thumbDataUrl = await images.resizeImage(item.blobs.original.dataUrl, THUMB_WIDTH)
-          let thumbData = parseDataUrl(thumbDataUrl)
-          let res = await session.api.blob.create(thumbData.base64buf, {mimeType: thumbData.mimeType})
-          item.blobs.thumb = {
-            blobName: res.name,
-            mimeType: thumbData.mimeType
-          }
-        }
-        if (!item.blobs.original?.blobName) {
-          let originalData = parseDataUrl(item.blobs.original.dataUrl)
-          let originalMimeType = originalData.mimeType
-          let res
-          let lastError
-          for (let i = 1; i < 6; i++) {
-            try {
-              res = await session.api.blob.create(originalData.base64buf, {mimeType: originalData.mimeType})
-            } catch (e) {
-              lastError = e
-              let dataUrl = await images.shrinkImage(item.blobs.original.dataUrl, (10 - i) / 10, originalMimeType)
-              originalData = parseDataUrl(dataUrl)
-            }
-          }
-          if (!res) throw lastError
-          item.blobs.original = {
-            blobName: res.name,
-            mimeType: originalData.mimeType
-          }
-        }
-
-        this.uploadProgress++
-      } catch (e) {
-        this.isProcessing = false
-        toast.create(e.message, 'error')
-        console.log(e)
-        return
-      }
-    }
-
     let res
     try {
       let media = this.media.filter(Boolean)
       let text = this.querySelector('#text').value
-      res = await session.api.user.table('ctzn.network/post').create({
+      let blobs = {}
+      for (let i = 0; i < (media?.length || 0); i++) {
+        const item = media[i]
+
+        let thumbDataUrl = await images.resizeImage(item.blobs.original.dataUrl, THUMB_WIDTH)
+        thumbDataUrl = await images.ensureImageByteSize(thumbDataUrl, MAX_THUMB_BYTE_SIZE)
+        blobs[`media${i + 1}Thumb`] = parseDataUrl(thumbDataUrl)
+        
+        let originalMimeType = images.parseDataUrl(item.blobs.original.dataUrl).mimeType
+        let originalDataUrl = await images.ensureImageByteSize(item.blobs.original.dataUrl, MAX_ORIGINAL_BYTE_SIZE, originalMimeType)
+        blobs[`media${i + 1}`] = parseDataUrl(originalDataUrl)
+      }
+      res = await session.api.user.table('ctzn.network/post').createWithBlobs({
         text,
-        media: media?.length ? media : undefined
-      })
+        media: media?.length ? media.map(item => ({caption: item.caption})) : undefined
+      }, blobs)
     } catch (e) {
       this.isProcessing = false
       toast.create(e.message, 'error')

@@ -265,17 +265,17 @@ export class Post extends LitElement {
     `
   }
 
-  renderImg (item, size) {
+  renderImg (n, item, size) {
     let url = ''
-    if (item.blobs.original.dataUrl) {
+    if (item.blobs?.original?.dataUrl) {
       url = item.blobs.original.dataUrl
     } else {
-      url = BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, (item.blobs.thumb || item.blobs.original).blobName)
+      url = BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, `media${n + 1}Thumb`)
     }
     return html`
       <div
         class="bg-gray-100 rounded img-sizing-${size} img-placeholder cursor-pointer"
-        @click=${this.renderOpts?.preview ? undefined : e => this.onClickImage(e, item)}
+        @click=${this.renderOpts?.preview ? undefined : e => this.onClickImage(e, n, item)}
       >
         <img
           class="box-border object-cover border border-gray-200 rounded w-full img-sizing-${size}"
@@ -294,8 +294,8 @@ export class Post extends LitElement {
     if (media.length > 4 && this.mode === 'expanded') {
       return html`
         <div class="grid grid-post-images mt-1 mb-2">
-          ${repeat(media, item => html`
-            ${this.renderImg(item, 'full')}
+          ${repeat(media, (item, i) => html`
+            ${this.renderImg(i, item, 'full')}
           `)}
         </div>
       `
@@ -305,11 +305,11 @@ export class Post extends LitElement {
       <div class="flex mt-1 mb-2 ${this.showDefault ? 'sm:px-1' : ''}">
         ${media.length >= 4 ? html`
           <div class="flex-1 flex flex-col pr-0.5">
-            <div class="flex-1 pb-0.5">${this.renderImg(media[0], 'small')}</div>
-            <div class="flex-1 pt-0.5">${this.renderImg(media[2], 'small')}</div>
+            <div class="flex-1 pb-0.5">${this.renderImg(0, media[0], 'small')}</div>
+            <div class="flex-1 pt-0.5">${this.renderImg(2, media[2], 'small')}</div>
           </div>
           <div class="flex-1 flex flex-col pl-0.5">
-            <div class="flex-1 pb-0.5">${this.renderImg(media[1], 'small')}</div>
+            <div class="flex-1 pb-0.5">${this.renderImg(1, media[1], 'small')}</div>
             <div class="flex-1 pt-0.5 relative">
               ${moreImages > 0 ? html`
                 <span
@@ -321,16 +321,16 @@ export class Post extends LitElement {
             </div>
           </div>
         ` : media.length === 3 ? html`
-          <div class="flex-1 pr-0.5">${this.renderImg(media[0], 'big')}</div>
+          <div class="flex-1 pr-0.5">${this.renderImg(0, media[0], 'big')}</div>
           <div class="flex-1 flex flex-col pl-0.5">
-            <div class="flex-1 pb-0.5">${this.renderImg(media[1], 'smaller')}</div>
-            <div class="flex-1 pt-0.5">${this.renderImg(media[2], 'small')}</div>
+            <div class="flex-1 pb-0.5">${this.renderImg(1, media[1], 'smaller')}</div>
+            <div class="flex-1 pt-0.5">${this.renderImg(2, media[2], 'small')}</div>
           </div>
         ` : media.length === 2 ? html`
-          <div class="flex-1 pr-0.5">${this.renderImg(media[0], 'medium')}</div>
-          <div class="flex-1 pl-0.5">${this.renderImg(media[1], 'medium')}</div>
+          <div class="flex-1 pr-0.5">${this.renderImg(0, media[0], 'medium')}</div>
+          <div class="flex-1 pl-0.5">${this.renderImg(1, media[1], 'medium')}</div>
         ` : html`
-          <div class="flex-1">${this.renderImg(media[0], 'free')}</div>
+          <div class="flex-1">${this.renderImg(0, media[0], 'free')}</div>
         `}
       </div>
     `
@@ -542,12 +542,12 @@ export class Post extends LitElement {
     })
   }
 
-  onClickImage (e, item) {
+  onClickImage (e, n, item) {
     e.preventDefault()
     e.stopPropagation()
     ViewMediaPopup.create({
-      url: BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, (item.blobs.thumb || item.blobs.original).blobName),
-      urls: this.post.value.media.map(item2 => BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, (item2.blobs.thumb || item2.blobs.original).blobName))
+      url: BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, `media${n + 1}`),
+      urls: this.post.value.media.map((item2, n) => BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, `media${n + 1}`))
     })
   }
 }

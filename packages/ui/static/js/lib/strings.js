@@ -109,6 +109,10 @@ export function decodeBase64 (str = '') {
   }).join(''))
 }
 
+export function base64ByteSize (str = '') {
+  return ((4 * str.length / 3) + 3) & ~3
+}
+
 const MAKE_SAFE_MAP = {
   '"': '&quot;',
   "'": '&#39;',
