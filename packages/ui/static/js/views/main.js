@@ -228,7 +228,7 @@ class CtznMainView extends LitElement {
 
   renderRightSidebar () {
     return html`
-      <nav class="pt-6">
+      <nav>
         <app-suggestions-sidebar></app-suggestions-sidebar>
       </nav>
     `

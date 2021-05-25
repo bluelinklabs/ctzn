@@ -76,8 +76,8 @@ export class SearchableUserList extends LitElement {
   get numResults () {
     const me = this.getFilteredMe()
     const users = this.getFilteredUsers()
-    const looksLikeUserId = false // TODO this.filter?.includes('@') && !this.filter?.includes(' ')
-    return (!!me ? 1 : 0) + (looksLikeUserId ? 1 : 0) + users?.length
+    const looksLikeDbKey = /^[0-9a-f]{64}$/.test(this.filter)
+    return (!!me ? 1 : 0) + (looksLikeDbKey ? 1 : 0) + users?.length
   }
 
   testUserId (userId) {
@@ -88,8 +88,8 @@ export class SearchableUserList extends LitElement {
   }
 
   getFilteredMe () {
-    const userId = session.info.userId
-    return this.testUserId(userId) ? userId : undefined
+    const username = session.info.username
+    return this.testUserId(username) ? username : undefined
   }
 
   getFilteredUsers () {
@@ -99,7 +99,7 @@ export class SearchableUserList extends LitElement {
   render () {
     const me = this.getFilteredMe()
     const users = this.getFilteredUsers()
-    const looksLikeUserId = false // TODO this.filter?.includes('@') && !this.filter?.includes(' ')
+    const looksLikeDbKey = /^[0-9a-f]{64}$/.test(this.filter)
     let itemIndex = 0
     const renderItem = (href, title, inner) => {
       let isHighlighted = (this.widgetMode && itemIndex++ === this.highlightIndex)
@@ -140,7 +140,7 @@ export class SearchableUserList extends LitElement {
         class="relative ${this.widgetMode ? 'overflow-y-auto' : ''}"
         style="${this.widgetMode ? 'max-height: 75vh' : ''}"
       >
-        ${looksLikeUserId ? html`
+        ${looksLikeDbKey ? html`
           ${renderItem(`/${this.filter}`, this.filter, html`
             <span class="bg-gray-100 fa-arrow-right fas mr-2 py-2 rounded text-center w-8"></span>
             Go to ${this.filter}
