@@ -2,7 +2,7 @@ export default [
   {
     input: 'browser.js',
     output: {
-      file: 'browser.build.js',
+      file: 'ctzn-api-client.build.js',
       format: 'module'
     }
   }
