@@ -61,22 +61,3 @@ export const SUGGESTED_REACTIONS = [
   '🔥',
   '😢'
 ]
-
-export const FIXED_CITIZEN_PROFILE_SECTIONS = [
-  {
-    id: 'feed',
-    label: 'Feed',
-    html: `<ctzn-posts-feed></ctzn-posts-feed>`
-  },
-  {
-    id: 'about',
-    label: 'About',
-    html: `<ctzn-followers-list></ctzn-followers-list>
-<ctzn-following-list></ctzn-following-list>`
-  },
-  {
-    id: 'pages',
-    label: 'Pages',
-    html: `<ctzn-pages-list></ctzn-pages-list>`
-  }
-]

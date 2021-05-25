@@ -1,7 +1,7 @@
 /* globals beaker */
 import { html } from '../../../vendor/lit/lit.min.js'
 import { BasePopup } from './base.js'
-import '../../ctzn-tags/post-view.js'
+import '../post-view.js'
 
 // exported api
 // =
@@ -55,11 +55,11 @@ export class ViewPostPopup extends BasePopup {
   renderBody () {
     return html`
       <div class="overflow-auto" style="max-height: calc(100vh - 100px)">
-        <ctzn-post-view
+        <app-post-view
           mode=${this.mode}
           .post=${this.post}
           .renderOpts=${{noclick: true, preview: true}}
-        ></ctzn-post-view>
+        ></app-post-view>
       </div>
     `
   }

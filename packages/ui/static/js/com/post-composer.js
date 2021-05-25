@@ -4,12 +4,8 @@ import { repeat } from '../../vendor/lit/directives/repeat.js'
 import { ViewPostPopup } from './popups/view-post.js'
 import * as toast from './toast.js'
 import * as session from '../lib/session.js'
-import { AVATAR_URL } from '../lib/const.js'
 import * as images from '../lib/images.js'
-import * as contextMenu from './context-menu.js'
-import * as displayNames from '../lib/display-names.js'
 import './button.js'
-import './rich-editor.js'
 
 const CHAR_LIMIT = 256
 const THUMB_WIDTH = 640
@@ -20,8 +16,6 @@ class PostComposer extends LitElement {
       isProcessing: {type: Boolean},
       uploadProgress: {type: Number},
       uploadTotal: {type: Number},
-      isExtendedOpen: {type: Boolean},
-      isExtendedUsingHtml: {type: Boolean},
       draftText: {type: String, attribute: 'draft-text'},
       media: {type: Array}
     }
@@ -32,8 +26,6 @@ class PostComposer extends LitElement {
     this.isProcessing = false
     this.uploadProgress = 0
     this.uploadTotal = 0
-    this.isExtendedOpen = false
-    this.isExtendedUsingHtml = false
     this.placeholder = 'What\'s new?'
     this.draftText = ''
     this.media = []
@@ -93,19 +85,6 @@ class PostComposer extends LitElement {
           </div>
         </section>
 
-        <section class="mb-2">
-          <div
-            class="block border border-gray-300 p-2 cursor-pointer hov:hover:bg-gray-100 ${this.isExtendedOpen ? 'rounded-0 rounded-t border-b-0' : 'rounded'}"
-            @click=${this.onToggleExtendedText}
-          >
-            <span class="fas fa-fw fa-caret-${this.isExtendedOpen ? 'down' : 'right'}"></span>
-            Extended post text
-          </div>
-          <div class="${this.isExtendedOpen ? '' : 'hidden'}">
-            <app-rich-editor context="post" placeholder="Add more to your post! This is optional, and there's no character limit."></app-rich-editor>
-          </div>
-        </section>
-
         ${this.media.length ? html`
           ${repeat(this.media, (item, index) => item ? html`
             <div class="flex my-3 overflow-hidden rounded bg-gray-50">
@@ -139,7 +118,7 @@ class PostComposer extends LitElement {
           @change=${this.onChooseImageFile}
         >
 
-        <div class="flex pt-3">
+        <div class="flex">
           <app-button
             transparent
             btn-class="hidden sm:block"
@@ -178,11 +157,6 @@ class PostComposer extends LitElement {
             ></div>
           </div>
         ` : ''}
-
-        <div class="bg-gray-100 font-medium mt-4 sm:mt-2 px-3 py-2 rounded text-center text-gray-700 text-sm">
-          <span class="fas fa-fw fa-info text-gray-600"></span>
-          Gentle reminder: always be kind and respectful of others!
-        </div>
       </form>
     `
   }
@@ -200,14 +174,6 @@ class PostComposer extends LitElement {
     }
   }
 
-  onToggleExtendedText (e) {
-    this.isExtendedOpen = !this.isExtendedOpen
-  }
-
-  onToggleExtendedUsingHtml (e) {
-    this.isExtendedUsingHtml = !!e.currentTarget.checked
-  }
-
   onClickPreview (e) {
     e.preventDefault()
     e.stopPropagation()
@@ -216,13 +182,11 @@ class PostComposer extends LitElement {
       post: {
         key: '',
         author: {
-          dbKey: session.api.info.dbKey,
-          displayName: session.api.info.displayName
+          dbKey: session.info.dbKey,
+          displayName: session.info.displayName
         },
         value: {
           text: this.draftText,
-          extendedText: this.querySelector('app-rich-editor').value,
-          extendedTextMimeType: 'text/html',
           media: this.media,
           createdAt: (new Date()).toISOString()
         }
@@ -323,13 +287,9 @@ class PostComposer extends LitElement {
     try {
       let media = this.media.filter(Boolean)
       let text = this.querySelector('#text').value
-      let extendedText = this.querySelector('app-rich-editor').value.trim()
-      let extendedTextMimeType = !!extendedText ? 'text/html' : undefined
       res = await session.api.user.table('ctzn.network/post').create({
         text,
-        media: media?.length ? media : undefined,
-        extendedText,
-        extendedTextMimeType
+        media: media?.length ? media : undefined
       })
     } catch (e) {
       this.isProcessing = false

@@ -3,7 +3,7 @@ import { html } from '../../../vendor/lit/lit.min.js'
 import { BasePopup } from './base.js'
 import '../button.js'
 import '../post-composer.js'
-import '../../ctzn-tags/post-view.js'
+import '../post-view.js'
 
 // exported api
 // =
@@ -53,11 +53,11 @@ export class CommentComposerPopup extends BasePopup {
         Reply to:
       </div>
       <div class="border border-gray-300 px-3 py-2 rounded mb-2">
-        <ctzn-post-view
+        <app-post-view
           .post=${subject}
           mode="content-only"
           .renderOpts=${{noclick: true}}
-        ></ctzn-post-view>
+        ></app-post-view>
       </div>
       <app-comment-composer
         autofocus

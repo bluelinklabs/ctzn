@@ -96,11 +96,3 @@ test('feeds', async t => {
     [alice, '4'],
   ])
 })
-
-test('extended text', async t => {
-  const bob = sim.users.bob
-  let post = await bob.createPost({text: 'the limited text', extendedText: 'the unlimited text'})
-  let postRecord = await api.view.get('ctzn.network/views/post', {dbId: bob.username, postKey: post.key})
-  t.is(postRecord.value.text, 'the limited text')
-  t.is(postRecord.value.extendedText, 'the unlimited text')
-})

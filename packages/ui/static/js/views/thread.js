@@ -3,16 +3,15 @@ import * as toast from '../com/toast.js'
 import * as contextMenu from '../com/context-menu.js'
 import { joinPath, ucfirst } from '../lib/strings.js'
 import * as session from '../lib/session.js'
-import * as displayNames from '../lib/display-names.js'
 import { writeToClipboard } from '../lib/clipboard.js'
-import { AVATAR_URL, FULL_POST_URL } from '../lib/const.js'
+import { FULL_POST_URL } from '../lib/const.js'
 import '../com/header.js'
 import '../com/button.js'
 import '../com/thread.js'
 import '../com/user-list.js'
 import '../com/subnav.js'
 
-class CtznPostView extends LitElement {
+class CtznThreadView extends LitElement {
   static get properties () {
     return {
       currentPath: {type: String, attribute: 'current-path'},
@@ -255,4 +254,4 @@ class CtznPostView extends LitElement {
   }
 }
 
-customElements.define('app-post-view', CtznPostView)
+customElements.define('app-thread-view', CtznThreadView)

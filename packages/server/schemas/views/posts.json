@@ -101,12 +101,6 @@
                     }
                   }
                 },
-                "extendedText": {
-                  "type": "string"
-                },
-                "extendedTextMimeType": {
-                  "type": "string"
-                },
                 "createdAt": {
                   "type": "string",
                   "format": "date-time"

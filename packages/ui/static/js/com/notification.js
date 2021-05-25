@@ -8,7 +8,7 @@ import { emit } from '../lib/dom.js'
 import { extractSchemaId, makeSafe, pluralize } from '../lib/strings.js'
 import { emojify } from '../lib/emojify.js'
 import * as displayNames from '../lib/display-names.js'
-import '../ctzn-tags/post-view.js'
+import './post-view.js'
 
 const _itemCache = {}
 
@@ -167,21 +167,21 @@ export class Notification extends LitElement {
       record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.api.getPost(dbUrl)
       _itemCache[dbUrl] = record
       yield html`
-        <ctzn-post-view
+        <app-post-view
           .post=${record}
           mode="content-only"
           .renderOpts=${{noclick: true}}
-        ></ctzn-post-view>
+        ></app-post-view>
       `
     } else if (schemaId === 'ctzn.network/comment') {
       record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.api.getComment(dbUrl)
       _itemCache[dbUrl] = record
       yield html`
-        <ctzn-post-view
+        <app-post-view
           .post=${record}
           mode="content-only"
           .renderOpts=${{noclick: true}}
-        ></ctzn-post-view>
+        ></app-post-view>
       `
     }
   }
@@ -194,11 +194,11 @@ export class Notification extends LitElement {
     let record = _itemCache[commentInfo.dbUrl] ? _itemCache[commentInfo.dbUrl] : await session.api.getComment(commentInfo.dbUrl)
     _itemCache[commentInfo.dbUrl] = record
     yield html`
-      <ctzn-post-view
+      <app-post-view
         .post=${record}
         mode="content-only"
         .renderOpts=${{noclick: true}}
-      ></ctzn-post-view>
+      ></app-post-view>
     `
   }
 

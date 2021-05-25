@@ -5,23 +5,19 @@ import { emit } from './lib/dom.js'
 import * as gestures from './lib/gestures.js'
 import * as toast from './com/toast.js'
 import * as contextMenu from './com/context-menu.js'
-import { PUBKEY_REGEX } from './lib/strings.js'
 import { BasePopup } from './com/popups/base.js'
 import './com/header.js'
 import './views/account.js'
 import './views/forgot-password.js'
 import './views/main.js'
 import './views/notifications.js'
-import './views/post.js'
-import './views/page.js'
+import './views/thread.js'
 import './views/signup.js'
 import './views/user.js'
 
-const PAGE_PATH_REGEX = new RegExp('/([^/]+)/ctzn.network/page/([^/]+)', 'i')
 const POST_PATH_REGEX = new RegExp('/([^/]+)/ctzn.network/post/([^/]+)', 'i')
 const COMMENT_PATH_REGEX = new RegExp('/([^/]+)/ctzn.network/comment/([^/]+)', 'i')
 const USER_PATH_REGEX = new RegExp('/([^/]+)')
-const USER_PAGE_REGEX = new RegExp('^/([^/]+)/([^/]+)$')
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
@@ -155,10 +151,6 @@ class CtznApp extends LitElement {
           this.querySelector('app-user-view').setGesturesNav()
         }
     }
-    if (PAGE_PATH_REGEX.test(this.currentPath)) {
-      gestures.setCurrentNav([{back: true}, this.currentPath])
-      return
-    }
     if (POST_PATH_REGEX.test(this.currentPath)) {
       gestures.setCurrentNav([{back: true}, this.currentPath])
       return
@@ -213,8 +205,6 @@ class CtznApp extends LitElement {
       this.hasVisitedHome = true
     } else if (this.currentPath === '/notifications') {
       this.hasVisitedNotifications = true
-    } else if (USER_PAGE_REGEX.test(this.currentPath)) {
-      this.lastUserPath = this.currentPath
     }
 
     let renderedViews = new Set()
@@ -243,14 +233,11 @@ class CtznApp extends LitElement {
         case '/signup':
           return html`<app-signup-view id="view" current-path=${path}></app-signup-view>`
       }
-      if (PAGE_PATH_REGEX.test(path)) {
-        return html`<app-page-view id="view" current-path=${path}></app-page-view>`
-      }
       if (POST_PATH_REGEX.test(path)) {
-        return html`<app-post-view id="view" current-path=${path}></app-post-view>`
+        return html`<app-thread-view id="view" current-path=${path}></app-thread-view>`
       }
       if (COMMENT_PATH_REGEX.test(path)) {
-        return html`<app-post-view id="view" current-path=${path}></app-post-view>`
+        return html`<app-thread-view id="view" current-path=${path}></app-thread-view>`
       }
       if (USER_PATH_REGEX.test(path)) {
         return html`<app-user-view id=${id} class=${cls} current-path=${path}></app-user-view>`

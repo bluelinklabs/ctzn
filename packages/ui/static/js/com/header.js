@@ -3,7 +3,6 @@ import * as session from '../lib/session.js'
 import * as notifications from '../lib/notifications.js'
 import { emit } from '../lib/dom.js'
 import { ComposerPopup } from './popups/composer.js'
-import { PageEditorPopup } from '../com/popups/page-editor.js'
 import * as contextMenu from './context-menu.js'
 import * as toast from './toast.js'
 import './button.js'
@@ -110,9 +109,6 @@ export class Header extends LitElement {
             label="Create Post"
             @click=${this.onClickCreatePost}
           ></app-button>
-          <a class=${this.getHeaderNavClass()} @click=${this.onClickCreateNew}>
-            <span class="fas fa-fw fa-plus"></span>
-          </a>
           <a
             class="${this.getHeaderNavClass(`/${info.username}`)}"
             href="/${info.username}"
@@ -163,11 +159,6 @@ export class Header extends LitElement {
             btn-class="text-base sm:text-sm font-semibold w-full mb-2"
             label="Create Post"
             @click=${this.onClickCreatePost}
-          ></app-button>
-          <app-button
-            btn-class="text-gray-600 text-base sm:text-sm font-semibold w-full mb-2"
-            label="Create Page"
-            @click=${this.onClickCreatePage}
           ></app-button>
         </div>
         <div class="px-2">
@@ -251,41 +242,6 @@ export class Header extends LitElement {
       // ignore
       console.log(e)
     }
-  }
-
-  onClickCreateNew (e) {
-    e.preventDefault()
-    e.stopPropagation()
-    let rect = e.currentTarget.getClientRects()[0]
-    contextMenu.create({
-      x: (rect.left + rect.right) / 2,
-      y: rect.bottom,
-      center: true,
-      noBorders: true,
-      rounded: true,
-      withTriangle: true,
-      style: `padding: 4px 0 4px; font-size: 14px`,
-      items: [{
-        label: 'New Page',
-        click: () => this.onClickCreatePage()
-      }]
-    })
-  }
-
-  async onClickCreatePage (e) {
-    e?.preventDefault()
-    e?.stopPropagation()
-    this.isMenuOpen = false
-
-    const res = await PageEditorPopup.create({
-      username: session.info.username,
-      context: 'page',
-      contextState: {page: {userId: session.info.username}},
-      placeholder: 'Create your page here!',
-      canSave: true
-    })
-    console.log(res)
-    window.location = `/${session.info.username}/ctzn.network/page/${res.id}`
   }
 
   onClickAccountMenu (e) {

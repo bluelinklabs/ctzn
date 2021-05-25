@@ -1,6 +1,5 @@
 /* globals beaker */
 import { BasePopup } from './base.js'
-import '../custom-html.js'
 
 // exported api
 // =

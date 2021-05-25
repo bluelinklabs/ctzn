@@ -22,8 +22,6 @@ export class FollowersList extends LitElement {
 
   constructor () {
     super()
-    this.setAttribute('ctzn-elem', '1')
-    this.view = undefined
     this.userId = undefined
     this.followers = undefined
     this.sharedFollowers = undefined
@@ -37,14 +35,6 @@ export class FollowersList extends LitElement {
 
   get canToggleExpanded () {
     return !this.renderOpts?.expandedOnly && this.followers?.length
-  }
-
-  setContextState (state) {
-    if (state?.page?.userId) {
-      if (!this.userId) {
-        this.userId = state.page.userId
-      }
-    }
   }
 
   updated (changedProperties) {
@@ -118,4 +108,4 @@ export class FollowersList extends LitElement {
   }
 }
 
-customElements.define('ctzn-followers-list', FollowersList)
+customElements.define('app-followers-list', FollowersList)

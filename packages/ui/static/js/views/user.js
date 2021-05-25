@@ -9,8 +9,7 @@ import * as toast from '../com/toast.js'
 import {
   AVATAR_URL,
   BLOB_URL,
-  USER_URL,
-  FIXED_CITIZEN_PROFILE_SECTIONS
+  USER_URL
 } from '../lib/const.js'
 import * as session from '../lib/session.js'
 import * as gestures from '../lib/gestures.js'
@@ -20,10 +19,11 @@ import { emojify } from '../lib/emojify.js'
 import '../com/header.js'
 import '../com/button.js'
 import '../com/img-fallbacks.js'
-import '../ctzn-tags/posts-feed.js'
+import '../com/posts-feed.js'
+import '../com/followers-list.js'
+import '../com/following-list.js'
 import '../com/simple-user-list.js'
 import '../com/subnav.js'
-import '../com/custom-html.js'
 import '../com/edit-profile.js'
 
 class CtznUser extends LitElement {
@@ -61,7 +61,6 @@ class CtznUser extends LitElement {
   reset () {
     this.isProfileLoading = false
     this.userProfile = undefined
-    this._sections = []
     this.followers = undefined
     this.following = undefined
     this.sharedFollowers = []
@@ -92,26 +91,11 @@ class CtznUser extends LitElement {
     return !!this.following?.find?.(f => f.value.subject.dbKey === session.info?.dbKey)
   }
 
-  get sections () {
-    return this._sections
-  }
-
-  set sections (v) {
-    this._sections = v
-    this.setGesturesNav()
-  }
-
-  get currentSection () {
-    return this.sections.find(section => section.id === this.currentView)
-  }
-
   get subnavItems () {
     return [
       {back: true, label: html`<span class="fas fa-angle-left"></span>`, mobileOnly: true},
-      ...this.sections.map(section => ({
-        label: section.label || section.id,
-        path: `${USER_URL(this.userId)}/${section.id}`
-      })),
+      {label: 'Feed', path: `${USER_URL(this.userId)}/feed`},
+      {label: 'About', path: `${USER_URL(this.userId)}/about`},
       {
         path: `${USER_URL(this.userId)}/settings`,
         label: html`<span class="fas fa-cog"></span>`,
@@ -124,7 +108,8 @@ class CtznUser extends LitElement {
   setGesturesNav () {
     gestures.setCurrentNav([
       {back: true},
-      ...this._sections.map(s => `${USER_URL(this.userId)}/${s.id}`),
+      `${USER_URL(this.userId)}/feed`,
+      `${USER_URL(this.userId)}/about`,      
       `${USER_URL(this.userId)}/settings`
     ])
   }
@@ -160,11 +145,6 @@ class CtznUser extends LitElement {
       }
       document.title = `${this.userProfile?.value.displayName || this.niceUserId} | CTZN`
       if (this.isCitizen) {
-        this.sections = FIXED_CITIZEN_PROFILE_SECTIONS.concat(
-          this.userProfile?.value?.sections?.length
-            ? this.userProfile.value.sections
-            : []
-        ).reduce(dedupSectionsReducer, [])
         const [followers, following] = await Promise.all([
           session.api.listFollowers(this.userId),
           session.api.db(this.userId).table('ctzn.network/follow').list()
@@ -180,11 +160,11 @@ class CtznUser extends LitElement {
     }
 
     if (!this.currentView) {
-      emit(this, 'navigate-to', {detail: {url: `${USER_URL(this.userId)}/${this.sections[0].id}`, replace: true}})
+      emit(this, 'navigate-to', {detail: {url: `${USER_URL(this.userId)}/feed`, replace: true}})
     }
 
-    this.querySelector('ctzn-posts-feed')?.load()
-    this.querySelector('ctzn-comments-feed')?.load()
+    this.querySelector('app-posts-feed')?.load()
+    this.querySelector('app-comments-feed')?.load()
 
     const rightNavProfileEl = this.querySelector('#right-nav-profile')
     if (!this.miniProfileObserver && rightNavProfileEl) {
@@ -196,18 +176,18 @@ class CtznUser extends LitElement {
   }
 
   async refresh () {
-    await this.querySelector('ctzn-posts-feed')?.load()
-    await this.querySelector('ctzn-comments-feed')?.load()
+    await this.querySelector('app-posts-feed')?.load()
+    await this.querySelector('app-comments-feed')?.load()
   }
 
   get isLoading () {
-    let queryViewEls = Array.from(this.querySelectorAll('ctzn-posts-feed'))
+    let queryViewEls = Array.from(this.querySelectorAll('app-posts-feed'))
     return this.isProfileLoading || !!queryViewEls.find(el => el.isLoading)
   }
 
   async pageLoadScrollTo (y) {
     await this.requestUpdate()
-    const feed = this.querySelector('ctzn-posts-feed')
+    const feed = this.querySelector('app-posts-feed')
     if (feed) {
       feed.pageLoadScrollTo(y)
     } else {
@@ -547,7 +527,18 @@ class CtznUser extends LitElement {
   }
 
   renderCurrentView () {
-    if (this.currentView === 'settings') {
+    if (this.currentView === 'about') {
+      return html`
+        <app-followers-list
+          class="block sm:border border-t border-gray-300 mb-2"
+          user-id=${this.userId}
+        ></app-followers-list>
+        <app-following-list
+          class="block sm:border border-t border-gray-300 mb-2"
+          user-id=${this.userId}
+        ></app-following-list>
+      `
+    } else if (this.currentView === 'settings') {
       return html`
         <app-edit-profile
           db-key=${this.userProfile?.dbKey}
@@ -555,15 +546,13 @@ class CtznUser extends LitElement {
           @profile-updated=${this.onProfileUpdated}
         ></app-edit-profile>
       `
-    } else if (this.currentSection) {
+    } else {
       return html`
-        <app-custom-html
-          context="profile"
-          .contextState=${{page: {userId: this.userId}}}
-          .userId=${this.userId}
-          .blobName="ui:profile:${this.currentSection.id}"
-          .html=${this.currentSection.html}
-        ></app-custom-html>
+        <app-posts-feed
+          class="block sm:border border-t border-gray-300"
+          user-id=${this.userId}
+          view="ctzn.network/views/posts"
+        ></app-posts-feed>
       `
     }
   }
@@ -615,7 +604,7 @@ class CtznUser extends LitElement {
     try {
       await ComposerPopup.create()
       toast.create('Post published', '', 10e3)
-      this.querySelector('ctzn-posts-feed').load()
+      this.querySelector('app-posts-feed').load()
     } catch (e) {
       // ignore
       console.log(e)
@@ -627,10 +616,10 @@ class CtznUser extends LitElement {
     e.stopPropagation()
     GeneralPopup.create({
       render: () => html`
-        <ctzn-followers-list
+        <app-followers-list
           user-id=${this.userId}
           .renderOpts=${{expandedOnly: true}}
-        ></ctzn-followers-list>
+        ></app-followers-list>
       `
     })
   }
@@ -669,11 +658,4 @@ function intersect (a, b) {
     }
   }
   return arr
-}
-
-function dedupSectionsReducer (acc, section) {
-  if (!acc.find(section2 => section2.id === section.id)) {
-    acc.push(section)
-  }
-  return acc
 }

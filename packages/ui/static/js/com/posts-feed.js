@@ -2,7 +2,7 @@ import { LitElement, html } from '../../vendor/lit/lit.min.js'
 import { repeat } from '../../vendor/lit/directives/repeat.js'
 import * as session from '../lib/session.js'
 import { emit } from '../lib/dom.js'
-import './comment-view.js'
+import './post-view.js'
 
 const CHECK_NEW_ITEMS_INTERVAL = 30e3
 let _cache = {
@@ -10,9 +10,10 @@ let _cache = {
   results: undefined
 }
 
-export class CommentsFeed extends LitElement {
+export class PostsFeed extends LitElement {
   static get properties () {
     return {
+      _view: {type: String, attribute: 'view'},
       userId: {type: String, attribute: 'user-id'},
       limit: {type: Number},
       results: {type: Array},
@@ -28,7 +29,7 @@ export class CommentsFeed extends LitElement {
 
   constructor () {
     super()
-    this.setAttribute('ctzn-elem', '1')
+    this._view = undefined
     this.userId = undefined
     this.limit = undefined
     this.results = undefined
@@ -52,6 +53,16 @@ export class CommentsFeed extends LitElement {
     }
   }
 
+  get view () {
+    if (this._view === 'posts') return 'ctzn.network/views/posts'
+    if (this._view === 'feed') return 'ctzn.network/views/feed'
+    return this._view || 'ctzn.network/views/posts'
+  }
+
+  set view (v) {
+    this._view = v
+  }
+
   get isLoading () {
     return !!this.activeQuery
   }
@@ -60,20 +71,12 @@ export class CommentsFeed extends LitElement {
     return this.hasReachedEnd || (this.limit > 0 && this.results?.length >= this.limit)
   }
 
-  setContextState (state) {
-    if (state?.page?.userId) {
-      if (!this.userId) {
-        this.userId = state.page?.userId
-      }
-    }
-  }
-
   get cacheId () {
-    return `${this.userId}|${this.limit}`
+    return `${this.userId}|${this.limit}|${this.view}`
   }
 
   async load ({clearCurrent} = {clearCurrent: false}) {
-    if (!this.userId) {
+    if (!this.view || (this.view === 'ctzn.network/views/posts' && !this.userId)) {
       return
     }
     if (this.activeQuery) {
@@ -98,7 +101,7 @@ export class CommentsFeed extends LitElement {
       if (!this.activeQuery) {
         this.load()
       }
-    } else if (changedProperties.has('userId')) {
+    } else if (changedProperties.has('_view') || changedProperties.has('userId')) {
       this.load()
     }
 
@@ -132,27 +135,28 @@ export class CommentsFeed extends LitElement {
     if (this.hasHitLimit) {
       return
     }
+
     emit(this, 'load-state-updated')
     this.abortController = new AbortController()
     this.isLoadingMore = more
 
     let results = more ? (this.results || []) : []
     let lt = more ? results[results?.length - 1]?.key : undefined
-
-    const entries = await session.api.db(this.userId).table("ctzn.network/comment").list({limit: 15, reverse: true, lt})
-    results = results.concat(await Promise.all(entries.map(entry => (
-      session.api.getComment(this.userId, entry.key)
-    ))))
-    this.hasReachedEnd = entries.length === 0
-    this.requestUpdate()
+    const orgLen = results.length
+    if (this.view === 'ctzn.network/views/feed') {
+      results = results.concat((await session.api.view.get(this.view, {limit: 15, reverse: true, lt}))?.feed)
+    } else {
+      results = results.concat((await session.api.view.get(this.view, {dbId: this.userId, limit: 15, reverse: true, lt}))?.posts)
+    }
+    this.hasReachedEnd = orgLen === results.length
     if (this.limit > 0 && results.length > this.limit) {
       results = results.slice(0, this.limit)
     }
     console.log(results)
 
-    if (!more && _cache?.id === this.cacheId && _cache?.results?.[0]?.dbUrl === results[0]?.dbUrl) {
+    if (!more && this.results?.length && _cache?.id === this.cacheId && _cache?.results?.[0]?.dbUrl === results[0]?.dbUrl) {
       // stick with the cache but update the signal metrics
-      for (let i = 0; i < results.length; i++) {
+      for (let i = 0; i < results.length && i < this.results.length; i++) {
         this.results[i].reactions = _cache.results[i].reactions = results[i].reactions
         this.results[i].replyCount = _cache.results[i].replyCount = results[i].replyCount
       }
@@ -166,19 +170,31 @@ export class CommentsFeed extends LitElement {
     this.hasNewItems = false
     this.isLoadingMore = false
     emit(this, 'load-state-updated', {detail: {isEmpty: this.results.length === 0}})
-
+    if (!more) {
+      emit(this, 'fetched-latest')
+    }
   }
 
   async checkNewItems () {
     if (!this.results || this.hasHitLimit) {
       return
     }
-    const results = await session.api.db(this.userId).table("ctzn.network/comment").list({limit: 1, reverse: true})
+    let results
+    if (this.view === 'ctzn.network/views/feed') {
+      results = (await session.api.view.get(this.view, {limit: 1, reverse: true}))?.feed
+    } else {
+      results = (await session.api.view.get(this.view, {dbId: this.userId, limit: 1, reverse: true}))?.posts
+    }
+    emit(this, 'fetched-latest')
     this.hasNewItems = (results[0] && results[0].key !== this.results[0].key)
   }
 
   async pageLoadScrollTo (y) {
+    await this.requestUpdate()
     window.scrollTo(0, y)
+    await new Promise(r => setTimeout(r, 100))
+    window.scrollTo(0, y)
+    
     let first = true
     while (true) {
       if (Math.abs(window.scrollY - y) < 10) {
@@ -193,22 +209,17 @@ export class CommentsFeed extends LitElement {
         await this.queueQuery({more: true})
       }
       await this.requestUpdate()
+      await new Promise(r => setTimeout(r, 100))
       window.scrollTo(0, y)
-      if (numResults === this.results?.length || 0) {
+      if (numResults === (this.results?.length || 0)) {
         break
       }
     }
-
-    setTimeout(() => {
-      if (Math.abs(window.scrollY - y) > 10) {
-        window.scrollTo(0, y)
-      }
-    }, 500)
   }
 
   requestResultUpdates () {
-    let commentEls = this.querySelectorAll('ctzn-comment-view')
-    for (let el of Array.from(commentEls)) {
+    let postEls = this.querySelectorAll('app-post-view')
+    for (let el of Array.from(postEls)) {
       el.requestUpdate()
     }
   }
@@ -222,9 +233,11 @@ export class CommentsFeed extends LitElement {
         return ''
       }
       return html`
-        <div class="bg-gray-100 text-gray-500 py-44 text-center mb-5">
-          <span class="spinner"></span>
-        </div>
+        ${this.renderPlaceholderPost(0)}
+        ${this.renderPlaceholderPost(1)}
+        ${this.renderPlaceholderPost(2)}
+        ${this.renderPlaceholderPost(3)}
+        ${this.renderPlaceholderPost(4)}
       `
     }
     if (!this.results.length) {
@@ -232,7 +245,11 @@ export class CommentsFeed extends LitElement {
         ${this.renderHasNewItems()}
         <div class="bg-gray-100 text-gray-500 py-44 text-center">
           <div class="fas fa-stream text-6xl text-gray-300 mb-8"></div>
+          ${this.view === 'ctzn.network/views/posts' ? html`
             <div>This feed is empty.</div>
+          ` : html`
+            <div>Follow people to see what's new.</div>
+          `}
         </div>
       `
     }
@@ -240,8 +257,8 @@ export class CommentsFeed extends LitElement {
       ${this.renderHasNewItems()}
       ${this.renderResults()}
       ${this.results?.length && !this.hasHitLimit ? html`
-        <div class="bottom-of-feed ${this.isLoadingMore ? 'bg-white' : ''} mb-10 py-4 sm:rounded text-center">
-          <span class="spinner w-6 h-6 text-gray-500"></span>
+        <div class="bottom-of-feed ${this.isLoadingMore ? 'bg-white' : ''}">
+          ${this.renderPlaceholderPost(-1)}
         </div>
       ` : ''}
     `
@@ -254,9 +271,9 @@ export class CommentsFeed extends LitElement {
     return html`
       <div
         class="new-items-indicator bg-blue-50 border border-blue-500 cursor-pointer fixed font-semibold hov:hover:bg-blue-100 inline-block px-4 py-2 rounded-3xl shadow-md text-blue-800 text-sm z-30"
-        @click=${this.onClickViewNewComments}
+        @click=${this.onClickViewNewPosts}
       >
-        New Comments <span class="fas fa-fw fa-angle-up"></span>
+        New Posts <span class="fas fa-fw fa-angle-up"></span>
       </div>
     `
   }
@@ -267,24 +284,43 @@ export class CommentsFeed extends LitElement {
     `
   }
   
-  renderResult (comment, index) {
+  renderResult (post, index) {
     return html`
-      <ctzn-comment-view
-        class="block ${index === 0 ? '' : 'border-t border-gray-300'}"
-        .comment=${comment}
+      <app-post-view
+        .post=${post}
         mode="default"
-      ></ctzn-comment-view>
+        class="block pt-1 lg:pt-1 pb-1 lg:pb-1 ${index === 0 ? '' : 'border-t border-gray-300'}"
+      ></app-post-view>
+    `
+  }
+
+  renderPlaceholderPost (index) {
+    return html`
+      <div class="block pt-1 lg:pt-4 pb-1 lg:pb-4 ${index === 0 ? '' : 'border-t border-gray-300'}">
+        <div class="grid grid-post px-1 py-0.5">
+          <div class="pl-2 pt-2">
+            <div class="block object-cover rounded-full mt-1 w-11 h-11 bg-gray-100"></div>
+          </div>
+          <div class="block bg-white min-w-0">
+            <div class="pr-2 py-2 min-w-0">
+              <div class="pl-1 pr-2.5 text-gray-600 truncate">
+                <div class="bg-loading-gradient rounded h-20"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     `
   }
 
   // events
   // =
 
-  onClickViewNewComments (e) {
+  onClickViewNewPosts (e) {
     this.hasNewItems = false
     this.load()
     window.scrollTo(0, 0)
   }
 }
 
-customElements.define('ctzn-comments-feed', CommentsFeed)
+customElements.define('app-posts-feed', PostsFeed)

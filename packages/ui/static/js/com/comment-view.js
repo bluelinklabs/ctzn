@@ -36,7 +36,6 @@ export class CommentView extends LitElement {
 
   constructor () {
     super()
-    this.setAttribute('ctzn-elem', '1')
     this.comment = undefined
     this.mode = 'default'
     this.renderOpts = {noclick: false}
@@ -536,4 +535,4 @@ export class CommentView extends LitElement {
   }
 }
 
-customElements.define('ctzn-comment-view', CommentView)
+customElements.define('app-comment-view', CommentView)

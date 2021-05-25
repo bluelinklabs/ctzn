@@ -168,7 +168,6 @@ function createAppServer (config, configDir) {
       res.status(404).end()
     }
   })
-  app.get(new RegExp('/([^/])/ctzn.network/page/([^/]+)'), (req, res) => res.render('index'))
   app.get(new RegExp('/([^/])/ctzn.network/post/([^/]+)'), (req, res) => res.render('index'))
   app.get(new RegExp('/([^/])/ctzn.network/comment/([^/]+)'), (req, res) => res.render('index'))
   app.get(new RegExp('/([^/])'), (req, res) => res.render('index'))

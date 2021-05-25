@@ -1,6 +1,5 @@
 import { LitElement, html } from '../../vendor/lit/lit.min.js'
 import { repeat } from '../../vendor/lit/directives/repeat.js'
-import { slugify } from '../../vendor/slugify.js'
 import * as session from '../lib/session.js'
 import * as images from '../lib/images.js'
 import { encodeBase64, decodeBase64 } from '../lib/strings.js'
@@ -10,7 +9,6 @@ import {
   AVATAR_URL,
   BLOB_URL
 } from '../lib/const.js'
-import { UiEditorPopup } from './popups/ui-editor.js'
 import * as toast from './toast.js'
 import './button.js'
 import './code-textarea.js'
@@ -60,21 +58,6 @@ export class EditProfile extends LitElement {
   }
 
   async load () {
-    if (this.profile?.value?.sections?.length) {
-      for (let section of this.profile.value.sections) {
-        if (!section.html) {
-          try {
-            let base64buf = (await session.api.blob.get(this.dbKey, `ui:profile:${section.id}`))?.buf
-            if (base64buf) section.html = decodeBase64(base64buf)
-          } catch (e) {
-            console.log('Failed to load blob', e)
-          }
-          if (!section.html) {
-            section.html = ''
-          }
-        }
-      }
-    }
     this.values = deepClone(this.profile.value)
   }
 
@@ -202,79 +185,9 @@ export class EditProfile extends LitElement {
               <input id="banner-file-input" class="hidden" type="file" accept=".jpg,.jpeg,.png,.svg" @change=${this.onChooseBannerFile}>
               <input id="avatar-file-input" class="hidden" type="file" accept=".jpg,.jpeg,.png,.svg" @change=${this.onChooseAvatarFile}>
             </div>
-
-            <div class="${this.currentView === 'advanced' ? 'block' : 'hidden'}">
-              <label class="block font-semibold p-1">Custom sections</label>
-              <div class="px-1 pb-3 text-gray-500 text-sm font-medium">
-                You can add new sections to your profile below.
-              </div>
-              <div class="block rounded border border-gray-200">
-                ${this.values?.sections?.length ? html`
-                  ${repeat(this.values.sections, section => section.id, this.renderSection.bind(this))}
-                ` : ''}
-                <div class="bg-white rounded px-2 py-2 border-t border-gray-200">
-                  <app-button
-                    transparent
-                    btn-class="px-2 py-1"
-                    icon="fas fa-plus"
-                    label="Add Section"
-                    @click=${this.onAddSection}
-                    ?disabled=${!this.canEditProfile}
-                  ></app-button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </form>
-    `
-  }
-
-  renderSection (section, i) {
-    return html`
-      <div class="flex items-center bg-white pl-2 pr-1 py-2 ${i !== 0 ? 'border-t border-gray-200 rounded-t' : ''}">
-        <span class="text-sm">
-          ${i === 0 ? html`
-            <span class="fas fa-arrow-up px-1.5 py-0.5 text-gray-300"></span>
-          ` : html`
-            <app-button
-              transparent
-              btn-class="px-1.5 py-0.5"
-              icon="fas fa-arrow-up"
-              data-tooltip="Move up in the nav order"
-              @click=${e => this.onMoveSection(e, i, -1)}
-              ?disabled=${!this.canEditProfile}
-            ></app-button>
-          `}
-          ${i === this.values.sections.length - 1 ? html`
-            <span class="fas fa-arrow-down px-1.5 py-0.5 text-gray-300"></span>
-          ` : html`
-            <app-button
-              transparent
-              btn-class="px-1.5 py-0.5"
-              icon="fas fa-arrow-down"
-              data-tooltip="Move down in the nav order"
-              @click=${e => this.onMoveSection(e, i, 1)}
-              ?disabled=${!this.canEditProfile}
-            ></app-button>
-          `}
-        </span>
-        <span
-          class="flex-1 truncate ml-2 border border-gray-200 rounded px-2 py-1 font-medium cursor-pointer hov:hover:bg-gray-50"
-          @click=${e => this.onEditSection(e, i)}
-        >
-          <span class="fa-fw fa-pen fas text-gray-400 text-gray-600 text-sm"></span>
-          ${section.label || html`<em>Unnamed section</em>`}
-        </span>
-        <app-button
-          transparent
-          btn-class="ml-1 px-2 py-1 text-red-500 text-sm"
-          class="ml-auto"
-          icon="fas fa-times"
-          @click=${e => this.onDeleteSection(e, i)}
-          ?disabled=${!this.canEditProfile}
-        ></app-button>
-      </div>
     `
   }
 
@@ -285,46 +198,6 @@ export class EditProfile extends LitElement {
     let v = (e.target.value || '').trim()
     if (this.getValue(path) !== v) {
       this.setValue(path, v)
-    }
-  }
-
-  onAddSection (e) {
-    this.values.sections = this.values.sections || []
-    this.values.sections.push({id: '', label: '', html: ''})
-    this.hasChanges = true
-    this.requestUpdate()
-  }
-
-  onMoveSection (e, index, dir) {
-    let tmp = this.values.sections[index + dir]
-    this.values.sections[index + dir] = this.values.sections[index]
-    this.values.sections[index] = tmp
-    this.hasChanges = true
-    this.requestUpdate()
-  }
-
-  onDeleteSection (e, index) {
-    if (!confirm('Delete this section?')) {
-      return
-    }
-    this.values.sections.splice(index, 1)
-    this.hasChanges = true
-    this.requestUpdate()
-  }
-
-  async onEditSection (e, index) {
-    const res = await UiEditorPopup.create({
-      label: this.values.sections[index].label,
-      context: 'profile',
-      contextState: {page: {userId: this.dbKey}},
-      value: this.values.sections[index].html,
-      placeholder: 'Build your UI here!',
-      canSave: this.canEditProfile
-    })
-    if (this.canEditProfile) {
-      this.setValue(['sections', index, 'label'], res.label)
-      this.setValue(['sections', index, 'html'], res.html)
-      this.requestUpdate()
     }
   }
 
@@ -378,45 +251,9 @@ export class EditProfile extends LitElement {
     try {
       // update profile data
       if (this.canEditProfile && hasChanges(this.values, this.profile.value)) {
-        // TODO
-        // let usedSectionIds = new Set()
-        // for (let section of (this.values.sections || [])) {
-        //   const baseId = (slugify(section.label) || 'section').toLocaleLowerCase()
-        //   let id = baseId
-        //   let n = 2
-        //   while (usedSectionIds.has(id)) {
-        //     id = `${baseId}-${n}`
-        //     n++
-        //   }
-        //   usedSectionIds.add(baseId)
-        //   section.id = id
-        // }
-
-        // // build a list of section blobs to update
-        // let sectionBlobUpdates = []
-        // for (let section of (this.values.sections || [])) {
-        //   let oldSection = this.profile.value.sections?.find(old => old.id === section.id)
-        //   if (!oldSection || oldSection.html !== section.html) {
-        //     sectionBlobUpdates.push({id: section.id, html: section.html})
-        //   }
-        // }
-
-        // // upload section blobs
-        // for (let update of sectionBlobUpdates) {
-        //   await session.api.blob.update(
-        //     `ui:profile:${update.id}`,
-        //     encodeBase64(update.html),
-        //     {mimeType: 'text/html'}
-        //   )
-        // }
-
-        // update profile record
         const record = {
           displayName: this.values.displayName,
-          description: this.values.description,
-          sections: this.values.sections?.length
-            ? this.values.sections.map(s => ({id: s.id, label: s.label}))
-            : undefined
+          description: this.values.description
         }
         await session.api.user.table('ctzn.network/profile').create(record)
       }

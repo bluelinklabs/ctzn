@@ -18,19 +18,10 @@ export class FollowingList extends LitElement {
 
   constructor () {
     super()
-    this.setAttribute('ctzn-elem', '1')
     this.view = undefined
     this.userId = undefined
     this.following = undefined
     this.isExpanded = false
-  }
-
-  setContextState (state) {
-    if (state?.page?.userId) {
-      if (!this.userId) {
-        this.userId = state.page.userId
-      }
-    }
   }
 
   updated (changedProperties) {
@@ -88,4 +79,4 @@ export class FollowingList extends LitElement {
   }
 }
 
-customElements.define('ctzn-following-list', FollowingList)
+customElements.define('app-following-list', FollowingList)

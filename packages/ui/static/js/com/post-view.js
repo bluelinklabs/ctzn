@@ -32,7 +32,6 @@ export class PostView extends LitElement {
 
   constructor () {
     super()
-    this.setAttribute('ctzn-elem', '1')
     this.mode = 'default'
     this.src = undefined
     this.post = undefined
@@ -195,7 +194,6 @@ export class PostView extends LitElement {
               @click=${this.onClickText}
             >${unsafeHTML(linkify(emojify(makeSafe(this.post.value.text))))}</div>
             ${this.renderMedia()}
-            ${this.renderPostExtendedText()}
             ${this.noctrls ? '' : html`
               ${this.hasReactions ? html`
                 <div class="my-1.5">
@@ -386,8 +384,8 @@ export class PostView extends LitElement {
   }
 
   renderPostTextNonFull () {
-    const {text, extendedText} = this.post.value
-    if (!text?.trim() && !extendedText?.trim()) {
+    const {text} = this.post.value
+    if (!text?.trim()) {
       return ''
     }
     return html`
@@ -395,33 +393,7 @@ export class PostView extends LitElement {
         class="whitespace-pre-wrap break-words text-black ${this.showContentOnly ? '' : 'mt-1 mb-2 ml-1 mr-2.5'}"
         style="font-size: 16px; line-height: 1.3;"
         @click=${this.onClickText}
-      >${unsafeHTML(linkify(emojify(makeSafe(this.post.value.text))))}${this.post.value.extendedText
-          ? html`<span class="bg-gray-200 ml-1 px-1 rounded text-gray-600 text-xs">more</span>`
-          : ''
-      }</div>
-    `
-  }
-
-  renderPostExtendedText () {
-    if (!this.post.value.extendedText) {
-      return ''
-    }
-    if (this.post.value.extendedTextMimeType === 'text/html') {
-      return html`
-        <app-custom-html
-          class="block pt-4 mt-4 mb-3 text-black border-t border-dashed border-gray-200"
-          context="post"
-          .contextState=${{page: {dbKey: this.post.author.dbKey}}}
-          .html=${this.post.value.extendedText}
-          @click=${this.onClickText}
-        ></app-custom-html>
-      `
-    }
-    return html`
-      <div
-        class="block pt-4 mt-4 mb-3 whitespace-pre-wrap break-words leading-snug text-black border-t border-dashed border-gray-200"
-        @click=${this.onClickText}
-      >${unsafeHTML(emojify(linkify(makeSafe(this.post.value.extendedText))))}</div>
+      >${unsafeHTML(linkify(emojify(makeSafe(this.post.value.text))))}</div>
     `
   }
 
@@ -580,4 +552,4 @@ export class PostView extends LitElement {
   }
 }
 
-customElements.define('ctzn-post-view', PostView)
+customElements.define('app-post-view', PostView)
