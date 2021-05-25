@@ -21,6 +21,8 @@ CTZN is still in development! If you decide to run a server or build against the
     - [**Database methods**](./docs/dbmethods.md)
     - [**Community roles system**](./docs/community-roles.md)
     - [**Community permissions system**](./docs/permissions.md)
+- **Developers**
+    - [**API Client**](./packages/api-client)
 
 ### 📺 Videos
 
