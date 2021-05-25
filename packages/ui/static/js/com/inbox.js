@@ -276,7 +276,7 @@ export class Inbox extends LitElement {
         <div class="font-semibold"><span class="fas fa-flask mr-2"></span> Experimental Feature</div>
         <div class="text-sm">This is a proof-of-concept. It currently contains replies to your posts.</div>
       </div>
-      ${repeat(this.results, result => result.url, (result, i) => html`
+      ${repeat(this.results, result => result.dbUrl, (result, i) => html`
         ${this.renderDateTitle(result)}
         ${this.renderResult(result, i)}
       `)}

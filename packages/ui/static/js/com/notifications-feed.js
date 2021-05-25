@@ -257,7 +257,7 @@ export class NotificationsFeed extends LitElement {
   renderResults () {
     this.lastResultNiceDate = undefined // used by renderDateTitle
     return html`
-      ${repeat(this.results, result => result.url, (result, i) => html`
+      ${repeat(this.results, result => result.dbUrl, (result, i) => html`
         ${this.renderDateTitle(result)}
         ${this.renderNotification(result, i)}
       `)}

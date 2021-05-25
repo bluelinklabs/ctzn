@@ -150,7 +150,7 @@ export class CommentsFeed extends LitElement {
     }
     console.log(results)
 
-    if (!more && _cache?.id === this.cacheId && _cache?.results?.[0]?.url === results[0]?.url) {
+    if (!more && _cache?.id === this.cacheId && _cache?.results?.[0]?.dbUrl === results[0]?.dbUrl) {
       // stick with the cache but update the signal metrics
       for (let i = 0; i < results.length; i++) {
         this.results[i].reactions = _cache.results[i].reactions = results[i].reactions
@@ -263,7 +263,7 @@ export class CommentsFeed extends LitElement {
 
   renderResults () {
     return html`
-      ${repeat(this.results, result => result.url, (result, i) => this.renderResult(result, i))}
+      ${repeat(this.results, result => result.dbUrl, (result, i) => this.renderResult(result, i))}
     `
   }
   

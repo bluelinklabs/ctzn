@@ -140,8 +140,8 @@ export class Thread extends LitElement {
     if (!replies?.length) return ''
     return html`
       <div class="pl-3 border-l-2 border-gray-200">
-        ${repeat(replies, r => r.url, reply => {
-          const isSubject = this.subject.dbUrl === reply.url
+        ${repeat(replies, r => r.dbUrl, reply => {
+          const isSubject = this.subject.dbUrl === reply.dbUrl
           return html`
             <div
               class="mb-1 ${isSubject ? 'bg-blue-50 border border-blue-200 border-l-2 px-2 rounded-r highlight' : ''}"
