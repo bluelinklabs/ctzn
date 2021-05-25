@@ -26,7 +26,7 @@ export class SimpleUserList extends LitElement {
 
   async load () {
     if (session.isActive()) {
-      let f = await session.api.user.table('ctzn.network/follow').list().catch(e => [])
+      let f = await session.api.user.table('ctzn.network/follow').list().then(res => res.entries, e => [])
       this.myFollows = f.map(f => f.value.subject.userId)
     }
   }
