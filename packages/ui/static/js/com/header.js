@@ -2,11 +2,11 @@ import {LitElement, html} from '../../vendor/lit/lit.min.js'
 import * as session from '../lib/session.js'
 import * as notifications from '../lib/notifications.js'
 import { emit } from '../lib/dom.js'
-import { ComposerPopup } from './popups/composer.js'
+import { PostComposerPopup } from './popups/post-composer.js'
 import * as contextMenu from './context-menu.js'
 import * as toast from './toast.js'
 import './button.js'
-import './searchable-user-list.js'
+import './users/searchable-user-list.js'
 
 // lib/notifications uses caching to only talk to the server every 30s
 const CHECK_NOTIFICATIONS_INTERVAL = 5e3
@@ -235,7 +235,7 @@ export class Header extends LitElement {
     e.stopPropagation()
     this.isMenuOpen = false
     try {
-      await ComposerPopup.create()
+      await PostComposerPopup.create()
       toast.create('Post published', '', 10e3)
       emit(this, 'post-created')
     } catch (e) {

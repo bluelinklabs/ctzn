@@ -1,14 +1,14 @@
-import { LitElement, html } from '../../vendor/lit/lit.min.js'
-import { unsafeHTML } from '../../vendor/lit/directives/unsafe-html.js'
-import { asyncReplace } from '../../vendor/lit/directives/async-replace.js'
-import { repeat } from '../../vendor/lit/directives/repeat.js'
-import * as session from '../lib/session.js'
-import { AVATAR_URL } from '../lib/const.js'
-import { emit } from '../lib/dom.js'
-import { extractSchemaId, makeSafe, pluralize } from '../lib/strings.js'
-import { emojify } from '../lib/emojify.js'
-import * as displayNames from '../lib/display-names.js'
-import './post-view.js'
+import { LitElement, html } from '../../../vendor/lit/lit.min.js'
+import { unsafeHTML } from '../../../vendor/lit/directives/unsafe-html.js'
+import { asyncReplace } from '../../../vendor/lit/directives/async-replace.js'
+import { repeat } from '../../../vendor/lit/directives/repeat.js'
+import * as session from '../../lib/session.js'
+import { AVATAR_URL } from '../../lib/const.js'
+import { emit } from '../../lib/dom.js'
+import { extractSchemaId, makeSafe, pluralize } from '../../lib/strings.js'
+import { emojify } from '../../lib/emojify.js'
+import * as displayNames from '../../lib/display-names.js'
+import './post.js'
 
 const _itemCache = {}
 
@@ -167,21 +167,21 @@ export class Notification extends LitElement {
       record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.api.getPost(dbUrl)
       _itemCache[dbUrl] = record
       yield html`
-        <app-post-view
+        <app-post
           .post=${record}
           mode="content-only"
           .renderOpts=${{noclick: true}}
-        ></app-post-view>
+        ></app-post>
       `
     } else if (schemaId === 'ctzn.network/comment') {
       record = _itemCache[dbUrl] ? _itemCache[dbUrl] : await session.api.getComment(dbUrl)
       _itemCache[dbUrl] = record
       yield html`
-        <app-post-view
+        <app-post
           .post=${record}
           mode="content-only"
           .renderOpts=${{noclick: true}}
-        ></app-post-view>
+        ></app-post>
       `
     }
   }
@@ -194,11 +194,11 @@ export class Notification extends LitElement {
     let record = _itemCache[commentInfo.dbUrl] ? _itemCache[commentInfo.dbUrl] : await session.api.getComment(commentInfo.dbUrl)
     _itemCache[commentInfo.dbUrl] = record
     yield html`
-      <app-post-view
+      <app-post
         .post=${record}
         mode="content-only"
         .renderOpts=${{noclick: true}}
-      ></app-post-view>
+      ></app-post>
     `
   }
 

@@ -1,14 +1,13 @@
 /* globals beaker */
 import { html } from '../../../vendor/lit/lit.min.js'
 import { BasePopup } from './base.js'
-import * as session from '../../lib/session.js'
 import '../button.js'
-import '../post-composer.js'
+import '../content/post-composer.js'
 
 // exported api
 // =
 
-export class ComposerPopup extends BasePopup {
+export class PostComposerPopup extends BasePopup {
   static get properties () {
     return {
     }
@@ -41,7 +40,7 @@ export class ComposerPopup extends BasePopup {
   //
 
   static async create (opts) {
-    return BasePopup.create(ComposerPopup, opts)
+    return BasePopup.create(PostComposerPopup, opts)
   }
 
   static destroy () {
@@ -71,4 +70,4 @@ export class ComposerPopup extends BasePopup {
   }
 }
 
-customElements.define('composer-popup', ComposerPopup)
+customElements.define('post-composer-popup', PostComposerPopup)

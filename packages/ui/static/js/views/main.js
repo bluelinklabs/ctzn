@@ -1,17 +1,16 @@
 import { LitElement, html } from '../../vendor/lit/lit.min.js'
 import * as toast from '../com/toast.js'
 import * as session from '../lib/session.js'
-import { ComposerPopup } from '../com/popups/composer.js'
+import { PostComposerPopup } from '../com/popups/post-composer.js'
 import '../com/header.js'
 import '../com/button.js'
 import '../com/login.js'
-import '../com/posts-feed.js'
-import '../com/inbox.js'
-import '../com/notifications-feed.js'
-import '../com/post-composer.js'
+import '../com/content/posts-feed.js'
+import '../com/content/notifications-feed.js'
+import '../com/content/post-composer.js'
 import '../com/img-fallbacks.js'
 import '../com/suggestions-sidebar.js'
-import '../com/searchable-user-list.js'
+import '../com/users/searchable-user-list.js'
 import '../com/subnav.js'
 
 class CtznMainView extends LitElement {
@@ -142,28 +141,6 @@ class CtznMainView extends LitElement {
       },
       {path: '/search', label: 'Search'}
     ]
-    if (this.currentView === 'inbox') {
-      return html`
-        <app-header
-          current-path=${this.currentPath}
-          @post-created=${e => this.load()}
-          @unread-notifications-changed=${this.onUnreadNotificationsChanged}
-        ></app-header>
-        <main class="wide">
-          <app-subnav
-            mobile-only
-            nav-cls=""
-            .items=${SUBNAV_ITEMS}
-            current-path=${this.currentPath}
-          ></app-subnav>
-          <h2 class="text-2xl tracking-tight font-bold p-4 border-l border-r border-gray-300 hidden lg:block">Inbox</h2>
-          <app-inbox
-            @load-state-updated=${this.onFeedLoadStateUpdated}
-            @publish-reply=${this.onPublishReply}
-          ></app-inbox>
-        </main>
-      `
-    }
     return html`
       <app-header
         current-path=${this.currentPath}
@@ -256,7 +233,7 @@ class CtznMainView extends LitElement {
     e.preventDefault()
     e.stopPropagation()
     try {
-      await ComposerPopup.create(opts)
+      await PostComposerPopup.create(opts)
       toast.create('Post published', '', 10e3)
       this.load()
     } catch (e) {

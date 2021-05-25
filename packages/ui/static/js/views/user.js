@@ -1,7 +1,7 @@
 import { LitElement, html } from '../../vendor/lit/lit.min.js'
 import { unsafeHTML } from '../../vendor/lit/directives/unsafe-html.js'
 import { repeat } from '../../vendor/lit/directives/repeat.js'
-import { ComposerPopup } from '../com/popups/composer.js'
+import { PostComposerPopup } from '../com/popups/post-composer.js'
 import { ViewMediaPopup } from '../com/popups/view-media.js'
 import { GeneralPopup } from '../com/popups/general.js'
 import * as contextMenu from '../com/context-menu.js'
@@ -20,9 +20,9 @@ import { writeToClipboard } from '../lib/clipboard.js'
 import '../com/header.js'
 import '../com/button.js'
 import '../com/img-fallbacks.js'
-import '../com/posts-feed.js'
-import '../com/followers-list.js'
-import '../com/following-list.js'
+import '../com/content/posts-feed.js'
+import '../com/users/followers-list.js'
+import '../com/users/following-list.js'
 import '../com/subnav.js'
 import '../com/edit-profile.js'
 
@@ -614,7 +614,7 @@ class CtznUser extends LitElement {
     e.preventDefault()
     e.stopPropagation()
     try {
-      await ComposerPopup.create()
+      await PostComposerPopup.create()
       toast.create('Post published', '', 10e3)
       this.querySelector('app-posts-feed').load()
     } catch (e) {

@@ -1,9 +1,9 @@
-import { LitElement, html } from '../../vendor/lit/lit.min.js'
-import { repeat } from '../../vendor/lit/directives/repeat.js'
-import { AVATAR_URL } from '../lib/const.js'
-import { emit } from '../lib/dom.js'
-import * as session from '../lib/session.js'
-import * as displayNames from '../lib/display-names.js'
+import { LitElement, html } from '../../../vendor/lit/lit.min.js'
+import { repeat } from '../../../vendor/lit/directives/repeat.js'
+import { AVATAR_URL } from '../../lib/const.js'
+import { emit } from '../../lib/dom.js'
+import * as session from '../../lib/session.js'
+import * as displayNames from '../../lib/display-names.js'
 
 export class SearchableUserList extends LitElement {
   static get properties () {

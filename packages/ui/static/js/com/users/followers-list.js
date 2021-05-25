@@ -1,9 +1,9 @@
-import { LitElement, html } from '../../vendor/lit/lit.min.js'
-import { repeat } from '../../vendor/lit/directives/repeat.js'
-import { intersect } from '../lib/functions.js'
-import * as session from '../lib/session.js'
-import { AVATAR_URL } from '../lib/const.js'
-import '../com/simple-user-list.js'
+import { LitElement, html } from '../../../vendor/lit/lit.min.js'
+import { repeat } from '../../../vendor/lit/directives/repeat.js'
+import { intersect } from '../../lib/functions.js'
+import * as session from '../../lib/session.js'
+import { AVATAR_URL } from '../../lib/const.js'
+import './simple-user-list.js'
 
 export class FollowersList extends LitElement {
   static get properties () {

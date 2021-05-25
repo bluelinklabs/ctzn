@@ -1,8 +1,8 @@
-import { LitElement, html } from '../../vendor/lit/lit.min.js'
-import { repeat } from '../../vendor/lit/directives/repeat.js'
-import * as session from '../lib/session.js'
-import { emit } from '../lib/dom.js'
-import './comment-view.js'
+import { LitElement, html } from '../../../vendor/lit/lit.min.js'
+import { repeat } from '../../../vendor/lit/directives/repeat.js'
+import * as session from '../../lib/session.js'
+import { emit } from '../../lib/dom.js'
+import './comment.js'
 
 const CHECK_NEW_ITEMS_INTERVAL = 30e3
 let _cache = {
@@ -198,7 +198,7 @@ export class CommentsFeed extends LitElement {
   }
 
   requestResultUpdates () {
-    let commentEls = this.querySelectorAll('app-comment-view')
+    let commentEls = this.querySelectorAll('app-comment')
     for (let el of Array.from(commentEls)) {
       el.requestUpdate()
     }
@@ -260,11 +260,11 @@ export class CommentsFeed extends LitElement {
   
   renderResult (comment, index) {
     return html`
-      <app-comment-view
+      <app-comment
         class="block ${index === 0 ? '' : 'border-t border-gray-300'}"
         .comment=${comment}
         mode="default"
-      ></app-comment-view>
+      ></app-comment>
     `
   }
 

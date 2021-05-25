@@ -138,7 +138,6 @@ class CtznApp extends LitElement {
       case '/':
       case '/index':
       case '/index.html':
-      case '/inbox':
       case '/notifications':
       case '/search':
         gestures.setCurrentNav(['/', '/notifications', '/search'])
@@ -220,7 +219,6 @@ class CtznApp extends LitElement {
         case '/':
         case '/index':
         case '/index.html':
-        case '/inbox':
         case '/search':
         case '/activity':
           return html`<app-main-view id=${id} class=${cls} current-path=${path}></app-main-view>`

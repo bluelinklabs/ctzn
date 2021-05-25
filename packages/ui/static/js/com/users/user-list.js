@@ -1,12 +1,12 @@
-import { LitElement, html } from '../../vendor/lit/lit.min.js'
-import { repeat } from '../../vendor/lit/directives/repeat.js'
-import { unsafeHTML } from '../../vendor/lit/directives/unsafe-html.js'
-import { AVATAR_URL, BLOB_URL } from '../lib/const.js'
-import * as session from '../lib/session.js'
-import { makeSafe, linkify } from '../lib/strings.js'
-import { emojify } from '../lib/emojify.js'
-import './button.js'
-import './img-fallbacks.js'
+import { LitElement, html } from '../../../vendor/lit/lit.min.js'
+import { repeat } from '../../../vendor/lit/directives/repeat.js'
+import { unsafeHTML } from '../../../vendor/lit/directives/unsafe-html.js'
+import { AVATAR_URL, BLOB_URL } from '../../lib/const.js'
+import * as session from '../../lib/session.js'
+import { makeSafe, linkify } from '../../lib/strings.js'
+import { emojify } from '../../lib/emojify.js'
+import '../button.js'
+import '../img-fallbacks.js'
 
 export class UserList extends LitElement {
   static get properties () {

@@ -1,24 +1,24 @@
-import { LitElement, html } from '../../vendor/lit/lit.min.js'
-import { unsafeHTML } from '../../vendor/lit/directives/unsafe-html.js'
-import { ifDefined } from '../../vendor/lit/directives/if-defined.js'
-import { repeat } from '../../vendor/lit/directives/repeat.js'
-import { asyncReplace } from '../../vendor/lit/directives/async-replace.js'
-import { AVATAR_URL, COMMENT_URL, FULL_COMMENT_URL } from '../lib/const.js'
-import { writeToClipboard } from '../lib/clipboard.js'
-import { CommentComposerPopup } from '../com/popups/comment-composer.js'
-import { ReactionsListPopup } from '../com/popups/reactions-list.js'
-import * as session from '../lib/session.js'
-import { emit } from '../lib/dom.js'
-import { makeSafe, linkify, pluralize, parseSrcAttr, extractSchemaId } from '../lib/strings.js'
-import { relativeDate } from '../lib/time.js'
-import { emojify } from '../lib/emojify.js'
-import * as displayNames from '../lib/display-names.js'
-import * as contextMenu from '../com/context-menu.js'
-import * as reactMenu from '../com/menus/react.js'
-import * as toast from '../com/toast.js'
-import '../com/comment-composer.js'
+import { LitElement, html } from '../../../vendor/lit/lit.min.js'
+import { unsafeHTML } from '../../../vendor/lit/directives/unsafe-html.js'
+import { ifDefined } from '../../../vendor/lit/directives/if-defined.js'
+import { repeat } from '../../../vendor/lit/directives/repeat.js'
+import { asyncReplace } from '../../../vendor/lit/directives/async-replace.js'
+import { AVATAR_URL, COMMENT_URL, FULL_COMMENT_URL } from '../../lib/const.js'
+import { writeToClipboard } from '../../lib/clipboard.js'
+import { CommentComposerPopup } from '../popups/comment-composer.js'
+import { ReactionsListPopup } from '../popups/reactions-list.js'
+import * as session from '../../lib/session.js'
+import { emit } from '../../lib/dom.js'
+import { makeSafe, linkify, pluralize, extractSchemaId } from '../../lib/strings.js'
+import { relativeDate } from '../../lib/time.js'
+import { emojify } from '../../lib/emojify.js'
+import * as displayNames from '../../lib/display-names.js'
+import * as contextMenu from '../context-menu.js'
+import * as reactMenu from '../menus/react.js'
+import * as toast from '../toast.js'
+import './comment-composer.js'
 
-export class CommentView extends LitElement {
+export class Comment extends LitElement {
   static get properties () {
     return {
       mode: {type: String}, // 'default', 'as-reply', or 'content-only'
@@ -535,4 +535,4 @@ export class CommentView extends LitElement {
   }
 }
 
-customElements.define('app-comment-view', CommentView)
+customElements.define('app-comment', Comment)

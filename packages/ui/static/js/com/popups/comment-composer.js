@@ -2,8 +2,8 @@
 import { html } from '../../../vendor/lit/lit.min.js'
 import { BasePopup } from './base.js'
 import '../button.js'
-import '../post-composer.js'
-import '../post-view.js'
+import '../content/post-composer.js'
+import '../content/post.js'
 
 // exported api
 // =
@@ -53,11 +53,11 @@ export class CommentComposerPopup extends BasePopup {
         Reply to:
       </div>
       <div class="border border-gray-300 px-3 py-2 rounded mb-2">
-        <app-post-view
+        <app-post
           .post=${subject}
           mode="content-only"
           .renderOpts=${{noclick: true}}
-        ></app-post-view>
+        ></app-post>
       </div>
       <app-comment-composer
         autofocus

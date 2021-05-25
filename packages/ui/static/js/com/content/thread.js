@@ -1,11 +1,11 @@
-import { LitElement, html } from '../../vendor/lit/lit.min.js'
-import { repeat } from '../../vendor/lit/directives/repeat.js'
-import { CommentComposerPopup } from './popups/comment-composer.js'
-import * as toast from './toast.js'
-import { emit } from '../lib/dom.js'
-import * as session from '../lib/session.js'
-import './post-view.js'
-import './comment-view.js'
+import { LitElement, html } from '../../../vendor/lit/lit.min.js'
+import { repeat } from '../../../vendor/lit/directives/repeat.js'
+import { CommentComposerPopup } from '../popups/comment-composer.js'
+import * as toast from '../toast.js'
+import { emit } from '../../lib/dom.js'
+import * as session from '../../lib/session.js'
+import './post.js'
+import './comment.js'
 import './comment-composer.js'
 
 export class Thread extends LitElement {
@@ -98,11 +98,11 @@ export class Thread extends LitElement {
     return html`
       <div class="mb-1 sm:pl-1 sm:pr-3 bg-white sm:rounded-b">
         ${this.post ? html`
-          <app-post-view
+          <app-post
             mode="expanded"
             .post=${this.post}
             .renderOpts=${{noclick: true}}
-          ></app-post-view>
+          ></app-post>
         ` : html`
           <span class="spinner"></span>
         `}
@@ -146,13 +146,13 @@ export class Thread extends LitElement {
               class="mb-1 ${isSubject ? 'bg-blue-50 border border-blue-200 border-l-2 px-2 rounded-r highlight' : ''}"
               style="${isSubject ? 'margin-left: -14px' : ''}"
             >
-              <app-comment-view
+              <app-comment
                 .comment=${reply}
                 .renderOpts=${{noclick: true}}
                 mode="as-reply"
                 @publish-reply=${this.onPublishReply}
                 @delete-comment=${this.onDeleteComment}
-              ></app-comment-view>
+              ></app-comment>
             </div>
             ${reply.replies?.length ? this.renderReplies(reply.replies) : ''}
           `

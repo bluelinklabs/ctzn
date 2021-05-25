@@ -1,12 +1,12 @@
-import { LitElement, html } from '../../vendor/lit/lit.min.js'
-import { repeat } from '../../vendor/lit/directives/repeat.js'
-import * as session from '../lib/session.js'
-import * as displayNames from '../lib/display-names.js'
-import { emit } from '../lib/dom.js'
-import './button.js'
+import { LitElement, html } from '../../../vendor/lit/lit.min.js'
+import { repeat } from '../../../vendor/lit/directives/repeat.js'
+import * as displayNames from '../../lib/display-names.js'
+import { emit } from '../../lib/dom.js'
+import '../button.js'
 import {
   AVATAR_URL
-} from '../lib/const.js'
+} from '../../lib/const.js'
+
 export class UsersInput extends LitElement {
   static get properties () {
     return {

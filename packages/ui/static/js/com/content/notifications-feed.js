@@ -1,9 +1,9 @@
-import { LitElement, html } from '../../vendor/lit/lit.min.js'
-import { repeat } from '../../vendor/lit/directives/repeat.js'
-import { emit } from '../lib/dom.js'
-import { extractSchemaId } from '../lib/strings.js'
-import * as session from '../lib/session.js'
-import * as notifications from '../lib/notifications.js'
+import { LitElement, html } from '../../../vendor/lit/lit.min.js'
+import { repeat } from '../../../vendor/lit/directives/repeat.js'
+import { emit } from '../../lib/dom.js'
+import { extractSchemaId } from '../../lib/strings.js'
+import * as session from '../../lib/session.js'
+import * as notifications from '../../lib/notifications.js'
 import './notification.js'
 
 let _cache = undefined

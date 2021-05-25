@@ -1,8 +1,8 @@
-import { LitElement, html } from '../../vendor/lit/lit.min.js'
-import { repeat } from '../../vendor/lit/directives/repeat.js'
-import * as session from '../lib/session.js'
-import { emit } from '../lib/dom.js'
-import './post-view.js'
+import { LitElement, html } from '../../../vendor/lit/lit.min.js'
+import { repeat } from '../../../vendor/lit/directives/repeat.js'
+import * as session from '../../lib/session.js'
+import { emit } from '../../lib/dom.js'
+import './post.js'
 
 const CHECK_NEW_ITEMS_INTERVAL = 30e3
 let _cache = {
@@ -218,7 +218,7 @@ export class PostsFeed extends LitElement {
   }
 
   requestResultUpdates () {
-    let postEls = this.querySelectorAll('app-post-view')
+    let postEls = this.querySelectorAll('app-post')
     for (let el of Array.from(postEls)) {
       el.requestUpdate()
     }
@@ -286,11 +286,11 @@ export class PostsFeed extends LitElement {
   
   renderResult (post, index) {
     return html`
-      <app-post-view
+      <app-post
         .post=${post}
         mode="default"
         class="block pt-1 lg:pt-1 pb-1 lg:pb-1 ${index === 0 ? '' : 'border-t border-gray-300'}"
-      ></app-post-view>
+      ></app-post>
     `
   }
 

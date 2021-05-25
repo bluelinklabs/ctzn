@@ -1,6 +1,6 @@
-import { LitElement, html } from '../../vendor/lit/lit.min.js'
-import * as session from '../lib/session.js'
-import '../com/simple-user-list.js'
+import { LitElement, html } from '../../../vendor/lit/lit.min.js'
+import * as session from '../../lib/session.js'
+import './simple-user-list.js'
 
 export class FollowingList extends LitElement {
   static get properties () {

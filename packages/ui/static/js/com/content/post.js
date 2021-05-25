@@ -1,21 +1,21 @@
-import { LitElement, html } from '../../vendor/lit/lit.min.js'
-import { unsafeHTML } from '../../vendor/lit/directives/unsafe-html.js'
-import { repeat } from '../../vendor/lit/directives/repeat.js'
-import { USER_URL, POST_URL, FULL_POST_URL, AVATAR_URL, BLOB_URL } from '../lib/const.js'
-import * as session from '../lib/session.js'
-import { ReactionsListPopup } from '../com/popups/reactions-list.js'
-import { ViewMediaPopup } from '../com/popups/view-media.js'
-import { emit } from '../lib/dom.js'
-import { makeSafe, linkify, pluralize, parseSrcAttr } from '../lib/strings.js'
-import { relativeDate } from '../lib/time.js'
-import { emojify } from '../lib/emojify.js'
-import { writeToClipboard } from '../lib/clipboard.js'
-import * as displayNames from '../lib/display-names.js'
-import * as contextMenu from '../com/context-menu.js'
-import * as reactMenu from '../com/menus/react.js'
-import * as toast from '../com/toast.js'
+import { LitElement, html } from '../../../vendor/lit/lit.min.js'
+import { unsafeHTML } from '../../../vendor/lit/directives/unsafe-html.js'
+import { repeat } from '../../../vendor/lit/directives/repeat.js'
+import { USER_URL, POST_URL, FULL_POST_URL, AVATAR_URL, BLOB_URL } from '../../lib/const.js'
+import * as session from '../../lib/session.js'
+import { ReactionsListPopup } from '../popups/reactions-list.js'
+import { ViewMediaPopup } from '../popups/view-media.js'
+import { emit } from '../../lib/dom.js'
+import { makeSafe, linkify, pluralize, parseSrcAttr } from '../../lib/strings.js'
+import { relativeDate } from '../../lib/time.js'
+import { emojify } from '../../lib/emojify.js'
+import { writeToClipboard } from '../../lib/clipboard.js'
+import * as displayNames from '../../lib/display-names.js'
+import * as contextMenu from '../context-menu.js'
+import * as reactMenu from '../menus/react.js'
+import * as toast from '../toast.js'
 
-export class PostView extends LitElement {
+export class Post extends LitElement {
   static get properties () {
     return {
       mode: {type: String}, // 'default', 'expanded', or 'content-only'
@@ -552,4 +552,4 @@ export class PostView extends LitElement {
   }
 }
 
-customElements.define('app-post-view', PostView)
+customElements.define('app-post', Post)

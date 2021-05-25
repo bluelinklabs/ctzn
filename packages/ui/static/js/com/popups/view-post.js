@@ -1,7 +1,7 @@
 /* globals beaker */
 import { html } from '../../../vendor/lit/lit.min.js'
 import { BasePopup } from './base.js'
-import '../post-view.js'
+import '../content/post.js'
 
 // exported api
 // =
@@ -55,11 +55,11 @@ export class ViewPostPopup extends BasePopup {
   renderBody () {
     return html`
       <div class="overflow-auto" style="max-height: calc(100vh - 100px)">
-        <app-post-view
+        <app-post
           mode=${this.mode}
           .post=${this.post}
           .renderOpts=${{noclick: true, preview: true}}
-        ></app-post-view>
+        ></app-post>
       </div>
     `
   }

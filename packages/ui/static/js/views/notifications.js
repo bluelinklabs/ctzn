@@ -3,7 +3,7 @@ import * as session from '../lib/session.js'
 import * as notifications from '../lib/notifications.js'
 import '../com/header.js'
 import '../com/button.js'
-import '../com/notifications-feed.js'
+import '../com/content/notifications-feed.js'
 import '../com/suggestions-sidebar.js'
 import '../com/subnav.js'
 

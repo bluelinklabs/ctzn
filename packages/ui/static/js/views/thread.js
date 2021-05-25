@@ -7,8 +7,8 @@ import { writeToClipboard } from '../lib/clipboard.js'
 import { FULL_POST_URL } from '../lib/const.js'
 import '../com/header.js'
 import '../com/button.js'
-import '../com/thread.js'
-import '../com/user-list.js'
+import '../com/content/thread.js'
+import '../com/users/user-list.js'
 import '../com/subnav.js'
 
 class CtznThreadView extends LitElement {
