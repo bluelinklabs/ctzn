@@ -37,6 +37,17 @@ class PostComposer extends LitElement {
     return this // dont use shadow dom
   }
 
+  connectedCallback () {
+    super.connectedCallback()
+    this.$onGlobalPaste = this.$onGlobalPaste || this.onGlobalPaste.bind(this)
+    document.addEventListener('paste', this.$onGlobalPaste)
+  }
+
+  disconnectedCallback () {
+    super.disconnectedCallback()
+    document.removeEventListener('paste', this.$onGlobalPaste)
+  }
+
   get canPost () {
     return !this.isProcessing && (
       (this.draftText.length > 0 && this.draftText.length <= CHAR_LIMIT)
@@ -218,6 +229,27 @@ class PostComposer extends LitElement {
   onClickRemoveMedia (e, index) {
     this.media[index] = undefined
     this.requestUpdate()
+  }
+
+  onGlobalPaste (e) {
+    if (!e.clipboardData.files.length) return
+    e.preventDefault()
+    for (let file of Array.from(e.clipboardData.files)) {
+      if (!/\.(png|jpg|jpeg|gif)$/.test(file.name)) {
+        continue
+      }
+      var fr = new FileReader()
+      fr.onload = () => {
+        this.media = this.media.concat({
+          caption: '',
+          blobs: {
+            original: {dataUrl: fr.result}
+          }
+        })
+      }
+      fr.readAsDataURL(file)
+    }
+    // console.log(e.clipboardData.files)
   }
 
   onCancel (e) {

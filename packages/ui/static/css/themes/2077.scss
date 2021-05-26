@@ -118,9 +118,7 @@ $font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation M
   
   app-main-view {
     .content-header {
-      background: $bgcolor-green;
-      border: 1px solid $bordercolor-green;
-      color: $color-darkgreen;
+      border: 1px solid $bordercolor;
       margin-top: 0.25rem;
     }
 
@@ -130,9 +128,7 @@ $font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation M
   }
   app-notifications-view {
     .content-header {
-      background: $bgcolor-green;
-      border: 1px solid $bordercolor-green;
-      color: $color-darkgreen;
+      border: 1px solid $bordercolor;
       margin-top: 0.25rem;
     }
   }
