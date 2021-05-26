@@ -4,6 +4,7 @@ import * as session from './lib/session.js'
 import { emit } from './lib/dom.js'
 import * as gestures from './lib/gestures.js'
 import * as toast from './com/toast.js'
+import * as theme from './lib/theme.js'
 import * as contextMenu from './com/context-menu.js'
 import { BasePopup } from './com/popups/base.js'
 import './com/header.js'
@@ -48,6 +49,8 @@ class CtznApp extends LitElement {
 
   constructor () {
     super()
+
+    document.body.classList.add(`theme-${theme.get()}`)
 
     this.isLoading = true
     this.pageHasChanges = false

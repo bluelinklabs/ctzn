@@ -94,7 +94,7 @@ export class Notification extends LitElement {
     } else if (schemaId === 'ctzn.network/reaction') {
       subject = note.item.subject
       action = 'reacted to'
-      icon = 'far fa-hand-point-up'
+      icon = 'fas fa-heart'
     } else {
       return ''
     }
@@ -108,28 +108,28 @@ export class Notification extends LitElement {
     }
     
     return html`
-      <div class="flex cursor-pointer bg-white hov:hover:bg-gray-50" @click=${this.onClickWrapper}>
-        <div class="w-12 text-center pt-4 rounded-l leading-9 ${this.isUnread ? 'bg-blue-50' : ''}">
-          <span class="${icon} text-2xl ${this.isUnread ? 'text-blue-600' : 'text-gray-400'}"></span>
+      <div class="wrapper ${this.isUnread ? 'is-unread' : ''} flex cursor-pointer" @click=${this.onClickWrapper}>
+        <div class="icon-wrapper w-12 text-center pt-4 pl-2 leading-9">
+          <span class="icon ${icon}"></span>
         </div>
         <div class="flex-1 min-w-0">
-          <div class="flex items-center text-sm pt-4 px-3 pb-2">
+          <div class="avatars flex items-center pt-4 px-3 pb-2">
             <a href="/${note.author.dbKey}">
-              <img class="w-8 h-8 rounded-full object-cover mr-2" src=${AVATAR_URL(note.author.dbKey)}>
+              <img class="avatar w-8 h-8 object-cover mr-2" src=${AVATAR_URL(note.author.dbKey)}>
             </a>
             ${otherAuthors?.length ? html`
               ${repeat(otherAuthors.slice(0, 5), dbKey => html`
                 <a href="/${dbKey}">
-                  <img class="w-8 h-8 rounded-full object-cover mr-2" src=${AVATAR_URL(dbKey)}>
+                  <img class="avatar w-8 h-8 object-cover mr-2" src=${AVATAR_URL(dbKey)}>
                 </a>
               `)}
               ${otherAuthors.length > 5 ? html`
-                <span class="font-semibold ml-1 text-base text-gray-500">+${otherAuthors.length - 5}</span>
+                <span class="more-authors ml-1">+${otherAuthors.length - 5}</span>
               ` : ''}
             ` : ''}
           </div>
-          <div class="pl-3 pr-4 pb-2">
-            <a class="font-bold" href="/${note.author.dbKey}">
+          <div class="notification-metadata pl-3 pr-4 pb-2">
+            <a class="display-name" href="/${note.author.dbKey}">
               ${displayNames.render(note.author.dbKey)}
             </a>
             ${otherAuthors ? html`and ${otherAuthors.length} ${pluralize(otherAuthors.length, 'other')}` : ''}
@@ -137,13 +137,13 @@ export class Notification extends LitElement {
           </div>
           ${schemaId === 'ctzn.network/comment' ? html`
             <div class="pb-5">
-              <div class="border border-gray-300 ml-3 mr-6 px-4 py-4 reply rounded-xl">
+              <div class="comment-wrapper ml-3 mr-6 px-4 py-4">
                 ${asyncReplace(this.renderReplyComment(replyCommentInfo))}
               </div>
             </div>
           ` : schemaId === 'ctzn.network/reaction' ? html`
             ${this.renderReactions()}
-            <div class="reply pl-3 pr-6 pb-4">
+            <div class="subject-wrapper pl-3 pr-6 pb-4">
               ${asyncReplace(this.renderSubject())}
             </div>
           ` : html`
@@ -216,7 +216,7 @@ export class Notification extends LitElement {
     return html`
       <div class="pl-3 pb-3 pr-6">
         ${repeat(Object.entries(reactions), ([reaction, count]) => html`
-          <span class="inline-block px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-sm">
+          <span class="reaction inline-block px-1.5 py-0.5">
             ${unsafeHTML(emojify(makeSafe(reaction)))}
             <sup>${count}</sup>
           </span>

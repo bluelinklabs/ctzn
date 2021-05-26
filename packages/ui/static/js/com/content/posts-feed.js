@@ -243,8 +243,8 @@ export class PostsFeed extends LitElement {
     if (!this.results.length) {
       return html`
         ${this.renderHasNewItems()}
-        <div class="bg-gray-100 text-gray-500 py-44 text-center">
-          <div class="fas fa-stream text-6xl text-gray-300 mb-8"></div>
+        <div class="empty py-44 text-center">
+          <div class="fas fa-stream text-6xl mb-8"></div>
           ${this.view === 'ctzn.network/views/posts' ? html`
             <div>This feed is empty.</div>
           ` : html`
@@ -289,21 +289,21 @@ export class PostsFeed extends LitElement {
       <app-post
         .post=${post}
         mode="default"
-        class="block pt-1 lg:pt-1 pb-1 lg:pb-1 ${index === 0 ? '' : 'border-t border-gray-300'}"
+        class="${index === 0 ? 'is-first' : ''} block pt-1 lg:pt-1 pb-1 lg:pb-1"
       ></app-post>
     `
   }
 
   renderPlaceholderPost (index) {
     return html`
-      <div class="block pt-1 lg:pt-4 pb-1 lg:pb-4 ${index === 0 ? '' : 'border-t border-gray-300'}">
+      <div class="placeholder ${index === 0 ? 'is-first' : ''} block pt-1 lg:pt-4 pb-1 lg:pb-4">
         <div class="grid grid-post px-1 py-0.5">
           <div class="pl-2 pt-2">
-            <div class="block object-cover rounded-full mt-1 w-11 h-11 bg-gray-100"></div>
+            <div class="avatar block mt-1 w-11 h-11"></div>
           </div>
-          <div class="block bg-white min-w-0">
+          <div class="block min-w-0">
             <div class="pr-2 py-2 min-w-0">
-              <div class="pl-1 pr-2.5 text-gray-600 truncate">
+              <div class="pl-1 pr-2.5 truncate">
                 <div class="bg-loading-gradient rounded h-20"></div>
               </div>
             </div>

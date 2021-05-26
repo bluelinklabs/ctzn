@@ -2,6 +2,7 @@ import {LitElement, html} from '../../vendor/lit/lit.min.js'
 import * as session from '../lib/session.js'
 import * as notifications from '../lib/notifications.js'
 import { emit } from '../lib/dom.js'
+import * as theme from '../lib/theme.js'
 import { PostComposerPopup } from './popups/post-composer.js'
 import * as contextMenu from './context-menu.js'
 import * as toast from './toast.js'
@@ -52,8 +53,8 @@ export class Header extends LitElement {
   }
 
   getHeaderNavClass (str) {
-    const additions = str === this.currentPath ? 'text-blue-600' : 'text-gray-700 hov:hover:text-blue-600'
-    return `px-5 py-3 rounded font-medium ${additions}`
+    const state = str === this.currentPath ? 'is-selected' : ''
+    return `nav-item ${state}`
   }
 
   getMenuNavClass (str) {
@@ -67,38 +68,31 @@ export class Header extends LitElement {
     }
     let info = session.api.session.info
     return html`
-      <div class="hidden lg:block white-glass sticky top-0 z-20 border-b border-gray-300">
-        <div class="flex items-center leading-none font-medium py-2 px-2">
-          <a href="/" class=${this.getHeaderNavClass(undefined)} @click=${this.onClickLink}>
-            CTZN <small>alpha</small>
-          </a>
-          <a href="/" class=${this.getHeaderNavClass('/')} @click=${this.onClickLink} data-tooltip="Home">
+      <div class="desktop-header hidden lg:block sticky top-0 z-20">
+        <div class="desktop-header-inner flex items-center leading-none">
+          <a href="/" class=${this.getHeaderNavClass('/')} @click=${this.onClickLink}>
             <span class="fas fa-fw navicon fa-home"></span>
+            Home
           </a>
-          <a href="/notifications" class="relative ${this.getHeaderNavClass('/notifications')}" @click=${this.onClickLink} data-tooltip="Notfications">
+          <a href="/notifications" class="relative ${this.getHeaderNavClass('/notifications')}" @click=${this.onClickLink}>
             ${this.unreadNotificationsCount > 0 ? html`
               <span class="absolute bg-blue-500 font-medium leading-none px-1.5 py-0.5 rounded-2xl text-white text-xs" style="top: 5px; left: 32px">${this.unreadNotificationsCount}</span>
             ` : ''}
             <span class="fas fa-fw navicon fa-bell"></span>
+            Notifications
           </a>
           <div class="relative flex-1 ml-2 mr-4 h-8" @click=${e => { this.isSearchFocused = true }}>
             ${this.isSearchFocused ? html`
               <app-searchable-user-list
-                class="block absolute rounded bg-white z-20 border border-gray-300 overflow-x-hidden shadow-lg"
+                class="search-container block absolute z-20 overflow-x-hidden"
                 style="top: -6px; left: -1px; right: -1px"
                 widget-mode
                 @blur=${this.onBlurSearch}
               ></app-searchable-user-list>
             ` : html`
-              <div
-                class="
-                  py-1.5 px-3.5 text-sm flex items-center border
-                  border-transparent rounded-full
-                "
-                style="background: rgba(0,0,0,0.05)"
-              >
-                <span class="fas fa-fw fa-search mr-2 text-gray-500"></span>
-                <span class="text-gray-600">Search</span>
+              <div class="search-placeholder flex items-center">
+                <span class="search-placeholder-icon fas fa-fw fa-search mr-2"></span>
+                <span class="search-placeholder-text">Search</span>
               </div>
             `}
           </div>
@@ -114,9 +108,9 @@ export class Header extends LitElement {
             href="/${info.username}"
             title="My Profile"
             @click=${this.onClickLink}
-            data-tooltip="Profile"
           >
             <span class="fas fa-fw navicon fa-user"></span>
+            My Profile
           </a>
           <a class=${this.getHeaderNavClass()} @click=${this.onClickAccountMenu}>
             <span class="fas fa-fw fa-caret-down"></span>
@@ -249,18 +243,30 @@ export class Header extends LitElement {
     e.stopPropagation()
     let rect = e.currentTarget.getClientRects()[0]
     contextMenu.create({
-      x: rect.right - 14,
+      x: rect.right - 4,
       y: rect.bottom,
       right: true,
       noBorders: true,
       rounded: true,
       withTriangle: true,
-      style: `padding: 4px 0 4px; font-size: 14px`,
-      items: [{
+      style: `padding: 4px 0 4px; font-size: 15px`,
+      items: [
+      {
+        icon: theme.get() === 'vanilla' ? 'far fa-check-circle' : 'far fa-circle',
+        label: 'Light',
+        click: () => theme.set('vanilla')
+      },
+      {
+        icon: theme.get() === 'vanilladark' ? 'far fa-check-circle' : 'far fa-circle',
+        label: 'Dark',
+        click: () => theme.set('vanilladark')
+      },
+      '-',
+      {
         icon: 'fas fa-cog',
         label: 'Account',
         click: () => { window.location = `/account` }
-      }, '-', {
+      }, {
         icon: 'fas fa-sign-out-alt',
         label: 'Log Out',
         click: () => this.onLogOut()

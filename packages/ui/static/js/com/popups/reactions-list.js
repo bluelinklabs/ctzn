@@ -62,8 +62,8 @@ export class ReactionsListPopup extends BasePopup {
           </a>
           <div>
             <div><a class="cursor-pointer font-semibold hov:hover:underline leading-tight text-lg" href="/${userId}" title=${userId}>${displayNames.render(userId)}</a></div>
-            <div class="text-gray-500">Reacted ${repeat(this.users[userId].reactions, reaction => html`
-              <span class="mr-0.5 text-gray-600 px-1 py-0.5 bg-gray-100 rounded">${unsafeHTML(emojify(makeSafe(reaction)))}</span>
+            <div class="reactions-list">Reacted ${repeat(this.users[userId].reactions, reaction => html`
+              <span class="reaction mr-0.5 px-1 py-0.5">${unsafeHTML(emojify(makeSafe(reaction)))}</span>
             `)}</div>
           </div>
         </div>

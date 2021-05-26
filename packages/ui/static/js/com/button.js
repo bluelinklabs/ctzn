@@ -25,39 +25,26 @@ export class Button extends LitElement {
   }
 
   getClass () {
-    let parentClass = this.btnClass || this.className || ''
-    let colors = 'bg-white hov:hover:bg-gray-100'
+    let cls = this.btnClass || this.className || ''
     if (this.hasAttribute('primary')) {
-      colors = 'bg-blue-600 text-white hov:hover:bg-blue-700'
+      cls += ' primary'
       if (this.disabled) {
-        colors = 'bg-blue-400 text-blue-50'
+        cls += ' disabled'
       }
     } else if (this.hasAttribute('transparent')) {
-      colors = 'hov:hover:bg-gray-100'
+      cls += ' transparent'
       if (this.disabled) {
-        colors = 'bg-gray-100'
-      }
-    } else if (this.hasAttribute('color')) {
-      const color = this.getAttribute('color')
-      colors = `bg-${color}-600 text-white hov:hover:bg-${color}-700`
-      if (this.disabled) {
-        colors = `bg-${color}-400 text-${color}-50`
+        cls += ' disabled'
       }
     } else if (this.disabled) {
-      colors = 'bg-gray-100 text-gray-500'
+      cls = ' disabled'
     }
     
     let paddings = ''
-    if (!/p(x|l|r)-/.test(parentClass)) paddings += 'px-4 '
-    if (!/p(y|t|b)-/.test(parentClass)) paddings += 'py-2'
+    if (!/p(x|l|r)-/.test(cls)) paddings += 'px-4 '
+    if (!/p(y|t|b)-/.test(cls)) paddings += 'py-2'
 
-    let shadow = 'shadow-sm'
-    let borders = `border border-gray-300`
-    if (/border/.test(parentClass)) borders = ''
-    else if (this.hasAttribute('primary')) borders = 'border border-blue-800'
-    else if (this.hasAttribute('transparent')) { borders = ''; shadow = '' }
-    else if (this.hasAttribute('color')) borders = `border border-${this.getAttribute('color')}-800`
-    return `rounded ${colors} ${paddings} ${borders} ${shadow} ${parentClass} ${this.disabled ? 'cursor-default' : ''}`
+    return `${cls} ${paddings} ${this.disabled ? 'cursor-default' : ''}`
   }
 
   renderSpinner () {

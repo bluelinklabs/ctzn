@@ -11,6 +11,7 @@ import { relativeDate } from '../../lib/time.js'
 import { emojify } from '../../lib/emojify.js'
 import { writeToClipboard } from '../../lib/clipboard.js'
 import * as displayNames from '../../lib/display-names.js'
+import * as userIds from '../../lib/user-ids.js'
 import * as contextMenu from '../context-menu.js'
 import * as reactMenu from '../menus/react.js'
 import * as toast from '../toast.js'
@@ -117,15 +118,15 @@ export class Post extends LitElement {
     if (this.post.error) {
       return html`
         <div class="flex items-center bg-gray-50 sm:rounded">
-          <div class="text-xl pl-4 py-2 text-gray-500">
+          <div class="pl-4 py-2">
             <span class="fas fa-fw fa-exclamation-circle"></span>
           </div>
           <div class="px-4 py-2 min-w-0">
-            <div class="font-semibold text-gray-600">
+            <div class="">
               Failed to load post
             </div>
             ${this.post.message ? html`
-              <div class="text-gray-500 text-sm">
+              <div class="">
                 ${this.post.message}
               </div>
             ` : ''}
@@ -152,7 +153,7 @@ export class Post extends LitElement {
         @mouseup=${this.onMouseupCard}
         @mousemove=${this.onMousemoveCard}
       >
-        ${this.renderPostTextNonFull()}
+        ${this.renderPostText()}
         ${this.renderMedia()}
       </div>
     `
@@ -161,7 +162,7 @@ export class Post extends LitElement {
   renderExpanded () {
     return html`
       <div
-        class="grid grid-post px-1 py-0.5 bg-white sm:rounded ${this.renderOpts.noclick ? '' : 'cursor-pointer'} text-gray-600"
+        class="expanded-wrapper grid grid-post px-1 py-0.5 ${this.renderOpts.noclick ? '' : 'cursor-pointer'}"
         @click=${this.onClickCard}
         @mousedown=${this.onMousedownCard}
         @mouseup=${this.onMouseupCard}
@@ -170,40 +171,51 @@ export class Post extends LitElement {
         <div class="pl-2 pt-2">
           <a class="block" href="${USER_URL(this.post.author.dbKey)}" title=${this.post.author.displayName}>
             <img
-              class="block object-cover rounded-full mt-1 w-11 h-11"
+              class="avatar block object-cover mt-1 w-11 h-11"
               src=${AVATAR_URL(this.post.author.dbKey)}
             >
           </a>
         </div>
-        <div class="block bg-white min-w-0">
+        <div class="block min-w-0">
           <div class="pl-2 pr-2 py-2 min-w-0">
-            <div class="pr-2.5 text-gray-600 truncate sm:mb-2">
-              <span class="sm:mr-1 whitespace-nowrap">
+            <div class="post-metadata pr-2.5 truncate sm:mb-2">
+              <span class="whitespace-nowrap">
                 <a class="hov:hover:underline" href="${USER_URL(this.post.author.dbKey)}" title=${this.post.author.displayName}>
-                  <span class="text-gray-800 font-semibold">${displayNames.render(this.post.author.dbKey)}</span>
+                  <span class="display-name">${displayNames.render(this.post.author.dbKey)}</span>
                 </a>
               </span>
-              <span class="mr-2 text-sm">
+              <span class="whitespace-nowrap">
+                <a class="hov:hover:underline" href="${USER_URL(this.post.author.dbKey)}" title=${this.post.author.displayName}>
+                  <span class="userid">@${userIds.render(this.post.author.dbKey)}</span>
+                </a>
+              </span>
+              <span>&middot;</span>
+              <span class="post-date">
                 <a class="hov:hover:underline" href="${POST_URL(this.post)}" data-tooltip=${(new Date(this.post.value.createdAt)).toLocaleString()}>
                   ${relativeDate(this.post.value.createdAt)}
                 </a>
               </span>
             </div>
             <div
-              class="whitespace-pre-wrap break-words text-black mb-4"
+              class="post-text whitespace-pre-wrap break-words mb-4"
               @click=${this.onClickText}
             >${unsafeHTML(linkify(emojify(makeSafe(this.post.value.text))))}</div>
             ${this.renderMedia()}
             ${this.noctrls ? '' : html`
-              ${this.hasReactions ? html`
-                <div class="my-1.5">
-                  ${this.renderReactions()}
-                </div>
-              ` : ''}
-              <div class="flex items-center justify-around text-sm text-gray-600 px-1 pt-1 pr-8 sm:pr-60">
+              ${this.renderActionsSummary()}
+              <div class="post-actions flex items-center justify-between pt-1 pl-1 pr-12">
                 ${this.renderRepliesCtrl()}
                 ${this.renderReactionsBtn()}
-                ${this.renderActionsSummary()}
+                <div class="post-action">
+                  <a class="px-1" @click=${this.onClickMenu}>
+                    <span class="fas fa-fw fa-retweet"></span>
+                  </a>
+                </div>
+                <div class="post-action">
+                  <a class="px-1" @click=${this.onClickMenu}>
+                    <span class="far fa-fw fa-share-square"></span>
+                  </a>
+                </div>
               </div>
             `}
           </div>
@@ -215,7 +227,7 @@ export class Post extends LitElement {
   renderDefault () {
     return html`
       <div
-        class="grid grid-post px-1 py-0.5 bg-white sm:rounded ${this.renderOpts.noclick ? '' : 'cursor-pointer'} text-gray-600"
+        class="default-wrapper grid grid-post px-1 py-0.5 sm:rounded ${this.renderOpts.noclick ? '' : 'cursor-pointer'}"
         @click=${this.onClickCard}
         @mousedown=${this.onMousedownCard}
         @mouseup=${this.onMouseupCard}
@@ -224,38 +236,49 @@ export class Post extends LitElement {
         <div class="pl-2 pt-2">
           <a class="block" href="${USER_URL(this.post.author.dbKey)}" title=${this.post.author.displayName}>
             <img
-              class="block object-cover rounded-full mt-1 w-11 h-11"
+              class="avatar block object-cover mt-1 w-11 h-11"
               src=${AVATAR_URL(this.post.author.dbKey)}
             >
           </a>
         </div>
-        <div class="block bg-white min-w-0">
+        <div class="block min-w-0">
           <div class="pr-2 py-2 min-w-0">
-            <div class="pl-1 pr-2.5 text-sm text-gray-600 truncate">
-              <span class="sm:mr-1 whitespace-nowrap">
+            <div class="post-metadata pl-1 pr-2.5 truncate">
+              <span class="whitespace-nowrap">
                 <a class="hov:hover:underline" href="${USER_URL(this.post.author.dbKey)}" title=${this.post.author.displayName}>
-                  <span class="text-black font-bold" style="font-size: 15px; letter-spacing: 0.1px;">${displayNames.render(this.post.author.dbKey)}</span>
+                  <span class="display-name">${displayNames.render(this.post.author.dbKey)}</span>
                 </a>
               </span>
-              <span class="mr-2">
+              <span class="whitespace-nowrap">
+                <a class="hov:hover:underline" href="${USER_URL(this.post.author.dbKey)}" title=${this.post.author.displayName}>
+                  <span class="userid">@${userIds.render(this.post.author.dbKey)}</span>
+                </a>
+              </span>
+              <span>&middot;</span>
+              <span class="post-date">
                 <a class="hov:hover:underline" href="${POST_URL(this.post)}" data-tooltip=${(new Date(this.post.value.createdAt)).toLocaleString()}>
                   ${relativeDate(this.post.value.createdAt)}
                 </a>
               </span>
             </div>
-            ${this.renderPostTextNonFull()}
+            ${this.renderPostText()}
             ${this.renderMedia()}
             ${this.hasReactions ? html`
-              <div class="flex items-center my-1.5 mx-0.5 text-gray-500 text-sm truncate">
+              <div class="reactions flex items-center my-1.5 mx-0.5 truncate">
                 ${this.renderReactions()}
               </div>
             ` : ''}
-            <div class="flex pl-1 mt-1.5 text-gray-500 text-sm items-center justify-between pr-12 sm:w-72">
+            <div class="post-actions flex mt-1.5 items-center justify-between pl-6 pr-24">
               ${this.renderRepliesCtrl()}
               ${this.renderReactionsBtn()}
-              <div>
-                <a class="hov:hover:bg-gray-200 px-1 rounded" @click=${this.onClickMenu}>
-                  <span class="fas fa-fw fa-ellipsis-h"></span>
+              <div class="post-action">
+                <a class="px-1" @click=${this.onClickMenu}>
+                  <span class="fas fa-fw fa-retweet"></span>
+                </a>
+              </div>
+              <div class="post-action">
+                <a class="px-1" @click=${this.onClickMenu}>
+                  <span class="far fa-fw fa-share-square"></span>
                 </a>
               </div>
             </div>
@@ -274,11 +297,11 @@ export class Post extends LitElement {
     }
     return html`
       <div
-        class="bg-gray-100 rounded img-sizing-${size} img-placeholder cursor-pointer"
+        class="item-wrapper img-sizing-${size} img-placeholder cursor-pointer"
         @click=${this.renderOpts?.preview ? undefined : e => this.onClickImage(e, n, item)}
       >
         <img
-          class="box-border object-cover border border-gray-200 rounded w-full img-sizing-${size}"
+          class="item box-border object-cover w-full img-sizing-${size}"
           src="${url}"
           alt=${item.caption || 'Image'}
         >
@@ -293,7 +316,7 @@ export class Post extends LitElement {
     }
     if (media.length > 4 && this.mode === 'expanded') {
       return html`
-        <div class="grid grid-post-images mt-1 mb-2">
+        <div class="post-media grid grid-post-images mt-1 mb-2">
           ${repeat(media, (item, i) => html`
             ${this.renderImg(i, item, 'full')}
           `)}
@@ -302,7 +325,7 @@ export class Post extends LitElement {
     }
     const moreImages = media.length - 4
     return html`
-      <div class="flex mt-1 mb-2 ${this.showDefault ? 'sm:px-1' : ''}">
+      <div class="post-media flex mt-1 mb-2 ${this.showDefault ? 'sm:px-1' : ''}">
         ${media.length >= 4 ? html`
           <div class="flex-1 flex flex-col pr-0.5">
             <div class="flex-1 pb-0.5">${this.renderImg(0, media[0], 'small')}</div>
@@ -313,11 +336,11 @@ export class Post extends LitElement {
             <div class="flex-1 pt-0.5 relative">
               ${moreImages > 0 ? html`
                 <span
-                  class="absolute inline-block font-bold px-2 py-0.5 rounded sm:text-lg text-white"
-                  style="left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,.85);"
+                  class="more-images absolute inline-block px-2 py-0.5"
+                  style="left: 50%; top: 50%; transform: translate(-50%, -50%)"
                 >+${moreImages}</span>
               ` : ''}
-              ${this.renderImg(media[3], 'small')}
+              ${this.renderImg(3, media[3], 'small')}
             </div>
           </div>
         ` : media.length === 3 ? html`
@@ -338,27 +361,29 @@ export class Post extends LitElement {
   
   renderActionsSummary () {
     const reactionsCount = this.post.reactions ? Object.values(this.post.reactions).reduce((acc, v) => acc + v.length, 0) : 0
-    let reactionsCls = `inline-block ml-1 rounded text-gray-500 ${reactionsCount ? 'cursor-pointer hov:hover:underline' : ''}`
+    if (reactionsCount === 0) return ''
     return html`
-      <a class=${reactionsCls} @click=${reactionsCount ? this.onClickViewReactions : undefined}>
-        ${reactionsCount} ${pluralize(reactionsCount, 'reaction')}
-      </a>
+      <div class="actions-summary mb-3 py-3 px-2">
+        <a class="inline-block mr-2 cursor-pointer hov:hover:underline" @click=${this.onClickViewReactions}>
+          ${reactionsCount} ${pluralize(reactionsCount, 'reaction')}
+        </a>
+        ${this.renderReactions()}
+      </div>
     `
   }
 
   renderRepliesCtrl () {
-    let aCls = `inline-block ml-1 mr-6 text-gray-500`
     return html`
-      <span class=${aCls}>
+      <span class="post-action reply">
         <span class="far fa-comment"></span>
-        ${this.replyCount}
+        <span class="count">${this.replyCount}</span>
       </span>
     `
   }
 
   renderReactionsBtn () {
-    let aCls = `inline-block px-1 ml-1 mr-6 rounded text-gray-500 hov:hover:bg-gray-200`
-    if (this.isReactionsOpen) aCls += ' bg-gray-200'
+    let aCls = `post-action react`
+    if (this.isReactionsOpen) aCls += ' is-open'
     return html`
       <a class=${aCls} @click=${this.onClickReactBtn}>
         <span class="far fa-fw fa-heart"></span>
@@ -372,26 +397,25 @@ export class Post extends LitElement {
     }
     return html`
       ${repeat(Object.entries(this.post.reactions), ([reaction, dbKeys]) => {
-        const colors = this.haveIReacted(reaction) ? 'bg-blue-50 hov:hover:bg-blue-100 text-blue-600' : 'bg-gray-50 text-gray-600 hov:hover:bg-gray-100'
+        const state = this.haveIReacted(reaction) ? 'is-selected' : ''
         return html`
           <a
-            class="inline-block mr-2 px-1.5 py-0.5 rounded text-sm flex-shrink-0 ${colors}"
+            class="reaction ${state} inline-block mr-2 px-1.5 py-0.5 flex-shrink-0"
             @click=${e => this.onClickReaction(e, reaction)}
-          >${unsafeHTML(emojify(makeSafe(reaction)))} <sup class="font-medium">${dbKeys.length}</sup></a>
+          >${unsafeHTML(emojify(makeSafe(reaction)))} <sup>${dbKeys.length}</sup></a>
         `
       })}
     `
   }
 
-  renderPostTextNonFull () {
+  renderPostText () {
     const {text} = this.post.value
     if (!text?.trim()) {
       return ''
     }
     return html`
       <div
-        class="whitespace-pre-wrap break-words text-black ${this.showContentOnly ? '' : 'mt-1 mb-2 ml-1 mr-2.5'}"
-        style="font-size: 16px; line-height: 1.3;"
+        class="post-text whitespace-pre-wrap break-words ${this.showContentOnly ? '' : 'mt-1 mb-2 ml-1 mr-2.5'}"
         @click=${this.onClickText}
       >${unsafeHTML(linkify(emojify(makeSafe(this.post.value.text))))}</div>
     `

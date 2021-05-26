@@ -191,7 +191,7 @@ class CtznSignup extends LitElement {
           >
         </div>
         ${this.currentError ? html`
-          <div class="bg-red-100 p-6 text-red-600">${this.currentError}</div>
+          <div class="error p-6">${this.currentError}</div>
         ` : ''}
         <div class="flex justify-between items-center border-t border-gray-300 mt-10 pt-6">
           <app-button
@@ -260,7 +260,7 @@ class CtznSignup extends LitElement {
           ></textarea>
         </div>
         ${this.currentError ? html`
-          <div class="bg-red-100 p-6 text-red-600">${this.currentError}</div>
+          <div class="error p-6">${this.currentError}</div>
         ` : ''}
         <div class="flex justify-between items-center border-t border-gray-300 mt-10 pt-6">
           <app-button

@@ -1,8 +1,6 @@
 import { LitElement, html } from '../../../vendor/lit/lit.min.js'
 import { unsafeHTML } from '../../../vendor/lit/directives/unsafe-html.js'
-import { ifDefined } from '../../../vendor/lit/directives/if-defined.js'
 import { repeat } from '../../../vendor/lit/directives/repeat.js'
-import { asyncReplace } from '../../../vendor/lit/directives/async-replace.js'
 import { AVATAR_URL, COMMENT_URL, FULL_COMMENT_URL } from '../../lib/const.js'
 import { writeToClipboard } from '../../lib/clipboard.js'
 import { CommentComposerPopup } from '../popups/comment-composer.js'
@@ -13,6 +11,7 @@ import { makeSafe, linkify, pluralize, extractSchemaId } from '../../lib/strings
 import { relativeDate } from '../../lib/time.js'
 import { emojify } from '../../lib/emojify.js'
 import * as displayNames from '../../lib/display-names.js'
+import * as userIds from '../../lib/user-ids.js'
 import * as contextMenu from '../context-menu.js'
 import * as reactMenu from '../menus/react.js'
 import * as toast from '../toast.js'
@@ -120,94 +119,39 @@ export class Comment extends LitElement {
       `
     }
 
-    if (this.mode === 'as-reply') {
-      return this.renderAsReply()
-    } else if (this.mode === 'content-only') {
+    if (this.mode === 'content-only') {
       return this.renderContentOnly()
     } else {
-      return this.renderDefault()
+      return this.renderAsReply()
     }
-  }
-
-  renderDefault () {
-    return html`
-      <div
-        class="px-1 py-0.5 bg-white sm:rounded mb-0.5 ${this.renderOpts.noclick ? '' : 'cursor-pointer'} text-gray-600"
-        @click=${this.onClickCard}
-        @mousedown=${this.onMousedownCard}
-        @mouseup=${this.onMouseupCard}
-        @mousemove=${this.onMousemoveCard}
-      >
-        <div class="grid grid-post">
-          <div class="pl-2 pt-2">
-            <a class="block" href="/${this.comment.author.dbKey}" title=${this.comment.author.displayName}>
-              <img
-                class="block object-cover rounded-full mt-1 w-11 h-11"
-                src=${AVATAR_URL(this.comment.author.dbKey)}
-              >
-            </a>
-          </div>
-          <div class="block min-w-0">
-            <div class="block min-w-0 pl-1 pt-2 text-sm truncate">
-              <span class="fas fa-reply"></span> Reply to
-              ${asyncReplace(this.renderReplyParentAsync())}
-            </div>
-            <div class="pr-2 pb-2 min-w-0">
-              <div class="pl-1 pr-2.5 text-gray-600 truncate">
-                <span class="sm:mr-1 whitespace-nowrap">
-                  <a class="hov:hover:underline" href="/${this.comment.author.dbKey}" title=${this.comment.author.displayName}>
-                    <span class="text-gray-800 font-semibold">${displayNames.render(this.comment.author.dbKey)}</span>
-                  </a>
-                </span>
-                <span class="mr-2 text-sm">
-                  <a class="hov:hover:underline" href="${COMMENT_URL(this.comment)}" data-tooltip=${(new Date(this.comment.value.createdAt)).toLocaleString()}>
-                    ${relativeDate(this.comment.value.createdAt)}
-                  </a>
-                </span>
-              </div>
-              ${this.renderCommentText()}
-              ${this.hasReactions ? html`
-                <div class="flex items-center my-1.5 mx-0.5 text-gray-500 text-sm truncate">
-                  ${this.renderReactions()}
-                </div>
-              ` : ''}
-              <div class="flex pl-1 mt-0.5 text-gray-500 text-sm items-center justify-between pr-12 sm:w-72">
-                ${this.renderRepliesBtn()}
-                ${this.renderReactionsBtn()}
-                <div>
-                  <a class="hov:hover:bg-gray-200 px-1 rounded" @click=${this.onClickMenu}>
-                    <span class="fas fa-fw fa-ellipsis-h"></span>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `
   }
 
   renderAsReply () {
     return html`
       <div
-        class="text-gray-600 sm:rounded mb-0.5 ${this.renderOpts.noclick ? '' : 'cursor-pointer'}"
+        class="as-reply-wrapper mb-0.5 ${this.renderOpts.noclick ? '' : 'cursor-pointer'}"
         @click=${this.onClickCard}
         @mousedown=${this.onMousedownCard}
         @mouseup=${this.onMouseupCard}
         @mousemove=${this.onMousemoveCard}
       >
         <div class="py-2 min-w-0">
-          <div class="flex pr-2.5 text-gray-500 text-xs items-center">
+          <div class="comment-metadata flex pr-2.5 items-center">
             <a class="block relative" href="/${this.comment.author.dbKey}" title=${this.comment.author.displayName}>
-              <img class="block w-4 h-4 object-cover rounded-full mr-1" src=${AVATAR_URL(this.comment.author.dbKey)}>
+              <img class="avatar block w-4 h-4 object-cover mr-1" src=${AVATAR_URL(this.comment.author.dbKey)}>
             </a>
-            <div class="whitespace-nowrap">
+            <div class="whitespace-nowrap mr-1">
               <a class="hov:hover:underline" href="/${this.comment.author.dbKey}" title=${this.comment.author.displayName}>
-                <span class="text-gray-700 font-medium">${displayNames.render(this.comment.author.dbKey)}</span>
+                <span class="display-name">${displayNames.render(this.comment.author.dbKey)}</span>
               </a>
             </div>
+            <span class="whitespace-nowrap">
+              <a class="hov:hover:underline" href="/${this.comment.author.dbKey}" title=${this.comment.author.displayName}>
+                <span class="userid">@${userIds.render(this.comment.author.dbKey)}</span>
+              </a>
+            </span>
             <span class="mx-1">&middot;</span>
-            <a class="text-gray-500 hov:hover:underline" href="${COMMENT_URL(this.comment)}" data-tooltip=${(new Date(this.comment.value.createdAt)).toLocaleString()}>
+            <a class="comment-date hov:hover:underline" href="${COMMENT_URL(this.comment)}" data-tooltip=${(new Date(this.comment.value.createdAt)).toLocaleString()}>
               ${relativeDate(this.comment.value.createdAt)}
             </a>
           </div>
@@ -217,19 +161,19 @@ export class Comment extends LitElement {
               ${this.renderReactions()}
             </div>
           ` : ''}
-          <div class="pl-4">
+          <div class="comment-actions pl-4">
             ${this.renderRepliesBtn()}
             ${this.renderReactionsBtn()}
             ${this.renderActionsSummary()}
             <a
-              class="cursor-pointer tooltip-right hov:hover:bg-gray-100 px-2 py-1 ml-2 text-xs text-gray-500 font-bold"
+              class="cursor-pointer tooltip-right px-2 py-1 ml-2"
               @click=${this.onClickMenu}
             >
               <span class="fas fa-fw fa-ellipsis-h"></span>
             </a>
           </div>
           ${this.isReplyOpen ? html`
-            <div class="border border-gray-300 rounded py-2 px-2 my-2 mx-1 bg-white">
+            <div class="comment-composer-wrapper py-2 px-2 my-2 mx-1">
               <app-comment-composer
                 autofocus
                 .subject=${this.comment.value.reply.root}
@@ -248,7 +192,7 @@ export class Comment extends LitElement {
   renderContentOnly () {
     return html`
       <div
-        class="${this.renderOpts.noclick ? '' : 'cursor-pointer'}"
+        class="content-only-wrapper ${this.renderOpts.noclick ? '' : 'cursor-pointer'}"
         @click=${this.onClickCard}
         @mousedown=${this.onMousedownCard}
         @mouseup=${this.onMouseupCard}
@@ -259,36 +203,17 @@ export class Comment extends LitElement {
     `
   }
 
-  async *renderReplyParentAsync () {
-    let parent = this.comment.value.reply.parent || this.comment.value.reply.root
-    if (!parent) return ''
-    const schemaId = extractSchemaId(parent.dbUrl)
-    let record
-    if (schemaId === 'ctzn.network/post') {
-      record = await session.api.getPost(parent.authorId, parent.dbUrl)
-    } else if (schemaId === 'ctzn.network/comment') {
-      record = await session.api.getComment(parent.authorId, parent.dbUrl)
-    } else {
-      return html`Content by ${parent.authorId}`
-    }
-    if (!record) {
-      return html`A ${schemaId === 'ctzn.network/post' ? 'post' : 'comment'} by ${parent.authorId}`
-    }
-    yield html`${record.value.text}`
-  }
-
   renderCommentText () {
     let cls
     let style
     if (this.mode === 'as-reply') {
-      cls = 'whitespace-pre-wrap break-words text-sm leading-snug text-black pt-2 pb-1.5 pl-5 pr-2.5'
+      cls = 'whitespace-pre-wrap break-words pt-2 pb-1.5 pl-5 pr-2.5'
     } else {
-      cls = 'whitespace-pre-wrap break-words text-black mt-1 mb-1 ml-1 mr-2.5'
-      style = 'font-size: 16px; letter-spacing: 0.1px; line-height: 1.3;'
+      cls = 'whitespace-pre-wrap break-words mt-1 mb-1 ml-1 mr-2.5'
     }
     return html`
       <div
-        class="${cls}"
+        class="comment-text ${cls}"
         style=${style}
         @click=${this.onClickText}
       >${unsafeHTML(emojify(linkify(makeSafe(this.comment.value.text))))}</div>`
@@ -297,11 +222,7 @@ export class Comment extends LitElement {
   renderRepliesBtn () {
     return html`
       <a
-        class="
-          tooltip-right px-2 py-1
-          ${this.mode === 'as-reply' ? 'text-xs font-bold' : ''}
-          cursor-pointer text-gray-500 hov:hover:bg-gray-100
-        "
+        class="reply px-2 py-1 cursor-pointer"
         @click=${this.onClickReply}
       >
         ${this.mode === 'default' ? html`
@@ -316,12 +237,7 @@ export class Comment extends LitElement {
   renderReactionsBtn () {
     return html`
       <a
-        class="
-          tooltip-right pl-2 pr-1 mr-2 py-1
-          ${this.mode === 'as-reply' ? 'text-xs font-bold' : ''}
-          cursor-pointer text-gray-500 hov:hover:bg-gray-100
-          ${this.isReactionsOpen ? 'bg-gray-200' : ''}
-        "
+        class="react pl-2 pr-1 mr-2 py-1 cursor-pointer"
         @click=${this.onClickReactBtn}
       >
         <span class="far fa-fw fa-heart"></span>
@@ -335,14 +251,14 @@ export class Comment extends LitElement {
     }
     return html`
       ${repeat(Object.entries(this.comment.reactions), ([reaction, userIds]) => {
-        const colors = this.haveIReacted(reaction) ? 'bg-blue-50 hov:hover:bg-blue-100 text-blue-600' : 'bg-gray-50 text-gray-600 hov:hover:bg-gray-100'
+        const state = this.haveIReacted(reaction) ? 'is-selected' : ''
         return html`
           <a
-            class="inline-block mr-1 px-1.5 py-0.5 mt-1 text-sm rounded cursor-pointer ${colors}"
+            class="reaction ${state} inline-block mr-1 px-1.5 py-0.5 mt-1 cursor-pointer"
             @click=${e => this.onClickReaction(e, reaction)}
           >
             ${unsafeHTML(emojify(makeSafe(reaction)))}
-            <sup class="font-medium">${userIds.length}</sup>
+            <sup>${userIds.length}</sup>
           </a>
         `
       })}
@@ -351,7 +267,7 @@ export class Comment extends LitElement {
 
   renderActionsSummary () {
     const reactionsCount = this.comment.reactions ? Object.values(this.comment.reactions).reduce((acc, v) => acc + v.length, 0) : 0
-    let reactionsCls = `inline-block ml-1 text-sm text-gray-500 ${reactionsCount ? 'cursor-pointer hov:hover:underline' : ''}`
+    let reactionsCls = `inline-block ml-1 ${reactionsCount ? 'cursor-pointer hov:hover:underline' : ''}`
     return html`
       <a class=${reactionsCls} @click=${reactionsCount ? this.onClickViewReactions : undefined}>
         ${reactionsCount} ${pluralize(reactionsCount, 'reaction')}

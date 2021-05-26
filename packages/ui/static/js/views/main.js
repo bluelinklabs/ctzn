@@ -159,12 +159,12 @@ class CtznMainView extends LitElement {
           ></app-subnav>
           ${this.currentView === 'feed' ? html`
             ${this.renderMockComposer()}
-            <h2 class="p-4 border-l border-r border-gray-300 hidden lg:flex items-baseline">
+            <h2 class="content-header p-4 hidden lg:flex items-baseline">
               <span class="text-2xl tracking-tight font-bold">What's new</span>
               <span class="ml-2 text-gray-400 text-sm tracking-tight">${this.lastFeedFetch ? `Updated ${this.lastFeedFetch}` : ''}</span>
             </h2>
             <app-posts-feed
-              class="block sm:border border-t border-gray-300"
+              class="block"
               view="ctzn.network/views/feed"
               @publish-reply=${this.onPublishReply}
               @fetched-latest=${e => {this.lastFeedFetch = (new Date()).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}}

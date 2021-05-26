@@ -283,7 +283,7 @@ export class NotificationsFeed extends LitElement {
     const isUnread = blendedCreatedAt > this.clearedAt
     return html`
       <app-notification
-        class="block bg-white sm:border border-b ${index !== 0 ? 'sm:border-t-0' : ''} ${isUnread ? 'border-blue-400' : 'border-gray-300'}"
+        class="${index === 0 ? 'is-first' : ''} ${isUnread ? 'is-unread' : ''} block"
         .notification=${note}
         ?is-unread=${isUnread}
       ></app-notification>
@@ -292,14 +292,14 @@ export class NotificationsFeed extends LitElement {
 
   renderPlaceholderNotification (index) {
     return html`
-      <div class="block pt-1 lg:pt-4 pb-1 lg:pb-4 sm:border border-b border-gray-300 ${index !== 0 ? 'sm:border-t-0' : ''}">
+      <div class="placeholder ${index === 0 ? 'is-first' : ''} block pt-1 lg:pt-4 pb-1 lg:pb-4">
         <div class="grid grid-post px-1 py-0.5">
           <div class="pl-2 pt-2">
-            <div class="block object-cover rounded-full mt-1 w-11 h-11 bg-gray-100"></div>
+            <div class="avatar block mt-1 w-11 h-11"></div>
           </div>
-          <div class="block bg-white min-w-0">
+          <div class="block min-w-0">
             <div class="pr-2 py-2 min-w-0">
-              <div class="pl-1 pr-2.5 text-gray-600 truncate">
+              <div class="pl-1 pr-2.5 truncate">
                 <div class="bg-loading-gradient rounded h-32"></div>
               </div>
             </div>

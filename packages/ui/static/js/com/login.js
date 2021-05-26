@@ -41,7 +41,7 @@ class CtznLogin extends LitElement {
             <input class="block w-full box-border mb-1 p-4 border border-gray-300 rounded" id="password" type="password" name="password" required placeholder="********">
           </div>
           ${this.currentError ? html`
-            <div class="bg-red-100 p-6 mb-4 text-red-600">${this.currentError}</div>
+            <div class="error p-6 mb-4">${this.currentError}</div>
           ` : ''}
           <div class="flex justify-between items-center">
             <a href="/forgot-password">Forgot Password</a>

@@ -96,7 +96,7 @@ export class Thread extends LitElement {
 
   render () {
     return html`
-      <div class="mb-1 sm:pl-1 sm:pr-3 bg-white sm:rounded-b">
+      <div class="post-container mb-1 sm:pl-1 sm:pr-3">
         ${this.post ? html`
           <app-post
             mode="expanded"
@@ -110,7 +110,7 @@ export class Thread extends LitElement {
       <hr class="mb-4">
       ${this.post ? this.renderCommentBox() : ''}
       ${this.thread?.length ? html`
-        <div class="bg-white sm:rounded px-1 py-2 sm:px-3 sm:py-3">
+        <div class="comments-thread-container px-1 py-2 sm:px-3 sm:py-3">
           ${this.renderReplies(this.thread)}
         </div>
       ` : ''}
@@ -123,7 +123,7 @@ export class Thread extends LitElement {
         return ''
       }
       return html`
-        <div class="pl-3 py-2 border-l border-gray-200">
+        <div class="comments-container pl-3 py-2">
           <div class="font-semibold text-gray-500">
             <span class="fas fa-fw fa-exclamation-circle"></span>
             Failed to load thread
@@ -138,12 +138,12 @@ export class Thread extends LitElement {
     }
     if (!replies?.length) return ''
     return html`
-      <div class="pl-3 border-l-2 border-gray-200">
+      <div class="comments-container pl-3">
         ${repeat(replies, r => r.dbUrl, reply => {
           const isSubject = this.subject.dbUrl === reply.dbUrl
           return html`
             <div
-              class="mb-1 ${isSubject ? 'bg-blue-50 border border-blue-200 border-l-2 px-2 rounded-r highlight' : ''}"
+              class="comment-container mb-1 ${isSubject ? 'highlight px-2' : ''}"
               style="${isSubject ? 'margin-left: -14px' : ''}"
             >
               <app-comment
@@ -168,16 +168,18 @@ export class Thread extends LitElement {
     return html`
       <div class="px-3 mb-2">
         ${this.isReplying ? html`
-          <app-comment-composer
-            autofocus
-            class="block border border-gray-200 rounded p-2"
-            .subject=${{dbUrl: this.post.dbUrl}}
-            placeholder="Write your comment. Remember to always be kind!"
-            @publish=${this.onPublishReply}
-            @cancel=${this.onCancelReply}
-          ></app-comment-composer>
+          <div class="comment-composer-wrapper">
+            <app-comment-composer
+              autofocus
+              class="block p-2"
+              .subject=${{dbUrl: this.post.dbUrl}}
+              placeholder="Write your comment. Remember to always be kind!"
+              @publish=${this.onPublishReply}
+              @cancel=${this.onCancelReply}
+            ></app-comment-composer>
+          </div>
         ` : html`
-          <div class="cursor-text bg-gray-50 text-gray-600 px-4 py-2 rounded" @click=${this.onStartReply}>
+          <div class="comment-composer-placeholder cursor-text px-4 py-2" @click=${this.onStartReply}>
             Write your comment
           </div>
         `}

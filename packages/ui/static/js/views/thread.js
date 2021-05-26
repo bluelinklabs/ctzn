@@ -85,7 +85,7 @@ class CtznThreadView extends LitElement {
     const SUBNAV_ITEMS = [
       {back: true, label: html`<span class="fas fa-angle-left"></span>`},
       {path: location.pathname, label: 'View post'},
-      {rightAlign: true, click: this.onClickMenu.bind(this), label: html`<span class="fas fa-ellipsis-h cursor-pointer hov:hover:text-gray-700 text-xl text-gray-600"></span>`} 
+      {rightAlign: true, click: this.onClickMenu.bind(this), label: html`<span class="fas fa-ellipsis-h cursor-pointer text-xl"></span>`} 
     ]
     return html`
       <app-subnav
@@ -149,7 +149,7 @@ class CtznThreadView extends LitElement {
           <div class="min-h-screen sm:bg-transparent sm:pb-2">
             ${this.subject ? html`
               <app-thread
-                class="block sm:border sm:border-t-0 sm:border-gray-300 sm:pb-1"
+                class="block sm:pb-1"
                 .subject=${this.subject}
                 @load=${this.onLoadThread}
               ></app-thread>

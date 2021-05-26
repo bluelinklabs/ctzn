@@ -38,11 +38,10 @@ export class Subnav extends LitElement {
   
   getNavCls ({path, mobileOnly, rightAlign, thick, thin}) {
     return `
-      text-center pt-2 pb-2.5 sm:pt-3 sm:pb-3 ${thick ? 'px-5 sm:px-8' : thin ? 'px-3 sm:px-4' : 'px-4 sm:px-7'} whitespace-nowrap font-semibold cursor-pointer
-      hov:hover:text-blue-600
+      nav-item text-center pt-2 pb-2.5 sm:pt-3 sm:pb-3 ${thick ? 'px-5 sm:px-8' : thin ? 'px-3 sm:px-4' : 'px-4 sm:px-7'} whitespace-nowrap cursor-pointer
       ${mobileOnly ? 'no-header-only' : 'block'}
       ${rightAlign ? 'ml-auto' : ''}
-      ${path === this.currentPath ? 'text-blue-600' : ''}
+      ${path === this.currentPath ? 'is-selected' : ''}
     `.replace('\n', '')
   }
 
@@ -72,8 +71,7 @@ export class Subnav extends LitElement {
     this.mediaQueryObserver.addListener(this.onViewportWidthChange)
     gestures.events.addEventListener('swiping', this.onSwiping)
     this.className = `
-      white-glass sticky top-0 z-10 flex overflow-x-auto bg-white
-      border-gray-300 border-b sm:border-l sm:border-r
+      sticky top-0 z-10 flex overflow-x-auto
       ${this.navClass}
       ${this.mobileOnly ? 'lg:hidden' : ''}
     `
@@ -101,7 +99,7 @@ export class Subnav extends LitElement {
     return html`
       ${typeof this.borderLeft === 'number' ? html`
         <div
-          class="absolute bg-blue-600"
+          class="underline absolute"
           style="
             left: ${this.borderLeft}px;
             bottom: 0;

@@ -33,7 +33,7 @@ export class FollowingList extends LitElement {
   async load () {
     this.isExpanded = false
     this.following = undefined
-    this.following = await session.api.db(this.userId).table('ctzn.network/follow').list()
+    this.following = (await session.api.db(this.userId).table('ctzn.network/follow').list()).entries
   }
 
   // rendering
@@ -42,32 +42,30 @@ export class FollowingList extends LitElement {
   render () {
     if (typeof this.following === 'undefined') {
       return html`
-        <div class="bg-white sm:rounded px-5 py-3">
+        <div class="px-5 py-3">
           <span class="text-lg font-medium mr-1">Following</span>
           <span class="spinner text-gray-500"></span>
         </div>
       `
     }
     return html`
-      <div class="bg-white sm:rounded">
-        <div
-          class="px-5 py-3 sm:rounded ${this.following?.length ? 'cursor-pointer hov:hover:text-blue-600' : ''}"
-          @click=${this.following?.length ? this.onToggleExpanded : undefined}
-        >
-          <div class="flex items-center justify-between">
-            <span>
-              <span class="text-lg font-medium mr-1">Following</span>
-              <span class="text-gray-500 font-bold">${this.following?.length || '0'}</span>
-            </span>
-            ${this.following?.length ? html`
-              <span class="fas fa-angle-${this.isExpanded ? 'up' : 'down'}"></span>
-            ` : ''}
-          </div>
+      <div
+        class="px-5 py-3 ${this.following?.length ? 'cursor-pointer is-toggleable' : ''}"
+        @click=${this.following?.length ? this.onToggleExpanded : undefined}
+      >
+        <div class="flex items-center justify-between">
+          <span>
+            <span class="label mr-1">Following</span>
+            <span class="count">${this.following?.length || '0'}</span>
+          </span>
+          ${this.following?.length ? html`
+            <span class="fas fa-angle-${this.isExpanded ? 'up' : 'down'}"></span>
+          ` : ''}
         </div>
-        ${this.isExpanded ? html`
-          <app-simple-user-list .ids=${this.following?.map(f => f.value.subject.userId)} empty-message="${this.userId} is not following anybody."></app-simple-user-list>
-        ` : ''}
       </div>
+      ${this.isExpanded ? html`
+        <app-simple-user-list .ids=${this.following?.map(f => f.value.subject.userId)} empty-message="${this.userId} is not following anybody."></app-simple-user-list>
+      ` : ''}
     `
   }
 

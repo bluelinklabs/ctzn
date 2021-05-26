@@ -27,7 +27,7 @@ export class SuggestionsSidebar extends LitElement {
     return html`
       <section class="sticky top-16 px-3 py-5">
         <h4 class="font-bold mb-2 text-lg">C T Z N</h4>
-        <div class="text-sm bg-white rounded mb-6">
+        <div class="text-sm mb-6">
           <div class="text-base font-medium">
             <span class="fas fa-heart fa-fw mr-1"></span> Support CTZN!
           </div>
@@ -36,13 +36,13 @@ export class SuggestionsSidebar extends LitElement {
           </div>
           <div>
             <a
-              class="text-blue-600 hov:hover:underline cursor-pointer"
+              class="link hov:hover:underline cursor-pointer"
               href="https://patreon.com/paul_maf_and_andrew"
               target="_blank"
             >Join our Patreon</a>            
           </div>
         </div>
-        <div class="text-sm bg-white rounded">
+        <div class="text-sm">
           <div class="text-base font-medium">
             <span class="fas fa-video fa-fw mr-1"></span> Watch the dev stream
           </div>
@@ -51,14 +51,14 @@ export class SuggestionsSidebar extends LitElement {
           </div>
           <div class="pb-1">
             <a
-              class="text-blue-600 py-1 hov:hover:underline cursor-pointer"
+              class="link py-1 hov:hover:underline cursor-pointer"
               href="https://www.youtube.com/channel/UCSkcL4my2wgDRFvjQOJzrlg"
               target="_blank"
             >Subscribe on YouTube</a>
           </div>
           <div>
             <a
-              class="text-blue-600 py-1 hov:hover:underline cursor-pointer"
+              class="link py-1 hov:hover:underline cursor-pointer"
               href="https://ctzn.network/dev-vlog"
               target="_blank"
             >Watch the archives</a>

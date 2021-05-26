@@ -77,7 +77,7 @@ class CtznNotificationsView extends LitElement {
             .items=${SUBNAV_ITEMS}
             current-path=${this.currentPath}
           ></app-subnav>
-          <h2 class="text-2xl tracking-tight font-bold p-4 border-l border-r border-gray-300 hidden lg:block">Notifications</h2>
+          <h2 class="content-header text-2xl tracking-tight font-bold p-4 hidden lg:block">Notifications</h2>
           <app-notifications-feed
             .clearedAt=${this.notificationsClearedAt}
           ></app-notifications-feed>
@@ -89,7 +89,7 @@ class CtznNotificationsView extends LitElement {
 
   renderRightSidebar () {
     return html`
-      <nav class="pt-6">
+      <nav>
         <app-suggestions-sidebar></app-suggestions-sidebar>
       </nav>
     `

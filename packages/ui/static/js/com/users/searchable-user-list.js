@@ -46,13 +46,13 @@ export class SearchableUserList extends LitElement {
   }
 
   navigateToSelection () {
-    let el = this.querySelector(this.widgetMode ? '.current-selection' : '.result')
+    let el = this.querySelector(this.widgetMode ? '.is-selected' : '.result')
     if (!el || !el.getAttribute('href')) return
     emit(this, 'navigate-to', {detail: {url: el.getAttribute('href')}})
   }
 
   scrollToSelection () {
-    const el = this.querySelector('.current-selection')
+    const el = this.querySelector('.is-selected')
     const container = this.querySelector('#results-container')
     if (!el || !container) return
     const containerRect = container.getClientRects()[0]
@@ -105,10 +105,7 @@ export class SearchableUserList extends LitElement {
       let isHighlighted = (this.widgetMode && itemIndex++ === this.highlightIndex)
       return html`
         <a
-          class="
-            result flex items-center pl-2 pr-4 py-2 text-sm border-b border-gray-200 hov:hover:bg-gray-100
-            ${isHighlighted ? 'current-selection bg-gray-100' : ''}
-          "
+          class="result flex items-center pl-2 pr-4 py-2 ${isHighlighted ? 'is-selected' : ''}"
           href=${href}
           title=${title}
           @mousedown=${this.onMousedownResult}
@@ -119,13 +116,13 @@ export class SearchableUserList extends LitElement {
     }
     return html`
       <div class="
-        flex items-center border-gray-300
+        wrapper flex items-center border-gray-300
         ${this.widgetMode
-          ? 'border-b py-3 px-4 text-sm'
-          : 'border-t border-b bg-gray-100 px-3 py-2'
+          ? 'widget-mode py-3 px-4'
+          : 'page-mode px-3 py-2'
         }
       ">
-        <span class="fas fa-search text-sm text-gray-500 mr-3"></span>
+        <span class="search-icon fas fa-search mr-3"></span>
         <input
           type="text"
           class="w-full bg-transparent"
@@ -142,23 +139,23 @@ export class SearchableUserList extends LitElement {
       >
         ${looksLikeDbKey ? html`
           ${renderItem(`/${this.filter}`, this.filter, html`
-            <span class="bg-gray-100 fa-arrow-right fas mr-2 py-2 rounded text-center w-8"></span>
+            <span class="result-icon fa-arrow-right fas mr-2 py-2 text-center w-8"></span>
             Go to ${this.filter}
           `)}
         ` : ''}
         ${me ? html`
           ${renderItem(`/${me}`, me, html`
-            <img class="w-8 h-8 object-cover rounded-md mr-2" src=${AVATAR_URL(me)} style="left: 10px; top: 6px">
+            <img class="avatar w-8 h-8 object-cover mr-2" src=${AVATAR_URL(me)} style="left: 10px; top: 6px">
             ${displayNames.render(me)}
           `)}
         ` : ''}
         ${users?.length ? html`
-          <h3 class="font-bold px-2 py-2 text-xs border-b border-gray-200">
+          <h3 class="results-heading px-2 py-2">
             Following
           </h3>
           ${repeat(users, f => f, userId => renderItem(`/${userId}`, userId, html`
             <img
-              class="lazyload w-8 h-8 object-cover rounded-md mr-2"
+              class="avatar lazyload w-8 h-8 object-cover mr-2"
               data-src=${AVATAR_URL(userId)}
             >
             <span class="truncate">${displayNames.render(userId)}</span>

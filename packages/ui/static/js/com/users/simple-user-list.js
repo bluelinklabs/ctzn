@@ -3,6 +3,7 @@ import { repeat } from '../../../vendor/lit/directives/repeat.js'
 import { AVATAR_URL } from '../../lib/const.js'
 import * as session from '../../lib/session.js'
 import * as displayNames from '../../lib/display-names.js'
+import * as userIds from '../../lib/user-ids.js'
 
 export class SimpleUserList extends LitElement {
   static get properties () {
@@ -46,22 +47,23 @@ export class SimpleUserList extends LitElement {
     }
     return html`
       ${this.ids.length === 0 ? html`
-        <div class="px-3 py-3 text-gray-500 bg-gray-50">
+        <div class="empty px-3 py-3">
           ${this.emptyMessage}
         </div>
       ` : ''}
       ${repeat(this.ids, (userId, i) => {
-        const [username, domain] = userId.split('@')
         return html`
-          <div class="flex items-center px-2 py-2 border-t border-gray-200">
+          <div class="user flex items-center px-2 py-2">
             <a class="ml-1 mr-3" href="/${userId}" title=${userId}>
-              <img class="block rounded-md w-10 h-10 object-cover" src=${AVATAR_URL(userId)}>
+              <img class="avatar block w-10 h-10 object-cover" src=${AVATAR_URL(userId)}>
             </a>
             <div class="flex-1 min-w-0 truncate">
-              <a class="font-medium hov:hover:underline" href="/${userId}" title=${userId}>
+              <a class="display-name hov:hover:underline" href="/${userId}" title=${userId}>
                 ${displayNames.render(userId)}
               </a>
-              <span class="hidden sm:inline text-sm text-gray-500">${domain}</span>
+              <span class="hidden sm:inline user-id">
+                @${userIds.render(userId)}
+            </span>
             </div>
             <div>
               ${this.renderControls(userId)}

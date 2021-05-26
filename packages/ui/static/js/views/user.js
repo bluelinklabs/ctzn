@@ -267,15 +267,15 @@ class CtznUser extends LitElement {
             <div class="absolute" style="top: -70px; right: 75px;">
               <a href="${USER_URL(this.userId)}" title=${this.userProfile?.value.displayName}>
                 <img
-                  class="border-2 border-white inline-block object-cover rounded-3xl shadow-md bg-white"
+                  class="avatar inline-block object-cover"
                   src=${AVATAR_URL(this.userId)}
                   style="width: 130px; height: 130px"
                   @click=${this.onClickAvatar}
                 >
               </a>
             </div>
-            <div class="rounded bg-white px-2 pt-20 pb-4 mb-2 break-words">
-              <h2 class="text-2xl font-semibold">
+            <div class="px-2 pt-20 pb-4 mb-2 break-words">
+              <h2 class="display-name">
                 <a
                   class="inline-block"
                   href="${USER_URL(this.userId)}"
@@ -284,18 +284,18 @@ class CtznUser extends LitElement {
                   ${unsafeHTML(emojify(makeSafe(this.userProfile?.value.displayName), 'w-6', '0'))}
                 </a>
               </h2>
-              <h2 class="text-gray-600 font-semibold mb-4">
+              <h2 class="userid mb-4">
                 <a href="${USER_URL(this.userId)}" title="${this.niceUserId}">
-                  ${this.niceUserId}
+                  @${this.niceUserId}
                 </a>
               </h2>
               ${this.userProfile?.value.description ? html`
-                <div class="pb-4">${unsafeHTML(linkify(emojify(makeSafe(this.userProfile?.value.description))))}</div>
+                <div class="description pb-4">${unsafeHTML(linkify(emojify(makeSafe(this.userProfile?.value.description))))}</div>
               ` : ''}
               ${this.isCitizen ? html`
                 <div class="pb-2">
                   <span
-                    class="font-semibold text-gray-500 hov:hover:underline cursor-pointer"
+                    class="profile-stat hov:hover:underline cursor-pointer"
                     @click=${this.onClickViewFollowers}
                   >
                     <span class="fas fa-fw fa-user"></span>
@@ -317,7 +317,7 @@ class CtznUser extends LitElement {
               ` : ''}
             </div>
           </div>
-          <div class="sticky" style="top: 130px">
+          <div class="mini-right-nav-profile sticky" style="top: 130px">
             <div
               class="absolute ${this.showMiniRightNavProfile ? '' : 'pointer-events-none'}"
               style="
@@ -329,13 +329,13 @@ class CtznUser extends LitElement {
               <div class="flex items-center">
                 <a href="${USER_URL(this.userId)}" title=${this.userProfile?.value.displayName}>
                   <img
-                    class="inline-block object-cover rounded-md mr-2"
+                    class="avatar inline-block object-cover mr-2"
                     src=${AVATAR_URL(this.userId)}
                     style="width: 40px; height: 40px"
                     @click=${this.onClickAvatar}
                   >
                 </a>
-                <h2 class="text-xl font-semibold flex-1 truncate">
+                <h2 class="display-name flex-1 truncate">
                   <a
                     class="inline-block"
                     href="${USER_URL(this.userId)}"
@@ -351,10 +351,8 @@ class CtznUser extends LitElement {
               return html`
                 <a
                   class="
-                    block px-3 py-1.5 mb-1 cursor-pointer border-l-2 font-medium hover:bg-blue-50 hover:border-blue-600
-                    ${item.path === this.currentPath ? 'border-blue-600 text-blue-700 bg-blue-50' : 'border-gray-200 text-gray-700'}
-                    ${i === 0 ? 'rounded-tr' : ''}
-                    ${i === this.subnavItems.length - 1 ? 'rounded-br' : ''}
+                    right-nav-item block px-3 py-1.5 mb-1 cursor-pointer
+                    ${item.path === this.currentPath ? 'is-selected' : ''}
                   "
                   href="${item.path}"
                 >
@@ -533,17 +531,17 @@ class CtznUser extends LitElement {
     if (this.currentView === 'about') {
       return html`
         <app-followers-list
-          class="block sm:border border-t border-gray-300 mb-2"
+          class="block mb-2"
           user-id=${this.userId}
         ></app-followers-list>
         <app-following-list
-          class="block sm:border border-t border-gray-300 mb-2"
+          class="block mb-2"
           user-id=${this.userId}
         ></app-following-list>
-        <div class="block sm:border border-t border-gray-300 mb-2 px-4 py-3">
+        <div class="info-block mb-2 px-4 py-3">
           <div class="mb-1 text-sm font-medium">Database Key (for the nerds):</div>
-          <div class="flex items-center bg-gray-100 rounded">
-            <div class="flex-1 font-mono text-sm overflow-auto py-2 px-3">${this.userProfile?.dbKey}</div>
+          <div class="dbkey flex items-center">
+            <div class="dbkey-text flex-1 overflow-auto py-2 px-3">${this.userProfile?.dbKey}</div>
             <div class="py-2 px-3">
               <a class="cursor-pointer" @click=${this.onClickCopyDbKey}><span class="far fa-clipboard"></span></a>
             </div>
@@ -561,7 +559,7 @@ class CtznUser extends LitElement {
     } else {
       return html`
         <app-posts-feed
-          class="block sm:border border-t border-gray-300"
+          class="block"
           user-id=${this.userId}
           view="ctzn.network/views/posts"
         ></app-posts-feed>

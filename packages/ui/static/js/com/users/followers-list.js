@@ -49,7 +49,7 @@ export class FollowersList extends LitElement {
     this.sharedFollowers = undefined
 
     this.followers = await session.api.listFollowers(this.userId)
-    if (session.isActive() && this.userId !== session.info.userId) {
+    if (session.isActive() && session.myFollowing && this.userId !== session.info.userId) {
       this.sharedFollowers = intersect(session.myFollowing, this.followers)
     }
   }
@@ -60,43 +60,41 @@ export class FollowersList extends LitElement {
   render () {
     if (typeof this.followers === 'undefined') {
       return html`
-        <div class="bg-white sm:rounded px-5 py-3">
+        <div class="px-5 py-3">
           <span class="text-lg font-medium mr-1">Followers</span>
           <span class="spinner text-gray-500"></span>
         </div>
       `
     }
     return html`
-      <div class="bg-white sm:rounded">
-        <div
-          class="px-5 py-3 sm:rounded ${this.canToggleExpanded ? 'cursor-pointer hov:hover:text-blue-600' : ''}"
-          @click=${this.canToggleExpanded ? this.onToggleExpanded : undefined}
-        >
-          <div class="flex items-center justify-between">
-            <span>
-              <span class="text-lg font-medium mr-1">Followers</span>
-              <span class="text-gray-500 font-bold">${this.followers?.length || '0'}</span>
-            </span>
-            ${this.canToggleExpanded ? html`
-              <span class="fas fa-angle-${this.showExpanded ? 'up' : 'down'}"></span>
-            ` : ''}
-          </div>
-          ${this.sharedFollowers?.length ? html`
-            <div class="pt-1 flex items-center text-gray-500">
-              <span class="mr-2">Shared:</span>
-              ${repeat(this.sharedFollowers.slice(0, 7), (userId, i) => html`
-                <span data-tooltip=${userId}>
-                  <img src=${AVATAR_URL(userId)} class="inline-block rounded-md w-7 h-7 mr-1">
-                </span>
-              `)}
-              ${this.sharedFollowers.length > 7 ? html`<span class="font-semibold ml-1">+${this.sharedFollowers.length - 7}` : ''}
-            </div>
+      <div
+        class="px-5 py-3 sm:rounded ${this.canToggleExpanded ? 'cursor-pointer is-toggleable' : ''}"
+        @click=${this.canToggleExpanded ? this.onToggleExpanded : undefined}
+      >
+        <div class="flex items-center justify-between">
+          <span>
+            <span class="label mr-1">Followers</span>
+            <span class="count">${this.followers?.length || '0'}</span>
+          </span>
+          ${this.canToggleExpanded ? html`
+            <span class="fas fa-angle-${this.showExpanded ? 'up' : 'down'}"></span>
           ` : ''}
         </div>
-        ${this.showExpanded ? html`
-          <app-simple-user-list .ids=${this.followers} empty-message="${this.userId} has no followers."></app-simple-user-list>
+        ${this.sharedFollowers?.length ? html`
+          <div class="shared pt-1 flex items-center">
+            <span class="mr-2">Shared:</span>
+            ${repeat(this.sharedFollowers.slice(0, 7), (userId, i) => html`
+              <span data-tooltip=${userId}>
+                <img src=${AVATAR_URL(userId)} class="inline-block rounded-md w-7 h-7 mr-1">
+              </span>
+            `)}
+            ${this.sharedFollowers.length > 7 ? html`<span class="ml-1">+${this.sharedFollowers.length - 7}` : ''}
+          </div>
         ` : ''}
       </div>
+      ${this.showExpanded ? html`
+        <app-simple-user-list .ids=${this.followers} empty-message="${this.userId} has no followers."></app-simple-user-list>
+      ` : ''}
     `
   }
 

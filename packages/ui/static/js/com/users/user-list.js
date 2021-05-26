@@ -31,7 +31,7 @@ export class UserList extends LitElement {
     for (let id of this.ids) {
       const profile = await session.api.getProfile(id)
       if (profile.error) {
-        profile.userId = id
+        profile.dbKey = id
       }
       this.profiles.push(profile)
       this.requestUpdate()
@@ -44,8 +44,8 @@ export class UserList extends LitElement {
         session.api.listFollowers(id).catch(e => undefined),
         session.api.db(id).table('ctzn.network/follow').list().catch(e => undefined)
       ])
-      profile.isFollowingMe = session.isActive() && !!following?.entries.find(f => f.value.subject.userId === session.info.userId)
-      profile.amIFollowing = session.isActive() && !!followers?.find(f => f === session.info.userId)
+      profile.isFollowingMe = session.isActive() && !!following?.entries.find(f => f.value.subject.dbKey === session.info.dbKey)
+      profile.amIFollowing = session.isActive() && !!followers?.find(f => f === session.info.dbKey)
       this.requestUpdate()
     }
   }
@@ -66,62 +66,61 @@ export class UserList extends LitElement {
     return html`
       <link rel="stylesheet" href="/css/fontawesome.css">
       <div>
-        ${repeat(this.profiles, profile => profile.userId, profile => {
+        ${repeat(this.profiles, profile => profile.dbKey, profile => {
           if (profile.error) {
             return html`
-              <div class="profile error">
+              <div class="user error">
                 <div class="error-info">
                   <span class="fas fa-exclamation-circle"></span>
                   Failed to load profile
                 </div>
                 <div class="id">
-                  <a class="username" href="/${profile.userId}" title=${profile.userId}>
-                    ${profile.userId}
+                  <a class="user-id" href="/${profile.dbKey}" title=${profile.dbKey}>
+                    ${profile.dbKey}
                   </a>
                 </div>
                 <div class="description">${profile.message}</div>
               </div>
             `
           }
-          const userId = (new URL(profile.url)).pathname.split('/')[1]
+          const dbKey = profile.dbKey
           return html`
-            <div class="rounded relative border border-gray-200">
+            <div class="user relative">
               <div
-                class="rounded-t"
+                class="banner-container"
                 style="height: 80px; background: linear-gradient(0deg, #3c4af6, #2663eb);"
               >
                 <app-img-fallbacks>
                   <img
                     slot="img1"
-                    class="rounded-t"
                     style="display: block; object-fit: cover; width: 100%; height: 80px;"
-                    src=${BLOB_URL(userId, 'ctzn.network/profile', 'self', 'banner')}
+                    src=${BLOB_URL(dbKey, 'ctzn.network/profile', 'self', 'banner')}
                   >
                   <div slot="img2"></div>
                 </app-img-fallbacks>
               </div>
               <div class="absolute text-center w-full" style="top: 40px">
-                <a href="/${userId}" title=${profile.value.displayName}>
+                <a href="/${dbKey}" title=${profile.value.displayName}>
                   <img
-                    class="border-2 border-white inline-block object-cover rounded-xl shadow-md bg-white"
-                    src=${AVATAR_URL(userId)}
+                    class="avatar inline-block object-cover"
+                    src=${AVATAR_URL(dbKey)}
                     style="width: 60px; height: 60px"
                   >
                 </a>
               </div>
-              <div class="pt-8 pb-2 px-4 bg-white rounded-lg mt-1">
+              <div class="profile-info pt-8 pb-2 px-4 mt-1">
                 <div class="text-center">
-                  <div class="font-medium text-lg truncate leading-tight">
-                    <a href="/${profile.userId}" title=${profile.value.displayName}>
+                  <div class="truncate leading-tight">
+                    <a class="display-name" href="/${profile.dbKey}" title=${profile.value.displayName}>
                       ${unsafeHTML(emojify(makeSafe(profile.value.displayName)))}
                     </a>
                   </div>
                   <div class="mb-3">
-                    <a class="font-medium text-gray-500 text-sm truncate" href="/${profile.userId}" title=${profile.value.displayName}>
-                      ${userId}
+                    <a class="user-id truncate" href="/${profile.dbKey}" title=${profile.value.displayName}>
+                      @${profile.username || profile.dbKey.slice(0, 6)}
                     </a>
                   </div>
-                  <div class="text-sm mb-4 break-words">${unsafeHTML(linkify(emojify(makeSafe(profile.value.description))))}</div>
+                  <div class="description mb-4 break-words">${unsafeHTML(linkify(emojify(makeSafe(profile.value.description))))}</div>
                 </div>
                 ${this.renderProfileControls(profile)}
               </div>
@@ -135,8 +134,8 @@ export class UserList extends LitElement {
   renderProfileControls (profile) {
     if (!session.isActive()) return ''
     return html`
-      ${profile.userId === session?.info?.userId ? html`
-        <div class="text-center"><span class="bg-gray-200 rounded text-sm text-gray-500 py-0.5 px-2">This is you</span></div>
+      ${profile.dbKey === session?.info?.dbKey ? html`
+        <div class="text-center"><span class="label py-0.5 px-2">This is you</span></div>
       ` : html`
         <div class="text-center">
           ${profile.amIFollowing ? html`
@@ -145,7 +144,7 @@ export class UserList extends LitElement {
             <app-button transparent btn-class="rounded-full border border-blue-500 text-blue-600 text-sm mb-2 py-1 shadow-none hov:hover:bg-gray-200" @click=${e => this.onClickFollow(e, profile)} label="Follow"></app-button>
           `}
           ${profile.isFollowingMe ? html`
-            <span class="text-sm text-gray-500 py-0.5 px-2">Follows you</span>
+            <span class="label py-0.5 px-2">Follows you</span>
           ` : ''}
         </div>
       `}
@@ -158,7 +157,7 @@ export class UserList extends LitElement {
   async onClickFollow (e, profile) {
     e.preventDefault()
     await session.api.user.table('ctzn.network/follow').create({
-      subject: {userId: profile.userId, dbUrl: profile.dbUrl}
+      subject: {dbKey: profile.dbKey}
     })
     profile.amIFollowing = true
     this.requestUpdate()
@@ -166,7 +165,7 @@ export class UserList extends LitElement {
 
   async onClickUnfollow (e, profile) {
     e.preventDefault()
-    await session.api.user.table('ctzn.network/follow').delete(profile.userId)
+    await session.api.user.table('ctzn.network/follow').delete(profile.dbKey)
     profile.amIFollowing = false
     this.requestUpdate()
   }

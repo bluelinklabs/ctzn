@@ -93,16 +93,16 @@ export class EditProfile extends LitElement {
     const navItem = (id, label) => html`
       <div
         class="
-          py-2 pl-4 pr-6 hov:hover:bg-gray-100 cursor-pointer
-          ${id === this.currentView ? 'text-blue-600 border-b sm:border-b-0 sm:border-r-4 border-blue-600' : ''}
+          nav-item py-2 pl-4 pr-6 cursor-pointer
+          ${id === this.currentView ? 'is-selected' : ''}
         "
         @click=${e => {this.currentView = id}}
       >${label}</div>
     `
     return html`
-      <form @submit=${this.onSubmit} class="bg-white sm:rounded mb-0.5">
-        <div class="border-b border-gray-200 flex items-center justify-between pl-4 pr-2 py-2 rounded-t">
-          <div class="text-lg font-semibold">Settings</div>
+      <form @submit=${this.onSubmit} class="mb-0.5">
+        <div class="header flex items-center justify-between pl-4 pr-2 py-2">
+          <div class="label">Settings</div>
           <app-button
             ?primary=${this.hasChanges}
             ?disabled=${!this.hasChanges || this.isProcessing}
@@ -113,12 +113,11 @@ export class EditProfile extends LitElement {
           ></app-button>
         </div>
         ${this.currentError ? html`
-          <div class="bg-red-100 p-6 mt-2 mb-4 text-red-600">${this.currentError}</div>
+          <div class="error p-6 mt-2 mb-4">${this.currentError}</div>
         ` : ''}
         <div class="sm:flex">
-          <div class="flex sm:block border-b sm:border-b-0 sm:border-r border-gray-200 sm:w-32">
+          <div class="nav flex sm:block sm:w-32">
             ${navItem('basics', 'Basics')}
-            ${navItem('advanced', 'Advanced')}
           </div>
           <div class="sm:flex-1 px-4 pt-2 pb-4">
             <div class="${this.currentView === 'basics' ? 'block' : 'hidden'}">
@@ -129,7 +128,7 @@ export class EditProfile extends LitElement {
                 id="displayName-input"
                 name="displayName"
                 value="${this.values.displayName}"
-                class="block box-border w-full border border-gray-300 rounded p-3 mb-1"
+                class="block box-border w-full p-3 mb-1"
                 placeholder="Anonymous"
                 @keyup=${e => this.onKeyupValue(e, ['displayName'])}
                 ?disabled=${!this.canEditProfile}
@@ -139,7 +138,7 @@ export class EditProfile extends LitElement {
               <textarea
                 id="description-input"
                 name="description"
-                class="block box-border w-full border border-gray-300 rounded p-3 mb-2"
+                class="block box-border w-full p-3 mb-2"
                 @keyup=${e => this.onKeyupValue(e, ['description'])}
                 ?disabled=${!this.canEditProfile}
               >${this.values.description}</textarea>
@@ -150,21 +149,21 @@ export class EditProfile extends LitElement {
                   <app-img-fallbacks>
                     <img
                       slot="img1"
-                      class="block rounded-2xl border border-gray-400 w-full object-cover cursor-pointer hov:hover:opacity-50"
+                      class="img-input block w-full object-cover cursor-pointer hov:hover:opacity-50"
                       style="width: 320px; height: 150px"
                       src=${BLOB_URL(this.dbKey, 'ctzn.network/profile', 'self', 'banner')} 
                       @click=${this.onClickBanner}
                     >
                     <div
                       slot="img2"
-                      class="block rounded-2xl border border-gray-400 cursor-pointer hov:hover:opacity-50"
+                      class="img-input block cursor-pointer hov:hover:opacity-50"
                       style="width: 320px; height: 150px; background: linear-gradient(0deg, #3c4af6, #2663eb);"
                       @click=${this.onClickBanner}
                     ></div>
                   </app-img-fallbacks>
                 ` : html`
                   <img
-                    class="block rounded-2xl border border-gray-400 w-full object-cover cursor-pointer hov:hover:opacity-50"
+                    class="img-input block w-full object-cover cursor-pointer hov:hover:opacity-50"
                     style="width: 320px; height: 150px"
                     src=${this.uploadedBanner} 
                     @click=${this.onClickBanner}
@@ -174,7 +173,7 @@ export class EditProfile extends LitElement {
               <div class="mb-2">
                 <label class="block font-semibold p-1">Profile Image</label>
                 <img 
-                  class="block border border-gray-400 rounded-3xl object-cover cursor-pointer hov:hover:opacity-50"
+                  class="img-input block object-cover cursor-pointer hov:hover:opacity-50"
                   style="width: 150px; height: 150px;"
                   src=${this.uploadedAvatar || AVATAR_URL(this.dbKey)}
                   @click=${this.onClickAvatar}
