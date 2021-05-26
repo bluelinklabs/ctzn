@@ -117,7 +117,7 @@ export class Post extends LitElement {
 
     if (this.post.error) {
       return html`
-        <div class="flex items-center bg-gray-50 sm:rounded">
+        <div class="flex items-center">
           <div class="pl-4 py-2">
             <span class="fas fa-fw fa-exclamation-circle"></span>
           </div>
@@ -227,7 +227,7 @@ export class Post extends LitElement {
   renderDefault () {
     return html`
       <div
-        class="default-wrapper grid grid-post px-1 py-0.5 sm:rounded ${this.renderOpts.noclick ? '' : 'cursor-pointer'}"
+        class="default-wrapper grid grid-post px-1 py-0.5 ${this.renderOpts.noclick ? '' : 'cursor-pointer'}"
         @click=${this.onClickCard}
         @mousedown=${this.onMousedownCard}
         @mouseup=${this.onMouseupCard}

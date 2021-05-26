@@ -1,4 +1,4 @@
-const THEMES = ['vanilla', 'vanilladark']
+const THEMES = ['vanilla', 'vanilladark', '2077']
 
 export function get () {
   let v = localStorage.getItem('theme')

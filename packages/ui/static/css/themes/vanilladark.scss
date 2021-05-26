@@ -64,7 +64,7 @@ $screen-2xl: 1536px;
   background: rgba(34, 34, 34, 0.9);
 }
 
-body.theme-vanilladark {
+%theme-vanilladark {
   background: $bgcolor;
   color: $color;
 
@@ -255,7 +255,6 @@ body.theme-vanilladark {
   app-comment {
     .as-reply-wrapper,
     .content-only-wrapper {
-      background: $bgcolor;
     }
 
     .avatar {
@@ -295,7 +294,6 @@ body.theme-vanilladark {
   app-comments-feed {}
   app-notification {
     .wrapper {
-      background: $bgcolor;
     }
 
     &.is-unread .icon-wrapper {
@@ -357,7 +355,6 @@ body.theme-vanilladark {
   app-post {
     .default-wrapper,
     .expanded-wrapper {
-      background: $bgcolor;
     }
 
     .avatar {
@@ -735,4 +732,7 @@ body.theme-vanilladark {
       }
     }
   }
+}
+body.theme-vanilladark {
+  @extend %theme-vanilladark;
 }

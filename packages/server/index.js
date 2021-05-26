@@ -23,6 +23,7 @@ import * as os from 'os'
 import { setOrigin, DEBUG_MODE_PORTS_MAP } from './lib/strings.js'
 import { Liquid } from 'liquidjs'
 import { resolve } from 'import-meta-resolve'
+import sass from 'node-sass'
 
 const INSTALL_PATH = path.dirname(fileURLToPath(import.meta.url))
 const INSTALL_UI_PATH = path.join(fileURLToPath(await resolve('@bluelinklabs/ctzn-ui/package.json', import.meta.url)), '..')
@@ -123,6 +124,18 @@ function createAppServer (config, configDir) {
   app.get('/account', (req, res) => res.render('index'))
   app.get('/signup', (req, res) => res.render('index'))
   app.use('/img', express.static(path.join(INSTALL_UI_PATH, 'static', 'img')))
+  app.get('/css/themes/:filename', (req, res) => {
+    const filepath = path.join(INSTALL_UI_PATH, 'static', 'css', 'themes', req.params.filename)
+    sass.render({file: filepath}, (err, result) => {
+      if (err) {
+        console.log(err)
+        json404(res, 'Not found')
+      } else {
+        res.header('Content-Type', 'text/css')
+        res.status(200).end(result.css)
+      }
+    })
+  })
   app.use('/css', express.static(path.join(INSTALL_UI_PATH, 'static', 'css')))
   app.get('/js/app.build.js', (req, res) => {
     if(process.env.NODE_ENV === 'production') {

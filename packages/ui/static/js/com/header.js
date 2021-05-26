@@ -261,6 +261,11 @@ export class Header extends LitElement {
         label: 'Dark',
         click: () => theme.set('vanilladark')
       },
+      {
+        icon: theme.get() === '2077' ? 'far fa-check-circle' : 'far fa-circle',
+        label: '2077',
+        click: () => theme.set('2077')
+      },
       '-',
       {
         icon: 'fas fa-cog',

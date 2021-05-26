@@ -50,6 +50,7 @@
     "ndjson": "^2.0.0",
     "nodemailer": "^6.5.0",
     "nodemailer-stub": "^1.2.2",
+    "node-sass": "^6.0.0",
     "pauls-sliding-window-rate-limiter": "^1.0.0",
     "pm2": "^4.5.6",
     "pump": "^3.0.0",

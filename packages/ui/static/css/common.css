@@ -19,7 +19,8 @@ textarea {
   -moz-appearance: none;
   appearance: none;
 }
-*:focus {
+input:focus,
+textarea:focus {
   outline: none;
   border-color: rgb(37, 99, 235) !important;
 }
