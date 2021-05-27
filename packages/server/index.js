@@ -214,6 +214,8 @@ function createAdminServer (config, configDir) {
     res.locals.issueCount = issues.count()
     next()
   })
+  appHttpAPI.setup(app, config)
+  if (config.debugMode) debugHttpAPI.setup(app)
   adminHttpAPI.setup(app)
   app.use('/_api', (req, res) => json404(res, 'Not found'))
   app.get('/', (req, res) => res.render('index', {topnav: 'dashboard'}))

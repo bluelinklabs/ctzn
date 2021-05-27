@@ -47,7 +47,7 @@ class Issues extends LitElement {
 
   async load () {
     await session.setup()
-    this.issues = await session.api.server.listIssues()
+    this.issues = (await session.api.get('admin/issues')).issues
     document.body.querySelector('#issue-count').textContent = String(this.issues.length)
     console.log(this.issues)
   }

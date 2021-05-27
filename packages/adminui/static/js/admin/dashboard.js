@@ -5,7 +5,6 @@ import * as session from '../lib/session.js'
 const METRIC_GRAPH_COLORS = {
   'signed-up': 'rgba(255, 99, 132, 1)',
   'logged-in': 'rgba(54, 162, 235, 1)',
-  'community-created': 'rgba(255, 206, 86, 1)',
   'post-created': 'rgba(75, 192, 192, 1)',
   'comment-created': 'rgba(153, 102, 255, 1)'
 }
@@ -36,76 +35,52 @@ class Dashboard extends LitElement {
 
   async load () {
     await session.setup()
-    const [users, activeWebsocketCounts] = await Promise.all([
-      session.api.server.countUsers(),
-      session.api.server.listMetricsEvents({event: 'active-websocket-count', timespan: 'day'})
+    const [users] = await Promise.all([
+      session.api.get('admin/users-count')
     ])
     this.metrics = {
-      fixed: {users, activeSessions: activeWebsocketCounts[activeWebsocketCounts.length - 1]?.count},
+      fixed: {users: users.count},
       day: {},
       week: {},
       month: {},
       overtime: {}
     }
-    this.updateActiveSessionsGraph(activeWebsocketCounts)
     this.requestUpdate()
-    this.metrics.day = await session.api.server.countMultipleMetricsEvents({
+    this.metrics.day = (await session.api.get('admin/multiple-metrics-events-counts', {
       timespan: 'day',
-      events: ['signed-up', 'logged-in', 'community-created', 'post-created', 'comment-created'],
-      uniqueBys: {'logged-in': 'user'}
-    })
+      events: 'signed-up,logged-in,post-created,comment-created',
+      uniqueBys: 'logged-in:user'
+    })).count
     this.requestUpdate()
-    this.metrics.week = await session.api.server.countMultipleMetricsEvents({
+    this.metrics.week = (await session.api.get('admin/multiple-metrics-events-counts', {
       timespan: 'week',
-      events: ['signed-up', 'logged-in', 'community-created', 'post-created', 'comment-created'],
-      uniqueBys: {'logged-in': 'user'}
-    })
+      events: 'signed-up,logged-in,post-created,comment-created',
+      uniqueBys: 'logged-in:user'
+    })).count
     this.requestUpdate()
-    this.metrics.month = await session.api.server.countMultipleMetricsEvents({
+    this.metrics.month = (await session.api.get('admin/multiple-metrics-events-counts', {
       timespan: 'month',
-      events: ['signed-up', 'logged-in', 'community-created', 'post-created', 'comment-created'],
-      uniqueBys: {'logged-in': 'user'}
-    })
+      events: 'signed-up,logged-in,post-created,comment-created',
+      uniqueBys: 'logged-in:user'
+    })).count
     this.requestUpdate()
-    this.httpHits = Object.entries(await session.api.server.aggregateHttpHits({timespan: 'day'}))
+    this.httpHits = Object.entries((await session.api.get('admin/aggregate-http-hits', {timespan: 'day'})).hits)
     this.httpHits.sort((a, b) => b[1] - a[1])
     this.requestUpdate()
-    this.metrics.overtime = await session.api.server.countMultipleMetricsEventsOverTime({
+    this.metrics.overtime = (await session.api.get('admin/multiple-metrics-events-counts-over-time', {
       timespan: 'month',
       window: 'day',
-      events: ['signed-up', 'logged-in', 'community-created', 'post-created', 'comment-created'],
-      uniqueBys: {'logged-in': 'user'}
-    })
+      events: 'signed-up,logged-in,post-created,comment-created',
+      uniqueBys: 'logged-in:user'
+    })).counts
     this.updateOvertimeGraphs(this.metrics.overtime)
-    console.log(this.metrics, activeWebsocketCounts)
-  }
-
-  updateActiveSessionsGraph (dataset) {
-    // reduce dataset down from every 30s to every 5m
-    dataset = dataset.reduce((acc, v, i) => {
-      if (i % 10 === 0) acc.push(v)
-      return acc
-    }, [])
-
-    const ctx = this.querySelector('#active-sessions-graph').getContext('2d')
-    var myChart = new window.Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: dataset.map(({ts}) => (new Date(ts)).toLocaleTimeString()),
-        datasets: [{
-          label: 'Active Websocket Connections',
-          data: dataset.map(({count}) => count),
-          borderColor: 'rgb(219, 39, 119)',
-          fill: false
-        }],
-      }
-    })
+    console.log(this.metrics)
   }
 
   updateOvertimeGraphs (overtime) {
     const labels = Object.keys(overtime).map(ts => (new Date(+ts)).toLocaleDateString())
     const datasets = []
-    for (let evt of ['signed-up', 'logged-in', 'community-created', 'post-created', 'comment-created']) {
+    for (let evt of ['signed-up', 'logged-in', 'post-created', 'comment-created']) {
       datasets.push({
         label: evt,
         data: Object.values(overtime).map(({counts}) => counts[evt] || 0),
@@ -135,10 +110,6 @@ class Dashboard extends LitElement {
           <div class="text-2xl font-semibold">${m(metrics?.['signed-up'])}</div>
           <div class="text-gray-600">Signups</div>
         </div>
-        <div style="flex: 1.5">
-          <div class="text-2xl font-semibold">${m(metrics?.['community-created'])}</div>
-          <div class="text-gray-600">New Communities</div>
-        </div>
         <div class="flex-1">
           <div class="text-2xl font-semibold">${m(metrics?.['post-created'])}</div>
           <div class="text-gray-600">Posts</div>
@@ -159,10 +130,6 @@ class Dashboard extends LitElement {
             <div class="text-4xl font-semibold">${m(this.metrics?.fixed?.users)}</div>
             <div>Registered Users</div>
           </div>
-          <div class="flex-1">
-            <div class="text-4xl font-semibold">${m(this.metrics?.fixed?.activeSessions)}</div>
-            <div>Active Sessions</div>
-          </div>
           <div class="flex-1"></div>
         </div>
       </div>
@@ -177,10 +144,6 @@ class Dashboard extends LitElement {
       <div class="px-3 pt-2 pb-2">
         <h4 class="font-semibold text-lg">This Month</h4>
         ${renderTimespanMetrics(this.metrics?.month)}
-      </div>
-      <div class="px-3 pt-8 pb-2">
-        <h4 class="font-semibold text-lg">Active Sessions <span class="text-sm font-normal text-gray-600">Past 24 hours</span></h4>
-        <canvas id="active-sessions-graph"></canvas>
       </div>
       <div class="px-3 pt-2 pb-2">
         <h4 class="font-semibold text-lg">HTTP Requests <span class="text-sm font-normal text-gray-600">Past 24 hours</span></h4>

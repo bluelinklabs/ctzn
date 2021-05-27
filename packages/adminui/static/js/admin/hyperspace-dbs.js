@@ -7,9 +7,7 @@ const FETCH_INTERVAL = 2e3
 const DB_TYPE_ORDERING = [
   'ctzn.network/private-server-db',
   'ctzn.network/public-server-db',
-  'ctzn.network/public-community-db',
   'ctzn.network/public-citizen-db',
-  'ctzn.network/private-community-db',
   'ctzn.network/private-citizen-db'
 ]
 
@@ -43,7 +41,7 @@ class HyperspaceDbs extends LitElement {
 
   async load () {
     await session.setup()
-    this.databases = await session.api.server.listDatabases()
+    this.databases = (await session.api.get('admin/databases')).databases
     this.databases.sort((a, b) => {
       if (a.dbType === b.dbType) return (a.userId || '').localeCompare(b.userId)
       let aI = DB_TYPE_ORDERING.indexOf(a.dbType)
@@ -76,7 +74,7 @@ class HyperspaceDbs extends LitElement {
             ` : ''}
             <a
               class="row flex items-center px-3 py-2 cursor-pointer zebra-row zebra-row-hovers"
-              href="/admin/hyperspace/db/${db.dkey}"
+              href="/hyperspace/db/${db.dbDkey}"
             >
               <div class="truncate">${this.renderDbType(db.dbType)}</div>
               <div class="truncate">${db.userId}</div>

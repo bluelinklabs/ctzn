@@ -40,7 +40,7 @@ class HyperspaceViewDb extends LitElement {
   async load () {
     await session.setup()
     const isFirst = !this.db
-    this.db = await session.api.server.getDatabaseInfo(this.dbKey)
+    this.db = await session.api.get('admin/database-info', {dkey: this.dbKey})
     if (isFirst) console.log(this.db)
   }
 

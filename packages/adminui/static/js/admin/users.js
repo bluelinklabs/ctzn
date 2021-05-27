@@ -4,7 +4,6 @@ import * as session from '../lib/session.js'
 
 const FETCH_INTERVAL = 10e3
 const USER_TYPE_ORDERING = [
-  'community',
   'citizen'
 ]
 
@@ -50,9 +49,9 @@ class Users extends LitElement {
 
   async load () {
     await session.setup()
-    this.accounts = await session.api.server.listAccounts()
+    this.accounts = (await session.api.get('admin/accounts')).accounts
     this.accounts.sort((a, b) => {
-      if (a.type === b.type) return (a.userId || '').localeCompare(b.userId)
+      if (a.type === b.type) return (a.username || '').localeCompare(b.username)
       let aI = USER_TYPE_ORDERING.indexOf(a.type)
       if (aI === -1) aI = USER_TYPE_ORDERING.length
       let bI = USER_TYPE_ORDERING.indexOf(b.type)
@@ -72,7 +71,7 @@ class Users extends LitElement {
       `
     }
     let lastType = undefined
-    const TYPE_MAP = {community: 'Communities', citizen: 'Citizens'}
+    const TYPE_MAP = {citizen: 'Citizens'}
     return html`
       <div class="pb-8">
         <div class="flex items-center justify-between px-3 py-3">
@@ -85,18 +84,18 @@ class Users extends LitElement {
           >
         </div>
         <div class="sticky top-0 z-10 row flex items-center border-b-2 border-pink-600 bg-white px-3 py-2 mb-0.5 font-semibold">
-          <div class="truncate">User ID</div>
+          <div class="truncate">Username</div>
           <div class="truncate">Display Name</div>
           <div class="truncate">Type</div>
         </div>
-        ${repeat(this.filteredAccounts, account => account.userId, account => {
+        ${repeat(this.filteredAccounts, account => account.username, account => {
           const res = html`
             ${account.type !== lastType ? html`
               <div class="pt-3 pb-1 px-1 border-b border-gray-300 text-base font-medium">${TYPE_MAP[account.type]}</div>
             ` : ''}
             <a
               class="row flex items-center px-3 py-2 cursor-pointer zebra-row zebra-row-hovers"
-              href="/admin/users/view/${account.username}"
+              href="/users/view/${account.username}"
             >
               <div class="truncate">${account.username}</div>
               <div class="truncate">${account.displayName}</div>

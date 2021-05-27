@@ -14,7 +14,9 @@ let _inspectorSession
 let _inspectorTimeout
 
 export function setup (app) {
-  const stopProfilingCPU = () =>new Promise((resolve, reject) => {
+  console.log('Enabling /_api/admin endpoints')
+
+  const stopProfilingCPU = () => new Promise((resolve, reject) => {
     console.log('Stopping CPU profiler')
     clearTimeout(_inspectorTimeout)
     _inspectorSession.post('Profiler.stop', async (err, res) => {
@@ -31,7 +33,7 @@ export function setup (app) {
     });
   })
 
-  app.post('_api/admin/toggle-profiling-cpu', async (req, res) => {
+  app.post('/_api/admin/toggle-profiling-cpu', async (req, res) => {
     if (_inspectorSession) {
       try {
         await stopProfilingCPU()
@@ -79,7 +81,7 @@ export function setup (app) {
     }
   }
 
-  app.get('_api/admin/database-info', async (req, res) => {
+  app.get('/_api/admin/database-info', async (req, res) => {
     const thisDb = db.getDbByDkey(req.query.dkey)
     if (!thisDb) return res.status(404).json({error: true, message: 'Database not found'})
     try {
@@ -90,18 +92,17 @@ export function setup (app) {
     }
   })
 
-  app.get('_api/admin/databases', async (req, res) => {
+  app.get('/_api/admin/databases', async (req, res) => {
     try {
-      const databases = await Promise.all((
-        Array.from(db.publicDbs.values()).concat(Array.from(db.privateDbs.values()))
-      ).map(db => getDbInfo(db)))
+      const dbSet = new Set(Array.from(db.publicDbs.values()).concat(Array.from(db.privateDbs.values())))
+      const databases = await Promise.all(([...dbSet]).map(db => getDbInfo(db)))
       res.status(200).json({databases})
     } catch (e) {
       res.status(500).json({error: true, message: e.message || e.toString()})
     }
   })
 
-  app.get('_api/admin/bee-shallow-list', async (req, res) => {
+  app.get('/_api/admin/bee-shallow-list', async (req, res) => {
     const thisDb = db.getDbByDkey(req.query.dkey)
     if (!thisDb) return res.status(404).json({error: true, message: 'Database not found'})
     try {
@@ -113,7 +114,7 @@ export function setup (app) {
     }
   })
 
-  app.get('_api/admin/hyperspace-log', async (req, res) => {
+  app.get('/_api/admin/hyperspace-log', async (req, res) => {
     try {
       const hasKeys = Object.keys(req.query).length > 0
       const entries = await hyperspaceLog.query(entry => {
@@ -132,7 +133,7 @@ export function setup (app) {
     }
   })
 
-  app.post('_api/admin/rebuild-database-indexes', async (req, res) => {
+  app.post('/_api/admin/rebuild-database-indexes', async (req, res) => {
     let targetDb = db.publicDbs.get(req.body.dbKey)
     if (!targetDb && req.body.dbKey === db.publicServerDb.dbKey) {
       targetDb = db.publicServerDb
@@ -153,7 +154,7 @@ export function setup (app) {
     }
   })
   
-  app.get('_api/admin/issues', (req, res) => {
+  app.get('/_api/admin/issues', (req, res) => {
     try {
       const issuesListing = Object.entries(issues.getAll()).map(([id, entries]) => {
         return {
@@ -172,7 +173,7 @@ export function setup (app) {
     }
   })
 
-  app.post('_api/admin/recover-issue', async (req, res) => {
+  app.post('/_api/admin/recover-issue', async (req, res) => {
     try {
       const result = await issues.recover(req.body.issueId)
       res.status(200).json({result})
@@ -181,12 +182,12 @@ export function setup (app) {
     }
   })
 
-  app.post('_api/admin/dismiss-issue', (req, res) => {
+  app.post('/_api/admin/dismiss-issue', (req, res) => {
     issues.dismiss(req.body.issueId, req.body.opts)
     res.status(200).json({})
   })
 
-  app.get('_api/admin/accounts', async (req, res) => {
+  app.get('/_api/admin/accounts', async (req, res) => {
     try {
       const userRecords = await db.publicServerDb.users.list()
       const fullUserRecords = await Promise.all(userRecords.map(async userRecord => {
@@ -207,7 +208,7 @@ export function setup (app) {
     }
   })
 
-  app.get('_api/admin/account', async (req, res) => {
+  app.get('/_api/admin/account', async (req, res) => {
     try {
       let userRecord = await db.publicServerDb.users.get(req.query.username)
       const publicDb = db.publicDbs.get(userRecord.key)
@@ -224,7 +225,7 @@ export function setup (app) {
     }
   })
 
-  app.post('_api/admin/remove-user', async (req, res) => {
+  app.post('/_api/admin/remove-user', async (req, res) => {
     try {
       await db.deleteUser(req.body.username)
       res.status(200).json({})
@@ -233,7 +234,7 @@ export function setup (app) {
     }
   })
 
-  app.get('_api/admin/metrics-events', async (req, res) => {
+  app.get('/_api/admin/metrics-events', async (req, res) => {
     try {
       const events = await metrics.listEvents(req.query)
       res.status(200).json({events})
@@ -242,7 +243,7 @@ export function setup (app) {
     }
   })
 
-  app.get('_api/admin/metrics-events-counts', async (req, res) => {
+  app.get('/_api/admin/metrics-events-counts', async (req, res) => {
     try {
       const counts = await metrics.countEvents(req.query)
       res.status(200).json({counts})
@@ -251,8 +252,10 @@ export function setup (app) {
     }
   })
 
-  app.get('_api/admin/multiple-metrics-events-counts', async (req, res) => {
+  app.get('/_api/admin/multiple-metrics-events-counts', async (req, res) => {
     try {
+      req.query.events = req.query.events.split(',')
+      req.query.uniqueBys = Object.fromEntries(req.query.uniqueBys.split(',').map(item => item.split(':')))
       const count = await metrics.countMultipleEvents(req.query)
       res.status(200).json({count})
     } catch (e) {
@@ -260,8 +263,10 @@ export function setup (app) {
     }
   })
 
-  app.get('_api/admin/multiple-metrics-events-counts-over-time', async (req, res) => {
+  app.get('/_api/admin/multiple-metrics-events-counts-over-time', async (req, res) => {
     try {
+      req.query.events = req.query.events.split(',')
+      req.query.uniqueBys = Object.fromEntries(req.query.uniqueBys.split(',').map(item => item.split(':')))
       const counts = await metrics.countMultipleEventsOverTime(req.query)
       res.status(200).json({counts})
     } catch (e) {
@@ -269,7 +274,7 @@ export function setup (app) {
     }
   })
 
-  app.get('_api/admin/aggregate-http-hits', async (req, res) => {
+  app.get('/_api/admin/aggregate-http-hits', async (req, res) => {
     try {
       const hits = await metrics.aggregateHttpHits(req.query)
       res.status(200).json({hits})
@@ -278,7 +283,7 @@ export function setup (app) {
     }
   })
 
-  app.get('_api/admin/users-count', async (req, res) => {
+  app.get('/_api/admin/users-count', async (req, res) => {
     try {
       let userRecords = await db.publicServerDb.users.list()
       const count = userRecords.filter(u => u.value.type === 'citizen').length
@@ -288,26 +293,26 @@ export function setup (app) {
     }
   })
 
-  app.get('_api/admin/is-debugger-enabled', (req, res) => {
+  app.get('/_api/admin/is-debugger-enabled', (req, res) => {
     res.status(200).json({isEnabled: debugLog.debugLog.isEnabled()})
   })
   
-  app.post('_api/admin/enable-debugger', (req, res) => {
+  app.post('/_api/admin/enable-debugger', (req, res) => {
     debugLog.debugLog.enable()
     res.status(200).json({})
   })
   
-  app.post('_api/admin/disable-debugger', (req, res) => {
+  app.post('/_api/admin/disable-debugger', (req, res) => {
     debugLog.debugLog.disable()
     res.status(200).json({})
   })
 
-  app.post('_api/admin/clear-debugger-log',  (req, res) => {
+  app.post('/_api/admin/clear-debugger-log',  (req, res) => {
     debugLog.reset()
     res.status(200).json({})
   })
 
-  app.get('_api/admin/debug-log', (req, res) => {
+  app.get('/_api/admin/debug-log', (req, res) => {
     res.status(200).json({log: debugLog.fetchAndClear()})
   })
 }

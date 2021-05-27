@@ -13,7 +13,6 @@ class Debugger extends LitElement {
       entries: {type: Array},
       counts: {type: Array},
       filter: {type: String},
-      showWs: {type: Boolean},
       showHttp: {type: Boolean},
       showDb: {type: Boolean},
       showOther: {type: Boolean}
@@ -31,7 +30,6 @@ class Debugger extends LitElement {
     this.entries = []
     this.counts = {}
     this.filter = ''
-    this.showWs = true
     this.showHttp = true
     this.showDb = true
     this.showOther = true
@@ -40,10 +38,9 @@ class Debugger extends LitElement {
 
   get filteredEntries () {
     return this.entries.filter(entry => {
-      if (!this.showWs && entry.event.startsWith('ws:')) return false
       if (!this.showHttp && entry.event.startsWith('http:')) return false
       if (!this.showDb && entry.event.startsWith('db:')) return false
-      if (!this.showOther && !(entry.event.startsWith('db:') || entry.event.startsWith('ws:') || entry.event.startsWith('http:'))) return false
+      if (!this.showOther && !(entry.event.startsWith('db:') || entry.event.startsWith('http:'))) return false
       if (this.filter) {
         for (let k in entry) {
           if (String(entry[k]).toLowerCase().includes(this.filter)) {
@@ -59,10 +56,9 @@ class Debugger extends LitElement {
   get filteredCounts () {
     let countEntries = Object.entries(this.counts)
     return countEntries.filter(([evt, count]) => {
-      if (!this.showWs && evt.startsWith('ws:')) return false
       if (!this.showHttp && evt.startsWith('http:')) return false
       if (!this.showDb && evt.startsWith('db:')) return false
-      if (!this.showOther && !(evt.startsWith('db:') || evt.startsWith('ws:') || evt.startsWith('http:'))) return false
+      if (!this.showOther && !(evt.startsWith('db:') || evt.startsWith('http:'))) return false
       if (this.filter) {
         if (!evt.toLowerCase().includes(this.filter)) return false
       }
@@ -83,9 +79,9 @@ class Debugger extends LitElement {
 
   async load () {
     await session.setup()
-    this.isEnabled = await session.api.server.isDebuggerEnabled()
+    this.isEnabled = (await session.api.get('admin/is-debugger-enabled')).isEnabled
     if (this.isEnabled) {
-      let newEntries = await session.api.server.fetchAndClearDebugLog()
+      let newEntries = (await session.api.get('admin/debug-log')).log
       newEntries = newEntries.filter(entry => {
         return !DEBUGGER_EVENTS.includes(entry.event)
       })
@@ -133,8 +129,6 @@ class Debugger extends LitElement {
             class="inline-block px-4 py-2 mr-auto rounded cursor-pointer ${this.currentView === 'counts' ? 'bg-pink-50 text-pink-600' : ''} hover:bg-pink-50 hover:text-pink-600"
             @click=${e => this.setCurrentView('counts')}
           >Counts</span>
-          <input id="show-ws" type="checkbox" @click=${this.onToggleShowWs} ?checked=${this.showWs}>
-          <label class="ml-1 mr-3" for="show-ws">WS</label>
           <input id="show-http" type="checkbox" @click=${this.onToggleShowHttp} ?checked=${this.showHttp}>
           <label class="ml-1 mr-3" for="show-http">HTTP</label>
           <input id="show-db" type="checkbox" @click=${this.onToggleShowDb} ?checked=${this.showDb}>
@@ -176,10 +170,6 @@ class Debugger extends LitElement {
     this.load()
   }
 
-  onToggleShowWs () {
-    this.showWs = !this.showWs
-  }
-
   onToggleShowHttp () {
     this.showHttp = !this.showHttp
   }
@@ -194,15 +184,15 @@ class Debugger extends LitElement {
 
   async onToggleDebugger (e) {
     if (this.isEnabled) {
-      await session.api.server.setDebuggerEnabled(false)
+      await session.api.post('admin/disable-debugger')
     } else {
-      await session.api.server.setDebuggerEnabled(true)
+      await session.api.post('admin/enable-debugger')
     }
     this.load()
   }
 
   async onClearLog () {
-    await session.api.server.clearDebuggerLog()
+    await session.api.post('admin/clear-debugger-log')
     this.entries = []
     this.counts = {}
   }

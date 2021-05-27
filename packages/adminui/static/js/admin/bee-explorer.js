@@ -32,7 +32,7 @@ class BeeExplorer extends LitElement {
     try {
       await session.setup()
       console.log(this.dkey)
-      this.entries = await session.api.server.beeShallowList(this.dkey, this.path)
+      this.entries = (await session.api.get('admin/bee-shallow-list', {dkey: this.dkey, path: this.path.join('/')})).rows
       console.log(this.entries)
     } catch (e) {
       console.error(e)

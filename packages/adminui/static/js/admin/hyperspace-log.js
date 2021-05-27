@@ -46,7 +46,7 @@ class HyperspaceLog extends LitElement {
   async load () {
     try {
       await session.setup()
-      let entries = await session.api.server.queryHyperspaceLog({dkey: this.dkey})
+      let entries = (await session.api.get('admin/hyperspace-log', {dkey: this.dkey})).entries
       this.entries = entries.reduce(reduceRelatedEntries, [])
     } catch (e) {
       console.error(e)

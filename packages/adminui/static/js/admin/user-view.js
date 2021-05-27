@@ -30,7 +30,7 @@ class UserView extends LitElement {
 
   async load () {
     await session.setup()
-    this.account = await session.api.server.getAccount(this.username)
+    this.account = await session.api.get('admin/account', {username: this.username})
     console.log(this.account)
   }
 
@@ -40,7 +40,7 @@ class UserView extends LitElement {
     }
     return html`
       <div class="px-3 pt-2 pb-3 mb-0.5 border-b-2 border-pink-600">
-        <a class="cursor-pointer" href="/admin/users">
+        <a class="cursor-pointer" href="/users">
           <span class="fas fa-fw fa-arrow-left"></span>
         </a>
       </div>
@@ -50,7 +50,7 @@ class UserView extends LitElement {
         </div>
       ` : ''}
       <div class="bg-white sm:rounded px-3 pt-4 pb-2">
-        <h2 class="text-4xl font-medium">${this.account.userId}</h2>
+        <h2 class="text-4xl font-medium">${this.account.username}</h2>
         <div class="text-lg text-gray-600 font-medium pb-6">${this.account.type}</div>
         <div>
           <strong>Display Name:</strong>
@@ -81,16 +81,6 @@ class UserView extends LitElement {
         >
           <span class="fas fa-fw fa-database"></span> View database
         </a>
-        ${this.account.type === 'community' ? html`
-          <button
-            class="px-2 py-1 rounded text-gray-600 text-sm hover:bg-red-100 hover:text-red-700"
-            @click=${this.onAddAdmin}
-          ><span class="fas fa-fw fa-user-plus"></span> Add admin</button>
-          <button
-            class="px-2 py-1 rounded text-gray-600 text-sm hover:bg-red-100 hover:text-red-700"
-            @click=${this.onRemoveAdmin}
-          ><span class="fas fa-fw fa-user-minus"></span> Remove admin</button>
-        ` : ''}
         <button
           class="px-2 py-1 rounded text-gray-600 text-sm hover:bg-red-100 hover:text-red-700"
           @click=${this.onClickDeleteUser}
@@ -116,30 +106,6 @@ class UserView extends LitElement {
     } catch (e) {
       this.currentError = e.toString()
     }
-  }
-
-  async onAddAdmin () {
-    this.currentError = undefined
-    let userId = prompt('UserID to add to admins')
-    if (!userId) return
-    try {
-      await session.api.server.addCommunityAdmin(this.account.userId, userId)
-    } catch (e) {
-      this.currentError = e.toString()
-    }
-    await this.load()
-  }
-
-  async onRemoveAdmin () {
-    this.currentError = undefined
-    let userId = prompt('UserID to remove from admins')
-    if (!userId) return
-    try {
-      await session.api.server.removeCommunityAdmin(this.account.userId, userId)
-    } catch (e) {
-      this.currentError = e.toString()
-    }
-    await this.load()
   }
 }
 customElements.define('app-user-view', UserView)

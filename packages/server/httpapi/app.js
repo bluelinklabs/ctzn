@@ -13,6 +13,8 @@ import * as metrics from '../lib/metrics.js'
 import * as cache from '../lib/cache.js'
 
 export function setup (app, config) {
+  console.log('Enabling /_api standard endpoints')
+
   app.get('/_api/table/:username([^\/]{3,})/:schemaNs/:schemaName', async (req, res) => {
     try {
       debugLog.httpCall('table.list', req.ip, req.params, req.query)

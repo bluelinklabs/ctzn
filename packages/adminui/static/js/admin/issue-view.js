@@ -35,7 +35,7 @@ class IssueView extends LitElement {
 
   async load () {
     await session.setup()
-    const issues = await session.api.server.listIssues()
+    const issues = (await session.api.get('admin/issues')).issues
     const issue = issues.find(issue => issue.id === this.id)
     if (issue) this.issue = issue
     console.log(this.issue, this.id, issues)
@@ -137,7 +137,7 @@ class IssueView extends LitElement {
     if (this.isAttemptingRecovery) return
     this.isAttemptingRecovery = true
     this.wasRecoverySuccessful = undefined
-    await session.api.server.recoverIssue(this.id)
+    await session.api.post('admin/recover-issue', {issueId: this.id})
     await new Promise(r => setTimeout(r, 2000)) // give a second to attempt recovery
     await this.load()
     this.isAttemptingRecovery = false
@@ -146,14 +146,14 @@ class IssueView extends LitElement {
 
   async onClickDismiss (e) {
     if (!confirm('Are you sure?')) return
-    await session.api.server.dismissIssue(this.id)
+    await session.api.post('admin/dismiss-issue', {issueId: this.id})
     await this.load()
     this.wasDismissed = true
   }
 
   async onClickDismissAndIgnore (e) {
     if (!confirm('Are you sure?')) return
-    await session.api.server.dismissIssue(this.id, {ignoreFuture: true})
+    await session.api.post('admin/dismiss-issue', {issueId: this.id, opts: {ignoreFuture: true}})
     await this.load()
     this.wasDismissed = true
   }
