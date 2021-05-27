@@ -79,7 +79,7 @@ export class Config {
   }
 
   isUsernameAdmin (username) {
-    return this.serverAdmins.includes(username) || username === 'loopback'
+    return this.serverAdmins.includes(username)
   }
 
   getLocalAuthToken () {

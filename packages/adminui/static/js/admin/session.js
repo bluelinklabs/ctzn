@@ -48,7 +48,7 @@ class AppSession extends LitElement {
     
     this.currentError = undefined
     try {
-      await session.doLogin({
+      await session.api.session.login({
         username: e.currentTarget.username.value,
         password: e.currentTarget.password.value
       })

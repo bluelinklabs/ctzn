@@ -13,8 +13,16 @@ import * as debugLog from '../lib/debug-log.js'
 let _inspectorSession
 let _inspectorTimeout
 
-export function setup (app) {
+export function setup (app, config) {
   console.log('Enabling /_api/admin endpoints')
+
+  app.use('/_api', (req, res, next) => {
+    if (!req.session.auth?.username || !config.isUsernameAdmin(req.session.auth.username)) {
+      res.status(401).json({error: true, message: 'Not authorized'})
+      return
+    }
+    next()
+  })
 
   const stopProfilingCPU = () => new Promise((resolve, reject) => {
     console.log('Stopping CPU profiler')

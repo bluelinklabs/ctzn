@@ -216,7 +216,7 @@ function createAdminServer (config, configDir) {
   })
   appHttpAPI.setup(app, config)
   if (config.debugMode) debugHttpAPI.setup(app)
-  adminHttpAPI.setup(app)
+  adminHttpAPI.setup(app, config)
   app.use('/_api', (req, res) => json404(res, 'Not found'))
   app.get('/', (req, res) => res.render('index', {topnav: 'dashboard'}))
   app.get('/hyperspace', (req, res) => res.render('hyperspace', {topnav: 'hyperspace'}))
