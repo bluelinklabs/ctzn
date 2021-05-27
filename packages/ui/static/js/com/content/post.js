@@ -15,6 +15,7 @@ import * as userIds from '../../lib/user-ids.js'
 import * as contextMenu from '../context-menu.js'
 import * as reactMenu from '../menus/react.js'
 import * as toast from '../toast.js'
+import * as icons from '../icons.js'
 
 export class Post extends LitElement {
   static get properties () {
@@ -203,19 +204,11 @@ export class Post extends LitElement {
             ${this.renderMedia()}
             ${this.noctrls ? '' : html`
               ${this.renderActionsSummary()}
-              <div class="post-actions flex items-center justify-between pt-1 pl-1 pr-12">
+              <div class="post-actions flex items-center justify-between pt-1 pl-1 pr-6 sm:pr-12">
                 ${this.renderRepliesCtrl()}
+                ${this.renderUpvoteCtrl()}
                 ${this.renderReactionsBtn()}
-                <div class="post-action">
-                  <a class="px-1" @click=${this.onClickMenu}>
-                    <span class="fas fa-fw fa-retweet"></span>
-                  </a>
-                </div>
-                <div class="post-action">
-                  <a class="px-1" @click=${this.onClickMenu}>
-                    <span class="far fa-fw fa-share-square"></span>
-                  </a>
-                </div>
+                ${this.renderShareCtrl()}
               </div>
             `}
           </div>
@@ -268,19 +261,11 @@ export class Post extends LitElement {
                 ${this.renderReactions()}
               </div>
             ` : ''}
-            <div class="post-actions flex mt-1.5 items-center justify-between pl-6 pr-24">
+            <div class="post-actions flex mt-1.5 items-center justify-between sm:pl-6 pr-6 sm:pr-24">
               ${this.renderRepliesCtrl()}
+              ${this.renderUpvoteCtrl()}
               ${this.renderReactionsBtn()}
-              <div class="post-action">
-                <a class="px-1" @click=${this.onClickMenu}>
-                  <span class="fas fa-fw fa-retweet"></span>
-                </a>
-              </div>
-              <div class="post-action">
-                <a class="px-1" @click=${this.onClickMenu}>
-                  <span class="far fa-fw fa-share-square"></span>
-                </a>
-              </div>
+              ${this.renderShareCtrl()}
             </div>
           </div>
         </div>
@@ -413,13 +398,35 @@ export class Post extends LitElement {
     `
   }
 
+  renderUpvoteCtrl () {
+    return html`
+      <div class="post-action">
+        <a class="px-1">
+          <span style="position: relative; top: -1px">
+            ${icons.upArrow(21, 21)}
+          </span>
+        </a>
+      </div>
+    `
+  }
+
   renderReactionsBtn () {
     let aCls = `post-action react`
     if (this.isReactionsOpen) aCls += ' is-open'
     return html`
       <a class=${aCls} @click=${this.onClickReactBtn}>
-        <span class="far fa-fw fa-heart"></span>
+        <span class="far fa-fw fa-grin-tears"></span>
       </a>
+    `
+  }
+
+  renderShareCtrl () {
+    return html`
+      <div class="post-action">
+        <a class="px-1" @click=${this.onClickShareMenu}>
+          <span class="far fa-fw fa-share-square"></span>
+        </a>
+      </div>
     `
   }
 
@@ -551,6 +558,32 @@ export class Post extends LitElement {
     this.isReactionsOpen = false
   }
 
+  onClickShareMenu (e) {
+    e.preventDefault()
+    e.stopPropagation()
+    const rect = e.currentTarget.getClientRects()[0]
+    const parentRect = this.getClientRects()[0]
+    let items = [
+      {
+        icon: 'fas fa-fw fa-link',
+        label: 'Copy link',
+        click: () => {
+          writeToClipboard(FULL_POST_URL(this.post))
+          toast.create('Copied to clipboard')
+        }
+      }
+    ]
+    contextMenu.create({
+      parent: this,
+      x: rect.left - parentRect.left + 30,
+      y: 0,
+      right: true,
+      roomy: true,
+      noBorders: true,
+      style: `padding: 4px 0; font-size: 13px`,
+      items
+    })
+  }
 
   onClickMenu (e) {
     e.preventDefault()
