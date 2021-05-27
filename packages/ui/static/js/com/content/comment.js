@@ -1,20 +1,18 @@
 import { LitElement, html } from '../../../vendor/lit/lit.min.js'
 import { unsafeHTML } from '../../../vendor/lit/directives/unsafe-html.js'
-import { repeat } from '../../../vendor/lit/directives/repeat.js'
 import { AVATAR_URL, COMMENT_URL, FULL_COMMENT_URL } from '../../lib/const.js'
 import { writeToClipboard } from '../../lib/clipboard.js'
 import { CommentComposerPopup } from '../popups/comment-composer.js'
-import { ReactionsListPopup } from '../popups/reactions-list.js'
 import * as session from '../../lib/session.js'
 import { emit } from '../../lib/dom.js'
-import { makeSafe, linkify, pluralize, extractSchemaId } from '../../lib/strings.js'
+import { makeSafe, linkify } from '../../lib/strings.js'
 import { relativeDate } from '../../lib/time.js'
 import { emojify } from '../../lib/emojify.js'
 import * as displayNames from '../../lib/display-names.js'
 import * as userIds from '../../lib/user-ids.js'
 import * as contextMenu from '../context-menu.js'
-import * as reactMenu from '../menus/react.js'
 import * as toast from '../toast.js'
+import * as icons from '../icons.js'
 import './comment-composer.js'
 
 export class Comment extends LitElement {
@@ -25,7 +23,6 @@ export class Comment extends LitElement {
       comment: {type: Object},
       renderOpts: {type: Object},
       isReplyOpen: {type: Boolean},
-      isReactionsOpen: {type: Boolean}
     }
   }
 
@@ -39,7 +36,6 @@ export class Comment extends LitElement {
     this.mode = 'default'
     this.renderOpts = {noclick: false}
     this.isReplyOpen = false
-    this.isReactionsOpen = false
 
     // helper state
     this.isMouseDown = false
@@ -74,25 +70,7 @@ export class Comment extends LitElement {
     return 0
   }
 
-  haveIReacted (reaction) {
-    if (!session.isActive()) return
-    return this.comment.reactions?.[reaction]?.includes(session.info.dbKey)
-  }
-
-  getMyReactions () {
-    if (!session.isActive()) return []
-    if (!this.comment.reactions) return []
-    return Object.keys(this.comment.reactions).filter(reaction => {
-      return this.comment.reactions[reaction].includes(session.info.dbKey)
-    })
-  }
-
-  get hasReactions () {
-    return (this.comment.reactions && Object.keys(this.comment.reactions).length > 0)
-  }
-
   async reloadSignals () {
-    this.comment.reactions = (await session.api.view.get('ctzn.network/views/reactions-to', {dbUrl: this.comment.dbUrl}))?.reactions
     this.requestUpdate()
   }
 
@@ -156,15 +134,10 @@ export class Comment extends LitElement {
             </a>
           </div>
           ${this.renderCommentText()}
-          ${this.hasReactions ? html`
-            <div class="pb-1 pl-5">
-              ${this.renderReactions()}
-            </div>
-          ` : ''}
           <div class="comment-actions pl-4">
+            ${this.renderUpvoteButton()}
+            ${this.renderDownvoteButton()}
             ${this.renderRepliesBtn()}
-            ${this.renderReactionsBtn()}
-            ${this.renderActionsSummary()}
             <a
               class="cursor-pointer tooltip-right px-2 py-1 ml-2"
               @click=${this.onClickMenu}
@@ -234,43 +207,24 @@ export class Comment extends LitElement {
     `
   }
 
-  renderReactionsBtn () {
+  renderUpvoteButton () {
     return html`
       <a
-        class="react pl-2 pr-1 mr-2 py-1 cursor-pointer"
-        @click=${this.onClickReactBtn}
+        class="upvote pl-2 pr-1 mr-2 py-1 cursor-pointer"
       >
-        <span class="far fa-fw fa-heart"></span>
+        <span style="position: relative; top: -1px">
+          ${icons.upArrow(16, 16, 45)}
+        </span>
       </a>
     `
   }
 
-  renderReactions () {
-    if (!this.comment.reactions || !Object.keys(this.comment.reactions).length) {
-      return ''
-    }
+  renderDownvoteButton () {
     return html`
-      ${repeat(Object.entries(this.comment.reactions), ([reaction, userIds]) => {
-        const state = this.haveIReacted(reaction) ? 'is-selected' : ''
-        return html`
-          <a
-            class="reaction ${state} inline-block mr-1 px-1.5 py-0.5 mt-1 cursor-pointer"
-            @click=${e => this.onClickReaction(e, reaction)}
-          >
-            ${unsafeHTML(emojify(makeSafe(reaction)))}
-            <sup>${userIds.length}</sup>
-          </a>
-        `
-      })}
-    `
-  }
-
-  renderActionsSummary () {
-    const reactionsCount = this.comment.reactions ? Object.values(this.comment.reactions).reduce((acc, v) => acc + v.length, 0) : 0
-    let reactionsCls = `inline-block ml-1 ${reactionsCount ? 'cursor-pointer hov:hover:underline' : ''}`
-    return html`
-      <a class=${reactionsCls} @click=${reactionsCount ? this.onClickViewReactions : undefined}>
-        ${reactionsCount} ${pluralize(reactionsCount, 'reaction')}
+      <a
+        class="downvote pl-2 pr-1 mr-2 py-1 cursor-pointer"
+      >
+        ${icons.downArrow(16, 16, 45)}
       </a>
     `
   }
@@ -365,45 +319,6 @@ export class Comment extends LitElement {
     }
   }
 
-  onToggleReaction (e) {
-    this.onClickReaction(e, e.detail.reaction)
-  }
-
-  async onClickReaction (e, reaction) {
-    e.preventDefault()
-    e.stopPropagation()
-
-    if (this.haveIReacted(reaction)) {
-      this.comment.reactions[reaction] = this.comment.reactions[reaction].filter(dbKey => dbKey !== session.info.dbKey)
-      this.requestUpdate()
-      await session.api.user.table('ctzn.network/reaction').delete(`${reaction}:${this.comment.dbUrl}`)
-    } else {
-      this.comment.reactions[reaction] = (this.comment.reactions[reaction] || []).concat([session.info.dbKey])
-      this.requestUpdate()
-      await session.api.user.table('ctzn.network/reaction').create({
-        subject: {dbUrl: this.comment.dbUrl, authorId: this.comment.author.dbKey},
-        reaction
-      })
-    }
-    this.reloadSignals()
-  }
-
-  async onClickReactBtn (e) {
-    e.preventDefault()
-    e.stopPropagation()
-    const rect = e.currentTarget.getClientRects()[0]
-    const parentRect = this.getClientRects()[0]
-    this.isReactionsOpen = true
-    await reactMenu.create({
-      parent: this,
-      x: rect.left - parentRect.left,
-      y: 0,
-      reactions: this.comment.reactions,
-      onToggleReaction: e => this.onToggleReaction(e)
-    })
-    this.isReactionsOpen = false
-  }
-
   onClickMenu (e) {
     e.preventDefault()
     e.stopPropagation()
@@ -441,12 +356,6 @@ export class Comment extends LitElement {
       noBorders: true,
       style: `padding: 4px 0; font-size: 13px`,
       items
-    })
-  }
-
-  onClickViewReactions (e) {
-    ReactionsListPopup.create({
-      reactions: this.comment.reactions
     })
   }
 }

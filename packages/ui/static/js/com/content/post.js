@@ -208,7 +208,7 @@ export class Post extends LitElement {
                 ${this.renderRepliesCtrl()}
                 ${this.renderUpvoteCtrl()}
                 ${this.renderReactionsBtn()}
-                ${this.renderShareCtrl()}
+                ${this.renderMenuCtrl()}
               </div>
             `}
           </div>
@@ -261,11 +261,11 @@ export class Post extends LitElement {
                 ${this.renderReactions()}
               </div>
             ` : ''}
-            <div class="post-actions flex mt-1.5 items-center justify-between sm:pl-6 pr-6 sm:pr-24">
+            <div class="post-actions flex mt-1.5 items-center justify-between sm:pl-6 pr-6 sm:pr-16">
               ${this.renderRepliesCtrl()}
               ${this.renderUpvoteCtrl()}
               ${this.renderReactionsBtn()}
-              ${this.renderShareCtrl()}
+              ${this.renderMenuCtrl()}
             </div>
           </div>
         </div>
@@ -425,6 +425,16 @@ export class Post extends LitElement {
       <div class="post-action">
         <a class="px-1" @click=${this.onClickShareMenu}>
           <span class="far fa-fw fa-share-square"></span>
+        </a>
+      </div>
+    `
+  }
+
+  renderMenuCtrl () {
+    return html`
+      <div class="post-action">
+        <a class="px-1" @click=${this.onClickMenu}>
+          <span class="fas fa-fw fa-ellipsis-h"></span>
         </a>
       </div>
     `
@@ -598,10 +608,17 @@ export class Post extends LitElement {
           writeToClipboard(FULL_POST_URL(this.post))
           toast.create('Copied to clipboard')
         }
+      },
+      '-',
+      {
+        icon: 'fas fa-fw fa-arrow-down',
+        label: 'Downvote',
+        click: () => {
+          alert('todo')
+        }
       }
     ]
     if (this.isMyPost) {
-      items.push('-')
       items.push({
         icon: 'fas fa-fw fa-trash',
         label: 'Delete post',
