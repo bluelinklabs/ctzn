@@ -288,25 +288,57 @@ export class Post extends LitElement {
     `
   }
 
-  renderImg (n, item, size) {
-    let url = ''
-    if (item.blobs?.original?.dataUrl) {
-      url = item.blobs.original.dataUrl
-    } else {
-      url = BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, `media${n + 1}Thumb`)
-    }
-    return html`
-      <div
-        class="item-wrapper img-sizing-${size} img-placeholder cursor-pointer"
-        @click=${this.renderOpts?.preview ? undefined : e => this.onClickImage(e, n, item)}
-      >
-        <img
-          class="item box-border object-cover w-full img-sizing-${size}"
-          src="${url}"
-          alt=${item.caption || 'Image'}
+  renderMediaItem (n, item, size) {
+    if (item.type === 'video') {
+      let thumbUrl = ''
+      if (item.blobs?.thumb?.dataUrl) {
+        thumbUrl = item.blobs.thumb.dataUrl
+      } else {
+        thumbUrl = BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, `media${n + 1}Thumb`)
+      }
+      let videoUrl = ''
+      if (item.blobs?.original?.objectUrl) {
+        videoUrl = item.blobs.original.objectUrl
+      } else {
+        videoUrl = BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, `media${n + 1}`)
+      }
+      return html`
+        <div
+          class="item-wrapper img-sizing-${size} img-placeholder cursor-pointer"
+          @click=${this.renderOpts?.preview ? undefined : e => this.onClickImage(e, n, item)}
         >
-      </div>
-    `
+          <video
+            class="item box-border object-cover w-full img-sizing-${size}"
+            playsinline
+            autoplay
+            loop
+            muted
+            poster=${thumbUrl}
+            src=${videoUrl}
+            alt=${item.caption || 'Video'}
+          >
+        </div>
+      `
+    } else if (item.type === 'image') {
+      let url = ''
+      if (item.blobs?.original?.dataUrl) {
+        url = item.blobs.original.dataUrl
+      } else {
+        url = BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, `media${n + 1}Thumb`)
+      }
+      return html`
+        <div
+          class="item-wrapper img-sizing-${size} img-placeholder cursor-pointer"
+          @click=${this.renderOpts?.preview ? undefined : e => this.onClickImage(e, n, item)}
+        >
+          <img
+            class="item box-border object-cover w-full img-sizing-${size}"
+            src="${url}"
+            alt=${item.caption || 'Image'}
+          >
+        </div>
+      `
+    }
   }
 
   renderMedia () {
@@ -318,7 +350,7 @@ export class Post extends LitElement {
       return html`
         <div class="post-media grid grid-post-images mt-1 mb-2">
           ${repeat(media, (item, i) => html`
-            ${this.renderImg(i, item, 'full')}
+            ${this.renderMediaItem(i, item, 'full')}
           `)}
         </div>
       `
@@ -328,11 +360,11 @@ export class Post extends LitElement {
       <div class="post-media flex mt-1 mb-2 ${this.showDefault ? 'sm:px-1' : ''}">
         ${media.length >= 4 ? html`
           <div class="flex-1 flex flex-col pr-0.5">
-            <div class="flex-1 pb-0.5">${this.renderImg(0, media[0], 'small')}</div>
-            <div class="flex-1 pt-0.5">${this.renderImg(2, media[2], 'small')}</div>
+            <div class="flex-1 pb-0.5">${this.renderMediaItem(0, media[0], 'small')}</div>
+            <div class="flex-1 pt-0.5">${this.renderMediaItem(2, media[2], 'small')}</div>
           </div>
           <div class="flex-1 flex flex-col pl-0.5">
-            <div class="flex-1 pb-0.5">${this.renderImg(1, media[1], 'small')}</div>
+            <div class="flex-1 pb-0.5">${this.renderMediaItem(1, media[1], 'small')}</div>
             <div class="flex-1 pt-0.5 relative">
               ${moreImages > 0 ? html`
                 <span
@@ -340,20 +372,20 @@ export class Post extends LitElement {
                   style="left: 50%; top: 50%; transform: translate(-50%, -50%)"
                 >+${moreImages}</span>
               ` : ''}
-              ${this.renderImg(3, media[3], 'small')}
+              ${this.renderMediaItem(3, media[3], 'small')}
             </div>
           </div>
         ` : media.length === 3 ? html`
-          <div class="flex-1 pr-0.5">${this.renderImg(0, media[0], 'big')}</div>
+          <div class="flex-1 pr-0.5">${this.renderMediaItem(0, media[0], 'big')}</div>
           <div class="flex-1 flex flex-col pl-0.5">
-            <div class="flex-1 pb-0.5">${this.renderImg(1, media[1], 'smaller')}</div>
-            <div class="flex-1 pt-0.5">${this.renderImg(2, media[2], 'small')}</div>
+            <div class="flex-1 pb-0.5">${this.renderMediaItem(1, media[1], 'smaller')}</div>
+            <div class="flex-1 pt-0.5">${this.renderMediaItem(2, media[2], 'small')}</div>
           </div>
         ` : media.length === 2 ? html`
-          <div class="flex-1 pr-0.5">${this.renderImg(0, media[0], 'medium')}</div>
-          <div class="flex-1 pl-0.5">${this.renderImg(1, media[1], 'medium')}</div>
+          <div class="flex-1 pr-0.5">${this.renderMediaItem(0, media[0], 'medium')}</div>
+          <div class="flex-1 pl-0.5">${this.renderMediaItem(1, media[1], 'medium')}</div>
         ` : html`
-          <div class="flex-1">${this.renderImg(0, media[0], 'free')}</div>
+          <div class="flex-1">${this.renderMediaItem(0, media[0], 'free')}</div>
         `}
       </div>
     `
@@ -570,8 +602,14 @@ export class Post extends LitElement {
     e.preventDefault()
     e.stopPropagation()
     ViewMediaPopup.create({
-      url: BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, `media${n + 1}`),
-      urls: this.post.value.media.map((item2, n) => BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, `media${n + 1}`))
+      item: {
+        type: item.type,
+        url: BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, `media${n + 1}`)
+      },
+      items: this.post.value.media.map((item2, n) => ({
+        type: item2.type,
+        url: BLOB_URL(this.post.author.dbKey, 'ctzn.network/post', this.post.key, `media${n + 1}`)
+      }))
     })
   }
 }

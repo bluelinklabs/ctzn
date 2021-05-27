@@ -576,7 +576,7 @@ class CtznUser extends LitElement {
 
   onClickAvatar (e) {
     e.preventDefault()
-    ViewMediaPopup.create({url: AVATAR_URL(this.userId)})
+    ViewMediaPopup.create({item: {type: 'image', url: AVATAR_URL(this.userId)}})
   }
 
   async onClickFollow (e) {

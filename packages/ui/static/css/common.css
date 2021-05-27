@@ -453,7 +453,7 @@ app-subnav::-webkit-scrollbar-thumb {
 }
 
 .img-sizing-free {
-  max-height: 300px;
+  max-height: 600px;
   object-fit: cover;
 }
 

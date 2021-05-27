@@ -101,6 +101,9 @@ function createAppServer (config, configDir) {
     window: 60e3
   })
   app.use((req, res, next) => {
+    res.header('Cross-Origin-Opener-Policy', 'same-origin')
+    res.header('Cross-Origin-Embedder-Policy', 'require-corp')
+
     metrics.httpRequest({path: req.url})
     if (!rl.hit(req.ip)) {
       return res.status(429).json({

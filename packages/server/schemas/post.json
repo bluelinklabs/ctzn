@@ -5,17 +5,17 @@
   "type": "json-table",
   "keyTemplate": [{"type": "auto"}],
   "blobs": {
-    "media1": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media1": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "video/mp4"]},
     "media1Thumb": {"maxSize": 256000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
-    "media2": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media2": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "video/mp4"]},
     "media2Thumb": {"maxSize": 256000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
-    "media3": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media3": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "video/mp4"]},
     "media3Thumb": {"maxSize": 256000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
-    "media4": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media4": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "video/mp4"]},
     "media4Thumb": {"maxSize": 256000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
-    "media5": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media5": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "video/mp4"]},
     "media5Thumb": {"maxSize": 256000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
-    "media6": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media6": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "video/mp4"]},
     "media6Thumb": {"maxSize": 256000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]}
   },
   "definition": {
@@ -31,7 +31,12 @@
         "type": "array",
         "items": {
           "type": "object",
+          "required": ["type"],
           "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["image", "video"]
+            },
             "caption": {
               "type": "string"
             }

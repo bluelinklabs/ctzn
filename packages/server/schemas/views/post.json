@@ -53,6 +53,10 @@
             "items": {
               "type": "object",
               "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["image", "video"]
+                },
                 "caption": {
                   "type": "string"
                 }

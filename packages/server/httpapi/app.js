@@ -2,6 +2,7 @@ import pump from 'pump'
 import concat from 'concat-stream'
 import multer from 'multer'
 import bytes from 'bytes'
+import parseRange from 'range-parser'
 import { debugLog } from '../lib/debug-log.js'
 import * as methods from '../methods/index.js'
 import * as dbViews from '../db/views.js'
@@ -57,16 +58,30 @@ export function setup (app, config) {
       const ptr = await table.getBlobPointer(req.params.key, req.params.blobName)
       if (!ptr) throw 'Not found'      
   
+      res.header('Accept-Ranges', 'bytes')
       const etag = `W/block-${ptr.value.start}`
       const mimeType = ptr.value.mimeType
       if (req.headers['if-none-match'] === etag) {
         return res.status(304).end()
       }
-      const {buf} = await table.getBlob(req.params.key, req.params.blobName)
-      res.setHeader('ETag', etag)
+      let {buf} = await table.getBlob(req.params.key, req.params.blobName)
+
+      let ranges = req.headers.range ? parseRange(buf.length, req.headers.range) : undefined
+      let range
+      if (ranges) {
+        range = ranges[0] // only handle first range given
+        // content-length will be set by send()
+        res.header('Content-Range', `bytes ${range.start}-${range.end}/${buf.length}`)
+      } else {
+        res.header('Content-Length', String(buf.length))
+        res.header('Content-Range', `bytes 0-${buf.length}/${buf.length}`)
+      }
+
+      if (!range) res.setHeader('ETag', etag)
       if (mimeType) res.setHeader('Content-Type', mimeType)
-      res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
-      res.status(200).end(buf)
+      res.setHeader('Content-Security-Policy', `default-src 'none'`)
+      if (range) res.status(206).send(buf.slice(range.start, range.end + 1))
+      else res.status(200).end(buf)
     } catch (e) {
       error(res, e, config)
     }
@@ -245,10 +260,10 @@ export function setup (app, config) {
         }
         res.setHeader('ETag', etag)
         if (mimeType) res.setHeader('Content-Type', mimeType)
-        res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
+        res.setHeader('Content-Security-Policy', `default-src 'none'; media-src 'self'; sandbox;`)
         pump(await createStream(), res, () => res.end())
       } else {
-        res.setHeader('Content-Security-Policy', `default-src 'none'; sandbox;`)
+        res.setHeader('Content-Security-Policy', `default-src 'none'; media-src 'self'; sandbox;`)
         res.status(200).json(await dbViews.exec(schemaId, req.session.auth, args))
       }
     } catch (e) {

@@ -5,12 +5,15 @@ import { ViewPostPopup } from '../popups/view-post.js'
 import * as toast from '../toast.js'
 import * as session from '../../lib/session.js'
 import * as images from '../../lib/images.js'
+import * as videos from '../../lib/videos.js'
+import bytes from '../../../vendor/bytes/index.js'
 import '../button.js'
 
 const CHAR_LIMIT = 256
 const THUMB_WIDTH = 640
 const MAX_THUMB_BYTE_SIZE = 256000
 const MAX_ORIGINAL_BYTE_SIZE = 512000
+let idCounter = 0
 
 class PostComposer extends LitElement {
   static get properties () {
@@ -19,7 +22,8 @@ class PostComposer extends LitElement {
       uploadProgress: {type: Number},
       uploadTotal: {type: Number},
       draftText: {type: String, attribute: 'draft-text'},
-      media: {type: Array}
+      media: {type: Array},
+      activeCompressionCount: {type: Number}
     }
   }
 
@@ -31,6 +35,8 @@ class PostComposer extends LitElement {
     this.placeholder = 'What\'s new?'
     this.draftText = ''
     this.media = []
+    this.activeCompressionCount = 0
+    this.activeCompressions = {}
   }
 
   createRenderRoot() {
@@ -73,7 +79,7 @@ class PostComposer extends LitElement {
 
   async triggerImageSelect () {
     await this.requestUpdate()
-    this.querySelector('#image-file-input').click()
+    this.querySelector('#media-file-input').click()
   }
 
   // rendering
@@ -101,35 +107,64 @@ class PostComposer extends LitElement {
         ${this.media.length ? html`
           ${repeat(this.media, (item, index) => item ? html`
             <div class="flex my-3 overflow-hidden rounded bg-gray-50">
-              <div class="flex-1 bg-black">
-                <img
-                  src=${item.blobs.original.dataUrl}
-                  class="block mx-auto"
-                >
-              </div>
-              <div class="flex-1 p-4">
-                <label class="block box-border mb-1 w-full" for="media-caption-${index}">Caption</label>
-                <input
-                  class="block border border-gray-300 box-border mb-1 px-3 py-2 rounded w-full"
-                  id="media-caption-${index}"
-                  placeholder="Optional"
-                >
-                <div class="text-sm px-0.5">
-                  <a class="text-blue-600 cursor-pointer hov:hover:underline" @click=${e => this.onClickRemoveMedia(e, index)}>Remove</a>
+              ${item.error ? html`
+                <div class="error px-3 py-2">${item.error}</div>
+                <div class="error px-3 py-2">
+                  <a class="cursor-pointer hov:hover:underline" @click=${e => this.onClickRemoveMedia(e, index)}><span class="fas fa-times"></span></a>
                 </div>
-              </div>
+              ` : html`
+                <div class="flex-1 bg-black">
+                  ${item.type === 'video' ? html`
+                    <video
+                      autoplay
+                      loop
+                      playsinline
+                      src=${item.blobs.original.dataUrl || item.blobs.original.objectUrl}
+                      class="block mx-auto"
+                    >
+                  ` : html`
+                    <img src=${item.blobs.original.dataUrl} class="block mx-auto">
+                  `}
+                </div>
+                <div class="flex-1 p-4">
+                  <label class="block box-border mb-1 w-full" for="media-caption-${index}">Caption</label>
+                  <input
+                    class="block border border-gray-300 box-border mb-1 px-3 py-2 rounded w-full"
+                    id="media-caption-${index}"
+                    placeholder="Optional"
+                  >
+                  <div class="text-sm px-0.5">
+                    <a class="text-blue-600 cursor-pointer hov:hover:underline" @click=${e => this.onClickRemoveMedia(e, index)}>Remove</a>
+                  </div>
+                  ${item.wasTruncated ? html`
+                    <div class="text-sm pt-1 px-0.5">
+                      Note: your video was shortened due to size limits.
+                    </div>
+                  ` : ''}
+                </div>
+              `}
             </div>
           ` : '')}
         ` : ''}
 
         <input
-          id="image-file-input"
+          id="media-file-input"
           class="hidden"
           type="file"
-          accept=".jpg,.jpeg,.png"
+          accept=".jpg,.jpeg,.png,.gif,.mp4"
           multiple
-          @change=${this.onChooseImageFile}
+          @change=${this.onChooseMediaFile}
         >
+
+        <div class="px-1 my-3 overflow-hidden ${this.activeCompressionCount > 0 ? 'block' : 'hidden'}">
+          <div class="mb-1">Compressing videos, please wait...</div>
+          ${repeat(Object.entries(this.activeCompressions), ([id]) => `compression-progress-${id}`, (([id, progress]) => html`
+            <div
+              class="bg-blue-500"
+              style="height: 2px; width: ${10 + (progress * 90)|0}%; transition: width 0.1s"
+            ></div>
+          `))}
+        </div>
 
         <div class="flex">
           <app-button
@@ -208,22 +243,14 @@ class PostComposer extends LitElement {
   }
 
   onClickAddImage (e) {
-    this.querySelector('#image-file-input').click()
+    this.querySelector('#media-file-input').click()
   }
 
-  onChooseImageFile (e) {
-    Array.from(e.currentTarget.files).forEach(file => {
-      var fr = new FileReader()
-      fr.onload = () => {
-        this.media = this.media.concat({
-          caption: '',
-          blobs: {
-            original: {dataUrl: fr.result}
-          }
-        })
-      }
-      fr.readAsDataURL(file)
-    })
+  async onChooseMediaFile (e) {
+    let files = Array.from(e.currentTarget.files)
+    for (let file of files) {
+      await this.handleMediaFile(file)
+    }
   }
 
   onClickRemoveMedia (e, index) {
@@ -231,16 +258,54 @@ class PostComposer extends LitElement {
     this.requestUpdate()
   }
 
-  onGlobalPaste (e) {
+  async onGlobalPaste (e) {
     if (!e.clipboardData.files.length) return
     e.preventDefault()
     for (let file of Array.from(e.clipboardData.files)) {
-      if (!/\.(png|jpg|jpeg|gif)$/.test(file.name)) {
+      if (!/\.(png|jpg|jpeg|gif|mp4)$/i.test(file.name)) {
         continue
       }
+      await this.handleMediaFile(file)
+    }
+  }
+
+  async handleMediaFile (file) {
+    if (/\.(mov|mp4)$/i.test(file.name)) {
+      const id = ++idCounter
+      this.activeCompressionCount = this.activeCompressionCount + 1
+      this.activeCompressions[id] = 0
+      const res = await videos.compressAndGetThumb(file, MAX_ORIGINAL_BYTE_SIZE, progress => {
+        this.activeCompressions[id] = progress
+        this.requestUpdate()
+      })
+      this.activeCompressionCount = this.activeCompressionCount - 1
+      delete this.activeCompressions[id]
+
+      if (res.videoBlob.size > MAX_ORIGINAL_BYTE_SIZE) {
+        this.media = this.media.concat({
+          error: `${file.name} is still too big after compression (${bytes(res.videoBlob.size)}), must be smaller than ${bytes(MAX_ORIGINAL_BYTE_SIZE)}`
+        })
+      } else {
+        this.media = this.media.concat({
+          type: 'video',
+          caption: '',
+          wasTruncated: res.wasTruncated,
+          blobs: {
+            thumb: {
+              dataUrl: res.thumbDataUrl
+            },
+            original: {
+              blob: res.videoBlob,
+              objectUrl: res.videoBlobUrl
+            }
+          }
+        })
+      }
+    } else {
       var fr = new FileReader()
       fr.onload = () => {
         this.media = this.media.concat({
+          type: 'image',
           caption: '',
           blobs: {
             original: {dataUrl: fr.result}
@@ -249,7 +314,6 @@ class PostComposer extends LitElement {
       }
       fr.readAsDataURL(file)
     }
-    // console.log(e.clipboardData.files)
   }
 
   onCancel (e) {
@@ -279,17 +343,27 @@ class PostComposer extends LitElement {
       for (let i = 0; i < (media?.length || 0); i++) {
         const item = media[i]
 
-        let thumbDataUrl = await images.resizeImage(item.blobs.original.dataUrl, THUMB_WIDTH)
-        thumbDataUrl = await images.ensureImageByteSize(thumbDataUrl, MAX_THUMB_BYTE_SIZE)
-        blobs[`media${i + 1}Thumb`] = parseDataUrl(thumbDataUrl)
-        
-        let originalMimeType = images.parseDataUrl(item.blobs.original.dataUrl).mimeType
-        let originalDataUrl = await images.ensureImageByteSize(item.blobs.original.dataUrl, MAX_ORIGINAL_BYTE_SIZE, originalMimeType)
-        blobs[`media${i + 1}`] = parseDataUrl(originalDataUrl)
+        if (item.type === 'video') {
+          let thumbDataUrl = await images.ensureImageByteSize(item.blobs.thumb.dataUrl, MAX_THUMB_BYTE_SIZE)
+          blobs[`media${i + 1}Thumb`] = parseDataUrl(thumbDataUrl)
+          
+          blobs[`media${i + 1}`] = {
+            mimeType: item.blobs.original.blob.type,
+            blob: item.blobs.original.blob
+          }
+        } else {
+          let thumbDataUrl = await images.resizeImage(item.blobs.original.dataUrl, THUMB_WIDTH)
+          thumbDataUrl = await images.ensureImageByteSize(thumbDataUrl, MAX_THUMB_BYTE_SIZE)
+          blobs[`media${i + 1}Thumb`] = parseDataUrl(thumbDataUrl)
+          
+          let originalMimeType = images.parseDataUrl(item.blobs.original.dataUrl).mimeType
+          let originalDataUrl = await images.ensureImageByteSize(item.blobs.original.dataUrl, MAX_ORIGINAL_BYTE_SIZE, originalMimeType)
+          blobs[`media${i + 1}`] = parseDataUrl(originalDataUrl)
+        }
       }
       res = await session.api.user.table('ctzn.network/post').createWithBlobs({
         text,
-        media: media?.length ? media.map(item => ({caption: item.caption})) : undefined
+        media: media?.length ? media.map(item => ({type: item.type, caption: item.caption})) : undefined
       }, blobs)
     } catch (e) {
       this.isProcessing = false

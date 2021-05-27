@@ -166,7 +166,11 @@ export function createApi ({origin, fetch, arrayBufferToBuffer, Blob, FormData})
           value: new Blob([JSON.stringify(value)], {type: 'application/json'})
         }
         for (let k in blobs) {
-          parts[k] = new Blob([await base64ToBufferAsync(blobs[k].base64buf)], {type: blobs[k].mimeType})
+          if (blobs[k].base64buf) {
+            parts[k] = new Blob([await base64ToBufferAsync(blobs[k].base64buf)], {type: blobs[k].mimeType})
+          } else if (blobs[k].blob) {
+            parts[k] = blobs[k].blob
+          }
         }
         return api.postMultipart(`table/${dbId}/${schemaId}`, parts)
       },

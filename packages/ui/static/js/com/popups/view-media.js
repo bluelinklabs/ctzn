@@ -9,14 +9,14 @@ import * as gestures from '../../lib/gestures.js'
 export class ViewMediaPopup extends BasePopup {
   static get properties () {
     return {
-      url: {type: String}
+      item: {type: Object}
     }
   }
 
   constructor (opts) {
     super()
-    this.url = opts.url
-    this.urls = opts.urls
+    this.item = opts.item
+    this.items = opts.items
     this.oldGestures = gestures.setCurrentNav(dir => this.move(dir))
     document.body.classList.add('overflow-hidden')
   }
@@ -29,8 +29,8 @@ export class ViewMediaPopup extends BasePopup {
   }
 
   get currentIndex () {
-    if (!this.urls) return 1
-    return this.urls.indexOf(this.url) + 1
+    if (!this.items) return 1
+    return this.items.findIndex(item => this.item.url === item.url) + 1
   }
 
   get isLeftMost () {
@@ -38,19 +38,19 @@ export class ViewMediaPopup extends BasePopup {
   }
 
   get isRightMost () {
-    return !this.urls || this.currentIndex === this.urls.length
+    return !this.items || this.currentIndex === this.items.length
   }
 
   move (dir) {
-    if (!this.urls) return
-    let current = this.urls.indexOf(this.url)
+    if (!this.items) return
+    let current = this.items.findIndex(item => this.item.url === item.url)
     if (dir === -1) {
       if (current > 0) {
-        this.url = this.urls[current - 1]
+        this.item = this.items[current - 1]
       }
     } else if (dir === 1) {
-      if (current < this.urls.length - 1) {
-        this.url = this.urls[current + 1]
+      if (current < this.items.length - 1) {
+        this.item = this.items[current + 1]
       }
     }
   }
@@ -101,7 +101,7 @@ export class ViewMediaPopup extends BasePopup {
             <div class="block sm:hidden text-white text-3xl px-10 cursor-pointer ${this.isLeftMost ? 'opacity-20' : ''}" @click=${e => this.onClickDir(e, -1)}>
               <span class="fas fa-angle-left"></span>
             </div>
-            <div class="text-white text-lg">${this.currentIndex} / ${this.urls?.length || 1}</div>
+            <div class="text-white text-lg">${this.currentIndex} / ${this.items?.urls?.length || 1}</div>
             <div class="block sm:hidden text-white text-3xl px-10 cursor-pointer ${this.isRightMost ? 'opacity-20' : ''}" @click=${e => this.onClickDir(e, 1)}>
               <span class="fas fa-angle-right"></span>
             </div>
@@ -110,7 +110,11 @@ export class ViewMediaPopup extends BasePopup {
             <div class="hidden sm:block text-white text-3xl px-10 cursor-pointer ${this.isLeftMost ? 'opacity-20' : ''}" @click=${e => this.onClickDir(e, -1)}>
               <span class="fas fa-angle-left"></span>
             </div>
-            <img class="block border border-white shadow-lg" src=${this.url} style="max-width: 90vw;">
+            ${this.item.type === 'image' ? html`
+              <img class="block border border-white shadow-lg" src=${this.item.url} style="max-width: 90vw;">
+            ` : this.item.type === 'video' ? html`
+              <video autoplay playsinline muted loop class="block border border-white shadow-lg" src=${this.item.url} style="max-width: 90vw;">
+            `: ''}
             <div class="hidden sm:block text-white text-3xl px-10 cursor-pointer ${this.isRightMost ? 'opacity-20' : ''}" @click=${e => this.onClickDir(e, 1)}>
               <span class="fas fa-angle-right"></span>
             </div>

@@ -163,7 +163,8 @@ All methods are async unless specified otherwise.
 - `schemaId` String.
 - `value` Object.
 - `blobs` Object. A map of blobnames to objects with the following attributes:
-  - `base64buf` String.
+  - `base64buf` Optional String. Must specify this or `blob`.
+  - `blob` Optional Blob. Must specify this or `base64buf`.
   - `mimeType` String.
 - Returns an object.
 
