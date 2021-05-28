@@ -13,16 +13,14 @@ import * as cache from '../lib/cache.js'
 import { debugLog } from '../lib/debug-log.js'
 
 export async function getPost (db, key, authorDbId, auth = undefined) {
-  console.log('fetching post')
-  const postEntry = await db.posts.get(key)
-  console.log('fetched post')
+  const postEntry = await db.getTable('ctzn.network/post').get(key)
   if (!postEntry) {
     throw new Error('Post not found')
   }
   if (postEntry.value.source?.dbUrl) {
     // TODO verify source authenticity
     postEntry.dbUrl = postEntry.value.source.dbUrl
-    postEntry.author = await fetchAuthor(hyperUrlToKeyStr(postEntry.value.source.dbUrl), authorsCache)
+    postEntry.author = await fetchAuthor(hyperUrlToKeyStr(postEntry.value.source.dbUrl))
   } else {
     postEntry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/post', postEntry.key)
     postEntry.author = await fetchAuthor(db.dbKey)

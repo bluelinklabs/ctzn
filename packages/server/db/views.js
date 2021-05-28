@@ -105,7 +105,6 @@ export function setup () {
   })
 
   define('ctzn.network/views/post', async (auth, {dbId, postKey, dbUrl}) => {
-    console.log('getPost view')
     if (dbUrl) {
       let urlp = parseEntryUrl(dbUrl)
       if (urlp.schemaId !== 'ctzn.network/post') {

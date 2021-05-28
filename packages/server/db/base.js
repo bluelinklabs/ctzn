@@ -19,6 +19,7 @@ import { DbIndexingIssue } from '../lib/issues/db-indexing.js'
 const FIRST_HYPERBEE_BLOCK = 2
 const READ_TIMEOUT = 10e3
 const BACKGROUND_INDEXING_DELAY = 5e3 // how much time is allowed to pass before globally indexing an update
+const BLOBS_RETRY_SETUP_INTERVAL = 5e3
 const BLOB_CHUNK_SIZE = bytes('64kb')
 const KEEP_IN_MEMORY_TTL = 15e3
 
@@ -57,12 +58,12 @@ export class BaseHyperbeeDB extends EventEmitter {
     this.key = key || null
     this.dbKey = this.key?.toString('hex')
     this.bee = null
-    this.beeInfo = {writable: undefined, discoveryKey: undefined}
+    this.beeInfo = {writable: false, discoveryKey: undefined}
     this.blobs = new Blobs(this, {isPrivate})
     this.tables = {}
     this.indexers = []
     this.lastAccess = 0
-    this.lock = (id = '') => lock(`${this.key?.toString('hex') || 'newdb'}:${id}`)
+    this.lock = (id = '') => lock(`${this.dbKey}:${id}`)
   }
 
   get isInMemory () {
@@ -99,7 +100,7 @@ export class BaseHyperbeeDB extends EventEmitter {
 
   async setup () {
     debugLog.dbCall('setup', this._ident)
-    const release = await this.lock('setup') // lock to handle multiple setup() calls
+    const release = await this.lock('setupteardown') // lock to handle multiple setup() calls
     try {
       if (this.bee) {
         return // already loaded
@@ -126,36 +127,24 @@ export class BaseHyperbeeDB extends EventEmitter {
       }
       hyperspaceLog.loadBee(this.discoveryKey.toString('hex'))
       hyperspaceLog.trackBee(this.bee.feed)
-
-      const desc = await this.bee.get('_db', {timeout: READ_TIMEOUT})
-      debugLog.dbCall('bee.get', this._ident, undefined, '_db')
-      if (desc) {
-        dbDescription.assert(desc.value)
-        this.desc = desc.value
-      } else {
-        this.desc = {
-          blobsFeedKey: null
-        }
-      }
+      await this.loadDesc()
     } finally {
       release()
     }
   }
 
   async teardown ({unswarm} = {unswarm: false}) {
-    const release = await this.lock('teardown') // lock to handle multiple teardown() calls
+    const release = await this.lock('setupteardown') // lock to handle multiple teardown() calls
     debugLog.dbCall('teardown', this._ident)
     try {
       if (!this.isInMemory) return
-      if (this.blobs) await this.blobs.teardown({unswarm})
-      for (let schemaId in this.tables) {
-        this.tables[schemaId].teardown()
-      }
-      if (!this.isPrivate && unswarm) {
-        client.network.configure(this.bee.feed, {announce: false, lookup: false})
-      }
-      await this.bee.feed.close()
+      const bee = this.bee
       this.bee = undefined
+      if (this.blobs) await this.blobs.teardown({unswarm})
+      if (!this.isPrivate && unswarm) {
+        client.network.configure(bee.feed, {announce: false, lookup: false})
+      }
+      await bee.feed.close()
     } finally {
       release()
     }
@@ -165,6 +154,20 @@ export class BaseHyperbeeDB extends EventEmitter {
     this.lastAccess = Date.now()
     if (!this.isInMemory) {
       await this.setup()
+    }
+  }
+
+  async loadDesc () {
+    debugLog.dbCall('bee.get', this._ident, undefined, '_db')
+    const desc = await this.bee.get('_db', {timeout: READ_TIMEOUT})
+    if (desc) {
+      dbDescription.assert(desc.value)
+      this.desc = desc.value
+    } else {
+      this.desc = {
+        didFailLoad: true,
+        blobsFeedKey: null
+      }
     }
   }
 
@@ -368,15 +371,20 @@ class Blobs {
       return // already setup
     }
     debugLog.dbCall('setup', this.db._ident, 'blobs')
-    if (!this.db.desc.blobsFeedKey) {
-      this.feed = client.corestore().get(null)
-      await this.feed.ready()
-      debugLog.dbCall('feed.ready', this.db._ident, 'blobs')
-      this.feedInfo = {writable: this.feed.writable, key: this.feed.key, discoveryKey: this.feed.discoveryKey}
-      await this.db.updateDesc({
-        blobsFeedKey: this.feed.key.toString('hex')
-      })
-      hyperspaceLog.createCore(this.discoveryKey.toString('hex'))
+    if (this.db.desc.didFailLoad && !this.writable) {
+      console.log('Failed to load database description for external database', this.db._ident, '- periodically retrying')
+      return this.periodicallyRetrySetup()
+    } else if (!this.db.desc.blobsFeedKey) {
+      if (this.db.writable) {
+        this.feed = client.corestore().get(null)
+        await this.feed.ready()
+        debugLog.dbCall('feed.ready', this.db._ident, 'blobs')
+        this.feedInfo = {writable: this.feed.writable, key: this.feed.key, discoveryKey: this.feed.discoveryKey}
+        await this.db.updateDesc({
+          blobsFeedKey: this.feed.key.toString('hex')
+        })
+        hyperspaceLog.createCore(this.discoveryKey.toString('hex'))
+      }
     } else {
       this.feed = client.corestore().get(Buffer.from(this.db.desc.blobsFeedKey, 'hex'))
       await this.feed.ready()
@@ -388,6 +396,18 @@ class Blobs {
     if (!this.isPrivate) {
       client.replicate(this.feed)
     }
+  }
+
+  async periodicallyRetrySetup () {
+    // this function is called when a remote bee fails to load a db description
+    if (!this.db.isInMemory) return
+    await this.db.loadDesc()
+    if (this.db.desc && !this.db.desc.didFailLoad) {
+      console.log('Resolved missing database description for external database', this.db._ident)
+      await this.setup()
+      return
+    }
+    setTimeout(() => this.periodicallyRetrySetup(), BLOBS_RETRY_SETUP_INTERVAL)
   }
 
   async teardown ({unswarm} = {unswarm: false}) {
