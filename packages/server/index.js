@@ -51,12 +51,12 @@ export async function start (opts) {
   }
   setOrigin(`http://${config.domain || 'localhost'}:${config.port}`)
 
-  const appServer = createAppServer(config, opts.configDir)
-  const adminServer = createAdminServer(config, opts.configDir)
-
   await email.setup(config)
   await db.setup(config)
   await methods.setup(config)
+  
+  const appServer = createAppServer(config, opts.configDir)
+  const adminServer = createAdminServer(config, opts.configDir)
 
   process.on('SIGINT', close)
   process.on('SIGTERM', close)

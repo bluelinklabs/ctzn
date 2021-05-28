@@ -41,7 +41,7 @@ export function setup () {
   define('ctzn.network/views/avatar', async (auth, {dbId}) => {
     let userDb
     try {
-      userDb = db.publicDbs.get(dbId)
+      userDb = db.getDb(dbId)
       if (!userDb) throw 'Not found'
       const table = userDb.getTable('ctzn.network/profile')
       
@@ -105,6 +105,7 @@ export function setup () {
   })
 
   define('ctzn.network/views/post', async (auth, {dbId, postKey, dbUrl}) => {
+    console.log('getPost view')
     if (dbUrl) {
       let urlp = parseEntryUrl(dbUrl)
       if (urlp.schemaId !== 'ctzn.network/post') {
@@ -190,7 +191,7 @@ function getListOpts (listOpts = {}) {
 }
 
 function getDb (dbId) {
-  const publicDb = db.publicDbs.get(dbId)
+  const publicDb = db.getDb(dbId)
   if (!publicDb) throw new Error('User database not found')
   return publicDb
 }

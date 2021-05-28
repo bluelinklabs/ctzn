@@ -2,7 +2,7 @@ import os from 'os'
 import path from 'path'
 import inspector from 'inspector'
 import { promises as fsp } from 'fs'
-import * as db from '../db/index.js'
+import * as dbs from '../db/index.js'
 import { log as hyperspaceLog } from '../db/hyperspace.js'
 import { beeShallowList } from '../db/util.js'
 import * as diskusage from '../db/diskusage-tracker.js'
@@ -90,7 +90,7 @@ export function setup (app, config) {
   }
 
   app.get('/_api/admin/database-info', async (req, res) => {
-    const thisDb = db.getDbByDkey(req.query.dkey)
+    const thisDb = dbs.getDbByDkey(req.query.dkey)
     if (!thisDb) return res.status(404).json({error: true, message: 'Database not found'})
     try {
       const info = await getDbInfo(thisDb, true)
@@ -102,7 +102,7 @@ export function setup (app, config) {
 
   app.get('/_api/admin/databases', async (req, res) => {
     try {
-      const dbSet = new Set(Array.from(db.publicDbs.values()).concat(Array.from(db.privateDbs.values())))
+      const dbSet = new Set(Array.from(dbs.publicDbs.values()).concat(Array.from(dbs.privateDbs.values())))
       const databases = await Promise.all(([...dbSet]).map(db => getDbInfo(db)))
       res.status(200).json({databases})
     } catch (e) {
@@ -111,7 +111,7 @@ export function setup (app, config) {
   })
 
   app.get('/_api/admin/bee-shallow-list', async (req, res) => {
-    const thisDb = db.getDbByDkey(req.query.dkey)
+    const thisDb = dbs.getDbByDkey(req.query.dkey)
     if (!thisDb) return res.status(404).json({error: true, message: 'Database not found'})
     try {
       await thisDb.touch()
@@ -142,9 +142,9 @@ export function setup (app, config) {
   })
 
   app.post('/_api/admin/rebuild-database-indexes', async (req, res) => {
-    let targetDb = db.publicDbs.get(req.body.dbKey)
-    if (!targetDb && req.body.dbKey === db.publicServerDb.dbKey) {
-      targetDb = db.publicServerDb
+    let targetDb = dbs.publicDbs.get(req.body.dbKey)
+    if (!targetDb && req.body.dbKey === dbs.publicServerDb.dbKey) {
+      targetDb = dbs.publicServerDb
     }
     if (!targetDb) {
       console.error('Unable to rebuild indexes for', req.body.dbKey, '- database not found')
@@ -197,10 +197,10 @@ export function setup (app, config) {
 
   app.get('/_api/admin/accounts', async (req, res) => {
     try {
-      const userRecords = await db.publicServerDb.users.list()
+      const userRecords = await dbs.publicServerDb.users.list()
       const fullUserRecords = await Promise.all(userRecords.map(async userRecord => {
         if (!userRecord) return {}
-        const publicDb = db.publicDbs.get(userRecord.key)
+        const publicDb = dbs.publicDbs.get(userRecord.key)
         const profile = publicDb ? await publicDb.profile.get('self') : undefined
         return {
           dbKey: publicDb?.key?.toString('hex'),
@@ -218,8 +218,8 @@ export function setup (app, config) {
 
   app.get('/_api/admin/account', async (req, res) => {
     try {
-      let userRecord = await db.publicServerDb.users.get(req.query.username)
-      const publicDb = db.publicDbs.get(userRecord.key)
+      let userRecord = await dbs.publicServerDb.users.get(req.query.username)
+      const publicDb = dbs.publicDbs.get(userRecord.key)
       const profile = publicDb ? await publicDb.profile.get('self') : undefined
       res.status(200).json({
         dbKey: publicDb.key.toString('hex'),
@@ -235,7 +235,7 @@ export function setup (app, config) {
 
   app.post('/_api/admin/remove-user', async (req, res) => {
     try {
-      await db.deleteUser(req.body.username)
+      await dbs.deleteUser(req.body.username)
       res.status(200).json({})
     } catch (e) {
       res.status(500).json({error: true, message: e.message || e.toString()})
@@ -293,7 +293,7 @@ export function setup (app, config) {
 
   app.get('/_api/admin/users-count', async (req, res) => {
     try {
-      let userRecords = await db.publicServerDb.users.list()
+      let userRecords = await dbs.publicServerDb.users.list()
       const count = userRecords.filter(u => u.value.type === 'citizen').length
       res.status(200).json({count})
     } catch (e) {

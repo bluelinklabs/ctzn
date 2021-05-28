@@ -18,7 +18,6 @@ import { DbIndexingIssue } from '../lib/issues/db-indexing.js'
 
 const FIRST_HYPERBEE_BLOCK = 2
 const READ_TIMEOUT = 10e3
-const UPDATE_CHECK_INTERVAL = 60e3
 const BACKGROUND_INDEXING_DELAY = 5e3 // how much time is allowed to pass before globally indexing an update
 const BLOB_CHUNK_SIZE = bytes('64kb')
 const KEEP_IN_MEMORY_TTL = 15e3
@@ -118,10 +117,6 @@ export class BaseHyperbeeDB extends EventEmitter {
         client.replicate(this.bee.feed)
       }
 
-      if (!this.bee.feed.writable) {
-        this._eagerUpdate()
-      }
-
       if (!this.key) {
         hyperspaceLog.createBee(this.discoveryKey.toString('hex'))
         this.key = this.bee.feed.key
@@ -192,7 +187,7 @@ export class BaseHyperbeeDB extends EventEmitter {
 
   async whenSynced () {
     debugLog.dbCall('whenSynced', this._ident)
-    if (!this.bee.feed.writable) {
+    if (!this.bee?.feed?.writable) {
       await this.touch()
       const pend = perf.measure('whenSynced')
       debugLog.dbCall('feed.update', this._ident)
@@ -203,17 +198,9 @@ export class BaseHyperbeeDB extends EventEmitter {
 
   watch (_cb) {
     debugLog.dbCall('watch', this._ident)
-    if (!this.isInMemory) return
+    if (!this.isInMemory || !this.writable) return
     const cb = _debounce(() => _cb(this), BACKGROUND_INDEXING_DELAY, {trailing: true})
     this.bee.feed.on('append', () => cb())
-  }
-
-  async _eagerUpdate () {
-    if (this.bee) {
-      debugLog.dbCall('feed.update', this._ident)
-      await this.bee.feed.update({ifAvailable: false}).catch(e => undefined)
-    }
-    setTimeout(() => this._eagerUpdate(), UPDATE_CHECK_INTERVAL).unref()
   }
 
   getTable (schemaId) {
@@ -286,6 +273,9 @@ export class BaseHyperbeeDB extends EventEmitter {
         const indexState = indexStates[i]
 
         await changedDb.touch()
+        if (!changedDb.writable) {
+          await changedDb.bee.feed.update({ifAvailable: true}).catch(e => undefined)
+        }
 
         let start = indexState?.value?.subject?.lastIndexedSeq || FIRST_HYPERBEE_BLOCK
         if (start === changedDb.bee.version) continue

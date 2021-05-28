@@ -1,15 +1,15 @@
 import ip from 'ip'
 import { promises as dns } from 'dns'
 import { domainToWsEndpoint, HYPER_KEY } from './strings.js'
-import { publicDbs, publicServerDb } from '../db/index.js'
+import * as dbs from '../db/index.js'
 import { ConfigurationError } from './errors.js'
 
 export function resolveDbId (dbId) {
-  if (dbId === 'server' || dbId === publicServerDb.dbKey) {
-    return {username: 'server', dbKey: publicServerDb.dbKey}
+  if (dbId === 'server' || dbId === dbs.publicServerDb.dbKey) {
+    return {username: 'server', dbKey: dbs.publicServerDb.dbKey}
   }
-  if (publicDbs.get(dbId)) {
-    return {username: publicDbs.get(dbId).username, dbKey: publicDbs.get(dbId).dbKey}
+  if (dbs.getDb(dbId)) {
+    return {username: dbs.getDb(dbId).username, dbKey: dbs.getDb(dbId).dbKey}
   }
   if (HYPER_KEY.test(dbId)) {
     return {username: undefined, dbKey: dbId}

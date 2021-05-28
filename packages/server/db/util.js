@@ -1,5 +1,5 @@
 import lexint from 'lexicographic-integer-encoding'
-import { publicServerDb, publicDbs, loadExternalDb } from '../db/index.js'
+import { publicServerDb, getDb, loadExternalDb } from '../db/index.js'
 import { parseEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
 import { resolveDbId } from '../lib/network.js'
 import { debugLog } from '../lib/debug-log.js'
@@ -14,7 +14,7 @@ export async function dbGet (dbUrl, opts = undefined) {
   const wait = typeof opts?.wait === 'boolean' ? opts.wait : true
   const urlp = new URL(dbUrl)
   const dbKey = urlp.hostname
-  let db = publicDbs.get(dbKey)
+  let db = getDb(dbKey)
   if (!db) {
     if (opts?.noLoadExternal) {
       throw new Error(`Database "${dbKey}" not found`)
@@ -43,7 +43,7 @@ export async function blobGet (dbKey, blobName, opts = undefined) {
     opts = {encoding: opts}
   }
   if (!blobName) throw new Error('Must specify a blob name')
-  let db = publicDbs.get(dbKey)
+  let db = getDb(dbKey)
   if (!db) {
     if (opts?.noLoadExternal) {
       throw new Error(`Database "${dbKey}" not found`)
@@ -58,7 +58,7 @@ export async function fetchAuthor (dbId, cache = undefined) {
   if (cache && cache[dbKey]) {
     return cache[dbKey]
   } else {
-    let publicDb = publicDbs.get(dbKey)
+    let publicDb = getDb(dbKey)
     let profileEntry
     if (publicDb) profileEntry = await publicDb.profile.get('self')
     let author = {
@@ -154,7 +154,7 @@ async function fetchNotification (notificationEntry) {
   const itemUrlp = parseEntryUrl(notificationEntry.value.itemUrl)
   const dbKey = itemUrlp.dbKey
   if (!dbKey) return undefined
-  const db = publicDbs.get(dbKey)
+  const db = getDb(dbKey)
   let item
   if (db) {
     try {

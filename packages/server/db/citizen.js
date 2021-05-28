@@ -2,7 +2,7 @@ import { BaseHyperbeeDB } from './base.js'
 
 export class PublicCitizenDB extends BaseHyperbeeDB {
   constructor (key, username) {
-    super(`public:${username || key}`, key)
+    super(`public:${username || key.toString('hex').slice(0, 8)}`, key)
     this.username = username
   }
 
@@ -26,7 +26,7 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
 
 export class PrivateCitizenDB extends BaseHyperbeeDB {
   constructor (key, username, publicServerDb, publicDb) {
-    super(`private:${username || key}`, key, {isPrivate: true})
+    super(`private:${username || key.toString('hex').slice(0, 8)}`, key, {isPrivate: true})
     this.username = username
     this.publicServerDb = publicServerDb
     this.publicDb = publicDb

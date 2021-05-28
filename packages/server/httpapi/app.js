@@ -6,7 +6,7 @@ import parseRange from 'range-parser'
 import { debugLog } from '../lib/debug-log.js'
 import * as methods from '../methods/index.js'
 import * as dbViews from '../db/views.js'
-import { publicServerDb, publicDbs, onDatabaseChange } from '../db/index.js'
+import * as dbs from '../db/index.js'
 import { constructEntryUrl } from '../lib/strings.js'
 import * as errors from '../lib/errors.js'
 import * as metrics from '../lib/metrics.js'
@@ -134,7 +134,7 @@ export function setup (app, config) {
           await table.putBlob(key, file.fieldname, file.buffer, {mimeType: file.mimetype})
         }
       }
-      await onDatabaseChange(db)
+      await dbs.onDatabaseChange(db)
 
       if (schemaId === 'ctzn.network/post') {
         metrics.postCreated({user: req.session.auth.username})
@@ -171,7 +171,7 @@ export function setup (app, config) {
         }
         
         await table.put(key, value)
-        await onDatabaseChange(db)
+        await dbs.onDatabaseChange(db)
         cache.onDatabaseChange(req.session.auth.username, schemaId)
 
         const dbUrl = constructEntryUrl(db.url, schemaId, key)
@@ -221,7 +221,7 @@ export function setup (app, config) {
       const release = await table.lock(key)
       try {
         await table.del(key)
-        await onDatabaseChange(db)
+        await dbs.onDatabaseChange(db)
         cache.onDatabaseChange(req.session.auth.username, schemaId)
         res.status(200).json({})
       } finally {
@@ -324,10 +324,10 @@ function getListOpts (req) {
 }
 
 function getDb (dbId) {
-  if (dbId === 'server' || dbId === publicServerDb.dbKey) {
-    return publicServerDb
+  if (dbId === 'server' || dbId === dbs.publicServerDb.dbKey) {
+    return dbs.publicServerDb
   }
-  const publicDb = publicDbs.get(dbId)
+  const publicDb = dbs.getDb(dbId)
   if (!publicDb) throw new Error('User database not found')
   return publicDb
 }

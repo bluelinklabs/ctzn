@@ -9,7 +9,7 @@ import { PublicCitizenDB, PrivateCitizenDB } from './citizen.js'
 import * as diskusageTracker from './diskusage-tracker.js'
 import * as schemas from '../lib/schemas.js'
 import * as views from './views.js'
-import { RESERVED_USERNAMES, HYPER_KEY, hyperUrlToKey } from '../lib/strings.js'
+import { RESERVED_USERNAMES, HYPER_KEY, hyperUrlToKey, isHyperKey } from '../lib/strings.js'
 import { hashPassword } from '../lib/crypto.js'
 import * as perf from '../lib/perf.js'
 import * as issues from '../lib/issues.js'
@@ -56,6 +56,7 @@ export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simu
   await loadOrUnloadExternalUserDbsDebounced()
   /* dont await */ catchupAllIndexes()
 
+  scheduleIndexExternalDb()
   const sweepInterval = setInterval(sweepInactiveDbs, SWEEP_INACTIVE_DBS_INTERVAL)
   sweepInterval.unref()
 }
@@ -157,6 +158,15 @@ export async function cleanup () {
   await hyperspace.cleanup()
 }
 
+export function getDb (dbId) {
+  let db = publicDbs.get(dbId)
+  if (!db && isHyperKey(dbId)) {
+    db = new PublicCitizenDB(Buffer.from(dbId, 'hex'))
+    publicDbs.set(dbId, db)
+  }
+  return db
+}
+
 async function readDbConfig () {
   try {
     let str = await fsp.readFile(configPath)
@@ -234,11 +244,9 @@ async function loadMemberUserDbs () {
 }
 
 export function* getAllDbs () {
-  for (let db of publicDbs) {
-    yield db[1]
-  }
-  for (let db of privateDbs) {
-    yield db[1]
+  let dbs = Array.from(new Set(Array.from(publicDbs.values()).concat(Array.from(privateDbs.values()))))
+  for (let db of dbs) {
+    yield db
   }
 }
 
@@ -253,17 +261,18 @@ export async function onDatabaseChange (changedDb, indexingDbsToUpdate = undefin
   _didIndexRecently = true
 
   for (let indexingDb of (indexingDbsToUpdate || getAllIndexingDbs())) {
-    let subscribedUrls = await indexingDb.getSubscribedDbUrls()
-    if (!subscribedUrls.includes(changedDb.url)) continue
+    // TODO
+    // let subscribedUrls = await indexingDb.getSubscribedDbUrls()
+    // if (!subscribedUrls.includes(changedDb.url)) continue
     await indexingDb.updateIndexes({changedDb})
   }
 
   pend()
 }
 
-export async function catchupAllIndexes () {
+export async function catchupAllIndexes (dbsToCatchup = undefined) {
   for (let indexingDb of getAllIndexingDbs()) {
-    await catchupIndexes(indexingDb)
+    await catchupIndexes(indexingDb, dbsToCatchup)
   }
 }
 
@@ -274,11 +283,13 @@ export async function catchupIndexes (indexingDb, dbsToCatchup = undefined) {
     pend()
     return
   }
-  let subscribedUrls = dbsToCatchup ? dbsToCatchup.map(db => db.url) : await indexingDb.getSubscribedDbUrls()
+  // TODO
+  // let subscribedUrls = dbsToCatchup ? dbsToCatchup.map(db => db.url) : await indexingDb.getSubscribedDbUrls()
   for (let changedDb of (dbsToCatchup || getAllDbs())) {
-    if (!subscribedUrls.includes(changedDb.url)) {
-      continue
-    }
+    // TODO
+    // if (!subscribedUrls.includes(changedDb.url)) {
+    //   continue
+    // }
     await indexingDb.updateIndexes({changedDb})
   }
   pend()
@@ -330,11 +341,15 @@ async function loadDbByType (dbUrl) {
   const dbDesc = await bee.get('_db', {wait: true, timeout: 60e3})
   if (!dbDesc) throw new Error('Failed to load database description')
   if (dbDesc.value?.dbType === 'ctzn.network/public-citizen-db') {
-    return new PublicCitizenDB(key) 
+    return new PublicCitizenDB(key)
   } else if (dbDesc.value?.dbType === 'ctzn.network/public-server-db') {
     return new PublicServerDB(key)
   }
   throw new Error(`Unknown database type: ${dbDesc.value?.dbType}`)
+}
+
+export function getAllLoadedExternalDbs () {
+  return Array.from(publicDbs.values()).filter(db => !db.writable)
 }
 
 async function getAllExternalDbKeys () {
@@ -372,7 +387,7 @@ async function loadExternalDbInner (dbKey) {
     publicDb = await loadDbByType(dbKey)
     await publicDb.setup()
     publicDbs.set(dbKey, publicDb)
-    publicDb.watch(onDatabaseChange)
+    await catchupAllIndexes([publicDb])
   } catch (e) {
     issues.add(new LoadExternalUserDbIssue({dbKey, cause: 'Failed to load the database', error: e}))
     return false
@@ -400,6 +415,31 @@ export async function loadOrUnloadExternalUserDbs () {
   }
 }
 const loadOrUnloadExternalUserDbsDebounced = _debounce(loadOrUnloadExternalUserDbs, 30e3)
+
+function scheduleIndexExternalDb () {
+  let to = setTimeout(indexExternalDb, 5e3)
+  to.unref()
+}
+
+let lastExternalDbIndexed = undefined
+async function indexExternalDb () {
+  const externalDbs = getAllLoadedExternalDbs()
+  if (externalDbs.length) {
+    let db
+    if (!lastExternalDbIndexed) {
+      db = externalDbs[0]
+    } else {
+      let i = externalDbs.indexOf(lastExternalDbIndexed)
+      i++
+      if (i >= externalDbs.length) i = 0
+      db = externalDbs[i]
+    }
+    // TODO sync data?
+    await catchupAllIndexes([db])
+  }
+
+  scheduleIndexExternalDb()
+}
 
 async function sweepInactiveDbs () {
   const ts = Date.now()

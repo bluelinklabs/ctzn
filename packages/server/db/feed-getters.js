@@ -1,5 +1,5 @@
 import lexint from 'lexicographic-integer-encoding'
-import { publicDbs } from './index.js'
+import { getDb } from './index.js'
 import { constructEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
 import { fetchAuthor, fetchReactions, fetchReplyCount } from './util.js'
 import * as errors from '../lib/errors.js'
@@ -15,7 +15,7 @@ export async function listHomeFeed (opts, auth) {
   opts.lt = opts.lt && typeof opts.lt === 'string' ? opts.lt : lexintEncoder.encode(Date.now())
 
   if (!auth) throw new errors.SessionError()
-  const publicDb = publicDbs.get(auth.username)
+  const publicDb = getDb(auth.username)
   if (!publicDb) throw new errors.NotFoundError('User database not found')
 
   if (!didSpecifyLt) {
@@ -33,7 +33,7 @@ export async function listHomeFeed (opts, auth) {
 
   const followEntries = await publicDb.follows.list()
   followEntries.unshift({value: {subject: auth}})
-  const sourceDbs = followEntries.map(f => publicDbs.get(f.value.subject.dbKey))
+  const sourceDbs = followEntries.map(f => getDb(f.value.subject.dbKey))
   
   const cursors = sourceDbs.map(db => {
     if (!db) return undefined

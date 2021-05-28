@@ -1,4 +1,4 @@
-import { publicServerDb, publicDbs } from '../db/index.js'
+import { getDb } from '../db/index.js'
 import { constructEntryUrl, parseEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
 import { resolveDbId } from '../lib/network.js'
 import {
@@ -13,7 +13,9 @@ import * as cache from '../lib/cache.js'
 import { debugLog } from '../lib/debug-log.js'
 
 export async function getPost (db, key, authorDbId, auth = undefined) {
+  console.log('fetching post')
   const postEntry = await db.posts.get(key)
+  console.log('fetched post')
   if (!postEntry) {
     throw new Error('Post not found')
   }
@@ -108,7 +110,7 @@ async function fetchIndexedComments (comments, {includeReplyCount} = {includeRep
     try {
       const {dbKey, key} = parseEntryUrl(comment.dbUrl)
 
-      const publicDb = publicDbs.get(dbKey)
+      const publicDb = getDb(dbKey)
       if (!publicDb) return undefined
 
       const commentEntry = await publicDb.comments.get(key)

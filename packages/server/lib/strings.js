@@ -1,4 +1,5 @@
 export const HYPER_KEY = /([0-9a-f]{64})/i
+export const HYPER_KEY_ONLY = /^([0-9a-f]{64})$/i
 export const RESERVED_USERNAMES = ['server']
 export const DEBUG_MODE_PORTS_MAP = {}
 for (let i = 0; i <= 1000; i++) {
@@ -37,6 +38,10 @@ export function isUrl (str) {
 
 export function isHyperUrl (str) {
   return /^hyper:\/\//.test(str)
+}
+
+export function isHyperKey (str) {
+  return HYPER_KEY_ONLY.test(String(str))
 }
 
 export function toOrigin (url) {

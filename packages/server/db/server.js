@@ -1,8 +1,8 @@
 import createMlts from 'monotonic-lexicographic-timestamp'
 import { BaseHyperbeeDB } from './base.js'
-import { publicDbs } from './index.js'
+import { publicDbs, getDb } from './index.js'
 import { dbGet } from './util.js'
-import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
+import { parseEntryUrl } from '../lib/strings.js'
 import _intersectionBy from 'lodash.intersectionby'
 
 const INDEXED_DB_TYPES = [
@@ -56,7 +56,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
       switch (diff.right.schemaId) {
         case 'ctzn.network/follow': {
           const subjectDbKey = value.subject.dbKey || value.subject.authorDbKey
-          const subjectDb = publicDbs.get(subjectDbKey)
+          const subjectDb = getDb(subjectDbKey)
           if (!subjectDb || !subjectDb.writable) return // not one of our users
           const {key, idxkey} = genKey(subjectDbKey)
           await batch.put(key, {
@@ -69,7 +69,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
         }
         case 'ctzn.network/reaction': {
           const {dbKey: subjectDbKey} = parseEntryUrl(value.subject.dbUrl)
-          const subjectDb = publicDbs.get(subjectDbKey)
+          const subjectDb = getDb(subjectDbKey)
           if (!subjectDb) return // not one of our users
 
           if (subjectDbKey === db.dbKey) {
@@ -86,8 +86,8 @@ export class PublicServerDB extends BaseHyperbeeDB {
           break
         }
         case 'ctzn.network/comment': {
-          const rootSubjectDb = value.reply.root ? publicDbs.get(parseEntryUrl(value.reply.root.dbUrl).dbKey) : undefined
-          const parentSubjectDb = value.reply.parent ? publicDbs.get(parseEntryUrl(value.reply.parent.dbUrl).dbKey) : undefined
+          const rootSubjectDb = value.reply.root ? getDb(parseEntryUrl(value.reply.root.dbUrl).dbKey) : undefined
+          const parentSubjectDb = value.reply.parent ? getDb(parseEntryUrl(value.reply.parent.dbUrl).dbKey) : undefined
           if (!rootSubjectDb?.writable && !parentSubjectDb?.writable) return // not one of our users
           if (rootSubjectDb && rootSubjectDb.url !== db.url) {
             // notification for root post author
@@ -126,15 +126,10 @@ export class PublicServerDB extends BaseHyperbeeDB {
       }
       let targets = [replyRoot, replyParent].filter(Boolean)
 
-      const replyRootValue = (await dbGet(replyRoot.dbUrl))?.entry?.value
-      if (!replyRootValue) {
-        throw new Error(`Failed to fetch thread root of comment ${commentUrl}`)
-      }
-
       for (let target of targets) {
         const release = await this.lock(`thread-idx:${target.dbUrl}`)
         try {
-          let threadIdxEntry = await this.threadIdx.get(target.dbUrl)
+          let threadIdxEntry = batch.threadIdxEntries?.[target.dbUrl] || await this.threadIdx.get(target.dbUrl)
           if (!threadIdxEntry) {
             threadIdxEntry = {
               key: target.dbUrl,
@@ -157,6 +152,10 @@ export class PublicServerDB extends BaseHyperbeeDB {
               await batch.put(this.threadIdx.constructBeeKey(threadIdxEntry.key), threadIdxEntry.value)
             }
           }
+
+          // cache in the batch to avoid possibly clobbering writes that occur in the batch
+          batch.threadIdxEntries = batch.threadIdxEntries || {}
+          batch.threadIdxEntries[target.dbUrl] = threadIdxEntry
         } finally {
           release()
         }
