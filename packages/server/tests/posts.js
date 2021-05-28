@@ -108,7 +108,7 @@ test('post with images', async t => {
   const base64buf = fs.readFileSync(TEST_IMAGE_PATH, 'base64')
   const res = await api.table.createWithBlobs('bob', 'ctzn.network/post', {
     text: 'Images test',
-    media: [{}]
+    media: [{type: 'image'}]
   }, {
     media1Thumb: {base64buf, mimeType: 'image/jpeg'},
     media1: {base64buf, mimeType: 'image/jpeg'}

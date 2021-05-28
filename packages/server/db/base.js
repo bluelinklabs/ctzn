@@ -340,6 +340,15 @@ export class BaseHyperbeeDB extends EventEmitter {
       release()
     }
   }
+
+  async optimisticRecordSync () {
+    // pre-sync follows, posts, and comments
+    await this.getTable('ctzn.network/follow').list()
+    for (let post of await this.getTable('ctzn.network/post').list({reverse: true, limit: 60})) {
+      await this.getTable('ctzn.network/post').downloadBlobs(post.key)
+    }
+    await this.getTable('ctzn.network/comment').list({reverse: true, limit: 60})
+  }
 }
 
 class Blobs {
@@ -441,6 +450,17 @@ class Blobs {
     })
   }
 
+  async download (pointerValue) {
+    return this.feed.download(pointerValue)
+  }
+
+  async isCached (pointerValue) {
+    for (let i = pointerValue.start; i <= pointerValue.end; i++) {
+      if (!(await this.feed.has(i))) return false
+    }
+    return true
+  }
+
   async put (buf) {
     const chunks = chunkify(buf, BLOB_CHUNK_SIZE)
     debugLog.dbCall('feed.append', this.db._ident, 'blobs')
@@ -536,6 +556,14 @@ class Table {
     return pointer
   }
 
+  async isBlobCached (key, blobNameOrPointer) {
+    let pointer = blobNameOrPointer
+    if (typeof pointer === 'string') {
+      pointer = await this.getBlobPointer(key, blobNameOrPointer)
+    }
+    return this.db.blobs.isCached(pointer.value)
+  }
+
   async getBlob (key, blobNameOrPointer, encoding = undefined) {
     let pointer = blobNameOrPointer
     if (typeof pointer === 'string') {
@@ -557,6 +585,20 @@ class Table {
       pointer = await this.getBlobPointer(key, blobNameOrPointer)
     }
     return this.db.blobs.createReadStream(pointer.value)
+  }
+
+  async downloadBlobs (key) {
+    debugLog.dbCall('downloadBlobs', this.db._ident, this.schema.id, key)
+    await this.db.touch()
+    const pointers = await this.listBlobPointers(key)
+    if (!pointers?.length) return
+    for (let pointer of pointers) {
+      try {
+        this.schema.assertBlobMimeTypeValid(pointer.key, pointer.value.mimeType)
+        blobPointer.assert(pointer.value)
+        await this.db.blobs.download(pointer.value)
+      } catch (e) {}
+    }
   }
 
   async put (key, value) {

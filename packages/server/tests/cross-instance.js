@@ -1,5 +1,10 @@
 import test from 'ava'
-import { createServer, TestFramework, randRange, threadDescToString } from './_util.js'
+import { createServer, TestFramework, randRange } from './_util.js'
+import fs from 'fs'
+import * as path from 'path'
+import { fileURLToPath } from 'url'
+
+const TEST_IMAGE_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-img.jpg')
 
 let instances = []
 
@@ -18,7 +23,7 @@ test('2 instances, all users follow all other users', async t => {
 
   const NUM_USERS = 6
   const NUM_POSTS = 5
-  const NUM_COMMENTS = 1
+  const NUM_COMMENTS = 20
   // const NUM_VOTES = 50
 
   let inst1 = await createServer()
@@ -335,6 +340,88 @@ test('2 instances, no follows (on-demand fetches)', async t => {
       t.deepEqual(commentEntry1.value.text, comment.value.text)
       const commentEntry2 = (await inst2.api.view.get('ctzn.network/views/comment', {dbUrl: comment.dbUrl}))
       t.deepEqual(commentEntry2.value.text, comment.value.text)
+    }
+  }
+})
+
+test('optimistic sync of followed users', async t => {
+  const NUM_USERS = 2
+  const NUM_POSTS = 5
+
+  let inst1 = await createServer()
+  instances.push(inst1)
+  let inst2 = await createServer()
+  instances.push(inst2)
+  let sim = new TestFramework()
+  const username = i => `user${i}`
+  const user = i => sim.users[username(i)]
+
+  // create users
+  for (let i = 0; i < NUM_USERS; i++) {
+    if (i < Math.floor(NUM_USERS / 2)) {
+      await sim.createCitizen(inst1, username(i))
+      console.log('INST 1', user(i).dbKey)
+    } else {
+      await sim.createCitizen(inst2, username(i))
+      console.log('INST 2', user(i).dbKey)
+    }
+  }
+  
+  // create social graph
+  console.log('Generating test social graph...')
+  for (let i = 0; i < NUM_USERS; i++) {
+    for (let j = 0; j < NUM_USERS; j++) {
+      if (i === j) continue
+      await user(i).follow(user(j))
+    }
+  }
+  for (let inst of instances) {
+    await inst.api.post('debug/update-external-dbs')
+  }
+  for (let inst of instances) {
+    await inst.api.get('debug/when-all-synced')
+  }
+
+  for (let i = 0; i < NUM_USERS; i++) {
+    for (let j = 0; j < NUM_USERS; j++) {
+      await user(j).login()
+      await user(i).testSocialGraph(t, sim, user(j).inst)
+    }
+  }
+  
+  // create post and comment activity
+  var x = 0
+  const posts = []
+  const base64buf = fs.readFileSync(TEST_IMAGE_PATH, 'base64')
+  for (let i = 0; i < NUM_USERS; i++) {
+    console.log(`Generating test activity for ${username(i)}...`)
+    for (let j = 0; j < NUM_POSTS; j++) {
+      await user(i).login()
+      posts.push(await user(i).inst.api.table.createWithBlobs(user(i).dbKey, 'ctzn.network/post', {
+        text: `Post ${x++}`,
+        media: [{type: 'image'}]
+      }, {
+        media1Thumb: {base64buf, mimeType: 'image/jpeg'},
+        media1: {base64buf, mimeType: 'image/jpeg'}
+      }))
+    }
+  }
+
+  for (let inst of instances) {
+    await inst.api.post('debug/update-external-dbs')
+  }
+  for (let inst of instances) {
+    await inst.api.get('debug/when-all-synced')
+  }
+
+  // test post availability
+  for (let i = 0; i < NUM_USERS; i++) {
+    for (let j = 0; j < NUM_POSTS; j++) {
+      let post = posts[j]
+      t.truthy(await inst1.api.get('debug/is-record-blob-cached', {dbUrl: post.dbUrl, blobName: 'media1Thumb'}))
+      t.truthy(await inst1.api.get('debug/is-record-blob-cached', {dbUrl: post.dbUrl, blobName: 'media1'}))
+      t.truthy(await inst2.api.get('debug/is-record-blob-cached', {dbUrl: post.dbUrl, blobName: 'media1Thumb'}))
+      t.truthy(await inst2.api.get('debug/is-record-blob-cached', {dbUrl: post.dbUrl, blobName: 'media1'}))
     }
   }
 })

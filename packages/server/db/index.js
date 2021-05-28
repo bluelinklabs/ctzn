@@ -428,7 +428,7 @@ async function indexExternalDb () {
       if (i >= externalDbs.length) i = 0
       db = externalDbs[i]
     }
-    // TODO sync data?
+    await db.optimisticRecordSync()
     await catchupAllIndexes([db])
   }
 
@@ -442,4 +442,12 @@ async function sweepInactiveDbs () {
       await db.teardown({unswarm: false})
     }
   }
+}
+
+export async function isRecordBlobCached (dbUrl, blobName) {
+  const urlp = new URL(dbUrl)
+  const db = publicDbs.get(urlp.hostname)
+  const pathParts = urlp.pathname.split('/').filter(Boolean)
+  const table = db.getTable(`${pathParts[0]}/${pathParts[1]}`)
+  return await table.isBlobCached(pathParts[2], blobName)
 }
