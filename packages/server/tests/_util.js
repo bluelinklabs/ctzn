@@ -93,15 +93,15 @@ export class TestFramework {
   }
 
   testThread (t, entries, descs) {
-    t.is(entries.length, descs.length, `expected ${descs.length} entries\n${threadDescToString(descs)}`)
+    t.is((entries?.length || 0), (descs?.length || 0), `expected ${descs?.length} entries\n${threadDescToString(descs)}`)
     for (let i = 0; i < descs.length; i++) {
-      this.testThreadItem(t, entries[i], descs[i])
+      let entry = entries.find(e => e.value.text === descs[i][1])
+      this.testThreadItem(t, entry, descs[i])
     }
   }
 
   testThreadItem (t, entry, desc) {
     const user = desc[0]
-    t.truthy(entry.dbUrl.startsWith(user.profile.dbUrl), `expected comment to be authored by ${user.username}\n${commentDescToString(desc)}`)
     t.is(entry.author.dbKey, user.dbKey, `expected author dbKey to be ${user.dbKey}\n${commentDescToString(desc)}`)
     t.is(entry.value.text, desc[1], `expected comment text to be ${desc[1]}\n${commentDescToString(desc)}`)
 
@@ -118,6 +118,13 @@ export class TestFramework {
         user.profile.dbKey,
         `expected to be following ${user.username}`
       )
+    }
+  }
+
+  testFollowers (t, followers, users) {
+    t.is(followers.length, users.length)
+    for (let user of users) {
+      t.truthy(followers.includes(user.dbKey))
     }
   }
 
@@ -185,7 +192,7 @@ export class TestFramework {
 
   getThread (post, filterFn) {
     const comments = this.allComments.filter(c => {
-      return (c.value.subject.dbUrl === post.dbUrl && (!filterFn || filterFn(c)))
+      return (c.value.reply.root.dbUrl === post.dbUrl && (!filterFn || filterFn(c)))
     })
     return commentEntriesToThread(comments) || []
   }
@@ -315,6 +322,13 @@ class TestCitizen {
     await this.inst.api.table.delete(this.dbKey, 'ctzn.network/reaction', `${reaction}:${subject.dbUrl}`)
     delete this.reactions[subject.dbUrl][reaction]
   }
+
+  async testSocialGraph (t, sim) {
+    let follows = (await this.inst.api.table.list(this.dbKey, 'ctzn.network/follow')).entries
+    sim.testFollows(t, follows, Object.values(this.following))
+    let followers = (await this.inst.api.view.get('ctzn.network/views/followers', {dbId: this.dbKey})).followers
+    sim.testFollowers(t, followers, sim.listFollowers(this))
+  }
 }
 
 export function randRange (min, max) {
@@ -361,7 +375,7 @@ function commentEntriesToThread (commentEntries) {
   return rootCommentEntries
 }
 
-function threadDescToString (descs, prefix = '') {
+export function threadDescToString (descs, prefix = '') {
   let items = []
   for (let desc of descs) {
     items.push(`${prefix}${desc[0].username} ${desc[1]}`)
