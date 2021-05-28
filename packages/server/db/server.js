@@ -5,9 +5,6 @@ import { dbGet } from './util.js'
 import { parseEntryUrl } from '../lib/strings.js'
 import _intersectionBy from 'lodash.intersectionby'
 
-const INDEXED_DB_TYPES = [
-  'ctzn.network/public-citizen-db'
-]
 const mlts = createMlts()
 
 export class PublicServerDB extends BaseHyperbeeDB {
@@ -32,6 +29,9 @@ export class PublicServerDB extends BaseHyperbeeDB {
     this.followsIdx = this.getTable('ctzn.network/follow-idx')
     this.notificationsIdx = this.getTable('ctzn.network/notification-idx')
     this.reactionsIdx = this.getTable('ctzn.network/reaction-idx')
+
+    this.memberDbKeys = new Set()
+    this.memberFollowedDbKeys = new Set()
 
     if (!this.writable) {
       return
@@ -248,11 +248,8 @@ export class PublicServerDB extends BaseHyperbeeDB {
     console.log('New public server database created, key:', this.key.toString('hex'))
   }
 
-  async getSubscribedDbUrls () {
-    return Array.from(publicDbs.values())
-      .filter(db => INDEXED_DB_TYPES.includes(db.dbType))
-      .map(db => db.url)
-      .concat([this.url]) // index self
+  shouldIndexDb (db) {
+    return (this.memberDbKeys.has(db.dbKey) || this.memberFollowedDbKeys.has(db.dbKey))
   }
 } 
 
@@ -277,8 +274,8 @@ export class PrivateServerDB extends BaseHyperbeeDB {
     this.accountSessions = this.getTable('ctzn.network/account-session')    
   }
 
-  async getSubscribedDbUrls () {
-    return [this.publicServerDb.url]
+  shouldIndexDb (db) {
+    return db === this.publicServerDb
   }
   
   async onDatabaseCreated () {

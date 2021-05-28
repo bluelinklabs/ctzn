@@ -114,6 +114,7 @@ export async function createUser ({type, username, email, password, profile}) {
     
     publicDbs.set(publicDb.dbKey, publicDb)
     publicDbs.set(username, publicDb)
+    publicServerDb.memberDbKeys.add(publicDb.dbKey)
     if (privateDb) {
       privateDbs.set(privateDb.dbKey, privateDb)
       privateDbs.set(username, privateDb)
@@ -136,6 +137,7 @@ export async function deleteUser (username) {
       await publicDbs.get(username).teardown({unswarm: true})
       publicDbs.delete(username)
       publicDbs.delete(dbKey)
+      publicServerDb.memberDbKeys.remove(dbKey)
     }
     if (privateDbs.has(username)) {
       let {dbKey} = publicDbs.get(username)
@@ -217,7 +219,8 @@ async function loadMemberUserDbs () {
         let publicDb = new PublicCitizenDB(user.value.dbKey, user.key)
         await publicDb.setup()
         publicDbs.set(publicDb.dbKey, publicDb)
-        publicDbs.set(user.key, publicDb)
+        publicDbs.set(publicDb.dbKey, publicDb)
+        publicServerDb.memberDbKeys.add(publicDb.dbKey)
         publicDb.watch(onDatabaseChange)
         publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
 
@@ -261,9 +264,6 @@ export async function onDatabaseChange (changedDb, indexingDbsToUpdate = undefin
   _didIndexRecently = true
 
   for (let indexingDb of (indexingDbsToUpdate || getAllIndexingDbs())) {
-    // TODO
-    // let subscribedUrls = await indexingDb.getSubscribedDbUrls()
-    // if (!subscribedUrls.includes(changedDb.url)) continue
     await indexingDb.updateIndexes({changedDb})
   }
 
@@ -283,13 +283,7 @@ export async function catchupIndexes (indexingDb, dbsToCatchup = undefined) {
     pend()
     return
   }
-  // TODO
-  // let subscribedUrls = dbsToCatchup ? dbsToCatchup.map(db => db.url) : await indexingDb.getSubscribedDbUrls()
   for (let changedDb of (dbsToCatchup || getAllDbs())) {
-    // TODO
-    // if (!subscribedUrls.includes(changedDb.url)) {
-    //   continue
-    // }
     await indexingDb.updateIndexes({changedDb})
   }
   pend()
@@ -352,7 +346,7 @@ export function getAllLoadedExternalDbs () {
   return Array.from(publicDbs.values()).filter(db => !db.writable)
 }
 
-async function getAllExternalDbKeys () {
+async function fetchAllExternalFollowedDbKeys () {
   const dbKeys = new Set()
   for (let db of publicDbs.values()) {
     if (!db.writable) continue
@@ -366,7 +360,7 @@ async function getAllExternalDbKeys () {
       }
     }
   }
-  return Array.from(dbKeys)
+  publicServerDb.memberFollowedDbKeys = dbKeys
 }
 
 let _loadExternalDbPromises = {}
@@ -397,8 +391,8 @@ async function loadExternalDbInner (dbKey) {
 
 export async function loadOrUnloadExternalUserDbs () {
   // load any new follows
-  const externalDbKeys = await getAllExternalDbKeys()
-  for (let dbKey of externalDbKeys) {
+  await fetchAllExternalFollowedDbKeys()
+  for (let dbKey of Array.from(publicServerDb.memberFollowedDbKeys)) {
     if (!publicDbs.has(dbKey)) {
       /* dont await */ loadExternalDb(dbKey)
     }
@@ -406,7 +400,7 @@ export async function loadOrUnloadExternalUserDbs () {
   // unload any unfollowed
   for (let value of publicDbs.values()) {
     const {dbKey} = value
-    if (!externalDbKeys.includes(dbKey) && !value.writable) {
+    if (!publicServerDb.memberFollowedDbKeys.has(dbKey) && !value.writable) {
       const username = publicDbs.get(dbKey).username
       publicDbs.get(dbKey).teardown({unswarm: true})
       publicDbs.delete(dbKey)

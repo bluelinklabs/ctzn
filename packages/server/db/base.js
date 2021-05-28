@@ -214,10 +214,9 @@ export class BaseHyperbeeDB extends EventEmitter {
     return this.tables[schemaId]
   }
 
-  async getSubscribedDbUrls () {
-    // override in subclasses to
-    // give a list of URLs for databases currently watched by this database for changes
-    return []
+  shouldIndexDb (db) {
+    // override in subclasses to establish whether indexing should occur
+    return false
   }
 
   createIndexer (schemaId, targetSchemaIds, indexFn) {
@@ -263,6 +262,7 @@ export class BaseHyperbeeDB extends EventEmitter {
 
   async updateIndexes ({changedDb}) {
     if (!this.key || !this.writable) return
+    if (!this.shouldIndexDb(changedDb)) return
     const release = await this.lock(`update-indexes:${changedDb.url}`)
     
     await this.touch()
