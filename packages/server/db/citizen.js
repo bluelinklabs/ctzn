@@ -14,6 +14,7 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
     await super.setup()
     await this.blobs.setup()
     this.profile = this.getTable('ctzn.network/profile')
+    this.currentStatus = this.getTable('ctzn.network/current-status')
     this.posts = this.getTable('ctzn.network/post')
     this.comments = this.getTable('ctzn.network/comment')
     this.reactions = this.getTable('ctzn.network/reaction')

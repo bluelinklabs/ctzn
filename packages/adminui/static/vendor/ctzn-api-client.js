@@ -43,7 +43,7 @@ function createApi ({origin, fetch, arrayBufferToBuffer, Blob, FormData}) {
         headers: buildHeaders()
       });
       const resbody = await res.json();
-      if (!res.ok || resbody.error) {
+      if (!res.ok || resbody?.error) {
         throw new Error(resbody.message || res.statusText || res.status)
       }
       setCookies(res);
@@ -68,7 +68,7 @@ function createApi ({origin, fetch, arrayBufferToBuffer, Blob, FormData}) {
         body: JSON.stringify(body || {})
       });
       const resbody = await res.json();
-      if (!res.ok || resbody.error) {
+      if (!res.ok || resbody?.error) {
         throw new Error(resbody.message || res.statusText || res.status)
       }
       setCookies(res);
@@ -87,7 +87,7 @@ function createApi ({origin, fetch, arrayBufferToBuffer, Blob, FormData}) {
         body: isBrowser ? formData : FormData.toStream(formData)
       });
       const resbody = await res.json();
-      if (!res.ok || resbody.error) {
+      if (!res.ok || resbody?.error) {
         throw new Error(resbody.message || res.statusText || res.status)
       }
       setCookies(res);
@@ -101,7 +101,7 @@ function createApi ({origin, fetch, arrayBufferToBuffer, Blob, FormData}) {
         body: JSON.stringify(body || {})
       });
       const resbody = await res.json();
-      if (!res.ok || resbody.error) {
+      if (!res.ok || resbody?.error) {
         throw new Error(resbody.message || res.statusText || res.status)
       }
       setCookies(res);
@@ -118,7 +118,7 @@ function createApi ({origin, fetch, arrayBufferToBuffer, Blob, FormData}) {
         body
       });
       const resbody = await res.json();
-      if (!res.ok || resbody.error) {
+      if (!res.ok || resbody?.error) {
         throw new Error(resbody.message || res.statusText || res.status)
       }
       setCookies(res);
@@ -131,7 +131,7 @@ function createApi ({origin, fetch, arrayBufferToBuffer, Blob, FormData}) {
         headers: buildHeaders()
       });
       const resbody = await res.json();
-      if (!res.ok || resbody.error) {
+      if (!res.ok || resbody?.error) {
         throw new Error(resbody.message || res.statusText || res.status)
       }
       setCookies(res);

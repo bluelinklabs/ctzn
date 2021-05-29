@@ -1,0 +1,34 @@
+{
+  "id": "ctzn.network/current-status",
+  "title": "Current status",
+  "description": "What this user is up to",
+  "type": "json-table",
+  "keyTemplate": [{"type": "string", "value": "self"}],
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "currentStatus": {
+        "type": "object",
+        "properties": {
+          "text": {"type": "string"},
+          "expiresAt": {"type": "string", "format": "date-time"}
+        }
+      },
+      "listeningTo": {
+        "type": "object",
+        "properties": {
+          "text": {"type": "string"},
+          "expiresAt": {"type": "string", "format": "date-time"}
+        }
+      },
+      "watching": {
+        "type": "object",
+        "properties": {
+          "text": {"type": "string"},
+          "expiresAt": {"type": "string", "format": "date-time"}
+        }
+      }
+    }
+  }
+}

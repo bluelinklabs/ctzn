@@ -293,6 +293,20 @@ body.theme-vanilla {
     }
   }
   app-comments-feed {}
+  app-current-status {
+    .section {
+      border: 1px solid $bordercolor;
+      border-bottom: 0;
+      &:last-child {
+        border-bottom: 1px solid $bordercolor;
+      }
+      padding: 0.5rem 1rem;
+
+      .label {
+        color: $color-light;
+      }
+    }
+  }
   app-notification {
     .wrapper {
       background: $bgcolor;

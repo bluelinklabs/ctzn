@@ -50,10 +50,12 @@ class CtznMainView extends LitElement {
     }
     const pathParts = (new URL(location)).pathname.split('/')
     this.currentView = pathParts[1] || 'feed'
+    this.querySelector('app-current-status')?.load()
     this.querySelector('app-posts-feed')?.load()
   }
 
   async refresh () {
+    await this.querySelector('app-current-status')?.load()
     await this.querySelector('app-posts-feed')?.load()
   }
 
@@ -206,6 +208,7 @@ class CtznMainView extends LitElement {
   renderRightSidebar () {
     return html`
       <nav>
+        <app-current-status class="block mt-4" user-id=${session.info.username}></app-current-status>
         <app-suggestions-sidebar></app-suggestions-sidebar>
       </nav>
     `

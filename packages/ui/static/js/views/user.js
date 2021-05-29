@@ -21,6 +21,7 @@ import '../com/header.js'
 import '../com/button.js'
 import '../com/img-fallbacks.js'
 import '../com/content/posts-feed.js'
+import '../com/content/current-status.js'
 import '../com/users/followers-list.js'
 import '../com/users/following-list.js'
 import '../com/subnav.js'
@@ -558,6 +559,7 @@ class CtznUser extends LitElement {
       `
     } else {
       return html`
+        <app-current-status class="block mb-1" user-id=${this.userId}></app-current-status>
         <app-posts-feed
           class="block"
           user-id=${this.userId}

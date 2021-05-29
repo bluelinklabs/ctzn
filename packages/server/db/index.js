@@ -219,7 +219,7 @@ async function loadMemberUserDbs () {
         let publicDb = new PublicCitizenDB(user.value.dbKey, user.key)
         await publicDb.setup()
         publicDbs.set(publicDb.dbKey, publicDb)
-        publicDbs.set(publicDb.dbKey, publicDb)
+        publicDbs.set(user.key, publicDb)
         publicServerDb.memberDbKeys.add(publicDb.dbKey)
         publicDb.watch(onDatabaseChange)
         publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
