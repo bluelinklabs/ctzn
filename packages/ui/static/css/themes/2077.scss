@@ -82,6 +82,16 @@ $font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation M
     }
   }
 
+  app-mini-profile {
+    .avatar {
+      border-radius: 0;
+    }
+    .display-name {
+      font-family: $font-mono;
+      font-weight: bold;
+    }
+  }
+
   app-post {
     .avatar {
       border-radius: 0;

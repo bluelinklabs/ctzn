@@ -549,6 +549,11 @@ body.theme-vanilla {
       font-weight: bold;
     }
   }
+  app-mini-profile {
+    .avatar {
+      border-radius: 0.25rem;
+    }
+  }
   app-searchable-user-list {
     .wrapper {
       &.widget-mode {

@@ -546,6 +546,14 @@ $screen-2xl: 1536px;
       font-weight: bold;
     }
   }
+  app-mini-profile {
+    .avatar {
+      border-radius: 0.25rem;
+    }
+    .display-name {
+      font-weight: bold;
+    }
+  }
   app-searchable-user-list {
     .wrapper {
       &.widget-mode {

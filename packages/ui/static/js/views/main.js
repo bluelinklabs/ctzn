@@ -10,6 +10,7 @@ import '../com/content/notifications-feed.js'
 import '../com/content/post-composer.js'
 import '../com/img-fallbacks.js'
 import '../com/suggestions-sidebar.js'
+import '../com/users/mini-profile.js'
 import '../com/users/searchable-user-list.js'
 import '../com/subnav.js'
 
@@ -208,6 +209,7 @@ class CtznMainView extends LitElement {
   renderRightSidebar () {
     return html`
       <nav>
+        <app-mini-profile class="block mt-4" user-id=${session.info.username}></app-mini-profile>
         <app-current-status class="block mt-4" user-id=${session.info.username}></app-current-status>
         <app-suggestions-sidebar></app-suggestions-sidebar>
       </nav>
