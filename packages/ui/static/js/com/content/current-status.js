@@ -78,7 +78,7 @@ export class CurrentStatus extends LitElement {
           </form>
         ` : html`
           <div class="text text-lg">
-            ${this.currentStatus?.[id].text || ''}
+            ${this.currentStatus?.[id]?.text || ''}
             ${this.isMyStatus ? html`
               <a class="link ml-1 text-base whitespace-nowrap cursor-pointer hover:underline" @click=${e => this.onClickEdit(e, id)}>
                 <span class="text-xs fas fa-fw fa-pen"></span> edit
