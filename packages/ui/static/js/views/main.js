@@ -8,6 +8,8 @@ import '../com/login.js'
 import '../com/content/posts-feed.js'
 import '../com/content/notifications-feed.js'
 import '../com/content/post-composer.js'
+import '../com/content/current-status.js'
+import '../com/content/current-statuses-list.js'
 import '../com/img-fallbacks.js'
 import '../com/suggestions-sidebar.js'
 import '../com/users/mini-profile.js'
@@ -144,6 +146,12 @@ class CtznMainView extends LitElement {
       },
       {path: '/search', label: 'Search'}
     ]
+    const leftNavItem = (id, path, icon, label) => html`
+      <a href=${path} class="left-nav-item ${id === this.currentView ? 'selected' : ''} block px-3 py-1.5 cursor-pointer">
+        <span class="mr-1 text-base fa-fw ${icon}"></span>
+        ${label}
+      </a>
+    `
     return html`
       <app-header
         current-path=${this.currentPath}
@@ -152,7 +160,13 @@ class CtznMainView extends LitElement {
       ></app-header>
       <!-- <div class="rainbow-gradient" style="height: 1px"></div> -->
       <!-- <div class="rainbow-gradient-pattern" style="height: 4px"></div> -->
-      <main class="col2">
+      <main class="col3">
+        <div class="text-lg pt-3">
+          ${leftNavItem('feed', '/', 'far fa-comment-alt', 'Posts')}
+          ${leftNavItem('ktzns', '/ktzns', 'fas fa-cat', 'KTZNs')}
+          ${leftNavItem('shout-outs', '/shout-outs', 'far fa-heart', 'Shout Outs')}
+          ${leftNavItem('statuses', '/statuses', 'far fa-clock', 'Statuses')}
+        </div>
         <div>
           <app-subnav
             mobile-only
@@ -162,10 +176,17 @@ class CtznMainView extends LitElement {
           ></app-subnav>
           ${this.currentView === 'feed' ? html`
             ${this.renderMockComposer()}
-            <h2 class="content-header p-4 hidden lg:flex items-baseline">
+            ${''/*<h2 class="content-header p-4 hidden lg:flex items-baseline">
               <span class="text-2xl tracking-tight font-bold">What's new</span>
               <span class="ml-2 text-gray-400 text-sm tracking-tight">${this.lastFeedFetch ? `Updated ${this.lastFeedFetch}` : ''}</span>
-            </h2>
+            </h2>*/}
+            <div class="flex items-center content-header px-3 py-2 font-medium">
+              <span class="px-3 py-1 underline">Main</span>
+              <span class="px-3 py-1 text-gray-700 hover:underline">Drunk Dev Posting</span>
+              <span class="px-3 py-1 text-gray-700 hover:underline">Paul's Devlog</span>
+              <span class="px-3 py-1 text-gray-700 hover:underline">MoE Season Finale</span>
+              <span class="px-3 py-1 text-gray-700 hover:underline"><span class="fas fa-caret-right"></span></span>
+            </div>
             <app-posts-feed
               class="block"
               view="ctzn.network/views/feed"
@@ -180,6 +201,9 @@ class CtznMainView extends LitElement {
               </div>
               <app-searchable-user-list></app-searchable-user-list>
             </div>
+          ` : this.currentView === 'statuses' ? html`
+            <app-current-statuses-list
+            ></app-current-statuses-list>
           ` : ''}
         </div>
         ${this.renderRightSidebar()}

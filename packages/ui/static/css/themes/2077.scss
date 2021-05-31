@@ -74,7 +74,8 @@ $font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation M
     }
   }
 
-  app-current-status {
+  app-current-status,
+  app-current-statuses-list {
     .section {
       .text {
         font-family: $font-mono;

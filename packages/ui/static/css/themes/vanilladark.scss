@@ -306,6 +306,28 @@ $screen-2xl: 1536px;
       }
     }
   }
+  app-current-statuses-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 0.5rem;
+
+    app-current-statuses-list-item {
+      border: 1px solid $bordercolor;
+      padding: 0.25rem 0;
+      border-radius: 0.25rem;
+      app-mini-profile {
+        display: block;
+        margin: 0.5rem 0.75rem;
+      }
+      .section {
+        margin: 0.5rem 0.75rem;
+
+        .label {
+          color: $color-light;
+        }
+      }
+    }
+  }
   app-notification {
     .wrapper {
     }
@@ -659,6 +681,17 @@ $screen-2xl: 1536px;
     .content-header {
       border-left: 1px solid $bordercolor;
       border-right: 1px solid $bordercolor;
+    }
+
+    .left-nav-item {
+      border-radius: 0.25rem;
+      &.selected,
+      &:hover {
+        background: $bgcolor-light;
+      }
+      &.selected {
+        font-weight: 600;
+      }
     }
 
     app-posts-feed {

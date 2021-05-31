@@ -42,3 +42,7 @@ export function onChange (cb) {
 export function onSecondaryState (cb, opts) {
   emitter.addEventListener('secondary-state', cb, opts)
 }
+
+export function unOnSecondaryState (cb) {
+  emitter.removeEventListener('secondary-state', cb)
+}

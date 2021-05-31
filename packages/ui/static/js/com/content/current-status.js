@@ -40,6 +40,7 @@ export class CurrentStatus extends LitElement {
   async load () {
     this.currentStatus = undefined
     this.currentStatus = (await session.api.db(this.userId).table('ctzn.network/current-status').get('self'))?.value
+    console.log(this.currentStatus)
   }
 
   // rendering
@@ -54,11 +55,10 @@ export class CurrentStatus extends LitElement {
   }
 
   renderSection (id, label) {
+    let isExpired = this.currentStatus?.[id]?.expiresAt && (new Date(this.currentStatus[id].expiresAt)) < new Date()
     if (!this.isMyStatus) {
       if (!this.currentStatus?.[id]) return ''
-      if (this.currentStatus?.[id].expiresAt && (new Date(this.currentStatus[id].expiresAt)) < new Date()) {
-        return ''
-      }
+      if (isExpired) return ''
     }
     return html`
       <div class="section">
@@ -78,7 +78,7 @@ export class CurrentStatus extends LitElement {
           </form>
         ` : html`
           <div class="text text-lg">
-            ${this.currentStatus?.[id]?.text || ''}
+            ${this.currentStatus?.[id]?.text && !isExpired ? this.currentStatus[id].text : ''}
             ${this.isMyStatus ? html`
               <a class="link ml-1 text-base whitespace-nowrap cursor-pointer hover:underline" @click=${e => this.onClickEdit(e, id)}>
                 <span class="text-xs fas fa-fw fa-pen"></span> edit

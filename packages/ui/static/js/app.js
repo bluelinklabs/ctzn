@@ -223,7 +223,7 @@ class CtznApp extends LitElement {
         case '/index':
         case '/index.html':
         case '/search':
-        case '/activity':
+        case '/statuses':
           return html`<app-main-view id=${id} class=${cls} current-path=${path}></app-main-view>`
         case '/notifications':
           return html`<app-notifications-view id=${id} class=${cls} current-path=${path}></app-notifications-view>`
