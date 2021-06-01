@@ -277,7 +277,7 @@ export class Post extends LitElement {
                 ${this.renderReactions()}
               </div>
             ` : ''}
-            <div class="post-actions flex mt-1.5 items-center justify-between sm:pl-6 pr-6 sm:pr-16">
+            <div class="post-actions flex mt-1.5 items-center justify-between sm:pl-2 pr-6 sm:pr-16">
               ${this.renderRepliesCtrl()}
               ${this.renderRepostCtrl()}
               ${this.renderReactCtrl()}

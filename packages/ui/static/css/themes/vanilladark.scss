@@ -152,6 +152,26 @@ $screen-2xl: 1536px;
       background: $bgcolor-reaction-selected;
     }
   }
+  .communities-list {
+    .community {
+      display: inline-block;
+      border: 1px solid $bordercolor-button;
+      border-radius: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      margin-bottom: 0.25rem;
+      cursor: pointer;
+      &:hover {
+        text-decoration: underline;
+      }
+      .link {
+        padding: 0 0.25rem;
+        border-radius: 0.25rem;
+      }
+      .link:hover {
+        background: $bgcolor-light;
+      }
+    }
+  }
 
   .bg-loading-gradient {
     background: linear-gradient(to right, #242424, #2c2c2c, #242424);
@@ -387,7 +407,21 @@ $screen-2xl: 1536px;
       }
     }
   }
-  app-post-composer {}
+  app-post-composer {
+    .post-community-select {
+      border: 1px solid $bordercolor;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      &:hover {
+        background: $bgcolor-light;
+      }
+      &.selected {
+        background: $bgcolor-button-primary;
+        color: #fff;
+        border-color: $bordercolor-button-primary;
+      }
+    }
+  }
   app-post {
     .default-wrapper,
     .expanded-wrapper {
@@ -395,6 +429,12 @@ $screen-2xl: 1536px;
 
     .avatar {
       border-radius: 50%;
+    }
+
+    .post-audience {
+      color: $color-post-controls;
+      font-size: 12px;
+      font-weight: 500;
     }
 
     .post-metadata {
@@ -676,6 +716,25 @@ $screen-2xl: 1536px;
   // =
 
   app-account-view {}
+  app-explore-view {
+    .content-header {
+      border-left: 1px solid $bordercolor;
+      border-right: 1px solid $bordercolor;
+    }
+
+    .communities-list {
+      padding: 1rem;
+    }
+
+    .communities-list,
+    app-posts-feed {
+      border-top: 1px solid $bordercolor;
+
+      @media (min-width: $screen-sm) {
+        border: 1px solid $bordercolor;
+      }
+    }
+  }
   app-forgot-password-view {}
   app-main-view {
     .content-header {

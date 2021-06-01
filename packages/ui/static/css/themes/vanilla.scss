@@ -8,6 +8,7 @@ $color-button-disabled: #6B7280;
 $color-button-primary: #fff;
 $color-button-primary-disabled: #EFF6FF;
 $color-post-controls: #4B5563;
+$color-post-controls-light: #838d9c;
 $color-comment-controls: #4B5563;
 $color-reaction: #4B5563;
 $color-reaction-selected: #0065f3;
@@ -472,7 +473,7 @@ body.theme-vanilla {
     }
 
     .post-actions {
-      color: $color-post-controls;
+      color: $color-post-controls-light;
     }
 
     .post-media {
@@ -721,17 +722,6 @@ body.theme-vanilla {
     .content-header {
       border-left: 1px solid $bordercolor;
       border-right: 1px solid $bordercolor;
-    }
-
-    .left-nav-item {
-      border-radius: 0.25rem;
-      &.selected,
-      &:hover {
-        background: $bgcolor-medium;
-      }
-      &.selected {
-        font-weight: 600;
-      }
     }
 
     .communities-list {

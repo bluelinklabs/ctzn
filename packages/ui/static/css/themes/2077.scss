@@ -23,6 +23,11 @@ $font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation M
       color: $color-green;
     }
   }
+  .communities-list {
+    .community {
+      font-family: $font-mono;
+    }
+  }
 
   app-button button {
     &.primary {
@@ -100,12 +105,18 @@ $font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation M
 
     .post-text {
       font-family: $font-mono;
-      font-size: 14px;
+      font-size: 15px;
     }
 
     .post-media .item {
       border-radius: 0;
       border: 0;
+    }
+  }
+
+  app-post-composer {
+    .post-community-select {
+      font-family: $font-mono;
     }
   }
 

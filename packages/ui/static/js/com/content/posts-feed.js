@@ -150,7 +150,7 @@ export class PostsFeed extends LitElement {
     } else {
       results = results.concat((await session.api.view.get(this.view, {dbId: this.userId, audience: this.audience, limit: 15, reverse: true, lt}))?.posts)
     }
-    this.hasReachedEnd = orgLen === results.length
+    this.hasReachedEnd = orgLen === results.length || results.length < 15
     if (this.limit > 0 && results.length > this.limit) {
       results = results.slice(0, this.limit)
     }
