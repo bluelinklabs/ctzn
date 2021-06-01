@@ -332,6 +332,9 @@ $screen-2xl: 1536px;
     grid-gap: 0.5rem;
 
     app-current-statuses-list-item {
+      &:empty {
+        display: none;
+      }
       border: 1px solid $bordercolor;
       padding: 0.25rem 0;
       border-radius: 0.25rem;
