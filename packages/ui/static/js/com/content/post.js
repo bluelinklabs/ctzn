@@ -182,7 +182,7 @@ export class Post extends LitElement {
             ${this.post.value.audience ? html`
               <div class="post-audience pr-2.5 truncate">
                 <span class="fas fa-users"></span>
-                <a class="hov:hover:underline" href="/explore/community/${encodeURIComponent(this.post.value.audience)}">
+                <a class="hov:hover:underline" href="/p/explore/community/${encodeURIComponent(this.post.value.audience)}">
                   ${this.post.value.audience}
                 </a>
               </div>
@@ -247,7 +247,7 @@ export class Post extends LitElement {
             ${this.post.value.audience ? html`
               <div class="post-audience pl-1 pr-2.5 truncate">
                 <span class="fas fa-users"></span>
-                <a class="hov:hover:underline" href="/explore/community/${encodeURIComponent(this.post.value.audience)}">
+                <a class="hov:hover:underline" href="/p/explore/community/${encodeURIComponent(this.post.value.audience)}">
                   ${this.post.value.audience}
                 </a>
               </div>

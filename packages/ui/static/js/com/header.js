@@ -74,11 +74,11 @@ export class Header extends LitElement {
             <span class="fas fa-fw navicon fa-home"></span>
             Home
           </a>
-          <a href="/explore" class=${this.getHeaderNavClass('/explore')} @click=${this.onClickLink}>
+          <a href="/p/explore" class=${this.getHeaderNavClass('/explore')} @click=${this.onClickLink}>
             <span class="fas fa-fw navicon fa-compass"></span>
             Explore
           </a>
-          <a href="/notifications" class="relative ${this.getHeaderNavClass('/notifications')}" @click=${this.onClickLink}>
+          <a href="/p/notifications" class="relative ${this.getHeaderNavClass('/notifications')}" @click=${this.onClickLink}>
             ${this.unreadNotificationsCount > 0 ? html`
               <span class="absolute bg-blue-500 font-medium leading-none px-1.5 py-0.5 rounded-2xl text-white text-xs" style="top: 5px; left: 32px">${this.unreadNotificationsCount}</span>
             ` : ''}
@@ -134,7 +134,7 @@ export class Header extends LitElement {
             <span class="fas mr-2 fa-fw navicon fa-home"></span>
             Home
           </a>
-          <a href="/notifications" class="relative ${this.getMenuNavClass('/notifications')}" @click=${this.onClickLink}>
+          <a href="/p/notifications" class="relative ${this.getMenuNavClass('/notifications')}" @click=${this.onClickLink}>
             ${this.unreadNotificationsCount > 0 ? html`
               <span class="absolute bg-blue-500 font-medium leading-none px-1.5 py-0.5 rounded-2xl text-white text-xs" style="top: 5px; left: 22px">${this.unreadNotificationsCount}</span>
             ` : ''}
@@ -161,7 +161,7 @@ export class Header extends LitElement {
         </div>
         <div class="px-2">
           <div class="pb-16 sm:pb-6 flex flex-col">
-            <a class=${this.getMenuNavClass('/account')} href="/account" @click=${this.onClickLink}><span class="fas fa-fw fa-cog mr-1.5"></span> Account</a>
+            <a class=${this.getMenuNavClass('/p/account')} href="/account" @click=${this.onClickLink}><span class="fas fa-fw fa-cog mr-1.5"></span> Account</a>
             <a class=${this.getMenuNavClass()} href="#" @click=${this.onLogOut}>
               <span class="fas fa-fw fa-sign-out-alt mr-1.5"></span> Log out
             </a>

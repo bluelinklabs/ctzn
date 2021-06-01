@@ -535,7 +535,7 @@ class CtznUser extends LitElement {
           <h2 class="font-semibold text-lg">Communities <span class="text-base ml-1">${this.userProfile?.value?.communities.length || 0}</span></h2>
           <div class="communities-list">
             ${repeat(this.userProfile?.value?.communities || [], c => c, c => html`
-              <a class="community" href="/explore/community/${encodeURIComponent(c)}">
+              <a class="community" href="/p/explore/community/${encodeURIComponent(c)}">
                 ${c}
                 <span class="link fas fa-${session.myCommunities?.includes?.(c) ? 'minus' : 'plus'}" @click=${e => this.onToggleCommunity(e, c)}></span>
               </a>

@@ -17,10 +17,10 @@ import './views/thread.js'
 import './views/signup.js'
 import './views/user.js'
 
-const EXPLORE_COMMUNITY_PATH_REGEX = new RegExp('/explore/community/([^/]+)', 'i')
-const POST_PATH_REGEX = new RegExp('/([^/]+)/ctzn.network/post/([^/]+)', 'i')
-const COMMENT_PATH_REGEX = new RegExp('/([^/]+)/ctzn.network/comment/([^/]+)', 'i')
-const USER_PATH_REGEX = new RegExp('/([^/]+)')
+const EXPLORE_COMMUNITY_PATH_REGEX = new RegExp('/p/explore/community/([^/]+)', 'i')
+const POST_PATH_REGEX = new RegExp('^/([^/]{3,})/ctzn.network/post/([^/]+)', 'i')
+const COMMENT_PATH_REGEX = new RegExp('^/([^/]{3,})/ctzn.network/comment/([^/]+)', 'i')
+const USER_PATH_REGEX = new RegExp('^/([^/]{3,})')
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
@@ -222,20 +222,18 @@ class CtznApp extends LitElement {
       const cls = isCurrentView ? 'block' : 'hidden'
       switch (path) {
         case '/':
-        case '/index':
-        case '/index.html':
-        case '/search':
-        case '/statuses':
+        case '/p/search':
+        case '/p/statuses':
           return html`<app-main-view id=${id} class=${cls} current-path=${path}></app-main-view>`
-        case '/explore':
+        case '/p/explore':
           return html`<app-explore-view id=${id} class=${cls} current-path=${path}></app-explore-view>`
-        case '/notifications':
+        case '/p/notifications':
           return html`<app-notifications-view id=${id} class=${cls} current-path=${path}></app-notifications-view>`
-        case '/forgot-password':
+        case '/p/forgot-password':
           return html`<app-forgot-password-view id="view" current-path=${path}></app-forgot-password-view>`
-        case '/account':
+        case '/p/account':
           return html`<app-account-view id="view" current-path=${path}></app-account-view>`
-        case '/signup':
+        case '/p/signup':
           return html`<app-signup-view id="view" current-path=${path}></app-signup-view>`
       }
       if (EXPLORE_COMMUNITY_PATH_REGEX.test(path)) {

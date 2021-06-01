@@ -52,7 +52,7 @@ class CtznMainView extends LitElement {
       return this.requestUpdate()
     }
     const pathParts = (new URL(location)).pathname.split('/')
-    this.currentView = pathParts[1] || 'feed'
+    this.currentView = pathParts[2] || 'feed'
     this.querySelector('app-current-status')?.load()
     this.querySelector('app-posts-feed')?.load()
   }
@@ -163,10 +163,10 @@ class CtznMainView extends LitElement {
       <main class="col3">
         <div class="text-lg pt-3">
           ${leftNavItem('feed', '/', 'far fa-comment-alt', 'Posts')}
-          ${leftNavItem('shout-outs', '/shout-outs', 'far fa-heart', 'Shout Outs')}
-          ${leftNavItem('statuses', '/statuses', 'far fa-clock', 'Statuses')}
-          ${leftNavItem('cats', '/cats', 'fas fa-cat', 'Cats')}
-          ${leftNavItem('about-s1', '/about/s1', 'far fa-hand-pointer', 'Season 1')}
+          ${leftNavItem('shout-outs', '/p/shout-outs', 'far fa-heart', 'Shout Outs')}
+          ${leftNavItem('statuses', '/p/statuses', 'far fa-clock', 'Statuses')}
+          ${leftNavItem('cats', '/p/cats', 'fas fa-cat', 'Cats')}
+          ${leftNavItem('about-s1', '/p/about/s1', 'far fa-hand-pointer', 'Season 1')}
         </div>
         <div>
           <app-subnav

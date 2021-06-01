@@ -34,7 +34,7 @@ class CtznExploreView extends LitElement {
 
   updated (changedProperties) {
     if (changedProperties.has('currentPath') && this.currentPath !== changedProperties.get('currentPath')) {
-      let [_1, _2, currentCommunity] = this.currentPath.split('/').filter(Boolean)
+      let [_1, _2, _3, currentCommunity] = this.currentPath.split('/').filter(Boolean)
       this.currentCommunity = currentCommunity ? decodeURIComponent(currentCommunity) : undefined
     }
   }
@@ -59,7 +59,7 @@ class CtznExploreView extends LitElement {
         <div>
           ${this.currentCommunity ? html`
             <h2 class="content-header flex items-center text-2xl tracking-tight font-bold p-4">
-              <a class="link fas fa-fw fa-angle-left" href="/explore"></a>
+              <a class="link fas fa-fw fa-angle-left" href="/p/explore"></a>
               ${this.currentCommunity}
               <app-button
                 transparent
@@ -94,7 +94,7 @@ class CtznExploreView extends LitElement {
 
   renderCommunityBtn (name) {
     return html`
-      <a class="community" href="/explore/community/${encodeURIComponent(name)}">
+      <a class="community" href="/p/explore/community/${encodeURIComponent(name)}">
         ${name}
         <span class="link fas fa-${this.isMember(name) ? 'minus' : 'plus'}" @click=${e => this.onToggleCommunity(e, name)}></span>
       </a>

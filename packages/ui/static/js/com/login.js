@@ -44,7 +44,7 @@ class CtznLogin extends LitElement {
             <div class="error p-6 mb-4">${this.currentError}</div>
           ` : ''}
           <div class="flex justify-between items-center">
-            <a href="/forgot-password">Forgot Password</a>
+            <a href="/p/forgot-password">Forgot Password</a>
             <app-button
               primary
               btn-type="submit"
@@ -55,7 +55,7 @@ class CtznLogin extends LitElement {
           </div>
           <div class="relative text-center border-t border-gray-300 pt-8 mt-6">
             <span class="absolute bg-white px-3 text-gray-500" style="top: -14px; left: 50%; transform: translateX(-50%);">or</span>
-            <app-button btn-class="py-2 px-8 font-semibold rounded-full" color="pink" label="Sign up" href="/signup"></app-button>
+            <app-button btn-class="py-2 px-8 font-semibold rounded-full" color="pink" label="Sign up" href="/p/signup"></app-button>
           </div>
         </form>
       </div>
