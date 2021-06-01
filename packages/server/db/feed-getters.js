@@ -18,7 +18,7 @@ export async function listHomeFeed (opts, auth) {
   const publicDb = getDb(auth.username)
   if (!publicDb) throw new errors.NotFoundError('User database not found')
 
-  if (!didSpecifyLt) {
+  if (!didSpecifyLt && !opts.audience) {
     let cached = cache.getHomeFeed(auth.username, limit)
     if (cached) {
       debugLog.cacheHit('home-feed', auth.username)
@@ -31,8 +31,12 @@ export async function listHomeFeed (opts, auth) {
     }
   }
 
-  const followEntries = await publicDb.follows.list()
+  const [profile, followEntries] = await Promise.all([
+    publicDb.profile.get('self'),
+    publicDb.follows.list()
+  ])
   followEntries.unshift({value: {subject: auth}})
+  const audience = opts.audience ? new Set([opts.audience]) : new Set(profile.value.communities || [])
   const sourceDbs = followEntries.map(f => getDb(f.value.subject.dbKey))
   
   const cursors = sourceDbs.map(db => {
@@ -44,6 +48,12 @@ export async function listHomeFeed (opts, auth) {
   const authorsCache = {}
   const mergedCursor = mergeCursors(cursors)
   for await (let [db, entry] of mergedCursor) {
+    if (opts?.audience && !entry.value.audience) {
+      continue
+    }
+    if (entry.value.audience && !audience.has(entry.value.audience)) {
+      continue
+    }
     if (entry.value.source?.dbUrl) {
       // TODO verify source authenticity
       entry.dbUrl = entry.value.source.dbUrl
@@ -60,7 +70,7 @@ export async function listHomeFeed (opts, auth) {
     }
   }
 
-  if (!didSpecifyLt) {
+  if (!didSpecifyLt && !opts.audience) {
     cache.setHomeFeed(auth.username, postEntries, limit, 60e3)
   }
 

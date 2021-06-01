@@ -1,0 +1,22 @@
+{
+  "id": "ctzn.network/views/popular-communities",
+  "title": "Popular communities view",
+  "description": "List a set of communities ordered by most members.",
+  "type": "json-view",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "communities": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "memberCount": {"type": "number"}
+          }
+        }
+      }
+    }
+  }
+}

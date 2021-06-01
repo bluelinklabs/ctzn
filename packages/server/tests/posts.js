@@ -102,6 +102,39 @@ test('feeds', async t => {
   ])
 })
 
+test('feed audiences & communities', async t => {
+  const {alice, bob, carla} = sim.users
+  await bob.updateProfile({displayName: 'Bob', communities: ['stuff']})
+  await alice.createPost({text: '7', audience: 'stuff'})
+  await alice.createPost({text: '8', audience: 'things'})
+  await bob.createPost({text: '9', audience: 'stuff'})
+
+  await bob.login()
+  let postEntries = (await api.view.get('ctzn.network/views/feed')).feed
+  sim.testFeed(t, postEntries, [
+    [bob, '9'],
+    [alice, '7'],
+    [bob, '6'],
+    [carla, '5'],
+    [alice, '4'],
+    [bob, '3'],
+    [bob, '2']
+  ])
+
+  await bob.updateProfile({displayName: 'Bob', communities: ['stuff', 'things']})
+  let postEntries2 = (await api.view.get('ctzn.network/views/feed')).feed
+  sim.testFeed(t, postEntries2, [
+    [bob, '9'],
+    [alice, '8'],
+    [alice, '7'],
+    [bob, '6'],
+    [carla, '5'],
+    [alice, '4'],
+    [bob, '3'],
+    [bob, '2']
+  ])
+})
+
 test('post with images', async t => {
   const bob = sim.users.bob
   await bob.login()

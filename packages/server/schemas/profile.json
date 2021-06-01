@@ -31,6 +31,13 @@
       "homepageUrl": {
         "type": "string",
         "format": "uri"
+      },
+      "communities": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "maxLength": 64
+        }
       }
     }
   }

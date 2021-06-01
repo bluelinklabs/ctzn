@@ -21,6 +21,7 @@ class PostComposer extends LitElement {
       isProcessing: {type: Boolean},
       uploadProgress: {type: Number},
       uploadTotal: {type: Number},
+      audience: {type: String},
       draftText: {type: String, attribute: 'draft-text'},
       media: {type: Array},
       activeCompressionCount: {type: Number}
@@ -33,6 +34,7 @@ class PostComposer extends LitElement {
     this.uploadProgress = 0
     this.uploadTotal = 0
     this.placeholder = 'What\'s new?'
+    this.audience = undefined
     this.draftText = ''
     this.media = []
     this.activeCompressionCount = 0
@@ -103,6 +105,41 @@ class PostComposer extends LitElement {
             </span>
           </div>
         </section>
+
+        <div class="pb-1 font-medium"><span class="fas fa-users"></span> Community:</div>
+        <div class="mb-4 text-lg">
+          ${this.renderCommunitySelector(undefined, 'Everyone')}
+          ${repeat(session.myCommunities || [], c => c, c => this.renderCommunitySelector(c, c))}
+        </div>
+
+        ${''/* TODO
+        <div class="font-medium">Content warnings:</div>
+        <div class="mb-4 rounded text-lg">
+          <label class="whitespace-nowrap px-1 py-1 inline-block mr-0.5">
+            <span class="mr-1 fas fa-check-square"></span>
+            Satire
+          </label>
+          <label class="whitespace-nowrap px-1 py-1 inline-block mr-0.5">
+            <span class="mr-1 far fa-square"></span>
+            Maybe wrong
+          </label>
+          <label class="whitespace-nowrap px-1 py-1 inline-block mr-0.5">
+            <span class="mr-1 far fa-square"></span>
+            Unverified
+          </label>
+          <label class="whitespace-nowrap px-1 py-1 inline-block mr-0.5">
+            <span class="mr-1 far fa-square"></span>
+            Politics
+          </label>
+          <label class="whitespace-nowrap px-1 py-1 inline-block mr-0.5">
+            <span class="mr-1 far fa-square"></span>
+            Upsetting
+          </label>
+          <label class="whitespace-nowrap px-1 py-1 inline-block mr-0.5">
+            <span class="mr-1 far fa-square"></span>
+            NSFW
+          </label>
+        </div>*/}
 
         ${this.media.length ? html`
           ${repeat(this.media, (item, index) => item ? html`
@@ -206,6 +243,15 @@ class PostComposer extends LitElement {
           </div>
         ` : ''}
       </form>
+    `
+  }
+
+  renderCommunitySelector (value, label) {
+    return html`
+      <span
+        class="post-community-select ${this.audience === value ? 'selected' : ''} whitespace-nowrap px-2 py-1 inline-block mb-1"
+        @click=${e => {this.audience = value}}
+      >${label}</span>
     `
   }
   
@@ -362,6 +408,7 @@ class PostComposer extends LitElement {
         }
       }
       res = await session.api.user.table('ctzn.network/post').createWithBlobs({
+        audience: this.audience,
         text,
         media: media?.length ? media.map(item => ({type: item.type, caption: item.caption})) : undefined
       }, blobs)

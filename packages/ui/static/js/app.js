@@ -9,6 +9,7 @@ import * as contextMenu from './com/context-menu.js'
 import { BasePopup } from './com/popups/base.js'
 import './com/header.js'
 import './views/account.js'
+import './views/explore.js'
 import './views/forgot-password.js'
 import './views/main.js'
 import './views/notifications.js'
@@ -16,6 +17,7 @@ import './views/thread.js'
 import './views/signup.js'
 import './views/user.js'
 
+const EXPLORE_COMMUNITY_PATH_REGEX = new RegExp('/explore/community/([^/]+)', 'i')
 const POST_PATH_REGEX = new RegExp('/([^/]+)/ctzn.network/post/([^/]+)', 'i')
 const COMMENT_PATH_REGEX = new RegExp('/([^/]+)/ctzn.network/comment/([^/]+)', 'i')
 const USER_PATH_REGEX = new RegExp('/([^/]+)')
@@ -225,6 +227,8 @@ class CtznApp extends LitElement {
         case '/search':
         case '/statuses':
           return html`<app-main-view id=${id} class=${cls} current-path=${path}></app-main-view>`
+        case '/explore':
+          return html`<app-explore-view id=${id} class=${cls} current-path=${path}></app-explore-view>`
         case '/notifications':
           return html`<app-notifications-view id=${id} class=${cls} current-path=${path}></app-notifications-view>`
         case '/forgot-password':
@@ -233,6 +237,9 @@ class CtznApp extends LitElement {
           return html`<app-account-view id="view" current-path=${path}></app-account-view>`
         case '/signup':
           return html`<app-signup-view id="view" current-path=${path}></app-signup-view>`
+      }
+      if (EXPLORE_COMMUNITY_PATH_REGEX.test(path)) {
+        return html`<app-explore-view id=${id} class=${cls} current-path=${path}></app-explore-view>`
       }
       if (POST_PATH_REGEX.test(path)) {
         return html`<app-thread-view id="view" current-path=${path}></app-thread-view>`
@@ -289,7 +296,7 @@ class CtznApp extends LitElement {
     const url = new URL(href, window.location.origin)
     if (url.origin === window.location.origin) {
       e.preventDefault()
-      this.navigateTo(url.pathname)
+      this.navigateTo(url.pathname + url.search)
     }
   }
 

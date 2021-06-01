@@ -23,6 +23,7 @@ $color-user-right-nav-item-selected: #004bb4;
 $color-subnav-item-selected: #0065f3;
 $bgcolor: #fff;
 $bgcolor-light: #F9FAFB;
+$bgcolor-medium: #F1F2F3;
 $bgcolor-label: #eee;
 $bgcolor-error: #ffc7c7;
 $bgcolor-empty: #F3F4F6;
@@ -152,6 +153,26 @@ body.theme-vanilla {
       background: $bgcolor-reaction-selected;
     }
   }
+  .communities-list {
+    .community {
+      display: inline-block;
+      border: 1px solid $bordercolor-button;
+      border-radius: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      margin-bottom: 0.25rem;
+      cursor: pointer;
+      &:hover {
+        text-decoration: underline;
+      }
+      .link {
+        padding: 0 0.25rem;
+        border-radius: 0.25rem;
+      }
+      .link:hover {
+        background: $bgcolor-medium;
+      }
+    }
+  }
 
   .bg-loading-gradient {
     background: linear-gradient(to right, rgb(249, 250, 251), rgb(237, 239, 240), rgb(249, 250, 251));
@@ -179,7 +200,7 @@ body.theme-vanilla {
       border-bottom: 1px solid $bordercolor;
 
       .desktop-header-inner {
-        max-width: 920px;
+        max-width: 1100px;
         margin: 0 auto;
       }
 
@@ -278,7 +299,7 @@ body.theme-vanilla {
     }
 
     .comment-text {
-      font-size: 17px;
+      font-size: 16px;
     }
 
     .comment-actions {
@@ -389,7 +410,21 @@ body.theme-vanilla {
       }
     }
   }
-  app-post-composer {}
+  app-post-composer {
+    .post-community-select {
+      border: 1px solid $bordercolor;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      &:hover {
+        background: $bgcolor-medium;
+      }
+      &.selected {
+        background: $bgcolor-button-primary;
+        color: #fff;
+        border-color: $bordercolor-button-primary;
+      }
+    }
+  }
   app-post {
     .default-wrapper,
     .expanded-wrapper {
@@ -398,6 +433,12 @@ body.theme-vanilla {
 
     .avatar {
       border-radius: 50%;
+    }
+
+    .post-audience {
+      color: $color-post-controls;
+      font-size: 12px;
+      font-weight: 500;
     }
 
     .post-metadata {
@@ -676,6 +717,36 @@ body.theme-vanilla {
   // =
 
   app-account-view {}
+  app-explore-view {
+    .content-header {
+      border-left: 1px solid $bordercolor;
+      border-right: 1px solid $bordercolor;
+    }
+
+    .left-nav-item {
+      border-radius: 0.25rem;
+      &.selected,
+      &:hover {
+        background: $bgcolor-medium;
+      }
+      &.selected {
+        font-weight: 600;
+      }
+    }
+
+    .communities-list {
+      padding: 1rem;
+    }
+
+    .communities-list,
+    app-posts-feed {
+      border-top: 1px solid $bordercolor;
+      
+      @media (min-width: $screen-sm) {
+        border: 1px solid $bordercolor;
+      }
+    }
+  }
   app-forgot-password-view {}
   app-main-view {
     .content-header {
@@ -687,7 +758,7 @@ body.theme-vanilla {
       border-radius: 0.25rem;
       &.selected,
       &:hover {
-        background: $bgcolor-light;
+        background: $bgcolor-medium;
       }
       &.selected {
         font-weight: 600;

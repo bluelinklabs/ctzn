@@ -26,6 +26,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
     this.indexState = this.getTable('ctzn.network/index-state')
     this.users = this.getTable('ctzn.network/user')
     this.threadIdx = this.getTable('ctzn.network/thread-idx')
+    this.communitiesIdx = this.getTable('ctzn.network/community-idx')
     this.followsIdx = this.getTable('ctzn.network/follow-idx')
     this.notificationsIdx = this.getTable('ctzn.network/notification-idx')
     this.reactionsIdx = this.getTable('ctzn.network/reaction-idx')
@@ -156,6 +157,52 @@ export class PublicServerDB extends BaseHyperbeeDB {
           // cache in the batch to avoid possibly clobbering writes that occur in the batch
           batch.threadIdxEntries = batch.threadIdxEntries || {}
           batch.threadIdxEntries[target.dbUrl] = threadIdxEntry
+        } finally {
+          release()
+        }
+      }
+    })
+
+    this.createIndexer('ctzn.network/community-idx', ['ctzn.network/profile'], async (batch, db, diff) => {
+      const oldCommunities = new Set(diff.left?.value?.communities || [])
+      const newCommunities = new Set(diff.right?.value?.communities || [])
+      const removedCommunities = new Set([...oldCommunities].filter(x => !newCommunities.has(x)))
+      const addedCommunities = new Set([...newCommunities].filter(x => !oldCommunities.has(x)))
+      const memberDbKey = db.dbKey
+
+      for (let community of removedCommunities) {
+        const release = await this.communitiesIdx.lock(community)
+        try {
+          let communityIdxEntry = await this.communitiesIdx.get(community)
+          if (!communityIdxEntry) continue
+          const memberDbKeyIndex = communityIdxEntry.value.memberDbKeys.indexOf(memberDbKey)
+          if (memberDbKey !== -1) {
+            communityIdxEntry.value.memberDbKeys.splice(memberDbKeyIndex, 1)
+          }
+          if (communityIdxEntry.value.memberDbKeys.length) {
+            await batch.put(this.communitiesIdx.constructBeeKey(communityIdxEntry.key), communityIdxEntry.value)
+          } else {
+            await batch.del(this.communitiesIdx.constructBeeKey(communityIdxEntry.key))
+          }
+        } finally {
+          release()
+        }
+      }
+      for (let community of addedCommunities) {
+        const release = await this.communitiesIdx.lock(community)
+        try {
+          let communityIdxEntry = await this.communitiesIdx.get(community)
+          if (!communityIdxEntry) {
+            communityIdxEntry = {
+              key: community,
+              value: {community, memberDbKeys: []}
+            }
+          }
+          const memberDbKeyIndex = communityIdxEntry.value.memberDbKeys.indexOf(memberDbKey)
+          if (memberDbKeyIndex === -1) {
+            communityIdxEntry.value.memberDbKeys.push(memberDbKey)
+          }
+          await batch.put(this.communitiesIdx.constructBeeKey(communityIdxEntry.key), communityIdxEntry.value)
         } finally {
           release()
         }

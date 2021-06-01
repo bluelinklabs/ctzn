@@ -15,6 +15,7 @@ export class PostsFeed extends LitElement {
     return {
       _view: {type: String, attribute: 'view'},
       userId: {type: String, attribute: 'user-id'},
+      audience: {type: String},
       limit: {type: Number},
       results: {type: Array},
       hasNewItems: {type: Boolean},
@@ -31,6 +32,7 @@ export class PostsFeed extends LitElement {
     super()
     this._view = undefined
     this.userId = undefined
+    this.audience = undefined
     this.limit = undefined
     this.results = undefined
     this.hasNewItems = false
@@ -72,7 +74,7 @@ export class PostsFeed extends LitElement {
   }
 
   get cacheId () {
-    return `${this.userId}|${this.limit}|${this.view}`
+    return `${this.userId}|${this.audience}|${this.limit}|${this.view}`
   }
 
   async load ({clearCurrent} = {clearCurrent: false}) {
@@ -144,9 +146,9 @@ export class PostsFeed extends LitElement {
     let lt = more ? results[results?.length - 1]?.key : undefined
     const orgLen = results.length
     if (this.view === 'ctzn.network/views/feed') {
-      results = results.concat((await session.api.view.get(this.view, {limit: 15, reverse: true, lt}))?.feed)
+      results = results.concat((await session.api.view.get(this.view, {audience: this.audience, limit: 15, reverse: true, lt}))?.feed)
     } else {
-      results = results.concat((await session.api.view.get(this.view, {dbId: this.userId, limit: 15, reverse: true, lt}))?.posts)
+      results = results.concat((await session.api.view.get(this.view, {dbId: this.userId, audience: this.audience, limit: 15, reverse: true, lt}))?.posts)
     }
     this.hasReachedEnd = orgLen === results.length
     if (this.limit > 0 && results.length > this.limit) {
@@ -181,9 +183,9 @@ export class PostsFeed extends LitElement {
     }
     let results
     if (this.view === 'ctzn.network/views/feed') {
-      results = (await session.api.view.get(this.view, {limit: 1, reverse: true}))?.feed
+      results = (await session.api.view.get(this.view, {audience: this.audience, limit: 1, reverse: true}))?.feed
     } else {
-      results = (await session.api.view.get(this.view, {dbId: this.userId, limit: 1, reverse: true}))?.posts
+      results = (await session.api.view.get(this.view, {dbId: this.userId, audience: this.audience, limit: 1, reverse: true}))?.posts
     }
     emit(this, 'fetched-latest')
     this.hasNewItems = (results[0] && results[0].key !== this.results[0].key)
@@ -245,7 +247,7 @@ export class PostsFeed extends LitElement {
         ${this.renderHasNewItems()}
         <div class="empty py-44 text-center">
           <div class="fas fa-stream text-6xl mb-8"></div>
-          ${this.view === 'ctzn.network/views/posts' ? html`
+          ${this.view === 'ctzn.network/views/posts' || this.audience ? html`
             <div>This feed is empty.</div>
           ` : html`
             <div>Follow people to see what's new.</div>

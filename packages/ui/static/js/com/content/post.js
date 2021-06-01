@@ -179,6 +179,14 @@ export class Post extends LitElement {
         </div>
         <div class="block min-w-0">
           <div class="pl-2 pr-2 py-2 min-w-0">
+            ${this.post.value.audience ? html`
+              <div class="post-audience pr-2.5 truncate">
+                <span class="fas fa-users"></span>
+                <a class="hov:hover:underline" href="/explore/community/${encodeURIComponent(this.post.value.audience)}">
+                  ${this.post.value.audience}
+                </a>
+              </div>
+            ` : ''}
             <div class="post-metadata pr-2.5 truncate sm:mb-2">
               <span class="whitespace-nowrap">
                 <a class="hov:hover:underline" href="${USER_URL(this.post.author.dbKey)}" title=${this.post.author.displayName}>
@@ -206,8 +214,8 @@ export class Post extends LitElement {
               ${this.renderActionsSummary()}
               <div class="post-actions flex items-center justify-between pt-1 pl-1 pr-6 sm:pr-12">
                 ${this.renderRepliesCtrl()}
-                ${this.renderUpvoteCtrl()}
-                ${this.renderReactionsBtn()}
+                ${this.renderRepostCtrl()}
+                ${this.renderReactCtrl()}
                 ${this.renderMenuCtrl()}
               </div>
             `}
@@ -235,7 +243,15 @@ export class Post extends LitElement {
           </a>
         </div>
         <div class="block min-w-0">
-          <div class="pr-2 py-2 min-w-0">
+          <div class="pr-2 py-2 ${this.post.value.audience ? 'pt-1' : ''} min-w-0">
+            ${this.post.value.audience ? html`
+              <div class="post-audience pl-1 pr-2.5 truncate">
+                <span class="fas fa-users"></span>
+                <a class="hov:hover:underline" href="/explore/community/${encodeURIComponent(this.post.value.audience)}">
+                  ${this.post.value.audience}
+                </a>
+              </div>
+            ` : ''}
             <div class="post-metadata pl-1 pr-2.5 truncate">
               <span class="whitespace-nowrap">
                 <a class="hov:hover:underline" href="${USER_URL(this.post.author.dbKey)}" title=${this.post.author.displayName}>
@@ -263,8 +279,8 @@ export class Post extends LitElement {
             ` : ''}
             <div class="post-actions flex mt-1.5 items-center justify-between sm:pl-6 pr-6 sm:pr-16">
               ${this.renderRepliesCtrl()}
-              ${this.renderUpvoteCtrl()}
-              ${this.renderReactionsBtn()}
+              ${this.renderRepostCtrl()}
+              ${this.renderReactCtrl()}
               ${this.renderMenuCtrl()}
             </div>
           </div>
@@ -398,19 +414,18 @@ export class Post extends LitElement {
     `
   }
 
-  renderUpvoteCtrl () {
+  renderRepostCtrl () {
     return html`
       <div class="post-action">
         <a class="px-1">
-          <span style="position: relative; top: -1px">
-            ${icons.upArrow(21, 21)}
-          </span>
+          <span class="fas fa-retweet"></span>
+          <span class="count">0</span>
         </a>
       </div>
     `
   }
 
-  renderReactionsBtn () {
+  renderReactCtrl () {
     let aCls = `post-action react`
     if (this.isReactionsOpen) aCls += ' is-open'
     return html`

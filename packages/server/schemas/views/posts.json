@@ -55,6 +55,10 @@
               "type": "object",
               "required": ["text", "createdAt"],
               "properties": {
+                "audience": {
+                  "type": "string",
+                  "maxLength": 64
+                },
                 "text": {
                   "type": "string",
                   "maxLength": 256
@@ -72,6 +76,13 @@
                         "type": "string"
                       }
                     }
+                  }
+                },
+                "warnings": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": ["satire", "maybe-wrong", "unverified", "politics", "upsetting", "nsfw"]
                   }
                 },
                 "createdAt": {

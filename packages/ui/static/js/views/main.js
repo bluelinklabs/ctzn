@@ -148,7 +148,7 @@ class CtznMainView extends LitElement {
     ]
     const leftNavItem = (id, path, icon, label) => html`
       <a href=${path} class="left-nav-item ${id === this.currentView ? 'selected' : ''} block px-3 py-1.5 cursor-pointer">
-        <span class="mr-1 text-base fa-fw ${icon}"></span>
+        <span class="mr-2 fa-fw ${icon}"></span>
         ${label}
       </a>
     `
@@ -163,9 +163,10 @@ class CtznMainView extends LitElement {
       <main class="col3">
         <div class="text-lg pt-3">
           ${leftNavItem('feed', '/', 'far fa-comment-alt', 'Posts')}
-          ${leftNavItem('ktzns', '/ktzns', 'fas fa-cat', 'KTZNs')}
           ${leftNavItem('shout-outs', '/shout-outs', 'far fa-heart', 'Shout Outs')}
           ${leftNavItem('statuses', '/statuses', 'far fa-clock', 'Statuses')}
+          ${leftNavItem('cats', '/cats', 'fas fa-cat', 'Cats')}
+          ${leftNavItem('about-s1', '/about/s1', 'far fa-hand-pointer', 'Season 1')}
         </div>
         <div>
           <app-subnav
@@ -175,18 +176,16 @@ class CtznMainView extends LitElement {
             current-path=${this.currentPath}
           ></app-subnav>
           ${this.currentView === 'feed' ? html`
+            <h2 class="content-header items-center text-2xl tracking-tight font-bold p-4 pr-5 hidden lg:flex">
+              <span>What's new</span>
+              <a class="ml-auto text-base" data-tooltip="Dashboard Mode">
+                <span class="fas fa-th"></span>
+              </a>
+              <a class="ml-6 text-base" data-tooltip="Filters">
+                <span class="fas fa-filter"></span>
+              </a>
+            </h2>
             ${this.renderMockComposer()}
-            ${''/*<h2 class="content-header p-4 hidden lg:flex items-baseline">
-              <span class="text-2xl tracking-tight font-bold">What's new</span>
-              <span class="ml-2 text-gray-400 text-sm tracking-tight">${this.lastFeedFetch ? `Updated ${this.lastFeedFetch}` : ''}</span>
-            </h2>*/}
-            <div class="flex items-center content-header px-3 py-2 font-medium">
-              <span class="px-3 py-1 underline">Main</span>
-              <span class="px-3 py-1 text-gray-700 hover:underline">Drunk Dev Posting</span>
-              <span class="px-3 py-1 text-gray-700 hover:underline">Paul's Devlog</span>
-              <span class="px-3 py-1 text-gray-700 hover:underline">MoE Season Finale</span>
-              <span class="px-3 py-1 text-gray-700 hover:underline"><span class="fas fa-caret-right"></span></span>
-            </div>
             <app-posts-feed
               class="block"
               view="ctzn.network/views/feed"

@@ -531,6 +531,20 @@ class CtznUser extends LitElement {
   renderCurrentView () {
     if (this.currentView === 'about') {
       return html`
+        <div class="info-block mb-2 px-4 py-3">
+          <h2 class="font-semibold text-lg">Communities <span class="text-base ml-1">${this.userProfile?.value?.communities.length || 0}</span></h2>
+          <div class="communities-list">
+            ${repeat(this.userProfile?.value?.communities || [], c => c, c => html`
+              <a class="community" href="/explore/community/${encodeURIComponent(c)}">
+                ${c}
+                <span class="link fas fa-${session.myCommunities?.includes?.(c) ? 'minus' : 'plus'}" @click=${e => this.onToggleCommunity(e, c)}></span>
+              </a>
+            `)}
+            ${this.isMe ? html`
+              <span class="link community" @click=${this.onClickNewCommunity}>New Community</span>
+            ` : ''}
+          </div>
+        </div>
         <app-followers-list
           class="block mb-2"
           user-id=${this.userId}
@@ -662,6 +676,58 @@ class CtznUser extends LitElement {
   onClickCopyDbKey (e) {
     writeToClipboard(this.userProfile.dbKey)
     toast.create('Copied to clipboard')
+  }
+
+  async onClickNewCommunity (e) {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const res = await GeneralPopup.create({
+      maxWidth: '400px',
+      render () {
+        const onCancel = e => this.onReject()
+        const onAdd = e => {    
+          const value = this.querySelector('input').value
+          this.dispatchEvent(new CustomEvent('resolve', {detail: {value}}))
+        }
+        const onKeydownInput = e => {
+          if (e.code === 'Enter' || e.code === 'NumpadEnter') onAdd()
+        }
+        return html`
+          <div class="font-semibold p-1">New community name:</div>
+          <input
+            class="block border border-gray-300 box-border mb-2 px-3 py-2 rounded w-full"
+            @keydown=${onKeydownInput}
+          >
+          <div class="flex justify-between">
+            <app-button btn-class="py-1" label="Cancel" @click=${onCancel}></app-button>
+            <app-button btn-class="py-1" primary label="Add" @click=${onAdd}></app-button>
+          </div>
+        `
+      },
+      firstUpdated () {
+        this.querySelector('input')?.focus()
+      }
+    }).catch(e => undefined)
+
+    if (!session.myCommunities?.includes?.(res.value)) {
+      session.myCommunities.push(res.value)
+      this.userProfile.value.communities = session.myCommunities.slice()
+      await session.modifyProfile(v => Object.assign(v, {communities: session.myCommunities}))
+      this.requestUpdate()
+    }
+  }
+
+  async onToggleCommunity (e, name) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!session.myCommunities.includes(name)) {
+      session.myCommunities.push(name)
+    } else {
+      session.myCommunities.splice(session.myCommunities.indexOf(name), 1)
+    }
+    await session.modifyProfile(v => Object.assign(v, {communities: session.myCommunities}))
+    this.requestUpdate()
   }
 }
 

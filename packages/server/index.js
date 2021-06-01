@@ -120,6 +120,7 @@ function createAppServer (config, configDir) {
   app.get('/', (req, res) => res.render('index'))
   app.get('/index', (req, res) => res.render('index'))
   app.get('/index.html', (req, res) => res.render('index'))
+  app.get('/explore', (req, res) => res.render('index'))
   app.get('/statuses', (req, res) => res.render('index'))
   app.get('/search', (req, res) => res.render('index'))
   app.get('/notifications', (req, res) => res.render('index'))

@@ -104,6 +104,13 @@ export function setup () {
     return {count: await countNotications(auth, opts)}
   })
 
+  define('ctzn.network/views/popular-communities', async (auth) => {
+    const records = await db.publicServerDb.communitiesIdx.list()
+    const communities = records.map(r => ({name: r.value.community, memberCount: r.value.memberDbKeys.length}))
+    communities.sort((a, b) => b.memberCount - a.memberCount)
+    return {communities}
+  })
+
   define('ctzn.network/views/post', async (auth, {dbId, postKey, dbUrl}) => {
     if (dbUrl) {
       let urlp = parseEntryUrl(dbUrl)

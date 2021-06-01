@@ -115,6 +115,7 @@ export async function createUser ({type, username, email, password, profile}) {
     publicDbs.set(publicDb.dbKey, publicDb)
     publicDbs.set(username, publicDb)
     publicServerDb.memberDbKeys.add(publicDb.dbKey)
+    await catchupAllIndexes([publicDb])
     if (privateDb) {
       privateDbs.set(privateDb.dbKey, privateDb)
       privateDbs.set(username, privateDb)

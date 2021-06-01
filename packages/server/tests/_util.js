@@ -261,12 +261,22 @@ class TestCitizen {
     await this.inst.api.method('ctzn.network/methods/login', {username: this.username, password: 'password'})
   }
 
-  async createPost ({text}) {
+  async updateProfile (profile) {
+    await this.login()
+    await this.inst.api.table.create(
+      this.username,
+      'ctzn.network/profile',
+      profile
+    )
+    this.profile = await this.inst.api.view.get('ctzn.network/views/profile', {dbId: this.dbKey})
+  }
+
+  async createPost ({audience, text}) {
     await this.login()
     const {dbUrl} = await this.inst.api.table.create(
       this.username,
       'ctzn.network/post',
-      {text, createdAt: (new Date()).toISOString()}
+      {audience, text, createdAt: (new Date()).toISOString()}
     )
     this.posts.push(await this.inst.api.view.get('ctzn.network/views/post', {dbUrl}))
     return this.posts[this.posts.length - 1]
