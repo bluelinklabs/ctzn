@@ -120,8 +120,8 @@ export class Header extends LitElement {
             <span class="fas fa-fw fa-caret-down"></span>
           </a>
         </div>
+        <!-- <div class="rainbow-gradient animated" style="height: 1px"></div> -->
       </div>
-      <!-- <div class="rainbow-gradient" style="height: 1px"></div> -->
       <div class="menu ${this.isMenuOpen ? 'open transition-enabled' : 'closed'} flex flex-col leading-none font-medium bg-white">
         <div class="px-4 pt-2.5 pb-1">
           <div class="font-bold text-3xl text-gray-800">

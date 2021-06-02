@@ -297,19 +297,8 @@ export class Post extends LitElement {
   }
 
   renderMediaItem (n, item, size) {
-    if (this.post.value.warnings.includes('NSFW')) {
-      return html`
-        <div
-          class="relative item-wrapper img-sizing-${size} img-placeholder nsfw cursor-pointer"
-          @click=${this.renderOpts?.preview ? undefined : e => this.onClickImage(e, n, item)}
-        >
-          <span
-            class="more-images absolute inline-block px-2 py-0.5"
-            style="left: 50%; top: 50%; transform: translate(-50%, -50%)"
-          >NSFW</span>
-        </div>
-      `
-    } else if (item.type === 'video') {
+    const isNSFW = this.post.value.warnings?.includes('NSFW')
+    if (item.type === 'video' && !isNSFW) {
       let thumbUrl = ''
       if (item.blobs?.thumb?.dataUrl) {
         thumbUrl = item.blobs.thumb.dataUrl
@@ -348,11 +337,11 @@ export class Post extends LitElement {
       }
       return html`
         <div
-          class="item-wrapper img-sizing-${size} img-placeholder cursor-pointer"
+          class="item-wrapper img-sizing-${size} img-placeholder ${isNSFW ? 'nsfw' : ''} cursor-pointer"
           @click=${this.renderOpts?.preview ? undefined : e => this.onClickImage(e, n, item)}
         >
           <img
-            class="item box-border object-cover w-full img-sizing-${size}"
+            class="item box-border object-cover w-full img-sizing-${size} ${isNSFW ? 'nsfw' : ''}"
             src="${url}"
             alt=${item.caption || 'Image'}
           >

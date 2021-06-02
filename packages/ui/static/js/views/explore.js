@@ -4,7 +4,6 @@ import { GeneralPopup } from '../com/popups/general.js'
 import * as session from '../lib/session.js'
 import '../com/header.js'
 import '../com/button.js'
-import '../com/suggestions-sidebar.js'
 import '../com/subnav.js'
 
 class CtznExploreView extends LitElement {
@@ -55,7 +54,7 @@ class CtznExploreView extends LitElement {
       <app-header
         current-path=${this.currentPath}
       ></app-header>
-      <main class="col2">
+      <main class="col1">
         <div>
           ${this.currentCommunity ? html`
             <h2 class="content-header flex items-center text-2xl tracking-tight font-bold p-4">
@@ -87,7 +86,6 @@ class CtznExploreView extends LitElement {
             </div>
           `}
         </div>
-        ${this.renderRightSidebar()}
       </main>
     `
   }

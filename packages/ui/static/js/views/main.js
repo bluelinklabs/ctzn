@@ -161,14 +161,17 @@ class CtznMainView extends LitElement {
         @post-created=${e => this.load()}
         @unread-notifications-changed=${this.onUnreadNotificationsChanged}
       ></app-header>
-      <!-- <div class="rainbow-gradient" style="height: 1px"></div> -->
-      <!-- <div class="rainbow-gradient-pattern" style="height: 4px"></div> -->
       <main class="col3">
-        <div class="text-lg pt-3">
-          ${leftNavItem('feed', '/', 'far fa-comment-alt', 'Posts')}
-          ${leftNavItem('shout-outs', '/p/shout-outs', 'far fa-heart', 'Shout Outs')}
-          ${leftNavItem('statuses', '/p/statuses', 'far fa-clock', 'Statuses')}
-          ${leftNavItem('cats', '/p/cats', 'fas fa-cat', 'Cats')}
+        <div>
+          <div class="text-lg pt-1 sticky top-16">
+            ${leftNavItem('feed', '/', 'far fa-comment-alt', 'Posts')}
+            ${leftNavItem('statuses', '/p/statuses', 'far fa-clock', 'Statuses')}
+            <hr class="my-3">
+            <div class="px-4 text-sm"><span class="fas fa-fw fa-circle text-xs text-green-500"></span> 14 users online</div>
+            <div class="px-4 text-sm"><span class="fas fa-fw fa-circle text-xs text-green-500"></span> 3 from the mesh</div>
+            <div class="px-4 text-sm"><span class="fas fa-fw fa-share-alt text-xs text-gray-500"></span> 5 unique peers</div>
+            <div class="px-4 text-sm"><span class="fas fa-fw fa-database text-xs text-gray-500"></span> 839MB saved</div>
+          </div>
         </div>
         <div>
           <app-subnav

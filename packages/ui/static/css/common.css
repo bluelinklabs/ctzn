@@ -518,8 +518,25 @@ app-subnav::-webkit-scrollbar-thumb {
   }
 }
 
+.img-placeholder.nsfw {
+  overflow: hidden;
+}
+
+img.nsfw {
+  filter: blur(20px);
+}
+
 .rainbow-gradient {
   background-image: linear-gradient(to right, rgb(248, 113, 113), /*rgb(254, 243, 199),*/ rgb(14, 165, 233), rgb(147, 197, 253), rgb(124, 58, 237), rgb(236, 72, 153), rgb(225, 29, 72)/*, rgb(248, 113, 113)*/);
+}
+.rainbow-gradient.animated {
+  animation: rainbow-gradient 2s ease infinite;
+  background-size: 200% 200%;
+}
+@keyframes rainbow-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 200% 50%; }
 }
 
 .rainbow-gradient-pattern {
@@ -528,17 +545,6 @@ app-subnav::-webkit-scrollbar-thumb {
     /*linear-gradient(to right, orange , yellow, green, cyan, blue, violet);*/
     linear-gradient(to right, rgb(248, 113, 113), rgb(254, 243, 199), rgb(14, 165, 233), rgb(147, 197, 253), rgb(124, 58, 237), rgb(236, 72, 153), rgb(225, 29, 72)/*, rgb(248, 113, 113)*/);
 }
-
-/*animation: gradient 4s ease infinite;
-background-size: 200% 200%;
-@keyframes gradient {
-0% {
-  background-position: 0% 50%;
-}
-100% {
-  background-position: 100% 50%;
-}
-}*/
 
 .bg-loading-gradient {
   background: linear-gradient(to right, rgb(249, 250, 251), rgb(237, 239, 240), rgb(249, 250, 251));
