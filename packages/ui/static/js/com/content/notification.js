@@ -95,6 +95,15 @@ export class Notification extends LitElement {
       subject = note.item.subject
       action = 'reacted to'
       icon = 'fas fa-heart'
+    } else if (schemaId === 'ctzn.network/vote') {
+      subject = note.item.subject
+      if (note.item.vote === 1) {
+        action = 'upvoted'
+        icon = 'fas fa-arrow-up'
+      } else if (note.item.vote === -1) {
+        action = 'downvoted'
+        icon = 'fas fa-arrow-down'
+      }
     } else {
       return ''
     }
@@ -141,8 +150,8 @@ export class Notification extends LitElement {
                 ${asyncReplace(this.renderReplyComment(replyCommentInfo))}
               </div>
             </div>
-          ` : schemaId === 'ctzn.network/reaction' ? html`
-            ${this.renderReactions()}
+          ` : (schemaId === 'ctzn.network/reaction' || schemaId === 'ctzn.network/vote') ? html`
+            ${schemaId === 'ctzn.network/reaction' ? this.renderReactions() : ''}
             <div class="subject-wrapper pl-3 pr-6 pb-4">
               ${asyncReplace(this.renderSubject())}
             </div>

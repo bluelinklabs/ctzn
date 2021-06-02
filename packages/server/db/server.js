@@ -42,7 +42,8 @@ export class PublicServerDB extends BaseHyperbeeDB {
     const NOTIFICATIONS_SCHEMAS = [
       'ctzn.network/follow',
       'ctzn.network/comment',
-      'ctzn.network/reaction'
+      'ctzn.network/reaction',
+      'ctzn.network/vote'
     ]
     this.createIndexer('ctzn.network/notification-idx', NOTIFICATIONS_SCHEMAS, async (batch, db, diff) => {
       if (!diff.right) return // ignore deletes
@@ -69,7 +70,8 @@ export class PublicServerDB extends BaseHyperbeeDB {
           })
           break
         }
-        case 'ctzn.network/reaction': {
+        case 'ctzn.network/reaction':
+        case 'ctzn.network/vote': {
           const {dbKey: subjectDbKey} = parseEntryUrl(value.subject.dbUrl)
           const subjectDb = getDb(subjectDbKey)
           if (!subjectDb) return // not one of our users

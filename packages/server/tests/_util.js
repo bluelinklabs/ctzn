@@ -223,6 +223,11 @@ export class TestFramework {
           t.is(entry.item.reaction, desc[3], itemDesc)
           t.is(entry.item.subject.dbUrl, desc[2].dbUrl, itemDesc)
           break
+        case 'vote':
+          t.is(schemaId, 'ctzn.network/vote', itemDesc)
+          t.is(entry.item.vote, desc[3], itemDesc)
+          t.is(entry.item.subject.dbUrl, desc[2].dbUrl, itemDesc)
+          break
       }
     }
   }

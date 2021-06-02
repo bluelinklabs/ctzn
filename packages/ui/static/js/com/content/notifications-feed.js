@@ -276,7 +276,7 @@ export class NotificationsFeed extends LitElement {
   
   renderNotification (note, index) {
     const schemaId = extractSchemaId(note.itemUrl)
-    if (schemaId !== 'ctzn.network/comment' && schemaId !== 'ctzn.network/follow' && schemaId !== 'ctzn.network/reaction') {
+    if (schemaId !== 'ctzn.network/comment' && schemaId !== 'ctzn.network/follow' && schemaId !== 'ctzn.network/reaction' && schemaId !== 'ctzn.network/vote') {
       return ''
     }
     let blendedCreatedAt = Number(new Date(note.blendedCreatedAt))
