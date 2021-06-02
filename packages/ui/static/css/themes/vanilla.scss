@@ -69,6 +69,7 @@ $screen-2xl: 1536px;
 body.theme-vanilla {
   background: $bgcolor;
   color: $color;
+  --theme-bg: #fff;
 
   // common elements
   // =
@@ -496,6 +497,26 @@ body.theme-vanilla {
         font-size: 16px;
         color: $color-more-images;
         background: $bgcolor-more-images;
+      }
+    }
+  }
+  app-posts-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    align-items: flex-start;
+    grid-gap: 1rem;
+    padding: 1rem;
+
+    .placeholder,
+    app-post {
+      border: 1px solid $bordercolor;
+      border-radius: 0.25rem;
+    }
+
+    .placeholder {
+      .avatar {
+        border-radius: 50%;
+        background: $bgcolor-placeholder-avatar;
       }
     }
   }

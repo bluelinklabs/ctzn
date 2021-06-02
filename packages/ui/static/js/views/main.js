@@ -2,6 +2,7 @@ import { LitElement, html } from '../../vendor/lit/lit.min.js'
 import * as toast from '../com/toast.js'
 import * as session from '../lib/session.js'
 import { PostComposerPopup } from '../com/popups/post-composer.js'
+import { PostsDashboardPopup } from '../com/popups/posts-dashboard.js'
 import '../com/header.js'
 import '../com/button.js'
 import '../com/login.js'
@@ -177,10 +178,10 @@ class CtznMainView extends LitElement {
           ${this.currentView === 'feed' ? html`
             <h2 class="content-header items-center text-2xl tracking-tight font-bold p-4 pr-5 hidden lg:flex">
               <span>What's new</span>
-              <a class="ml-auto text-base" data-tooltip="Dashboard Mode">
+              <a class="ml-auto text-base cursor-pointer" data-tooltip="Dashboard Mode" @click=${this.onClickDashboardMode}>
                 <span class="fas fa-th"></span>
               </a>
-              <a class="ml-6 text-base" data-tooltip="Filters">
+              <a class="ml-6 text-base cursor-pointer" data-tooltip="Filters">
                 <span class="fas fa-filter"></span>
               </a>
             </h2>
@@ -267,6 +268,12 @@ class CtznMainView extends LitElement {
       // ignore
       console.log(e)
     }
+  }
+
+  onClickDashboardMode (e) {
+    e.preventDefault()
+    e.stopPropagation()
+    PostsDashboardPopup.create()
   }
 
   onUnreadNotificationsChanged (e) {
