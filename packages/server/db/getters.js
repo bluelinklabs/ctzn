@@ -5,6 +5,7 @@ import {
   dbGet,
   fetchAuthor,
   fetchReactions,
+  fetchVotesTally,
   fetchReplyCount,
   fetchReplies,
   fetchIndexedFollowerDbKeys
@@ -71,18 +72,19 @@ export async function getComment (db, key, authorDbId, auth = undefined) {
   }
   commentEntry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/comment', commentEntry.key)
   commentEntry.author = await fetchAuthor(authorDbId)
+  commentEntry.votes = await fetchVotesTally(commentEntry, auth?.dbKey)
   commentEntry.reactions = (await fetchReactions(commentEntry)).reactions
   commentEntry.replyCount = await fetchReplyCount(commentEntry)
   return commentEntry
 }
 
-export async function getThread (subjectUrl) {
+export async function getThread (subjectUrl, auth) {
   const subject = await dbGet(subjectUrl)
   if (!subject?.entry) throw new Error('Thread subject not found')
   subject.entry.dbUrl = subjectUrl
   subject.entry.author = {dbKey: subject.db.dbKey}
   const replies = await fetchReplies(subject.entry)
-  const commentEntries = await fetchIndexedComments(replies)
+  const commentEntries = await fetchIndexedComments(replies, auth)
   return commentEntriesToThread(commentEntries)
 }
 
@@ -102,7 +104,7 @@ export async function listFollows (db, opts) {
   return entries
 }
 
-async function fetchIndexedComments (comments, {includeReplyCount} = {includeReplyCount: false}) {
+async function fetchIndexedComments (comments, auth, {includeReplyCount} = {includeReplyCount: false}) {
   const authorsCache = {}
   const commentEntries = await Promise.all(comments.map(async (comment) => {
     try {
@@ -115,6 +117,7 @@ async function fetchIndexedComments (comments, {includeReplyCount} = {includeRep
       if (!commentEntry) return undefined
       commentEntry.dbUrl = constructEntryUrl(publicDb.url, 'ctzn.network/comment', key)
       commentEntry.author = await fetchAuthor(dbKey, authorsCache)
+      commentEntry.votes = await fetchVotesTally(commentEntry, auth?.dbKey)
       commentEntry.reactions = (await fetchReactions(commentEntry)).reactions
       if (includeReplyCount) commentEntry.replyCount = await fetchReplyCount(commentEntry)
       return commentEntry

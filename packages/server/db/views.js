@@ -76,7 +76,7 @@ export function setup () {
     if (!dbId || !commentKey) {
       throw new errors.ValidationError('Must provide a valid dbUrl or dbId/commentKey')
     }
-    return dbGetters.getComment(getDb(dbId), commentKey, dbId)
+    return dbGetters.getComment(getDb(dbId), commentKey, dbId, auth)
   })
 
   define('ctzn.network/views/feed', async (auth, opts) => {
@@ -160,7 +160,7 @@ export function setup () {
   })
 
   define('ctzn.network/views/thread', async (auth, {dbUrl}) => {
-    return {comments: await dbGetters.getThread(dbUrl)}
+    return {comments: await dbGetters.getThread(dbUrl, auth)}
   })
 }
 

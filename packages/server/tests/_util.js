@@ -333,6 +333,18 @@ class TestCitizen {
     delete this.reactions[subject.dbUrl][reaction]
   }
 
+  async vote (subject, vote) {
+    await this.login()
+    await this.inst.api.table.create(
+      this.username,
+      'ctzn.network/vote',
+      {
+        subject: {dbUrl: subject.dbUrl},
+        vote
+      }
+    )
+  }
+
   async testSocialGraph (t, sim) {
     let follows = (await this.inst.api.table.list(this.dbKey, 'ctzn.network/follow')).entries
     sim.testFollows(t, follows, Object.values(this.following))

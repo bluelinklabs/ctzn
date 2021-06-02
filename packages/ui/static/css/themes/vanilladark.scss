@@ -430,7 +430,7 @@ $screen-2xl: 1536px;
     &:empty {
       display: none;
     }
-    
+
     .default-wrapper,
     .expanded-wrapper {
     }
@@ -477,7 +477,7 @@ $screen-2xl: 1536px;
 
     .warnings {
       background: $bgcolor-light;
-      font-size: 14px;
+      font-size: 12px;
       color: $color-post-controls;
       border-radius: 0.25rem;
       font-weight: 600;

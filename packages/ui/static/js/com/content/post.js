@@ -416,7 +416,7 @@ export class Post extends LitElement {
       return ''
     }
     return html`
-      <div class="warnings mb-3 py-2 px-2">
+      <div class="warnings mb-3 py-1 px-2">
         <span class="fas fa-fw fa-info-circle"></span>
         ${this.post.value.warnings.join(', ')}
       </div>

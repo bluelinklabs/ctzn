@@ -46,6 +46,13 @@
               }
             }
           },
+          "votes": {
+            "type": "object",
+            "properties": {
+              "tally": {"type": "number"},
+              "mine": {"type": "number"}
+            }
+          },
           "replyCount": {"type": "number"},
           "replies": {
             "type": "array",

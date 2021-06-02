@@ -30,6 +30,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
     this.followsIdx = this.getTable('ctzn.network/follow-idx')
     this.notificationsIdx = this.getTable('ctzn.network/notification-idx')
     this.reactionsIdx = this.getTable('ctzn.network/reaction-idx')
+    this.votesIdx = this.getTable('ctzn.network/vote-idx')
 
     this.memberDbKeys = new Set()
     this.memberFollowedDbKeys = new Set()
@@ -247,11 +248,6 @@ export class PublicServerDB extends BaseHyperbeeDB {
         const reactionUrl = (diff.right || diff.left).url
         const subject = (diff.right || diff.left).value.subject
 
-        const subjectValue = (await dbGet(subject.dbUrl))?.entry?.value
-        if (!subjectValue) {
-          throw new Error(`Failed to fetch thread root of comment ${reactionUrl}`)
-        }
-
         let reactionsIdxEntry = await this.reactionsIdx.get(subject.dbUrl)
         if (!reactionsIdxEntry) {
           reactionsIdxEntry = {
@@ -289,7 +285,50 @@ export class PublicServerDB extends BaseHyperbeeDB {
         release()
       }
     })
+
+    this.createIndexer('ctzn.network/vote-idx', ['ctzn.network/vote'], async (batch, db, diff) => {
+      const subjectUrl = (diff.right || diff.left).value.subject.dbUrl
+      const oldVote = diff.left?.value?.vote || 0
+      const newVote = diff.right?.value?.vote || 0
+      if (oldVote === newVote) return
+
+      const release = await this.votesIdx.lock(subjectUrl)
+      try {
+        let votesIdxEntry = await this.votesIdx.get(subjectUrl)
+        if (!votesIdxEntry) {
+          votesIdxEntry = {
+            key: subjectUrl,
+            value: {
+              subject: {dbUrl: subjectUrl},
+              upvoterDbKeys: [],
+              downvoterDbKeys: []
+            }
+          }
+        }
+  
+        if (oldVote === -1) {
+          let i = votesIdxEntry.value.downvoterDbKeys.indexOf(db.dbKey)
+          if (i !== -1) votesIdxEntry.value.downvoterDbKeys.splice(i, 1)
+        } else if (oldVote === 1) {
+          let i = votesIdxEntry.value.upvoterDbKeys.indexOf(db.dbKey)
+          if (i !== -1) votesIdxEntry.value.upvoterDbKeys.splice(i, 1)
+        }
+  
+        if (newVote === -1) {
+          let i = votesIdxEntry.value.downvoterDbKeys.indexOf(db.dbKey)
+          if (i === -1) votesIdxEntry.value.downvoterDbKeys.push(db.dbKey)
+        } else if (newVote === 1) {
+          let i = votesIdxEntry.value.upvoterDbKeys.indexOf(db.dbKey)
+          if (i === -1) votesIdxEntry.value.upvoterDbKeys.push(db.dbKey)
+        }
+  
+        await batch.put(this.votesIdx.constructBeeKey(votesIdxEntry.key), votesIdxEntry.value)
+      } finally {
+        release()
+      }
+    })
   }
+
 
   async onDatabaseCreated () {
     console.log('New public server database created, key:', this.key.toString('hex'))

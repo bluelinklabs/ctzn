@@ -136,6 +136,7 @@ export class Comment extends LitElement {
           ${this.renderCommentText()}
           <div class="comment-actions pl-4">
             ${this.renderUpvoteButton()}
+            ${this.renderVoteTally()}
             ${this.renderDownvoteButton()}
             ${this.renderRepliesBtn()}
             <a
@@ -210,7 +211,8 @@ export class Comment extends LitElement {
   renderUpvoteButton () {
     return html`
       <a
-        class="upvote pl-2 pr-1 mr-2 py-1 cursor-pointer"
+        class="upvote ${this.comment.votes.mine === 1 ? 'selected' : ''} pl-2 pr-1 py-1 cursor-pointer"
+        @click=${e => this.onToggleVote(e, 1)}
       >
         <span style="position: relative; top: -1px">
           ${icons.upArrow(16, 16, 45)}
@@ -219,10 +221,17 @@ export class Comment extends LitElement {
     `
   }
 
+  renderVoteTally () {
+    return html`
+      <span class="vote-tally px-1">${this.comment.votes.tally}</span>
+    `
+  }
+
   renderDownvoteButton () {
     return html`
       <a
-        class="downvote pl-2 pr-1 mr-2 py-1 cursor-pointer"
+        class="downvote ${this.comment.votes.mine === -1 ? 'selected' : ''} pl-1 pr-1 mr-2 py-1 cursor-pointer"
+        @click=${e => this.onToggleVote(e, -1)}
       >
         ${icons.downArrow(16, 16, 45)}
       </a>
@@ -298,6 +307,24 @@ export class Comment extends LitElement {
     } else {
       this.isReplyOpen = true
     }
+  }
+
+  onToggleVote (e, vote) {
+    let diff
+    if (this.comment.votes.mine === vote) {
+      /* dont await */ session.api.user.table('ctzn.network/vote').delete(this.comment.dbUrl)
+      diff = 0 - this.comment.votes.mine
+      this.comment.votes.mine = 0
+    } else {
+      /* dont await */ session.api.user.table('ctzn.network/vote').create({
+        subject: {dbUrl: this.comment.dbUrl},
+        vote
+      })
+      diff = vote - this.comment.votes.mine
+      this.comment.votes.mine = vote
+    }
+    this.comment.votes.tally += diff
+    this.requestUpdate()
   }
 
   onPublishReply (e) {

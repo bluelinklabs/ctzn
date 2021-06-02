@@ -102,6 +102,23 @@ export async function fetchReplies (subject) {
   return threadIdxEntry?.value.items || []
 }
 
+export async function fetchVotesTally (subject, authDbKey = undefined) {
+  const votesIdxEntry = await publicServerDb.votesIdx.get(subject.dbUrl)
+  if (!votesIdxEntry) return {tally: 0, mine: 0}
+  let mine = 0
+  if (authDbKey) {
+    if (votesIdxEntry.value.upvoterDbKeys.includes(authDbKey)) {
+      mine = 1
+    } else if (votesIdxEntry.value.downvoterDbKeys.includes(authDbKey)) {
+      mine = -1
+    }
+  }
+  return {
+    tally: votesIdxEntry.value.upvoterDbKeys.length - votesIdxEntry.value.downvoterDbKeys.length,
+    mine
+  }
+}
+
 export async function fetchReplyCount (subject) {
   const comments = await fetchReplies(subject)
   return comments.length

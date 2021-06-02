@@ -8,6 +8,9 @@ import './post.js'
 import './comment.js'
 import './comment-composer.js'
 
+const VOTE_TALLY_IS_DYING = -1
+const VOTE_TALLY_IS_DEAD = -3
+
 export class Thread extends LitElement {
   static get properties () {
     return {
@@ -67,6 +70,7 @@ export class Thread extends LitElement {
       this.post = await session.api.getPost(this.subject.dbUrl).catch(onError)
       this.thread = !this.post.error ? await session.api.getThread(this.subject.dbUrl).catch(onError) : undefined
     }
+    sortThreadByVotes(this.thread)
     await this.updateComplete
     emit(this, 'load', {detail: {post: this.post}})
     console.log(this.post)
@@ -140,10 +144,11 @@ export class Thread extends LitElement {
     return html`
       <div class="comments-container pl-3">
         ${repeat(replies, r => r.dbUrl, reply => {
+          const tallyState = reply.votes.tally <= VOTE_TALLY_IS_DEAD ? 'opacity-30' : reply.votes.tally <= VOTE_TALLY_IS_DYING ? 'opacity-60' : ''
           const isSubject = this.subject.dbUrl === reply.dbUrl
           return html`
             <div
-              class="comment-container mb-1 ${isSubject ? 'highlight px-2' : ''}"
+              class="comment-container mb-1 ${isSubject ? 'highlight px-2' : ''} ${tallyState}"
               style="${isSubject ? 'margin-left: -14px' : ''}"
             >
               <app-comment
@@ -223,3 +228,10 @@ export class Thread extends LitElement {
 }
 
 customElements.define('app-thread', Thread)
+
+function sortThreadByVotes (replies) {
+  replies.sort((a, b) => b.votes.tally - a.votes.tally)
+  for (let reply of replies) {
+    if (reply.replies) sortThreadByVotes(reply.replies)
+  }
+}

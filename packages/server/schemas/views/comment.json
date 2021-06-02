@@ -37,6 +37,13 @@
           }
         }
       },
+      "votes": {
+        "type": "object",
+        "properties": {
+          "tally": {"type": "number"},
+          "mine": {"type": "number"}
+        }
+      },
       "replyCount": {"type": "number"},
       "seq": {"type": "number"},
       "dbUrl": {"type": "string", "format": "uri"},

@@ -309,6 +309,14 @@ body.theme-vanilla {
       font-size: 13px;
     }
 
+    .upvote.selected,
+    .downvote.selected {
+      svg path {
+        fill: $bgcolor-button-primary !important;
+        stroke: $bgcolor-button-primary !important;
+      }
+    }
+
     .comment-composer-wrapper {
       border: 1px solid $bordercolor;
       border-radius: 0.25rem;
@@ -482,7 +490,7 @@ body.theme-vanilla {
 
     .warnings {
       background: $bgcolor-medium;
-      font-size: 14px;
+      font-size: 12px;
       color: $color-post-controls;
       border-radius: 0.25rem;
       font-weight: 600;
