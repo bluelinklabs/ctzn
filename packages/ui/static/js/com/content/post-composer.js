@@ -6,6 +6,7 @@ import * as toast from '../toast.js'
 import * as session from '../../lib/session.js'
 import * as images from '../../lib/images.js'
 import * as videos from '../../lib/videos.js'
+import * as contentFilters from '../../lib/content-filters.js'
 import bytes from '../../../vendor/bytes/index.js'
 import '../button.js'
 
@@ -23,6 +24,7 @@ class PostComposer extends LitElement {
       uploadTotal: {type: Number},
       audience: {type: String},
       draftText: {type: String, attribute: 'draft-text'},
+      warnings: {type: Array},
       media: {type: Array},
       activeCompressionCount: {type: Number}
     }
@@ -36,6 +38,7 @@ class PostComposer extends LitElement {
     this.placeholder = 'What\'s new?'
     this.audience = undefined
     this.draftText = ''
+    this.warnings = []
     this.media = []
     this.activeCompressionCount = 0
     this.activeCompressions = {}
@@ -106,40 +109,16 @@ class PostComposer extends LitElement {
           </div>
         </section>
 
-        <div class="pb-1 font-medium"><span class="fas fa-users"></span> Community:</div>
+        <div class="pb-1 font-medium"><span class="fas fa-users text-xs relative" style="top: -1px"></span> Community:</div>
         <div class="mb-4 text-lg">
           ${this.renderCommunitySelector(undefined, 'Everyone')}
           ${repeat(session.myCommunities || [], c => c, c => this.renderCommunitySelector(c, c))}
         </div>
 
-        ${''/* TODO
-        <div class="font-medium">Content warnings:</div>
-        <div class="mb-4 rounded text-lg">
-          <label class="whitespace-nowrap px-1 py-1 inline-block mr-0.5">
-            <span class="mr-1 fas fa-check-square"></span>
-            Satire
-          </label>
-          <label class="whitespace-nowrap px-1 py-1 inline-block mr-0.5">
-            <span class="mr-1 far fa-square"></span>
-            Maybe wrong
-          </label>
-          <label class="whitespace-nowrap px-1 py-1 inline-block mr-0.5">
-            <span class="mr-1 far fa-square"></span>
-            Unverified
-          </label>
-          <label class="whitespace-nowrap px-1 py-1 inline-block mr-0.5">
-            <span class="mr-1 far fa-square"></span>
-            Politics
-          </label>
-          <label class="whitespace-nowrap px-1 py-1 inline-block mr-0.5">
-            <span class="mr-1 far fa-square"></span>
-            Upsetting
-          </label>
-          <label class="whitespace-nowrap px-1 py-1 inline-block mr-0.5">
-            <span class="mr-1 far fa-square"></span>
-            NSFW
-          </label>
-        </div>*/}
+        <div class="font-medium">Content notices:</div>
+        <div class="mb-4">
+          ${repeat(contentFilters.IDs, w => w, w => this.renderContentWarningToggle(w))}
+        </div>
 
         ${this.media.length ? html`
           ${repeat(this.media, (item, index) => item ? html`
@@ -254,6 +233,19 @@ class PostComposer extends LitElement {
       >${label}</span>
     `
   }
+
+  renderContentWarningToggle (id) {
+    const icon = this.warnings.includes(id) ? 'fas fa-check-square' : 'far fa-square'
+    return html`
+      <app-button
+        transparent
+        btn-class="whitespace-nowrap px-1 py-1 mr-0.5"
+        icon=${icon}
+        label=${id}
+        @click=${e => this.onToggleContentWarning(e, id)}
+      ></app-button>
+    `
+  }
   
   // events
   // =
@@ -280,8 +272,10 @@ class PostComposer extends LitElement {
           displayName: session.info.displayName
         },
         value: {
+          audience: this.audience,
           text: this.draftText,
           media: this.media,
+          warnings: this.warnings,
           createdAt: (new Date()).toISOString()
         }
       }
@@ -362,6 +356,14 @@ class PostComposer extends LitElement {
     }
   }
 
+  onToggleContentWarning (e, id) {
+    if (this.warnings.includes(id)) {
+      this.warnings = this.warnings.filter(id2 => id2 !== id)
+    } else {
+      this.warnings = this.warnings.concat([id])
+    }
+  }
+
   onCancel (e) {
     e.preventDefault()
     e.stopPropagation()
@@ -410,7 +412,8 @@ class PostComposer extends LitElement {
       res = await session.api.user.table('ctzn.network/post').createWithBlobs({
         audience: this.audience,
         text,
-        media: media?.length ? media.map(item => ({type: item.type, caption: item.caption})) : undefined
+        media: media?.length ? media.map(item => ({type: item.type, caption: item.caption})) : undefined,
+        warnings: this.warnings.length ? this.warnings : undefined
       }, blobs)
     } catch (e) {
       this.isProcessing = false

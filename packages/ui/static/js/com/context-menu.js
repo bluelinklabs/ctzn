@@ -108,7 +108,7 @@ function onClickAnywhere (e) {
 // =
 
 export class ContextMenu extends LitElement {
-  constructor ({parent, x, y, right, center, top, withTriangle, roomy, veryRoomy, rounded, noBorders, style, items, fontAwesomeCSSUrl, render}) {
+  constructor ({parent, x, y, right, center, top, withTriangle, roomy, veryRoomy, rounded, noBorders, keepOpen, style, items, fontAwesomeCSSUrl, render}) {
     super()
     this.hasParent = !!parent
     this.x = x
@@ -121,6 +121,7 @@ export class ContextMenu extends LitElement {
     this.veryRoomy = veryRoomy || false
     this.rounded = rounded || false
     this.noBorders = noBorders || false
+    this.keepOpen = keepOpen || false
     this.customStyle = style || undefined
     this.items = items
     this.fontAwesomeCSSUrl = fontAwesomeCSSUrl || '/css/fontawesome.css'
@@ -137,6 +138,7 @@ export class ContextMenu extends LitElement {
   // =
 
   render () {
+    const keepOpen = this.keepOpen
     const cls = classMap({
       'dropdown-items': true,
       right: this.right,
@@ -152,6 +154,7 @@ export class ContextMenu extends LitElement {
     var style = ''
     if (this.x) style += `left: ${this.x}px; `
     if (this.y) style += `top: ${this.y}px; `
+    const items = typeof this.items === 'function' ? this.items() : this.items
     return html`
       ${this.fontAwesomeCSSUrl ? html`<link rel="stylesheet" href="${this.fontAwesomeCSSUrl}">` : ''}
       <div class="context-menu dropdown ${this.hasParent ? 'has-parent' : ''}" style="${style}">
@@ -159,7 +162,7 @@ export class ContextMenu extends LitElement {
           ? this.customRender.call(this)
           : html`
             <div class="${cls}" style="${ifDefined(this.customStyle)}">
-              ${this.items.map(item => {
+              ${items.map(item => {
                 if (item instanceof Promise) {
                   return html`${asyncReplace(renderPromiseItem(item))}`
                 }
@@ -190,7 +193,7 @@ export class ContextMenu extends LitElement {
                   `
                 }
                 return html`
-                  <div class="dropdown-item ${item.selected ? 'selected' : ''}" @click=${() => { destroy(); item.click() }}>
+                  <div class="dropdown-item ${item.selected ? 'selected' : ''}" @click=${(e) => { if (!keepOpen) { destroy(); } else { e.preventDefault(); e.stopPropagation(); this.requestUpdate(); } item.click() }}>
                     ${typeof icon === 'string'
                       ? html`<i class="${icon}"></i>`
                       : icon ? icon : ''}

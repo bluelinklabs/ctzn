@@ -76,8 +76,7 @@
                 "warnings": {
                   "type": "array",
                   "items": {
-                    "type": "string",
-                    "enum": ["satire", "maybe-wrong", "unverified", "politics", "upsetting", "nsfw"]
+                    "type": "string"
                   }
                 },
                 "createdAt": {

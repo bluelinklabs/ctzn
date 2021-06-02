@@ -431,6 +431,10 @@ body.theme-vanilla {
     }
   }
   app-post {
+    &:empty {
+      display: none;
+    }
+
     .default-wrapper,
     .expanded-wrapper {
       background: $bgcolor;
@@ -474,6 +478,14 @@ body.theme-vanilla {
       .reaction {
         margin-right: 0.25rem;
       }
+    }
+
+    .warnings {
+      background: $bgcolor-medium;
+      font-size: 14px;
+      color: $color-post-controls;
+      border-radius: 0.25rem;
+      font-weight: 600;
     }
 
     .post-actions {

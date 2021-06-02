@@ -1,6 +1,8 @@
 import { LitElement, html } from '../../vendor/lit/lit.min.js'
 import * as toast from '../com/toast.js'
+import * as contextMenu from '../com/context-menu.js'
 import * as session from '../lib/session.js'
+import * as contentFilters from '../lib/content-filters.js'
 import { PostComposerPopup } from '../com/popups/post-composer.js'
 import { PostsDashboardPopup } from '../com/popups/posts-dashboard.js'
 import '../com/header.js'
@@ -181,7 +183,7 @@ class CtznMainView extends LitElement {
               <a class="ml-auto text-base cursor-pointer" data-tooltip="Dashboard Mode" @click=${this.onClickDashboardMode}>
                 <span class="fas fa-th"></span>
               </a>
-              <a class="ml-6 text-base cursor-pointer" data-tooltip="Filters">
+              <a class="ml-6 text-base cursor-pointer" data-tooltip="Filters" @click=${this.onClickFilterMenu}>
                 <span class="fas fa-filter"></span>
               </a>
             </h2>
@@ -274,6 +276,31 @@ class CtznMainView extends LitElement {
     e.preventDefault()
     e.stopPropagation()
     PostsDashboardPopup.create()
+  }
+
+  onClickFilterMenu (e) {
+    e.preventDefault()
+    e.stopPropagation()
+    const item = id => ({
+      icon: contentFilters.isFiltered(id) ? 'far fa-check-square' : 'far fa-square',
+      label: id,
+      click: () => contentFilters.toggle(id)
+    })
+    let rect = e.currentTarget.getClientRects()[0]
+    contextMenu.create({
+      x: rect.right + 6,
+      y: rect.bottom,
+      right: true,
+      noBorders: true,
+      rounded: true,
+      withTriangle: true,
+      keepOpen: true,
+      style: `padding: 4px 0 4px; font-size: 15px`,
+      items: () => [
+        html`<div class="section-header small light">Check items to remove:</div>`,
+        ...contentFilters.IDs.map(item)
+      ]
+    })
   }
 
   onUnreadNotificationsChanged (e) {

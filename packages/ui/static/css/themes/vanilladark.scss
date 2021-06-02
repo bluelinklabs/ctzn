@@ -427,6 +427,10 @@ $screen-2xl: 1536px;
     }
   }
   app-post {
+    &:empty {
+      display: none;
+    }
+    
     .default-wrapper,
     .expanded-wrapper {
     }
@@ -469,6 +473,14 @@ $screen-2xl: 1536px;
       .reaction {
         margin-right: 0.25rem;
       }
+    }
+
+    .warnings {
+      background: $bgcolor-light;
+      font-size: 14px;
+      color: $color-post-controls;
+      border-radius: 0.25rem;
+      font-weight: 600;
     }
 
     .post-actions {

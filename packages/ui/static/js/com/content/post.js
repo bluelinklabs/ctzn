@@ -12,10 +12,11 @@ import { emojify } from '../../lib/emojify.js'
 import { writeToClipboard } from '../../lib/clipboard.js'
 import * as displayNames from '../../lib/display-names.js'
 import * as userIds from '../../lib/user-ids.js'
+import * as contentFilters from '../../lib/content-filters.js'
 import * as contextMenu from '../context-menu.js'
 import * as reactMenu from '../menus/react.js'
 import * as toast from '../toast.js'
-import * as icons from '../icons.js'
+
 
 export class Post extends LitElement {
   static get properties () {
@@ -136,6 +137,10 @@ export class Post extends LitElement {
       `
     }
 
+    if (this.post?.value?.warnings?.length && contentFilters.isAnyFiltered(this.post.value.warnings)) {
+      return html``
+    }
+
     if (this.showContentOnly) {
       return this.renderContentOnly()
     } else if (this.showExpanded) {
@@ -212,6 +217,7 @@ export class Post extends LitElement {
             ${this.renderMedia()}
             ${this.noctrls ? '' : html`
               ${this.renderActionsSummary()}
+              ${this.renderWarnings()}
               <div class="post-actions flex items-center justify-between pt-1 pl-1 pr-6 sm:pr-12">
                 ${this.renderRepliesCtrl()}
                 ${this.renderRepostCtrl()}
@@ -290,7 +296,19 @@ export class Post extends LitElement {
   }
 
   renderMediaItem (n, item, size) {
-    if (item.type === 'video') {
+    if (this.post.value.warnings.includes('NSFW')) {
+      return html`
+        <div
+          class="relative item-wrapper img-sizing-${size} img-placeholder nsfw cursor-pointer"
+          @click=${this.renderOpts?.preview ? undefined : e => this.onClickImage(e, n, item)}
+        >
+          <span
+            class="more-images absolute inline-block px-2 py-0.5"
+            style="left: 50%; top: 50%; transform: translate(-50%, -50%)"
+          >NSFW</span>
+        </div>
+      `
+    } else if (item.type === 'video') {
       let thumbUrl = ''
       if (item.blobs?.thumb?.dataUrl) {
         thumbUrl = item.blobs.thumb.dataUrl
@@ -388,6 +406,18 @@ export class Post extends LitElement {
         ` : html`
           <div class="flex-1">${this.renderMediaItem(0, media[0], 'free')}</div>
         `}
+      </div>
+    `
+  }
+
+  renderWarnings () {
+    if (!this.post.value.warnings?.length) {
+      return ''
+    }
+    return html`
+      <div class="warnings mb-3 py-2 px-2">
+        <span class="fas fa-fw fa-info-circle"></span>
+        ${this.post.value.warnings.join(', ')}
       </div>
     `
   }
