@@ -7,7 +7,7 @@ import { constructUserUrl, parseEntryUrl } from '../lib/strings.js'
 import * as dbGetters from './getters.js'
 import * as schemas from '../lib/schemas.js'
 import * as errors from '../lib/errors.js'
-import { listHomeFeed } from './feed-getters.js'
+import { listHomeFeed, listGlobalPostsFeed } from './feed-getters.js'
 import { fetchNotications, countNotications, dbGet, fetchReactions } from './util.js'
 
 const DEFAULT_USER_AVATAR_PATH = path.join(fileURLToPath(await resolve('@bluelinklabs/ctzn-ui/package.json', import.meta.url)), '..', 'static', 'img', 'default-user-thumb.jpg')
@@ -85,6 +85,10 @@ export function setup () {
 
   define('ctzn.network/views/followers', async (auth, {dbId}) => {
     return dbGetters.listFollowers(dbId)
+  })
+
+  define('ctzn.network/views/global-posts-feed', async (auth, opts) => {
+    return {feed: await listGlobalPostsFeed(opts, auth)}
   })
 
   define('ctzn.network/views/notifications', async (auth, opts) => {

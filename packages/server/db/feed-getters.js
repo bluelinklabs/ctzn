@@ -1,5 +1,5 @@
 import lexint from 'lexicographic-integer-encoding'
-import { getDb } from './index.js'
+import { getDb, publicServerDb, getAllLoadedMemberDbs } from './index.js'
 import { constructEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
 import { fetchAuthor, fetchReactions, fetchReplyCount } from './util.js'
 import * as errors from '../lib/errors.js'
@@ -7,6 +7,51 @@ import * as cache from '../lib/cache.js'
 import { debugLog } from '../lib/debug-log.js'
 
 const lexintEncoder = lexint('hex')
+
+export async function listGlobalPostsFeed (opts, auth) {
+  opts = opts && typeof opts === 'object' ? opts : {}
+  const limit = Math.min(opts?.limit || 100, 100)
+  opts.lt = opts.lt && typeof opts.lt === 'string' ? opts.lt : lexintEncoder.encode(Date.now())
+
+  let sourceDbs
+  if (opts.audience) {
+    const idx = await publicServerDb.communitiesIdx.get(opts.audience)
+    if (!idx?.value?.memberDbKeys?.length) return []
+    sourceDbs = idx.value.memberDbKeys.map(key => getDb(key)).filter(Boolean)
+  } else {
+    sourceDbs = getAllLoadedMemberDbs()
+  }
+
+  const cursors = sourceDbs.map(db => {
+    if (!db) return undefined
+    return db.posts.cursorRead({lt: opts?.lt, reverse: true, wait: false})
+  })
+
+  const postEntries = []
+  const authorsCache = {}
+  const mergedCursor = mergeCursors(cursors)
+  for await (let [db, entry] of mergedCursor) {
+    if (opts?.audience && entry.value.audience !== opts.audience) {
+      continue
+    }
+    if (entry.value.source?.dbUrl) {
+      // TODO verify source authenticity
+      entry.dbUrl = entry.value.source.dbUrl
+      entry.author = await fetchAuthor(hyperUrlToKeyStr(entry.value.source.dbUrl), authorsCache)
+    } else {
+      entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
+      entry.author = await fetchAuthor(db.dbKey, authorsCache)
+    }
+    entry.reactions = (await fetchReactions(entry)).reactions
+    entry.replyCount = await fetchReplyCount(entry)
+    postEntries.push(entry)
+    if (postEntries.length >= limit) {
+      break
+    }
+  }
+
+  return postEntries
+}
 
 export async function listHomeFeed (opts, auth) {
   opts = opts && typeof opts === 'object' ? opts : {}

@@ -72,7 +72,7 @@ class CtznExploreView extends LitElement {
             </h2>
             <app-posts-feed
               class="block"
-              view="ctzn.network/views/feed"
+              view="ctzn.network/views/global-posts-feed"
               audience=${this.currentCommunity}
             ></app-posts-feed>
           ` : html`

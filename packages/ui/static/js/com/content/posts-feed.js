@@ -56,6 +56,7 @@ export class PostsFeed extends LitElement {
   }
 
   get view () {
+    if (this._view === 'global') return 'ctzn.network/views/global-posts-feed'
     if (this._view === 'posts') return 'ctzn.network/views/posts'
     if (this._view === 'feed') return 'ctzn.network/views/feed'
     return this._view || 'ctzn.network/views/posts'
@@ -145,7 +146,7 @@ export class PostsFeed extends LitElement {
     let results = more ? (this.results || []) : []
     let lt = more ? results[results?.length - 1]?.key : undefined
     const orgLen = results.length
-    if (this.view === 'ctzn.network/views/feed') {
+    if (this.view === 'ctzn.network/views/feed' || this.view === 'ctzn.network/views/global-posts-feed') {
       results = results.concat((await session.api.view.get(this.view, {audience: this.audience, limit: 15, reverse: true, lt}))?.feed)
     } else {
       results = results.concat((await session.api.view.get(this.view, {dbId: this.userId, audience: this.audience, limit: 15, reverse: true, lt}))?.posts)
@@ -182,7 +183,7 @@ export class PostsFeed extends LitElement {
       return
     }
     let results
-    if (this.view === 'ctzn.network/views/feed') {
+    if (this.view === 'ctzn.network/views/feed' || this.view === 'ctzn.network/views/global-posts-feed') {
       results = (await session.api.view.get(this.view, {audience: this.audience, limit: 1, reverse: true}))?.feed
     } else {
       results = (await session.api.view.get(this.view, {dbId: this.userId, audience: this.audience, limit: 1, reverse: true}))?.posts

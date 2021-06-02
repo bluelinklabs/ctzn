@@ -343,8 +343,12 @@ async function loadDbByType (dbUrl) {
   throw new Error(`Unknown database type: ${dbDesc.value?.dbType}`)
 }
 
+export function getAllLoadedMemberDbs () {
+  return Array.from(new Set(publicDbs.values())).filter(db => db.writable)
+}
+
 export function getAllLoadedExternalDbs () {
-  return Array.from(publicDbs.values()).filter(db => !db.writable)
+  return Array.from(new Set(publicDbs.values())).filter(db => !db.writable)
 }
 
 async function fetchAllExternalFollowedDbKeys () {

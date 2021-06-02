@@ -166,7 +166,6 @@ class CtznMainView extends LitElement {
           ${leftNavItem('shout-outs', '/p/shout-outs', 'far fa-heart', 'Shout Outs')}
           ${leftNavItem('statuses', '/p/statuses', 'far fa-clock', 'Statuses')}
           ${leftNavItem('cats', '/p/cats', 'fas fa-cat', 'Cats')}
-          ${leftNavItem('about-s1', '/p/about/s1', 'far fa-hand-pointer', 'Season 1')}
         </div>
         <div>
           <app-subnav
