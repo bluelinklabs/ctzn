@@ -541,8 +541,14 @@ body.theme-vanilla {
     }
   }
   app-posts-feed {
-    .placeholder:not(.is-first),
-    app-post:not(.is-first) {
+    @media (min-width: $screen-sm) {
+      border-left: 1px solid $bordercolor;
+      border-right: 1px solid $bordercolor;
+      border-bottom: 1px solid $bordercolor;
+    }
+
+    .placeholder,
+    app-post {
       border-top: 1px solid $bordercolor;
     }
 
@@ -770,12 +776,6 @@ body.theme-vanilla {
 
     .communities-list {
       padding: 1rem;
-    }
-
-    .communities-list,
-    app-posts-feed {
-      border-top: 1px solid $bordercolor;
-      
       @media (min-width: $screen-sm) {
         border: 1px solid $bordercolor;
       }
@@ -798,14 +798,6 @@ body.theme-vanilla {
         font-weight: 600;
       }
     }
-
-    app-posts-feed {
-      border-top: 1px solid $bordercolor;
-      
-      @media (min-width: $screen-sm) {
-        border: 1px solid $bordercolor;
-      }
-    }
   }
   app-notifications-view {
     .content-header {
@@ -816,14 +808,6 @@ body.theme-vanilla {
   app-signup-view {}
   app-thread-view {}
   app-user-view {
-    app-posts-feed {
-      border-top: 1px solid $bordercolor;
-      
-      @media (min-width: $screen-sm) {
-        border: 1px solid $bordercolor;
-      }
-    }
-
     app-followers-list,
     app-following-list,
     .info-block {

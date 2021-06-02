@@ -121,6 +121,8 @@ $font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation M
   }
 
   app-posts-feed {
+    border: 0 !important;
+
     .placeholder,
     app-post {
       border: 1px solid $bordercolor !important;
@@ -151,10 +153,6 @@ $font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation M
       border: 1px solid $bordercolor;
       margin-top: 0.25rem;
     }
-
-    app-posts-feed {
-      border: 0;
-    }
   }
   app-notifications-view {
     .content-header {
@@ -163,8 +161,5 @@ $font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation M
     }
   }
   app-user-view {
-    app-posts-feed {
-      border: 0;
-    }
   }
 }
