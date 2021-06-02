@@ -282,8 +282,8 @@ class CtznMainView extends LitElement {
     e.preventDefault()
     e.stopPropagation()
     const item = id => ({
-      icon: contentFilters.isFiltered(id) ? 'far fa-check-square' : 'far fa-square',
-      label: id,
+      icon: contentFilters.isFiltered(id) ? 'fas fa-toggle-off' : 'fas fa-toggle-on',
+      label: html`${id}: <strong>${contentFilters.isFiltered(id) ? 'Hidden' : 'Allowed'}</strong>`,
       click: () => contentFilters.toggle(id)
     })
     let rect = e.currentTarget.getClientRects()[0]
@@ -297,7 +297,7 @@ class CtznMainView extends LitElement {
       keepOpen: true,
       style: `padding: 4px 0 4px; font-size: 15px`,
       items: () => [
-        html`<div class="section-header small light">Check items to remove:</div>`,
+        html`<div class="section-header small light">Filters:</div>`,
         ...contentFilters.IDs.map(item)
       ]
     })
