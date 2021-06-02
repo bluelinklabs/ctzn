@@ -278,6 +278,7 @@ export class Post extends LitElement {
             </div>
             ${this.renderPostText()}
             ${this.renderMedia()}
+            ${this.renderWarnings()}
             ${this.hasReactions ? html`
               <div class="reactions flex items-center my-1.5 mx-0.5 truncate">
                 ${this.renderReactions()}
