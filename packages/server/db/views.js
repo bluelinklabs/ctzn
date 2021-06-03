@@ -176,6 +176,17 @@ export function setup () {
     }
   })
 
+  define('ctzn.network/views/server-stats', async (auth) => {
+    let dbs = db.getAllPublicDbs()
+    return {
+      databases: {
+        total: dbs.length,
+        external: dbs.filter(db => !db.writable).length
+      },
+      peers: dbs.reduce((acc, db) => (db.peers?.length || 0) + acc, 0)
+    }
+  })
+
   define('ctzn.network/views/thread', async (auth, {dbUrl}) => {
     return {comments: await dbGetters.getThread(dbUrl, auth)}
   })

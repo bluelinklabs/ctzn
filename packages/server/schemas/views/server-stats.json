@@ -1,0 +1,22 @@
+{
+  "id": "ctzn.network/views/server-stats",
+  "title": "Server statis view",
+  "description": "Statistics about the server.",
+  "type": "json-view",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["databases", "peers"],
+    "properties": {
+      "databases": {
+        "type": "object",
+        "required": ["total", "external"],
+        "properties": {
+          "total": {"type": "number"},
+          "external": {"type": "number"}
+        }
+      },
+      "peers": {"type": "number"}
+    }
+  }
+}

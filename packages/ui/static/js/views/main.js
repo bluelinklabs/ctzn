@@ -2,6 +2,7 @@ import { LitElement, html } from '../../vendor/lit/lit.min.js'
 import * as toast from '../com/toast.js'
 import * as contextMenu from '../com/context-menu.js'
 import * as session from '../lib/session.js'
+import { pluralize } from '../lib/strings.js'
 import * as contentFilters from '../lib/content-filters.js'
 import { PostComposerPopup } from '../com/popups/post-composer.js'
 import { PostsDashboardPopup } from '../com/popups/posts-dashboard.js'
@@ -26,7 +27,8 @@ class CtznMainView extends LitElement {
       currentView: {type: String},
       searchQuery: {type: String},
       numUnreadNotifications: {type: Number},
-      lastFeedFetch: {type: Number}
+      lastFeedFetch: {type: Number},
+      serverStats: {type: Object}
     }
   }
 
@@ -39,6 +41,7 @@ class CtznMainView extends LitElement {
     this.searchQuery = ''
     this.numUnreadNotifications = 0
     this.lastFeedFetch = undefined
+    this.serverStats = undefined
 
     const pathParts = (new URL(location)).pathname.split('/')
     this.currentView = pathParts[1] || 'feed'
@@ -59,6 +62,11 @@ class CtznMainView extends LitElement {
     await this.updateComplete
     this.querySelector('app-current-status')?.load()
     this.querySelector('app-posts-feed')?.load()
+
+    if (!this.serverStats) {
+      this.serverStats = await session.api.view.get('ctzn.network/views/server-stats')
+      console.log(this.serverStats)
+    }
   }
 
   async refresh () {
@@ -168,10 +176,13 @@ class CtznMainView extends LitElement {
             ${leftNavItem('feed', '/', 'far fa-comment-alt', 'Posts')}
             ${leftNavItem('statuses', '/p/statuses', 'far fa-clock', 'Statuses')}
             <hr class="my-3">
-            <div class="px-4 text-sm"><span class="fas fa-fw fa-circle text-xs text-green-500"></span> 14 users online</div>
-            <div class="px-4 text-sm"><span class="fas fa-fw fa-circle text-xs text-green-500"></span> 3 from the mesh</div>
-            <div class="px-4 text-sm"><span class="fas fa-fw fa-share-alt text-xs text-gray-500"></span> 5 unique peers</div>
-            <div class="px-4 text-sm"><span class="fas fa-fw fa-database text-xs text-gray-500"></span> 839MB saved</div>
+            ${this.serverStats ? html`
+              <div class="px-3.5 py-0.5 text-sm"><span class="fas fa-fw fa-circle text-xs text-green-500"></span> <span class="opacity-70">${this.serverStats.databases.total} ${pluralize(this.serverStats.databases.total, 'user')} online</span></div>
+              ${this.serverStats.databases.external ? html`
+                <div class="px-3.5 py-0.5 text-sm"><span class="fas fa-fw fa-circle text-xs text-green-500"></span> <span class="opacity-70">${this.serverStats.databases.external} from the mesh</span></div>
+              ` : ''}
+              <div class="px-3.5 py-0.5 text-sm"><span class="fas fa-fw fa-share-alt text-xs text-gray-500"></span> <span class="opacity-70">${this.serverStats.peers} server ${pluralize(this.serverStats.databases.total, 'peer')}</span></div>
+            ` : ''}
           </div>
         </div>
         <div>
