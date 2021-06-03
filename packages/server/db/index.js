@@ -256,6 +256,10 @@ export function* getAllIndexingDbs () {
   if (privateServerDb) yield privateServerDb
 }
 
+export function getAllPublicDbs () {
+  return Array.from(new Set(Array.from(publicDbs.values())))
+}
+
 var _didIndexRecently = false // NOTE used only for tests, see whenAllSynced
 export async function onDatabaseChange (changedDb, indexingDbsToUpdate = undefined) {
   const pend = perf.measure('onDatabaseChange')

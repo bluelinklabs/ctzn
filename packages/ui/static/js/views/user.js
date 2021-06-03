@@ -595,7 +595,9 @@ class CtznUser extends LitElement {
             ></app-button>
           </div>
           <div class="text-sm px-4">
-            "Muting" hides this user's posts from your feed. Nobody will know you muted them.
+            "Muting" hides this user's posts from your feed.
+            Nobody will know you muted them.
+            You will continue to receive notifications from them and see their comments.
           </div>
         </div>
       `

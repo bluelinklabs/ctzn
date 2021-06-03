@@ -1,0 +1,31 @@
+{
+  "id": "ctzn.network/views/search-users",
+  "title": "Search users view",
+  "description": "Search known users.",
+  "type": "json-view",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["q"],
+    "properties": {
+      "q": {"type": "string"}
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["users"],
+    "properties": {
+      "users": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "dbKey": {"type": "string",  "pattern": "^[0-9a-f]{64}$"},
+            "username": {"type": "string"}
+          }
+        }
+      }
+    }
+  }
+}

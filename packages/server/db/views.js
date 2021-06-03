@@ -168,6 +168,14 @@ export function setup () {
     return {subject: res.subject, reactions: res.reactions}
   })
 
+  define('ctzn.network/views/search-users', async (auth, {q}) => {
+    q = q.toLowerCase()
+    let hits = db.getAllPublicDbs().filter(db => db.username && db.username.toLowerCase().includes(q))
+    return {
+      users: hits.map(db => ({dbKey: db.dbKey, username: db.username}))
+    }
+  })
+
   define('ctzn.network/views/thread', async (auth, {dbUrl}) => {
     return {comments: await dbGetters.getThread(dbUrl, auth)}
   })

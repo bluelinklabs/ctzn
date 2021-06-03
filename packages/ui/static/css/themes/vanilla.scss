@@ -694,9 +694,11 @@ body.theme-vanilla {
     .result {
       border-bottom: 1px solid $bordercolor;
       font-size: 14px;
-      &:hover,
-      &.is-selected {
+      &:hover {
         background: $bgcolor-light;
+      }
+      &.is-selected {
+        background: $bgcolor-medium;
       }
     }
     .result-icon {

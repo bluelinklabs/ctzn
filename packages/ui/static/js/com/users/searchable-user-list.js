@@ -9,6 +9,7 @@ export class SearchableUserList extends LitElement {
   static get properties () {
     return {
       filter: {type: String},
+      users: {type: Array},
       widgetMode: {type: Boolean, attribute: 'widget-mode'},
       highlightIndex: {type: Number}
     }
@@ -21,6 +22,7 @@ export class SearchableUserList extends LitElement {
   constructor () {
     super()
     this.filter = ''
+    this.users = []
     this.widgetMode = false
     this.highlightIndex = 0
   }
@@ -31,7 +33,7 @@ export class SearchableUserList extends LitElement {
 
   updated (changedProperties) {
     if (changedProperties.has('filter')) {
-      this.highlightIndex = Math.max(0, Math.min(this.highlightIndex, this.numResults - 1))
+      this.runSearch()
     }
   }
 
@@ -49,6 +51,15 @@ export class SearchableUserList extends LitElement {
     let el = this.querySelector(this.widgetMode ? '.is-selected' : '.result')
     if (!el || !el.getAttribute('href')) return
     emit(this, 'navigate-to', {detail: {url: el.getAttribute('href')}})
+  }
+
+  async runSearch () {
+    if (!this.filter.trim()) {
+      this.users = []
+    } else {
+      this.users = (await session.api.view.get('ctzn.network/views/search-users', {q: this.filter})).users.map(u => u.dbKey)
+    }
+    this.highlightIndex = Math.max(0, Math.min(this.highlightIndex, this.numResults - 1))
   }
 
   scrollToSelection () {
@@ -74,31 +85,13 @@ export class SearchableUserList extends LitElement {
   }
 
   get numResults () {
-    const me = this.getFilteredMe()
-    const users = this.getFilteredUsers()
+    const users = this.users
     const looksLikeDbKey = /^[0-9a-f]{64}$/.test(this.filter)
-    return (!!me ? 1 : 0) + (looksLikeDbKey ? 1 : 0) + users?.length
-  }
-
-  testUserId (userId) {
-    if (!this.filter) return true
-    if (userId.toLowerCase().includes(this.filter)) return true
-    if (displayNames.get(userId).toLowerCase().includes(this.filter)) return true
-    return false
-  }
-
-  getFilteredMe () {
-    const username = session.info.username
-    return this.testUserId(username) ? username : undefined
-  }
-
-  getFilteredUsers () {
-    return (session.myFollowing || []).filter(userId => this.testUserId(userId))
+    return (looksLikeDbKey ? 1 : 0) + users?.length
   }
 
   render () {
-    const me = this.getFilteredMe()
-    const users = this.getFilteredUsers()
+    const users = this.users
     const looksLikeDbKey = /^[0-9a-f]{64}$/.test(this.filter)
     let itemIndex = 0
     const renderItem = (href, title, inner) => {
@@ -143,16 +136,7 @@ export class SearchableUserList extends LitElement {
             Go to ${this.filter}
           `)}
         ` : ''}
-        ${me ? html`
-          ${renderItem(`/${me}`, me, html`
-            <img class="avatar w-8 h-8 object-cover mr-2" src=${AVATAR_URL(me)} style="left: 10px; top: 6px">
-            ${displayNames.render(me)}
-          `)}
-        ` : ''}
         ${users?.length ? html`
-          <h3 class="results-heading px-2 py-2">
-            Following
-          </h3>
           ${repeat(users, f => f, userId => renderItem(`/${userId}`, userId, html`
             <img
               class="avatar lazyload w-8 h-8 object-cover mr-2"
