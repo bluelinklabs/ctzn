@@ -10,9 +10,9 @@ test.before(async () => {
   close = inst.close
   api = inst.api
 
-  await sim.createCitizen(inst, 'alice')
-  await sim.createCitizen(inst, 'bob')
-  await sim.createCitizen(inst, 'carla')
+  await sim.createUser(inst, 'alice')
+  await sim.createUser(inst, 'bob')
+  await sim.createUser(inst, 'carla')
 
   const {alice, bob, carla} = sim.users
   await bob.follow(alice)

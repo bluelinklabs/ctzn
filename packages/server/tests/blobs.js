@@ -12,7 +12,7 @@ test.before(async () => {
   inst = await createServer()
 
   await inst.api.post('debug/create-user', {
-    type: 'citizen',
+    type: 'user',
     username: 'bob',
     email: 'bob@roberts.com',
     password: 'password',

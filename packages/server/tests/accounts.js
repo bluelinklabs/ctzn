@@ -10,7 +10,7 @@ test.before(async () => {
   close = inst.close
   api = inst.api
 
-  await sim.createCitizen(inst, 'alice')
+  await sim.createUser(inst, 'alice')
 })
 
 test.after.always(async t => {

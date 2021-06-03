@@ -1,13 +1,13 @@
 import { BaseHyperbeeDB } from './base.js'
 
-export class PublicCitizenDB extends BaseHyperbeeDB {
+export class PublicUserDB extends BaseHyperbeeDB {
   constructor (key, username) {
     super(`public:${username || key.toString('hex').slice(0, 8)}`, key)
     this.username = username
   }
 
   get dbType () {
-    return 'ctzn.network/public-citizen-db'
+    return 'ctzn.network/public-user-db'
   }
 
   async setup () {
@@ -26,7 +26,7 @@ export class PublicCitizenDB extends BaseHyperbeeDB {
   }
 }
 
-export class PrivateCitizenDB extends BaseHyperbeeDB {
+export class PrivateUserDB extends BaseHyperbeeDB {
   constructor (key, username, publicServerDb, publicDb) {
     super(`private:${username || key.toString('hex').slice(0, 8)}`, key, {isPrivate: true})
     this.username = username
@@ -35,7 +35,7 @@ export class PrivateCitizenDB extends BaseHyperbeeDB {
   }
 
   get dbType () {
-    return 'ctzn.network/private-citizen-db'
+    return 'ctzn.network/private-user-db'
   }
 
   async setup () {

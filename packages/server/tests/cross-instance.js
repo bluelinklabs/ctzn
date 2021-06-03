@@ -43,10 +43,10 @@ test('2 instances, all users follow all other users', async t => {
   // create users
   for (let i = 0; i < NUM_USERS; i++) {
     if (i < Math.floor(NUM_USERS / 2)) {
-      await sim.createCitizen(inst1, username(i))
+      await sim.createUser(inst1, username(i))
       console.log('INST 1', user(i).dbKey)
     } else {
-      await sim.createCitizen(inst2, username(i))
+      await sim.createUser(inst2, username(i))
       console.log('INST 2', user(i).dbKey)
     }
   }
@@ -167,13 +167,13 @@ test('3 instances, all users follow all other users', async t => {
   // create users
   for (let i = 0; i < NUM_USERS; i++) {
     if (i < Math.floor(NUM_USERS / 3)) {
-      await sim.createCitizen(inst1, username(i))
+      await sim.createUser(inst1, username(i))
       console.log('INST 1', user(i).dbKey)
     } else if (i < Math.floor(NUM_USERS * 2 / 3)) {
-      await sim.createCitizen(inst2, username(i))
+      await sim.createUser(inst2, username(i))
       console.log('INST 2', user(i).dbKey)
     } else {
-      await sim.createCitizen(inst3, username(i))
+      await sim.createUser(inst3, username(i))
       console.log('INST 3', user(i).dbKey)
     }
   }
@@ -288,10 +288,10 @@ test('2 instances, no follows (on-demand fetches)', async t => {
   // create users
   for (let i = 0; i < NUM_USERS; i++) {
     if (i < Math.floor(NUM_USERS / 2)) {
-      await sim.createCitizen(inst1, username(i))
+      await sim.createUser(inst1, username(i))
       console.log('INST 1', user(i).dbKey)
     } else {
-      await sim.createCitizen(inst2, username(i))
+      await sim.createUser(inst2, username(i))
       console.log('INST 2', user(i).dbKey)
     }
   }
@@ -359,10 +359,10 @@ test('optimistic sync of followed users', async t => {
   // create users
   for (let i = 0; i < NUM_USERS; i++) {
     if (i < Math.floor(NUM_USERS / 2)) {
-      await sim.createCitizen(inst1, username(i))
+      await sim.createUser(inst1, username(i))
       console.log('INST 1', user(i).dbKey)
     } else {
-      await sim.createCitizen(inst2, username(i))
+      await sim.createUser(inst2, username(i))
       console.log('INST 2', user(i).dbKey)
     }
   }

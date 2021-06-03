@@ -101,7 +101,7 @@ export class HyperspaceView extends BaseView {
   async fetchLatest () {
     this.databases = await this.api.call('server.listDatabases', []).catch(e => [])
     this.dbsListed = this.databases
-      .filter(db => ['ctzn.network/public-server-db', 'ctzn.network/public-citizen-db'].includes(db.dbType))
+      .filter(db => ['ctzn.network/public-server-db', 'ctzn.network/public-user-db'].includes(db.dbType))
       .sort((a, b) => {
         if (!a.userId) return -1
         if (!b.userId) return 1
@@ -113,7 +113,7 @@ export class HyperspaceView extends BaseView {
       ...this.dbsListed.map(db => ([
         ({
           'ctzn.network/public-server-db': 'Server',
-          'ctzn.network/public-citizen-db': 'Citizen'
+          'ctzn.network/public-user-db': 'User'
         })[db.dbType],
         db.userId || 'Server',
         String(db.peerCount),
@@ -212,15 +212,15 @@ export class HyperspaceView extends BaseView {
     } else {
       let pub = this.databases.find(db => db.key === this.selection)
       let priv = undefined
-      if (pub.dbType === 'ctzn.network/public-citizen-db') {
-        priv = this.databases.find(db => db.userId === pub.userId && db.dbType === 'ctzn.network/private-citizen-db')
+      if (pub.dbType === 'ctzn.network/public-user-db') {
+        priv = this.databases.find(db => db.userId === pub.userId && db.dbType === 'ctzn.network/private-user-db')
       } else if (pub.dbType === 'ctzn.network/public-server-db') {
         priv = this.databases.find(db => db.dbType === 'ctzn.network/private-server-db')
       }
 
       const typeLabel = ({
         'ctzn.network/public-server-db': 'Server',
-        'ctzn.network/public-citizen-db': 'Citizen'
+        'ctzn.network/public-user-db': 'User'
       })[pub.dbType]
       this.infopane.append(blessed.text({
         left: 0,

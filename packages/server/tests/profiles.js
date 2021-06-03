@@ -12,7 +12,7 @@ test.before(async () => {
   inst = await createServer()
 
   await inst.api.post('debug/create-user', {
-    type: 'citizen',
+    type: 'user',
     username: 'bob',
     email: 'bob@roberts.com',
     password: 'password',
@@ -33,7 +33,7 @@ test('basic CRUD', async t => {
     'ctzn.network/profile',
     {
       displayName: 'Bobo Roberts',
-      description: 'Some citizen',
+      description: 'Some user',
       homepageUrl: 'http://example.com'
     }
   )
@@ -41,7 +41,7 @@ test('basic CRUD', async t => {
   let profile1 = await inst.api.view.get('ctzn.network/views/profile', {dbId: `bob`})
   t.truthy(/^hyper:\/\/([0-9a-f]{64})\/$/.test(profile1.dbUrl))
   t.is(profile1.value.displayName, 'Bobo Roberts')
-  t.is(profile1.value.description, 'Some citizen')
+  t.is(profile1.value.description, 'Some user')
   t.is(profile1.value.homepageUrl, 'http://example.com')
 })
 
@@ -58,7 +58,7 @@ test('communities', async t => {
     'ctzn.network/profile',
     {
       displayName: 'Bobo Roberts',
-      description: 'Some citizen',
+      description: 'Some user',
       homepageUrl: 'http://example.com',
       communities: ['WebDev', 'US News']
     }
@@ -73,7 +73,7 @@ test('communities', async t => {
   }
 
   await inst.api.post('debug/create-user', {
-    type: 'citizen',
+    type: 'user',
     username: 'alice',
     email: 'alice@roberts.com',
     password: 'password',
@@ -97,7 +97,7 @@ test('communities', async t => {
     'ctzn.network/profile',
     {
       displayName: 'Bobo Roberts',
-      description: 'Some citizen',
+      description: 'Some user',
       homepageUrl: 'http://example.com',
       communities: []
     }

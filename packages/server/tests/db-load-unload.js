@@ -9,7 +9,7 @@ test.after.always(async t => {
   }
 })
 
-test('external citizen databases are loaded and unloaded by follows', async t => {
+test('external user databases are loaded and unloaded by follows', async t => {
   let inst1 = await createServer()
   instances.push(inst1)
   let inst2 = await createServer()
@@ -19,8 +19,8 @@ test('external citizen databases are loaded and unloaded by follows', async t =>
   const user = i => sim.users[username(i)]
 
   // create users
-  await sim.createCitizen(inst1, username(0))
-  await sim.createCitizen(inst2, username(1))
+  await sim.createUser(inst1, username(0))
+  await sim.createUser(inst2, username(1))
 
   // test that inst2 doesnt have inst1's user loaded
   await t.throwsAsync(() => inst2.api.table.list(user(0).dbKey, 'ctzn.network/post'))

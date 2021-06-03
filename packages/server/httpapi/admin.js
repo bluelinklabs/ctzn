@@ -294,7 +294,7 @@ export function setup (app, config) {
   app.get('/_api/admin/users-count', async (req, res) => {
     try {
       let userRecords = await dbs.publicServerDb.users.list()
-      const count = userRecords.filter(u => u.value.type === 'citizen').length
+      const count = userRecords.filter(u => u.value.type === 'user').length
       res.status(200).json({count})
     } catch (e) {
       res.status(500).json({error: true, message: e.message || e.toString()})

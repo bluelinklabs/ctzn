@@ -55,15 +55,8 @@ export class TestFramework {
     this.users = {}
   }
 
-  async createCitizen (inst, username) {
-    const user = new TestCitizen(inst, username)
-    await user.setup()
-    this.users[username] = user
-    return user
-  }
-
-  async createCommunity (inst, username) {
-    const user = new TestCommunity(inst, username)
+  async createUser (inst, username) {
+    const user = new TestUser(inst, username)
     await user.setup()
     this.users[username] = user
     return user
@@ -238,7 +231,7 @@ export class TestFramework {
   }
 }
 
-class TestCitizen {
+class TestUser {
   constructor (inst, username) {
     this.inst = inst
     this.username = username
@@ -255,7 +248,7 @@ class TestCitizen {
 
   async setup () {
     const res = await this.inst.api.post('debug/create-user', {
-      type: 'citizen',
+      type: 'user',
       username: this.username,
       email: `${this.username}@email.com`,
       password: 'password',
@@ -320,18 +313,18 @@ class TestCitizen {
     return this.comments[this.comments.length - 1]
   }
 
-  async follow (testCitizen) {
+  async follow (testUser) {
     await this.login()
     await this.inst.api.table.create(this.dbKey, 'ctzn.network/follow', {
-      subject: {dbKey: testCitizen.dbKey}
+      subject: {dbKey: testUser.dbKey}
     })
-    this.following[testCitizen.dbKey] = testCitizen
+    this.following[testUser.dbKey] = testUser
   }
 
-  async unfollow (testCitizen) {
+  async unfollow (testUser) {
     await this.login()
-    await this.inst.api.table.delete(this.dbKey, 'ctzn.network/follow', testCitizen.dbKey)
-    delete this.following[testCitizen.dbKey]
+    await this.inst.api.table.delete(this.dbKey, 'ctzn.network/follow', testUser.dbKey)
+    delete this.following[testUser.dbKey]
   }
 
   async react ({subject, reaction}) {

@@ -50,7 +50,7 @@ const match = subcommand({
           hyperspaceStorage: args.hyperspaceStorage
         })
         await inst.db.createUser({
-          type: 'citizen',
+          type: 'user',
           username: args.username,
           email: args.email,
           password: args.password,
@@ -77,7 +77,7 @@ const match = subcommand({
         })
         for (let username of ['alice', 'bob', 'carla', 'dan', 'erica', 'finn']) {
           await inst.db.createUser({
-            type: 'citizen',
+            type: 'user',
             username: username,
             email: `${username}@email.com`,
             password: 'password',

@@ -57,7 +57,7 @@ export function setup () {
     } catch (e) {
       return {
         ptr: null,
-        etag: `W/default-citizen-avatar`,
+        etag: `W/default-user-avatar`,
         mimeType: 'image/jpeg',
         createStream: () => fs.createReadStream(DEFAULT_USER_AVATAR_PATH)
       }

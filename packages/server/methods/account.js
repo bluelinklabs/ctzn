@@ -59,8 +59,8 @@ export function setup (define, config) {
   })
 
   define('ctzn.network/methods/register', async (auth, params, req) => {
-    const citizenUser = await createUser({
-      type: 'citizen',
+    const newUser = await createUser({
+      type: 'user',
       username: params.username,
       email: params.email,
       password: params.password,
@@ -71,7 +71,7 @@ export function setup (define, config) {
     })
 
     const username = params.username
-    const dbKey = citizenUser.publicDb.dbKey
+    const dbKey = newUser.publicDb.dbKey
     await req.session.create({username, dbKey})
     metrics.signedUp({user: username})
     return {

@@ -5,7 +5,7 @@ import { client } from './hyperspace.js'
 import Hyperbee from 'hyperbee'
 import * as hyperspace from './hyperspace.js'
 import { PublicServerDB, PrivateServerDB } from './server.js'
-import { PublicCitizenDB, PrivateCitizenDB } from './citizen.js'
+import { PublicUserDB, PrivateUserDB } from './user.js'
 import * as diskusageTracker from './diskusage-tracker.js'
 import * as schemas from '../lib/schemas.js'
 import * as views from './views.js'
@@ -62,8 +62,8 @@ export async function setup ({configDir, hyperspaceHost, hyperspaceStorage, simu
 }
 
 export async function createUser ({type, username, email, password, profile}) {
-  if (type !== 'citizen') {
-    throw new Error(`Invalid type "${type}": must be 'citizen'`)
+  if (type !== 'user') {
+    throw new Error(`Invalid type "${type}": must be 'user'`)
   }
   if (RESERVED_USERNAMES.includes(username)) {
     throw new Error(`Username is reserved: ${username}`)
@@ -84,7 +84,7 @@ export async function createUser ({type, username, email, password, profile}) {
     }
 
     schemas.get('ctzn.network/profile').assertValid(profile)
-    if (type === 'citizen') schemas.get('ctzn.network/account').assertValid(account)
+    if (type === 'user') schemas.get('ctzn.network/account').assertValid(account)
     schemas.get('ctzn.network/user').assertValid(user)
 
     if (publicDbs.has(username)) {
@@ -93,15 +93,15 @@ export async function createUser ({type, username, email, password, profile}) {
 
     let publicDb
     let privateDb
-    if (type === 'citizen') {
-      publicDb = new PublicCitizenDB(null, username)
+    if (type === 'user') {
+      publicDb = new PublicUserDB(null, username)
       await publicDb.setup()
       publicDb.watch(onDatabaseChange)
       publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
       await catchupIndexes(publicDb)
       user.dbKey = publicDb.dbKey
 
-      privateDb = new PrivateCitizenDB(null, username, publicServerDb, publicDb)
+      privateDb = new PrivateUserDB(null, username, publicServerDb, publicDb)
       await privateDb.setup()
       await catchupIndexes(privateDb)
       account.privateDbKey = privateDb.dbKey
@@ -109,7 +109,7 @@ export async function createUser ({type, username, email, password, profile}) {
 
     await publicDb.profile.put('self', profile)
     await publicServerDb.users.put(username, user)
-    if (type === 'citizen') await privateServerDb.accounts.put(username, account)
+    if (type === 'user') await privateServerDb.accounts.put(username, account)
     await onDatabaseChange(publicServerDb, [privateServerDb])
     
     publicDbs.set(publicDb.dbKey, publicDb)
@@ -164,7 +164,7 @@ export async function cleanup () {
 export function getDb (dbId) {
   let db = publicDbs.get(dbId)
   if (!db && isHyperKey(dbId)) {
-    db = new PublicCitizenDB(Buffer.from(dbId, 'hex'))
+    db = new PublicUserDB(Buffer.from(dbId, 'hex'))
     publicDbs.set(dbId, db)
   }
   return db
@@ -212,12 +212,12 @@ async function loadMemberUserDbs () {
   let users = await publicServerDb.users.list()
   await Promise.allSettled(users.map(async (user) => {
     try {
-      if (user.value.type === 'citizen') {
+      if (user.value.type === 'user') {
         if (publicDbs.has(user.key)) {
           console.error('Skipping db load due to duplicate username', user.key)
           return
         }
-        let publicDb = new PublicCitizenDB(user.value.dbKey, user.key)
+        let publicDb = new PublicUserDB(user.value.dbKey, user.key)
         await publicDb.setup()
         publicDbs.set(publicDb.dbKey, publicDb)
         publicDbs.set(user.key, publicDb)
@@ -229,7 +229,7 @@ async function loadMemberUserDbs () {
         // we may not use these anymore
         // -prf
         // let accountEntry = await privateServerDb.accounts.get(user.value.username)
-        // let privateDb = new PrivateCitizenDB(hyperUrlToKey(accountEntry.value.privateDbUrl), user.key, publicServerDb, publicDb)
+        // let privateDb = new PrivateUserDB(hyperUrlToKey(accountEntry.value.privateDbUrl), user.key, publicServerDb, publicDb)
         // await privateDb.setup()
         // privateDbs.set(user.key, privateDb)
         // privateDbs.set(privateDb.dbKey, privateDb)
@@ -335,8 +335,8 @@ async function loadDbByType (dbUrl) {
 
   const dbDesc = await bee.get('_db', {wait: true, timeout: 60e3})
   if (!dbDesc) throw new Error('Failed to load database description')
-  if (dbDesc.value?.dbType === 'ctzn.network/public-citizen-db') {
-    return new PublicCitizenDB(key)
+  if (dbDesc.value?.dbType === 'ctzn.network/public-user-db') {
+    return new PublicUserDB(key)
   } else if (dbDesc.value?.dbType === 'ctzn.network/public-server-db') {
     return new PublicServerDB(key)
   }
@@ -355,7 +355,7 @@ async function fetchAllExternalFollowedDbKeys () {
   const dbKeys = new Set()
   for (let db of publicDbs.values()) {
     if (!db.writable) continue
-    if (db.dbType === 'ctzn.network/public-citizen-db') {
+    if (db.dbType === 'ctzn.network/public-user-db') {
       const follows = await db.follows.list()
       for (let follow of follows) {
         const dbKey = follow.value.subject.dbKey
