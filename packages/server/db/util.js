@@ -1,5 +1,5 @@
 import lexint from 'lexicographic-integer-encoding'
-import { publicServerDb, getDb, loadExternalDb } from '../db/index.js'
+import { publicServerDb, getDb, privateDbs, loadExternalDb } from '../db/index.js'
 import { parseEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
 import { resolveDbId } from '../lib/network.js'
 import { debugLog } from '../lib/debug-log.js'
@@ -129,29 +129,31 @@ export async function fetchReplyCount (subject) {
   return comments.length
 }
 
-async function fetchNotificationsInner (userInfo, {lt, gt, after, before, limit} = {}) {
+async function fetchNotificationsInner (auth, {lt, gt, after, before, limit} = {}) {
   let notificationEntries = []
   limit = Math.max(Math.min(limit || 20, 20), 1)
 
   const ltKey = lt ? lt : before ? lexintEncoder.encode(Number(new Date(before))) : undefined
   const gtKey = gt ? gt : after ? lexintEncoder.encode(Number(new Date(after))) : undefined
 
-  notificationEntries = await publicServerDb.notificationsIdx.list({
-    lt: ltKey ? `${userInfo.dbKey}:${ltKey}` : `${userInfo.dbKey}:\xff`,
-    gt: gtKey ? `${userInfo.dbKey}:${gtKey}` : `${userInfo.dbKey}:\x00`,
+  const db = privateDbs.get(auth.username)
+  if (!db) return []
+  notificationEntries = await db.notifications.list({
+    lt: ltKey ? ltKey : `\xff`,
+    gt: gtKey ? gtKey : `\x00`,
     limit,
     reverse: true
   })
   return notificationEntries
 }
 
-export async function fetchNotications (userInfo, opts) {
-  const notificationEntries = await fetchNotificationsInner(userInfo, opts)
+export async function fetchNotications (auth, opts) {
+  const notificationEntries = await fetchNotificationsInner(auth, opts)
   return (await Promise.all(notificationEntries.map(fetchNotification))).filter(Boolean)
 }
 
-export async function countNotications (userInfo, opts) {
-  const notificationEntries = await fetchNotificationsInner(userInfo, opts)
+export async function countNotications (auth, opts) {
+  const notificationEntries = await fetchNotificationsInner(auth, opts)
   return notificationEntries.length
 }
 

@@ -32,6 +32,7 @@ export class PrivateUserDB extends BaseHyperbeeDB {
     this.username = username
     this.publicServerDb = publicServerDb
     this.publicDb = publicDb
+    this.notifications = this.getTable('ctzn.network/notification')
   }
 
   get dbType () {

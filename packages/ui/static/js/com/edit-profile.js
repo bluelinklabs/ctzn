@@ -45,8 +45,8 @@ export class EditProfile extends LitElement {
     this.isProcessing = false
   }
 
-  get isCitizen () {
-    return this.profile?.dbType === 'ctzn.network/public-citizen-db'
+  get isUser () {
+    return this.profile?.dbType === 'ctzn.network/public-user-db'
   }
 
   updated (changedProperties) {
@@ -258,7 +258,7 @@ export class EditProfile extends LitElement {
       // update avatar
       if (this.canEditProfile && this.uploadedAvatar) {
         toast.create('Uploading avatar...')
-        if (this.isCitizen) {
+        if (this.isUser) {
           await images.uploadBlob('ctzn.network/profile', 'self', 'avatar', this.uploadedAvatar)
         }
       }
@@ -266,7 +266,7 @@ export class EditProfile extends LitElement {
       // update banner
       if (this.canEditProfile && this.uploadedBanner) {
         toast.create('Uploading banner image...')
-        if (this.isCitizen) {
+        if (this.isUser) {
           await images.uploadBlob('ctzn.network/profile', 'self', 'banner', this.uploadedBanner)
         }
       }

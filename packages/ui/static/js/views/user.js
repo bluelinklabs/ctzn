@@ -80,8 +80,8 @@ class CtznUser extends LitElement {
     return session.info?.dbKey === this.userProfile?.dbKey
   }
 
-  get isCitizen () {
-    return this.userProfile?.dbType === 'ctzn.network/public-citizen-db'
+  get isUser () {
+    return this.userProfile?.dbType === 'ctzn.network/public-user-db'
   }
 
   get amIFollowing () {
@@ -145,7 +145,7 @@ class CtznUser extends LitElement {
         return this.requestUpdate()
       }
       document.title = `${this.userProfile?.value.displayName || this.niceUserId} | CTZN`
-      if (this.isCitizen) {
+      if (this.isUser) {
         const [followers, following] = await Promise.all([
           session.api.listFollowers(this.userId),
           session.api.db(this.userId).table('ctzn.network/follow').list()
@@ -226,7 +226,7 @@ class CtznUser extends LitElement {
       <main class="col2">
         <div>
           <div class="widescreen-hidden sm:border-l sm:border-r border-gray-300">
-            ${this.isCitizen ? html`
+            ${this.isUser ? html`
               <div class="bg-white text-center pb-4">
                 <span
                   class="bg-gray-50 font-semibold px-2 py-1 rounded text-gray-500 hov:hover:bg-gray-100 cursor-pointer"
@@ -240,7 +240,7 @@ class CtznUser extends LitElement {
             ${this.userProfile?.value.description ? html`
               <div class="text-center pb-4 px-4 sm:px-7 bg-white">${unsafeHTML(linkify(emojify(makeSafe(this.userProfile?.value.description))))}</div>
             ` : ''}
-            ${!this.isProfileLoading && session.isActive() && !this.isMe && this.isCitizen && this.amIFollowing === false ? html`
+            ${!this.isProfileLoading && session.isActive() && !this.isMe && this.isUser && this.amIFollowing === false ? html`
               <div class="bg-white text-center pb-4 px-4">
                 <app-button
                   btn-class="font-semibold py-1 text-base block w-full rounded-lg sm:px-10 sm:inline sm:w-auto sm:rounded-full"
@@ -293,7 +293,7 @@ class CtznUser extends LitElement {
               ${this.userProfile?.value.description ? html`
                 <div class="description pb-4">${unsafeHTML(linkify(emojify(makeSafe(this.userProfile?.value.description))))}</div>
               ` : ''}
-              ${this.isCitizen ? html`
+              ${this.isUser ? html`
                 <div class="pb-2">
                   <span
                     class="profile-stat hov:hover:underline cursor-pointer"
@@ -304,7 +304,7 @@ class CtznUser extends LitElement {
                   </span>
                 </div>
               ` : ''}
-              ${!this.isProfileLoading && session.isActive() && !this.isMe && this.isCitizen && this.amIFollowing === false ? html`
+              ${!this.isProfileLoading && session.isActive() && !this.isMe && this.isUser && this.amIFollowing === false ? html`
                 <div class="pb-2">
                   <app-button
                     btn-class="font-semibold py-1 text-base block w-full rounded-lg"
@@ -487,7 +487,7 @@ class CtznUser extends LitElement {
   renderProfileControls () {
     if (this.isProfileLoading) return html``
     const btnStyle = `background: rgba(0,0,0,.5); backdrop-filter: blur(5px) contrast(0.9); -webkit-backdrop-filter: blur(5px) contrast(0.9);`
-    if (this.isCitizen) {
+    if (this.isUser) {
       return html`
         <div>
           ${session.isActive() ? html`

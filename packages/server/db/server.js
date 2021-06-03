@@ -1,6 +1,6 @@
 import createMlts from 'monotonic-lexicographic-timestamp'
 import { BaseHyperbeeDB } from './base.js'
-import { publicDbs, getDb } from './index.js'
+import { privateDbs, getDb } from './index.js'
 import { dbGet } from './util.js'
 import { parseEntryUrl } from '../lib/strings.js'
 import _intersectionBy from 'lodash.intersectionby'
@@ -28,7 +28,6 @@ export class PublicServerDB extends BaseHyperbeeDB {
     this.threadIdx = this.getTable('ctzn.network/thread-idx')
     this.communitiesIdx = this.getTable('ctzn.network/community-idx')
     this.followsIdx = this.getTable('ctzn.network/follow-idx')
-    this.notificationsIdx = this.getTable('ctzn.network/notification-idx')
     this.reactionsIdx = this.getTable('ctzn.network/reaction-idx')
     this.repostsIdx = this.getTable('ctzn.network/repost-idx')
     this.votesIdx = this.getTable('ctzn.network/vote-idx')
@@ -47,24 +46,27 @@ export class PublicServerDB extends BaseHyperbeeDB {
       'ctzn.network/reaction',
       'ctzn.network/vote'
     ]
-    this.createIndexer('ctzn.network/notification-idx', NOTIFICATIONS_SCHEMAS, async (batch, db, diff) => {
+    this.createIndexer('ctzn.network/notification', NOTIFICATIONS_SCHEMAS, async (batch, db, diff) => {
       if (!diff.right) return // ignore deletes
       if (diff.left && diff.right) return // ignore edits
 
       const createdAt = new Date()
       const value = diff.right.value
       const itemCreatedAt = new Date(value.createdAt)
-      const genKey = dbKey => {
-        const idxkey = mlts(Math.min(+createdAt, (+itemCreatedAt) || (+createdAt)))
-        return {idxkey, key: this.notificationsIdx.constructBeeKey(`${dbKey}:${idxkey}`)}
+      const getPrivateDb = dbKey => {
+        const subjectDb = getDb(dbKey)
+        if (!subjectDb || !subjectDb.writable) return false // not one of our users
+        return privateDbs.get(subjectDb.username)
       }
+      const genKey = () => mlts(Math.min(+createdAt, (+itemCreatedAt) || (+createdAt)))
       switch (diff.right.schemaId) {
         case 'ctzn.network/follow': {
           const subjectDbKey = value.subject.dbKey || value.subject.authorDbKey
-          const subjectDb = getDb(subjectDbKey)
-          if (!subjectDb || !subjectDb.writable) return // not one of our users
-          const {key, idxkey} = genKey(subjectDbKey)
-          await batch.put(key, {
+          if (subjectDbKey === db.dbKey) return // acting on self, ignore
+          let privDb = getPrivateDb(subjectDbKey)
+          if (!privDb) return
+          const idxkey = genKey()
+          await privDb.notifications.put(idxkey, {
             subjectDbKey,
             idxkey,
             itemUrl: diff.right.url,
@@ -75,10 +77,11 @@ export class PublicServerDB extends BaseHyperbeeDB {
         case 'ctzn.network/post': {
           if (!diff.right.value?.source?.dbUrl) return // only handle reposts
           let urlp = parseEntryUrl(diff.right.value.source.dbUrl)
-          const subjectDb = getDb(urlp.dbKey)
-          if (!subjectDb || !subjectDb.writable) return // not one of our users
-          const {key, idxkey} = genKey(urlp.dbKey)
-          await batch.put(key, {
+          if (urlp.dbKey === db.dbKey) return // acting on self, ignore
+          let privDb = getPrivateDb(urlp.dbKey)
+          if (!privDb) return
+          const idxkey = genKey()
+          await privDb.notifications.put(idxkey, {
             subjectDbKey: urlp.dbKey,
             idxkey,
             itemUrl: diff.right.url,
@@ -89,15 +92,11 @@ export class PublicServerDB extends BaseHyperbeeDB {
         case 'ctzn.network/reaction':
         case 'ctzn.network/vote': {
           const {dbKey: subjectDbKey} = parseEntryUrl(value.subject.dbUrl)
-          const subjectDb = getDb(subjectDbKey)
-          if (!subjectDb) return // not one of our users
-
-          if (subjectDbKey === db.dbKey) {
-            return // acting on own content, ignore
-          }
-
-          const {key, idxkey} = genKey(subjectDbKey)
-          await batch.put(key, {
+          if (subjectDbKey === db.dbKey) return // acting on self, ignore
+          let privDb = getPrivateDb(subjectDbKey)
+          if (!privDb) return
+          const idxkey = genKey()
+          await privDb.notifications.put(idxkey, {
             subjectDbKey,
             idxkey,
             itemUrl: diff.right.url,
@@ -106,24 +105,26 @@ export class PublicServerDB extends BaseHyperbeeDB {
           break
         }
         case 'ctzn.network/comment': {
-          const rootSubjectDb = value.reply.root ? getDb(parseEntryUrl(value.reply.root.dbUrl).dbKey) : undefined
-          const parentSubjectDb = value.reply.parent ? getDb(parseEntryUrl(value.reply.parent.dbUrl).dbKey) : undefined
+          let rootUrlp = value.reply.root ? parseEntryUrl(value.reply.root.dbUrl) : undefined
+          let parentUrlp = value.reply.parent ? parseEntryUrl(value.reply.parent.dbUrl) : undefined
+          const rootSubjectDb = value.reply.root ? getPrivateDb(rootUrlp.dbKey) : undefined
+          const parentSubjectDb = value.reply.parent ? getPrivateDb(parentUrlp.dbKey) : undefined
           if (!rootSubjectDb?.writable && !parentSubjectDb?.writable) return // not one of our users
-          if (rootSubjectDb && rootSubjectDb.url !== db.url) {
+          if (rootSubjectDb && rootUrlp.dbKey !== db.dbKey) {
             // notification for root post author
-            const {key, idxkey} = genKey(rootSubjectDb.dbKey)
-            await batch.put(key, {
-              subjectDbKey: rootSubjectDb.dbKey,
+            const idxkey = genKey()
+            await rootSubjectDb.notifications.put(idxkey, {
+              subjectDbKey: rootUrlp.dbKey,
               idxkey,
               itemUrl: diff.right.url,
               createdAt: createdAt.toISOString()
             })
           }
-          if (parentSubjectDb && parentSubjectDb.url !== db.url && rootSubjectDb?.url !== parentSubjectDb.url) {
+          if (parentSubjectDb && parentUrlp.dbKey !== db.dbKey && rootSubjectDb?.dbKey !== parentSubjectDb.dbKey) {
             // notification for parent post author
-            const {key, idxkey} = genKey(parentSubjectDb.dbKey)
-            await batch.put(key, {
-              subjectDbKey: parentSubjectDb.dbKey,
+            const idxkey = genKey()
+            await batch.put(idxkey, {
+              subjectDbKey: parentUrlp.dbKey,
               idxkey,
               itemUrl: diff.right.url,
               createdAt: createdAt.toISOString()

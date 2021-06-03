@@ -162,7 +162,7 @@ export async function cleanup () {
 }
 
 export function getDb (dbId) {
-  let db = publicDbs.get(dbId)
+  let db = publicDbs.get(dbId) || privateDbs.get(dbId)
   if (!db && isHyperKey(dbId)) {
     db = new PublicUserDB(Buffer.from(dbId, 'hex'))
     publicDbs.set(dbId, db)
@@ -225,15 +225,12 @@ async function loadMemberUserDbs () {
         publicDb.watch(onDatabaseChange)
         publicDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
 
-        // DISABLED
-        // we may not use these anymore
-        // -prf
-        // let accountEntry = await privateServerDb.accounts.get(user.value.username)
-        // let privateDb = new PrivateUserDB(hyperUrlToKey(accountEntry.value.privateDbUrl), user.key, publicServerDb, publicDb)
-        // await privateDb.setup()
-        // privateDbs.set(user.key, privateDb)
-        // privateDbs.set(privateDb.dbKey, privateDb)
-        // privateDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
+        let accountEntry = await privateServerDb.accounts.get(user.value.username)
+        let privateDb = new PrivateUserDB(accountEntry.value.privateDbKey, user.key, publicServerDb, publicDb)
+        await privateDb.setup()
+        privateDbs.set(user.key, privateDb)
+        privateDbs.set(privateDb.dbKey, privateDb)
+        privateDb.on('subscriptions-changed', loadOrUnloadExternalUserDbsDebounced)
 
         numLoaded++
       } else {
