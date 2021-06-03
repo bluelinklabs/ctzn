@@ -1,6 +1,6 @@
 export const HYPER_KEY = /([0-9a-f]{64})/i
 export const HYPER_KEY_ONLY = /^([0-9a-f]{64})$/i
-export const RESERVED_USERNAMES = ['server']
+export const RESERVED_USERNAMES = ['server', 'admin', 'root']
 export const DEBUG_MODE_PORTS_MAP = {}
 for (let i = 0; i <= 1000; i++) {
   DEBUG_MODE_PORTS_MAP[`dev${i + 1}.localhost`] = 3000 + (i * 1e3)
