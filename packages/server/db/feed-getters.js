@@ -1,6 +1,6 @@
 import lexint from 'lexicographic-integer-encoding'
-import { getDb, publicServerDb, getAllLoadedMemberDbs } from './index.js'
-import { constructEntryUrl, parseEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
+import { getDb, privateDbs, publicServerDb, getAllLoadedMemberDbs } from './index.js'
+import { constructEntryUrl, parseEntryUrl } from '../lib/strings.js'
 import { getPost } from './getters.js'
 import { fetchAuthor, fetchReactions, fetchReposts, fetchReplyCount } from './util.js'
 import * as errors from '../lib/errors.js'
@@ -14,6 +14,13 @@ export async function listGlobalPostsFeed (opts, auth) {
   const limit = Math.min(opts?.limit || 100, 100)
   opts.lt = opts.lt && typeof opts.lt === 'string' ? opts.lt : lexintEncoder.encode(Date.now())
 
+  let mutedDbKeys
+  const privateDb = auth ? privateDbs.get(auth.username) : undefined
+  if (privateDb) {
+    let settingsRecord = await privateDb.settings.get('self')
+    mutedDbKeys = new Set(settingsRecord?.value?.mutedDbKeys || [])
+  }
+
   let sourceDbs
   if (opts.audience) {
     const idx = await publicServerDb.communitiesIdx.get(opts.audience)
@@ -25,6 +32,7 @@ export async function listGlobalPostsFeed (opts, auth) {
 
   const cursors = sourceDbs.map(db => {
     if (!db) return undefined
+    if (mutedDbKeys?.has?.(db.dbKey)) return undefined
     return db.posts.cursorRead({lt: opts?.lt, reverse: true, wait: false})
   })
 
@@ -36,6 +44,7 @@ export async function listGlobalPostsFeed (opts, auth) {
     if (entry.value.source?.dbUrl) {
       let urlp = parseEntryUrl(entry.value.source.dbUrl)
       if (urlp.schemaId !== 'ctzn.network/post') continue
+      if (mutedDbKeys?.has?.(urlp.dbKey)) continue
       entry = await getPost(getDb(urlp.dbKey), urlp.key)
       if (!entry) continue
       entry.repostedBy = await fetchAuthor(db.dbKey, authorsCache)
@@ -70,6 +79,13 @@ export async function listHomeFeed (opts, auth) {
   const publicDb = getDb(auth.username)
   if (!publicDb) throw new errors.NotFoundError('User database not found')
 
+  let mutedDbKeys
+  const privateDb = privateDbs.get(auth.username)
+  if (privateDb) {
+    let settingsRecord = await privateDb.settings.get('self')
+    mutedDbKeys = new Set(settingsRecord?.value?.mutedDbKeys || [])
+  }
+
   if (!didSpecifyLt && !opts.audience) {
     let cached = cache.getHomeFeed(auth.username, limit)
     if (cached) {
@@ -94,6 +110,7 @@ export async function listHomeFeed (opts, auth) {
   
   const cursors = sourceDbs.map(db => {
     if (!db) return undefined
+    if (mutedDbKeys?.has?.(db.dbKey)) return undefined
     return db.posts.cursorRead({lt: opts?.lt, reverse: true, wait: false})
   })
 
@@ -104,6 +121,7 @@ export async function listHomeFeed (opts, auth) {
     let wasFetched = false
     if (entry.value.source?.dbUrl) {
       let urlp = parseEntryUrl(entry.value.source.dbUrl)
+      if (mutedDbKeys?.has?.(urlp.dbKey)) continue
       if (urlp.schemaId !== 'ctzn.network/post') continue
       entry = await getPost(getDb(urlp.dbKey), urlp.key)
       if (!entry) continue

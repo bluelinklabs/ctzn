@@ -1,6 +1,7 @@
-import { publicServerDb, privateServerDb, createUser } from '../db/index.js'
+import { publicServerDb, privateServerDb, privateDbs, createUser } from '../db/index.js'
 import { constructUserUrl } from '../lib/strings.js'
 import { hashPassword, verifyPassword, generateRecoveryCode } from '../lib/crypto.js'
+import { invalidateHomeFeed } from '../lib/cache.js'
 import * as errors from '../lib/errors.js'
 import * as metrics from '../lib/metrics.js'
 import * as email from '../lib/email.js'
@@ -145,6 +146,38 @@ export function setup (define, config) {
       accountRecord.value.passwordChangeCode = undefined
       accountRecord.value.passwordChangeCodeCreatedAt = undefined
       await privateServerDb.accounts.put(username, accountRecord.value)
+    } finally {
+      release()
+    }
+  })
+
+  define('ctzn.network/methods/set-muted', async (auth, params) => {
+    if (!auth) {
+      throw new errors.SessionError()
+    }
+    const db = privateDbs.get(auth.username)
+    if (!db) throw new Error('Private database not found')
+
+    const release = await db.settings.lock('self')
+    try {
+      let settingsRecord = await db.settings.get('self')
+      settingsRecord = settingsRecord || {key: 'self', value: {}}
+      settingsRecord.value.mutedDbKeys = settingsRecord.value.mutedDbKeys || []
+
+      let i = settingsRecord.value.mutedDbKeys.indexOf(params.dbKey)
+      if (params.muted) {
+        if (i === -1) {
+          settingsRecord.value.mutedDbKeys.push(params.dbKey)
+          await db.settings.put('self', settingsRecord.value)
+        }
+      } else {
+        if (i !== -1) {
+          settingsRecord.value.mutedDbKeys.splice(i, 1)
+          await db.settings.put('self', settingsRecord.value)
+        }
+      }
+      
+      invalidateHomeFeed(auth.username)
     } finally {
       release()
     }

@@ -140,13 +140,22 @@ export function setup () {
     if (!profileEntry) {
       throw new Error('User profile not found')
     }
+    let isMuted
+    if (auth) {
+      let pdb = db.privateDbs.get(auth.username)
+      if (pdb) {
+        let settings = await pdb.settings.get('self')
+        isMuted = settings?.value?.mutedDbKeys?.includes(profileDb.dbKey) || false
+      }
+    }
     return {
       url: constructUserUrl(profileDb.username || profileDb.dbKey),
       dbKey: profileDb.dbKey,
       dbUrl: profileDb.url,
       dbType: profileDb.dbType,
       username: profileDb.username,
-      value: profileEntry.value
+      value: profileEntry.value,
+      isMuted
     }
   })
 

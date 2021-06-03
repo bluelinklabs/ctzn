@@ -227,3 +227,52 @@ test('reposts', async t => {
     [bob, '2']
   ])
 })
+
+test('muting', async t => {
+  const {alice, bob, carla} = sim.users
+
+  await alice.login()
+  let postEntries = (await api.view.get('ctzn.network/views/feed')).feed
+  sim.testFeed(t, postEntries, [
+    [bob, '2', carla],
+    [bob, '2', alice],
+    [bob, 'Images test'],
+    [bob, '6'],
+    [carla, '5'],
+    [alice, '4'],
+    [bob, '3'],
+    [bob, '2']
+  ])
+
+  await api.method('ctzn.network/methods/set-muted', {dbKey: bob.dbKey, muted: true})
+
+  let profile = await api.view.get('ctzn.network/views/profile', {dbId: 'bob'})
+  t.is(profile.isMuted, true)
+  await carla.login()
+  profile = await api.view.get('ctzn.network/views/profile', {dbId: 'bob'})
+  t.is(profile.isMuted, false)
+
+  await alice.login()
+  postEntries = (await api.view.get('ctzn.network/views/feed')).feed
+  sim.testFeed(t, postEntries, [
+    [carla, '5'],
+    [alice, '4']
+  ])
+
+  await api.method('ctzn.network/methods/set-muted', {dbKey: bob.dbKey, muted: false})
+  profile = await api.view.get('ctzn.network/views/profile', {dbId: 'bob'})
+  t.is(profile.isMuted, false)
+
+  postEntries = (await api.view.get('ctzn.network/views/feed')).feed
+  sim.testFeed(t, postEntries, [
+    [bob, '2', carla],
+    [bob, '2', alice],
+    [bob, 'Images test'],
+    [bob, '6'],
+    [carla, '5'],
+    [alice, '4'],
+    [bob, '3'],
+    [bob, '2']
+  ])
+
+})

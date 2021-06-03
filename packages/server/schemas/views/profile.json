@@ -23,7 +23,8 @@
           "displayName": {"type": "string"},
           "description": {"type": "string"}
         }
-      }
+      },
+      "isMuted": {"type": "boolean"}
     }
   }
 }

@@ -235,6 +235,11 @@ class CtznUser extends LitElement {
                   <span class="fas fa-fw fa-user"></span>
                   ${nFollowers} ${pluralize(nFollowers, 'Follower')}
                 </span>
+              ${this.userProfile?.isMuted ? html`
+                <span class="bg-gray-50 font-semibold px-2 py-1 rounded text-gray-500 ml-2">
+                  <span class="fas fa-microphone-slash fa-fw"></span> Muted
+                </span>
+              ` : ''}
               </div>
             ` : ''}
             ${this.userProfile?.value.description ? html`
@@ -302,6 +307,11 @@ class CtznUser extends LitElement {
                     <span class="fas fa-fw fa-user"></span>
                     ${nFollowers} ${pluralize(nFollowers, 'Follower')}
                   </span>
+                </div>
+              ` : ''}
+              ${this.userProfile?.isMuted ? html`
+                <div class="pb-2 profile-stat">
+                  <span class="fas fa-microphone-slash fa-fw"></span> Muted
                 </div>
               ` : ''}
               ${!this.isProfileLoading && session.isActive() && !this.isMe && this.isUser && this.amIFollowing === false ? html`
@@ -532,7 +542,7 @@ class CtznUser extends LitElement {
     if (this.currentView === 'about') {
       return html`
         <div class="info-block mb-2 px-4 py-3">
-          <h2 class="font-semibold text-lg">Communities <span class="text-base ml-1">${this.userProfile?.value?.communities.length || 0}</span></h2>
+          <h2 class="font-semibold text-lg">Communities <span class="text-base ml-1">${this.userProfile?.value?.communities?.length || 0}</span></h2>
           <div class="communities-list">
             ${repeat(this.userProfile?.value?.communities || [], c => c, c => html`
               <a class="community" href="/p/explore/community/${encodeURIComponent(c)}">
@@ -564,12 +574,30 @@ class CtznUser extends LitElement {
         </div>
       `
     } else if (this.currentView === 'settings') {
+      if (this.isMe) {
+        return html`
+          <app-edit-profile
+            db-key=${this.userProfile?.dbKey}
+            .profile=${this.userProfile}
+            @profile-updated=${this.onProfileUpdated}
+          ></app-edit-profile>
+        `
+      }
       return html`
-        <app-edit-profile
-          db-key=${this.userProfile?.dbKey}
-          .profile=${this.userProfile}
-          @profile-updated=${this.onProfileUpdated}
-        ></app-edit-profile>
+        <div class="info-block mb-2 px-5 pt-4 pb-6">
+          <div class="mb-1 text-lg font-medium">Settings:</div>
+          <div>
+            <app-button
+              transparent
+              icon="fas fa-toggle-${this.userProfile?.isMuted ? 'on' : 'off'}"
+              label="Mute this user (${this.userProfile?.isMuted ? 'on' : 'off'})"
+              @click=${this.onToggleMute}
+            ></app-button>
+          </div>
+          <div class="text-sm px-4">
+            "Muting" hides this user's posts from your feed. Nobody will know you muted them.
+          </div>
+        </div>
       `
     } else {
       return html`
@@ -727,6 +755,12 @@ class CtznUser extends LitElement {
       session.myCommunities.splice(session.myCommunities.indexOf(name), 1)
     }
     await session.modifyProfile(v => Object.assign(v, {communities: session.myCommunities}))
+    this.requestUpdate()
+  }
+
+  async onToggleMute (e) {
+    await session.api.method('ctzn.network/methods/set-muted', {dbKey: this.userProfile.dbKey, muted: !this.userProfile.isMuted})
+    this.userProfile.isMuted = !this.userProfile.isMuted
     this.requestUpdate()
   }
 }
