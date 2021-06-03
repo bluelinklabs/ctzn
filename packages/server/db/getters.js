@@ -5,6 +5,7 @@ import {
   dbGet,
   fetchAuthor,
   fetchReactions,
+  fetchReposts,
   fetchVotesTally,
   fetchReplyCount,
   fetchReplies,
@@ -13,20 +14,24 @@ import {
 import * as cache from '../lib/cache.js'
 import { debugLog } from '../lib/debug-log.js'
 
-export async function getPost (db, key, authorDbId, auth = undefined) {
+export async function getPost (db, key, canResolveRepost = false) {
   const postEntry = await db.getTable('ctzn.network/post').get(key)
   if (!postEntry) {
     throw new Error('Post not found')
   }
-  if (postEntry.value.source?.dbUrl) {
-    // TODO verify source authenticity
-    postEntry.dbUrl = postEntry.value.source.dbUrl
-    postEntry.author = await fetchAuthor(hyperUrlToKeyStr(postEntry.value.source.dbUrl))
-  } else {
-    postEntry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/post', postEntry.key)
-    postEntry.author = await fetchAuthor(db.dbKey)
+  if (postEntry.value.source) {
+    if (!canResolveRepost || !postEntry.value.source.dbUrl) {
+      throw new Error('Post not found')
+    }
+    let urlp = parseEntryUrl(postEntry.value.source.dbUrl)
+    const originalEntry = await getPost(getDb(urlp.dbKey), urlp.key, false)
+    originalEntry.respostedBy = await fetchAuthor(db.dbKey)
+    return originalEntry
   }
+  postEntry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/post', postEntry.key)
+  postEntry.author = await fetchAuthor(db.dbKey)
   postEntry.reactions = (await fetchReactions(postEntry)).reactions
+  postEntry.reposts = await fetchReposts(postEntry)
   postEntry.replyCount = await fetchReplyCount(postEntry)
   return postEntry
 }
@@ -40,6 +45,7 @@ export async function listPosts (db, opts, authorDbId) {
       let cachedEntries = opts.limit ? cached.slice(0, opts?.limit || 100) : cached
       for (let entry of cachedEntries) {
         entry.reactions = (await fetchReactions(entry)).reactions
+        entry.reposts = await fetchReposts(entry)
         entry.replyCount = await fetchReplyCount(entry)
       }
       return cachedEntries
@@ -47,22 +53,27 @@ export async function listPosts (db, opts, authorDbId) {
   }*/
   const entries = await db.posts.list(opts)
   const authorsCache = {}
+  const results = []
   for (let entry of entries) {
     if (entry.value.source?.dbUrl) {
-      // TODO verify source authenticity
-      entry.dbUrl = entry.value.source.dbUrl
-      entry.author = await fetchAuthor(hyperUrlToKeyStr(entry.value.source.dbUrl), authorsCache)
+      let urlp = parseEntryUrl(entry.value.source.dbUrl)
+      if (urlp.schemaId !== 'ctzn.network/post') continue
+      entry = await getPost(getDb(urlp.dbKey), urlp.key)
+      if (!entry) continue
+      entry.repostedBy = await fetchAuthor(db.dbKey, authorsCache)
     } else {
       entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
       entry.author = await fetchAuthor(db.dbKey, authorsCache)
+      entry.reactions = (await fetchReactions(entry)).reactions
+      entry.reposts = await fetchReposts(entry)
+      entry.replyCount = await fetchReplyCount(entry)
     }
-    entry.reactions = (await fetchReactions(entry)).reactions
-    entry.replyCount = await fetchReplyCount(entry)
+    results.push(entry)
   }
   if (canUseCache) {
-    cache.setUserFeed(authorDbId, entries, entries.length)
+    cache.setUserFeed(authorDbId, results, results.length)
   }
-  return entries
+  return results
 }
 
 export async function getComment (db, key, authorDbId, auth = undefined) {

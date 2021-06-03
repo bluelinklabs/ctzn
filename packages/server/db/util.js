@@ -97,6 +97,11 @@ export async function fetchReactions (subject) {
   }
 }
 
+export async function fetchReposts (subject) {
+  const repostsIdxEntry = await publicServerDb.repostsIdx.get(subject.dbUrl)
+  return repostsIdxEntry?.value.reposts || []
+}
+
 export async function fetchReplies (subject) {
   const threadIdxEntry = await publicServerDb.threadIdx.get(subject.dbUrl)
   return threadIdxEntry?.value.items || []

@@ -27,7 +27,27 @@
           }
         }
       },
+      "repostedBy": {
+        "type": "object",
+        "required": ["dbKey"],
+        "properties": {
+          "dbKey": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
       "key": {"type": "string"},
+      "reposts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "dbKey": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "postKey": {"type": "string"}
+          }
+        }
+      },
       "reactions": {
         "type": "object",
         "patternProperties": {

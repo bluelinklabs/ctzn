@@ -20,57 +20,71 @@
   },
   "definition": {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
-    "required": ["text", "createdAt"],
-    "properties": {
-      "audience": {
-        "type": "string",
-        "maxLength": 64
-      },
-      "text": {
-        "type": "string",
-        "maxLength": 256
-      },
-      "media": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "required": ["type"],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": ["image", "video"]
-            },
-            "caption": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "source": {
+    "oneOf": [
+      {
         "type": "object",
-        "required": ["dbUrl"],
+        "required": ["text", "createdAt"],
         "properties": {
-          "dbUrl": {"type": "string", "format": "uri"},
-          "author": {
-            "type": "object",
-            "properties": {
-              "displayName": {"type": "string"}
+          "audience": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["image", "video"]
+                },
+                "caption": {
+                  "type": "string"
+                }
+              }
             }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 32
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
-      "warnings": {
-        "type": "array",
-        "items": {
-          "type": "string",
-          "maxLength": 32
+      {
+        "type": "object",
+        "required": ["source", "createdAt"],
+        "properties": {
+          "source": {
+            "type": "object",
+            "required": ["dbUrl"],
+            "properties": {
+              "dbUrl": {"type": "string", "format": "uri"},
+              "author": {
+                "type": "object",
+                "properties": {
+                  "displayName": {"type": "string"}
+                }
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
-      },
-      "createdAt": {
-        "type": "string",
-        "format": "date-time"
       }
-    }
+    ]
   }
 }

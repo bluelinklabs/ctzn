@@ -1,7 +1,8 @@
 import lexint from 'lexicographic-integer-encoding'
 import { getDb, publicServerDb, getAllLoadedMemberDbs } from './index.js'
-import { constructEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
-import { fetchAuthor, fetchReactions, fetchReplyCount } from './util.js'
+import { constructEntryUrl, parseEntryUrl, hyperUrlToKeyStr } from '../lib/strings.js'
+import { getPost } from './getters.js'
+import { fetchAuthor, fetchReactions, fetchReposts, fetchReplyCount } from './util.js'
 import * as errors from '../lib/errors.js'
 import * as cache from '../lib/cache.js'
 import { debugLog } from '../lib/debug-log.js'
@@ -31,19 +32,25 @@ export async function listGlobalPostsFeed (opts, auth) {
   const authorsCache = {}
   const mergedCursor = mergeCursors(cursors)
   for await (let [db, entry] of mergedCursor) {
+    let wasFetched = false
+    if (entry.value.source?.dbUrl) {
+      let urlp = parseEntryUrl(entry.value.source.dbUrl)
+      if (urlp.schemaId !== 'ctzn.network/post') continue
+      entry = await getPost(getDb(urlp.dbKey), urlp.key)
+      if (!entry) continue
+      entry.repostedBy = await fetchAuthor(db.dbKey, authorsCache)
+      wasFetched = true
+    }
     if (opts?.audience && entry.value.audience !== opts.audience) {
       continue
     }
-    if (entry.value.source?.dbUrl) {
-      // TODO verify source authenticity
-      entry.dbUrl = entry.value.source.dbUrl
-      entry.author = await fetchAuthor(hyperUrlToKeyStr(entry.value.source.dbUrl), authorsCache)
-    } else {
+    if (!wasFetched) {
       entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
       entry.author = await fetchAuthor(db.dbKey, authorsCache)
+      entry.reactions = (await fetchReactions(entry)).reactions
+      entry.reposts = await fetchReposts(entry)
+      entry.replyCount = await fetchReplyCount(entry)
     }
-    entry.reactions = (await fetchReactions(entry)).reactions
-    entry.replyCount = await fetchReplyCount(entry)
     postEntries.push(entry)
     if (postEntries.length >= limit) {
       break
@@ -70,6 +77,7 @@ export async function listHomeFeed (opts, auth) {
       let cachedEntries = opts.limit ? cached.slice(0, limit) : cached
       for (let entry of cachedEntries) {
         entry.reactions = (await fetchReactions(entry)).reactions
+        entry.reposts = await fetchReposts(entry)
         entry.replyCount = await fetchReplyCount(entry)
       }
       return cachedEntries
@@ -93,22 +101,28 @@ export async function listHomeFeed (opts, auth) {
   const authorsCache = {}
   const mergedCursor = mergeCursors(cursors)
   for await (let [db, entry] of mergedCursor) {
+    let wasFetched = false
+    if (entry.value.source?.dbUrl) {
+      let urlp = parseEntryUrl(entry.value.source.dbUrl)
+      if (urlp.schemaId !== 'ctzn.network/post') continue
+      entry = await getPost(getDb(urlp.dbKey), urlp.key)
+      if (!entry) continue
+      entry.repostedBy = await fetchAuthor(db.dbKey, authorsCache)
+      wasFetched = true
+    }
     if (opts?.audience && !entry.value.audience) {
       continue
     }
     if (entry.value.audience && !audience.has(entry.value.audience)) {
       continue
     }
-    if (entry.value.source?.dbUrl) {
-      // TODO verify source authenticity
-      entry.dbUrl = entry.value.source.dbUrl
-      entry.author = await fetchAuthor(hyperUrlToKeyStr(entry.value.source.dbUrl), authorsCache)
-    } else {
+    if (!wasFetched) {
       entry.dbUrl = constructEntryUrl(db.url, 'ctzn.network/post', entry.key)
       entry.author = await fetchAuthor(db.dbKey, authorsCache)
+      entry.reactions = (await fetchReactions(entry)).reactions
+      entry.reposts = await fetchReposts(entry)
+      entry.replyCount = await fetchReplyCount(entry)
     }
-    entry.reactions = (await fetchReactions(entry)).reactions
-    entry.replyCount = await fetchReplyCount(entry)
     postEntries.push(entry)
     if (postEntries.length >= limit) {
       break

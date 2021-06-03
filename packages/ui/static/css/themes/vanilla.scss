@@ -9,6 +9,7 @@ $color-button-primary: #fff;
 $color-button-primary-disabled: #EFF6FF;
 $color-post-controls: #4B5563;
 $color-post-controls-light: #838d9c;
+$color-post-controls-selected: #0bae78;
 $color-comment-controls: #4B5563;
 $color-reaction: #4B5563;
 $color-reaction-selected: #0065f3;
@@ -455,7 +456,7 @@ body.theme-vanilla {
     .post-audience {
       color: $color-post-controls;
       font-size: 12px;
-      font-weight: 500;
+      font-weight: bold;
     }
 
     .post-metadata {
@@ -498,6 +499,10 @@ body.theme-vanilla {
 
     .post-actions {
       color: $color-post-controls-light;
+    }
+
+    .repost.selected {
+      color: $color-post-controls-selected;
     }
 
     .post-media {

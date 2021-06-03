@@ -103,7 +103,10 @@ class Schema {
     return (
       this.schemaObject.type === 'json-table'
       && this.schemaObject.definition
-      && this.schemaObject.definition.properties.createdAt
+      && (
+        this.schemaObject.definition.properties?.createdAt
+        || this.schemaObject.definition.oneOf?.every?.(obj => obj.properties.createdAt)
+      )
     )
   }
 

@@ -30,6 +30,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
     this.followsIdx = this.getTable('ctzn.network/follow-idx')
     this.notificationsIdx = this.getTable('ctzn.network/notification-idx')
     this.reactionsIdx = this.getTable('ctzn.network/reaction-idx')
+    this.repostsIdx = this.getTable('ctzn.network/repost-idx')
     this.votesIdx = this.getTable('ctzn.network/vote-idx')
 
     this.memberDbKeys = new Set()
@@ -288,6 +289,51 @@ export class PublicServerDB extends BaseHyperbeeDB {
       }
     })
 
+    this.createIndexer('ctzn.network/repost-idx', ['ctzn.network/post'], async (batch, db, diff) => {
+      const leftDbUrl = diff.left?.value?.source?.dbUrl
+      const rightDbUrl = diff.right?.value?.source?.dbUrl
+      if (!leftDbUrl && !rightDbUrl) return
+      if (leftDbUrl === rightDbUrl) return
+
+      if (leftDbUrl) {
+        const release = await this.repostsIdx.lock(leftDbUrl)
+        try {
+          let repostsIdxEntry = await this.repostsIdx.get(leftDbUrl)
+          if (repostsIdxEntry) {
+            let i = repostsIdxEntry.value.reposts.findIndex(r => r.dbKey === db.dbKey)
+            if (i !== -1) {
+              repostsIdxEntry.value.reposts.splice(i, 1)
+              await batch.put(this.repostsIdx.constructBeeKey(repostsIdxEntry.key), repostsIdxEntry.value)
+            }
+          }
+        } finally {
+          release()
+        }
+      }
+      if (rightDbUrl) {
+        const release = await this.repostsIdx.lock(rightDbUrl)
+        try {
+          let repostsIdxEntry = await this.repostsIdx.get(rightDbUrl)
+          if (!repostsIdxEntry) {
+            repostsIdxEntry = {
+              key: rightDbUrl,
+              value: {
+                subject: {dbUrl: rightDbUrl},
+                reposts: []
+              }
+            }
+          }
+          let i = repostsIdxEntry.value.reposts.findIndex(r => r.dbKey === db.dbKey)
+          if (i === -1) {
+            repostsIdxEntry.value.reposts.push({dbKey: db.dbKey, postKey: diff.right.key})
+            await batch.put(this.repostsIdx.constructBeeKey(repostsIdxEntry.key), repostsIdxEntry.value)
+          }
+        } finally {
+          release()
+        }
+      }
+    })
+
     this.createIndexer('ctzn.network/vote-idx', ['ctzn.network/vote'], async (batch, db, diff) => {
       const subjectUrl = (diff.right || diff.left).value.subject.dbUrl
       const oldVote = diff.left?.value?.vote || 0
@@ -330,7 +376,6 @@ export class PublicServerDB extends BaseHyperbeeDB {
       }
     })
   }
-
 
   async onDatabaseCreated () {
     console.log('New public server database created, key:', this.key.toString('hex'))

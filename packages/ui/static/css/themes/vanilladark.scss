@@ -8,6 +8,7 @@ $color-button-disabled: #6B7280;
 $color-button-primary: #fff;
 $color-button-primary-disabled: #EFF6FF;
 $color-post-controls: #989faa;
+$color-post-controls-selected: #0bae78;
 $color-comment-controls: #989faa;
 $color-reaction: #c9ced5;
 $color-reaction-selected: #c8daf2;
@@ -442,7 +443,7 @@ $screen-2xl: 1536px;
     .post-audience {
       color: $color-post-controls;
       font-size: 12px;
-      font-weight: 500;
+      font-weight: bold;
     }
 
     .post-metadata {
@@ -485,6 +486,10 @@ $screen-2xl: 1536px;
 
     .post-actions {
       color: $color-post-controls;
+    }
+
+    .repost.selected {
+      color: $color-post-controls-selected;
     }
 
     .post-media {

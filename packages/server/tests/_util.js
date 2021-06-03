@@ -81,6 +81,7 @@ export class TestFramework {
     t.truthy(entry.dbUrl.startsWith(user.profile.dbUrl))
     t.is(entry.author.dbKey, user.dbKey)
     t.is(entry.value.text, desc[1])
+    if (desc[2]) t.is(entry.repostedBy.dbKey, desc[2].dbKey)
   }
 
   testComment (t, entry, desc, reply) {
@@ -282,6 +283,17 @@ class TestCitizen {
       this.username,
       'ctzn.network/post',
       {audience, text, createdAt: (new Date()).toISOString()}
+    )
+    this.posts.push(await this.inst.api.view.get('ctzn.network/views/post', {dbUrl}))
+    return this.posts[this.posts.length - 1]
+  }
+
+  async repost (source) {
+    await this.login()
+    const {dbUrl} = await this.inst.api.table.create(
+      this.username,
+      'ctzn.network/post',
+      {source: {dbUrl: source.dbUrl}, createdAt: (new Date()).toISOString()}
     )
     this.posts.push(await this.inst.api.view.get('ctzn.network/views/post', {dbUrl}))
     return this.posts[this.posts.length - 1]

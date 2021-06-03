@@ -18,6 +18,13 @@ test.before(async () => {
   await sim.createCitizen(inst, 'alice')
   await sim.createCitizen(inst, 'bob')
   await sim.createCitizen(inst, 'carla')
+  const {alice, bob, carla} = sim.users
+  await alice.follow(bob)
+  await alice.follow(carla)
+  await bob.follow(alice)
+  await bob.follow(carla)
+  await carla.follow(alice)
+  await carla.follow(bob)
 })
 
 test.after.always(async t => {
@@ -70,11 +77,9 @@ test('single user posting to self', async t => {
 
 test('feeds', async t => {
   const {alice, bob, carla} = sim.users
-  await bob.follow(alice)
   await alice.createPost({text: '4'})
   await carla.createPost({text: '5'})
   await bob.createPost({text: '6'})
-  await bob.follow(carla)
 
   await bob.login()
   let postEntries = (await api.view.get('ctzn.network/views/feed')).feed
@@ -98,7 +103,11 @@ test('feeds', async t => {
   await alice.login()
   postEntries = (await api.view.get('ctzn.network/views/feed')).feed
   sim.testFeed(t, postEntries, [
+    [bob, '6'],
+    [carla, '5'],
     [alice, '4'],
+    [bob, '3'],
+    [bob, '2']
   ])
 })
 
@@ -169,4 +178,52 @@ test('post with images', async t => {
   }, {
     media1Thumb: {base64buf: '0'.repeat(400000), mimeType: 'image/jpeg'}
   }))
+})
+
+test('reposts', async t => {
+  const {alice, bob, carla} = sim.users
+  await alice.repost(bob.posts[1])
+  await carla.repost(bob.posts[1])
+
+  const postEntry = await api.view.get('ctzn.network/views/post', {dbUrl: bob.posts[1].dbUrl})
+  t.is(postEntry.value.text, '2')
+  t.is(postEntry.reposts.length, 2)
+
+  await bob.login()
+  let postEntries = (await api.view.get('ctzn.network/views/feed')).feed
+  sim.testFeed(t, postEntries, [
+    [bob, '2', carla],
+    [bob, '2', alice],
+    [bob, 'Images test'],
+    [bob, '9'],
+    [alice, '8'],
+    [alice, '7'],
+    [bob, '6'],
+    [carla, '5'],
+    [alice, '4'],
+    [bob, '3'],
+    [bob, '2']
+  ])
+
+  await alice.login()
+  postEntries = (await api.view.get('ctzn.network/views/posts', {dbId: alice.username, reverse: true})).posts
+  sim.testFeed(t, postEntries, [
+    [bob, '2', alice],
+    [alice, '8'],
+    [alice, '7'],
+    [alice, '4']
+  ])
+
+  await alice.login()
+  postEntries = (await api.view.get('ctzn.network/views/feed')).feed
+  sim.testFeed(t, postEntries, [
+    [bob, '2', carla],
+    [bob, '2', alice],
+    [bob, 'Images test'],
+    [bob, '6'],
+    [carla, '5'],
+    [alice, '4'],
+    [bob, '3'],
+    [bob, '2']
+  ])
 })

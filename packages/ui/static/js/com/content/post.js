@@ -3,6 +3,7 @@ import { unsafeHTML } from '../../../vendor/lit/directives/unsafe-html.js'
 import { repeat } from '../../../vendor/lit/directives/repeat.js'
 import { USER_URL, POST_URL, FULL_POST_URL, AVATAR_URL, BLOB_URL } from '../../lib/const.js'
 import * as session from '../../lib/session.js'
+import { UsersListPopup } from '../popups/users-list.js'
 import { ReactionsListPopup } from '../popups/reactions-list.js'
 import { ViewMediaPopup } from '../popups/view-media.js'
 import { emit } from '../../lib/dom.js'
@@ -87,8 +88,17 @@ export class Post extends LitElement {
     return session.info?.dbKey === this.post?.author.dbKey
   }
 
+  getMyRepost () {
+    if (!session.isActive()) return false
+    return this.post.reposts?.find(r => r.dbKey === session.info.dbKey)
+  }
+
+  haveIReposted () {
+    return !!this.getMyRepost()
+  }
+
   haveIReacted (reaction) {
-    if (!session.isActive()) return
+    if (!session.isActive()) return false
     return this.post.reactions?.[reaction]?.includes(session.info.dbKey)
   }
 
@@ -184,12 +194,22 @@ export class Post extends LitElement {
         </div>
         <div class="block min-w-0">
           <div class="pl-2 pr-2 py-2 min-w-0">
-            ${this.post.value.audience ? html`
+            ${this.post.value.audience || this.post.repostedBy ? html`
               <div class="post-audience pr-2.5 truncate">
-                <span class="fas fa-users"></span>
-                <a class="hov:hover:underline" href="/p/explore/community/${encodeURIComponent(this.post.value.audience)}">
-                  ${this.post.value.audience}
-                </a>
+                ${this.post.value.audience ? html`
+                  <span class="fas fa-users"></span>
+                  <a class="hov:hover:underline" href="/p/explore/community/${encodeURIComponent(this.post.value.audience)}">
+                    ${this.post.value.audience}
+                  </a>
+                ` : ''}
+                ${this.post.value.audience && this.post.repostedBy ? html`&middot;` : ''}
+                ${this.post.repostedBy ? html`
+                  <span class="fas fa-retweet"></span>
+                  Reposted by
+                  <a class="hov:hover:underline" href=${USER_URL(this.post.repostedBy.dbKey)}>
+                    ${this.post.repostedBy.displayName}
+                  </a>
+                ` : ''}
               </div>
             ` : ''}
             <div class="post-metadata pr-2.5 truncate sm:mb-2">
@@ -249,13 +269,23 @@ export class Post extends LitElement {
           </a>
         </div>
         <div class="block min-w-0">
-          <div class="pr-2 py-2 ${this.post.value.audience ? 'pt-1' : ''} min-w-0">
-            ${this.post.value.audience ? html`
+          <div class="pr-2 py-2 ${this.post.value.audience || this.post.repostedBy ? 'pt-1' : ''} min-w-0">
+            ${this.post.value.audience || this.post.repostedBy ? html`
               <div class="post-audience pl-1 pr-2.5 truncate">
-                <span class="fas fa-users"></span>
-                <a class="hov:hover:underline" href="/p/explore/community/${encodeURIComponent(this.post.value.audience)}">
-                  ${this.post.value.audience}
-                </a>
+                ${this.post.value.audience ? html`
+                  <span class="fas fa-users"></span>
+                  <a class="hov:hover:underline" href="/p/explore/community/${encodeURIComponent(this.post.value.audience)}">
+                    ${this.post.value.audience}
+                  </a>
+                ` : ''}
+                ${this.post.value.audience && this.post.repostedBy ? html`&middot;` : ''}
+                ${this.post.repostedBy ? html`
+                  <span class="fas fa-retweet"></span>
+                  Reposted by
+                  <a class="hov:hover:underline" href=${USER_URL(this.post.repostedBy.dbKey)}>
+                    ${this.post.repostedBy.displayName}
+                  </a>
+                ` : ''}
               </div>
             ` : ''}
             <div class="post-metadata pl-1 pr-2.5 truncate">
@@ -414,13 +444,20 @@ export class Post extends LitElement {
   
   renderActionsSummary () {
     const reactionsCount = this.post.reactions ? Object.values(this.post.reactions).reduce((acc, v) => acc + v.length, 0) : 0
-    if (reactionsCount === 0) return ''
+    if (reactionsCount === 0 && this.post.reposts.length === 0) return ''
     return html`
       <div class="actions-summary mb-3 py-3 px-2">
-        <a class="inline-block mr-2 cursor-pointer hov:hover:underline" @click=${this.onClickViewReactions}>
-          ${reactionsCount} ${pluralize(reactionsCount, 'reaction')}
-        </a>
-        ${this.renderReactions()}
+        ${this.post.reposts.length > 0 ? html`
+          <a class="inline-block mr-2 cursor-pointer hov:hover:underline" @click=${this.onClickViewReposts}>
+            ${this.post.reposts.length} ${pluralize(this.post.reposts.length, 'repost')}
+          </a>
+        ` : ''}
+        ${reactionsCount > 0 ? html`
+          <a class="inline-block mr-2 cursor-pointer hov:hover:underline" @click=${this.onClickViewReactions}>
+            ${reactionsCount} ${pluralize(reactionsCount, 'reaction')}
+          </a>
+          ${this.renderReactions()}
+        ` : ''}
       </div>
     `
   }
@@ -437,9 +474,12 @@ export class Post extends LitElement {
   renderRepostCtrl () {
     return html`
       <div class="post-action">
-        <a class="px-1">
+        <a
+          class="repost ${this.haveIReposted() ? 'selected' : ''} px-1"
+          @click=${this.onClickRepostBtn}
+        >
           <span class="fas fa-retweet"></span>
-          <span class="count">0</span>
+          <span class="count">${this.post?.reposts?.length || ''}</span>
         </a>
       </div>
     `
@@ -586,6 +626,23 @@ export class Post extends LitElement {
     }
     this.reloadSignals()
   }
+
+  async onClickRepostBtn (e) {
+    const myRepost = this.getMyRepost()
+    if (myRepost) {
+      if (!confirm('Remove repost?')) {
+        return
+      }
+      await session.api.user.table('ctzn.network/post').delete(myRepost.postKey)
+      this.post.reposts = this.post.reposts.filter(r => r !== myRepost)
+    } else {
+      const res = await session.api.user.table('ctzn.network/post').create({
+        source: {dbUrl: this.post.dbUrl, author: {displayName: this.post.author.displayName}}
+      })
+      this.post.reposts.push({dbKey: session.info.dbKey, postKey: res.key})
+    }
+    this.requestUpdate()
+  }
   
   async onClickReactBtn (e) {
     e.preventDefault()
@@ -674,6 +731,13 @@ export class Post extends LitElement {
       noBorders: true,
       style: `padding: 4px 0; font-size: 13px`,
       items
+    })
+  }
+
+  onClickViewReposts (e) {
+    UsersListPopup.create({
+      title: 'Reposted by...',
+      userIds: this.post.reposts.map(r => r.dbKey)
     })
   }
 

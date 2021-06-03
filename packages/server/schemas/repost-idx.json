@@ -1,0 +1,34 @@
+{
+  "id": "ctzn.network/repost-idx",
+  "title": "Repost Index",
+  "description": "Aggregated repost counts on a post",
+  "type": "json-table",
+  "keyTemplate": [{"type": "json-pointer", "value": "/subject/dbUrl"}],
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["subject", "reposts"],
+    "properties": {
+      "subject": {
+        "type": "object",
+        "required": ["dbUrl"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "reposts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "dbKey": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "postKey": {"type": "string"}
+          }
+        }
+      }
+    }
+  }
+}
