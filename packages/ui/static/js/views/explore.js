@@ -29,12 +29,16 @@ class CtznExploreView extends LitElement {
     document.title = `Explore | CTZN`
     this.popularCommunities = (await session.api.view.get('ctzn.network/views/popular-communities')).communities
     console.log(this.popularCommunities)
+    await this.updateComplete
+    this.querySelector('app-posts-feed')?.load()
   }
 
-  updated (changedProperties) {
+  async updated (changedProperties) {
     if (changedProperties.has('currentPath') && this.currentPath !== changedProperties.get('currentPath')) {
       let [_1, _2, _3, currentCommunity] = this.currentPath.split('/').filter(Boolean)
       this.currentCommunity = currentCommunity ? decodeURIComponent(currentCommunity) : undefined
+      await this.updateComplete
+      this.querySelector('app-posts-feed')?.load()
     }
   }
 

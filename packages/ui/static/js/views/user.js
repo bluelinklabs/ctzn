@@ -167,8 +167,7 @@ class CtznUser extends LitElement {
       emit(this, 'navigate-to', {detail: {url: `${USER_URL(this.userProfile.username)}/${this.currentView}`, replace: true}})
     }
 
-    this.querySelector('app-posts-feed')?.load()
-    this.querySelector('app-comments-feed')?.load()
+    this.querySelector('app-posts-feed')?.load({clearCurrent: true})
 
     const rightNavProfileEl = this.querySelector('#right-nav-profile')
     if (!this.miniProfileObserver && rightNavProfileEl) {
@@ -181,7 +180,6 @@ class CtznUser extends LitElement {
 
   async refresh () {
     await this.querySelector('app-posts-feed')?.load()
-    await this.querySelector('app-comments-feed')?.load()
   }
 
   get isLoading () {

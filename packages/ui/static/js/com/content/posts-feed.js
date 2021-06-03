@@ -90,7 +90,8 @@ export class PostsFeed extends LitElement {
     }
     if (clearCurrent) {
       this.results = undefined
-    } else if (_cache.id === this.cacheId) {
+      this.hasReachedEnd = false
+    } else if (false /*_cache.id === this.cacheId*/) {
       // use cached results
       this.results = _cache.results
       /* dont await */ this.queueQuery() // queue up a load to make sure we're getting latest
@@ -100,14 +101,6 @@ export class PostsFeed extends LitElement {
   }
 
   updated (changedProperties) {
-    if (typeof this.results === 'undefined') {
-      if (!this.activeQuery) {
-        this.load()
-      }
-    } else if (changedProperties.has('_view') || changedProperties.has('userId')) {
-      this.load()
-    }
-
     const botOfFeedEl = this.querySelector('.bottom-of-feed')
     if (!this.loadMoreObserver && botOfFeedEl) {
       this.loadMoreObserver = new IntersectionObserver((entries) => {
@@ -157,7 +150,7 @@ export class PostsFeed extends LitElement {
     }
     console.log(results)
 
-    if (!more && this.results?.length && _cache?.id === this.cacheId && _cache?.results?.[0]?.dbUrl === results[0]?.dbUrl) {
+    if (false /*!more && this.results?.length && _cache?.id === this.cacheId && _cache?.results?.[0]?.dbUrl === results[0]?.dbUrl*/) {
       // stick with the cache but update the signal metrics
       for (let i = 0; i < results.length && i < this.results.length; i++) {
         this.results[i].reactions = _cache.results[i].reactions = results[i].reactions

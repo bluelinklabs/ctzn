@@ -56,6 +56,7 @@ class CtznMainView extends LitElement {
     }
     const pathParts = (new URL(location)).pathname.split('/')
     this.currentView = pathParts[2] || 'feed'
+    await this.updateComplete
     this.querySelector('app-current-status')?.load()
     this.querySelector('app-posts-feed')?.load()
   }
