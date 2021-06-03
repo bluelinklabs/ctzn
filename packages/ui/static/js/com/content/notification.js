@@ -91,6 +91,10 @@ export class Notification extends LitElement {
       subject = note.item.subject
       action = 'followed'
       icon = 'fas fa-user-plus'
+    } else if (schemaId === 'ctzn.network/post') {
+      subject = note.item.source
+      action = 'reposted'
+      icon = 'fas fa-retweet'
     } else if (schemaId === 'ctzn.network/reaction') {
       subject = note.item.subject
       action = 'reacted to'
@@ -150,7 +154,7 @@ export class Notification extends LitElement {
                 ${asyncReplace(this.renderReplyComment(replyCommentInfo))}
               </div>
             </div>
-          ` : (schemaId === 'ctzn.network/reaction' || schemaId === 'ctzn.network/vote') ? html`
+          ` : (schemaId === 'ctzn.network/post' || schemaId === 'ctzn.network/reaction' || schemaId === 'ctzn.network/vote') ? html`
             ${schemaId === 'ctzn.network/reaction' ? this.renderReactions() : ''}
             <div class="subject-wrapper pl-3 pr-6 pb-4">
               ${asyncReplace(this.renderSubject())}
@@ -164,7 +168,7 @@ export class Notification extends LitElement {
   }
 
   async *renderSubject () {
-    const {dbUrl} = this.notification.item.subject
+    const {dbUrl} = (this.notification.item.subject || this.notification.item.source)
     
     if (!_itemCache[dbUrl]) {
       yield html`Loading...`

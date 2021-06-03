@@ -65,11 +65,13 @@ test('user notifications index', async t => {
     await carla.react({subject: reply, reaction: 'woah'})
     await carla.vote(reply, -1)
   }
+  await alice.repost(bob.posts[0])
 
   await bob.login()
   var notifications = (await api.view.get('ctzn.network/views/notifications')).notifications
   notifications.sort((a, b) => new Date(b.item.createdAt) - new Date(a.item.createdAt))
   sim.testNotifications(t, notifications, [
+    [alice, 'repost', bob.posts[0]],
     [carla, 'vote', bob.replies[0], -1],
     [carla, 'reaction', bob.replies[0], 'woah'],
     [carla, 'reaction', bob.posts[1], 'woah'],

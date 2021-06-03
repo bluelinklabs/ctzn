@@ -80,7 +80,7 @@ export class Header extends LitElement {
           </a>
           <a href="/p/notifications" class="relative ${this.getHeaderNavClass('/p/notifications')}" @click=${this.onClickLink}>
             ${this.unreadNotificationsCount > 0 ? html`
-              <span class="absolute bg-blue-500 font-medium leading-none px-1.5 py-0.5 rounded-2xl text-white text-xs" style="top: 5px; left: 32px">${this.unreadNotificationsCount}</span>
+              <span class="absolute bg-blue-500 font-medium leading-none px-1.5 py-0.5 rounded-2xl text-white text-xs" style="top: 10px; left: 20px">${this.unreadNotificationsCount}</span>
             ` : ''}
             <span class="fas fa-fw navicon fa-bell"></span>
             Notifications

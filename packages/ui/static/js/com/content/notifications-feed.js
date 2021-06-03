@@ -6,6 +6,7 @@ import * as session from '../../lib/session.js'
 import * as notifications from '../../lib/notifications.js'
 import './notification.js'
 
+const SUPPORTED_SCHEMA_IDS = ['ctzn.network/comment', 'ctzn.network/post', 'ctzn.network/follow', 'ctzn.network/reaction', 'ctzn.network/vote']
 let _cache = undefined
 
 export class NotificationsFeed extends LitElement {
@@ -276,7 +277,7 @@ export class NotificationsFeed extends LitElement {
   
   renderNotification (note, index) {
     const schemaId = extractSchemaId(note.itemUrl)
-    if (schemaId !== 'ctzn.network/comment' && schemaId !== 'ctzn.network/follow' && schemaId !== 'ctzn.network/reaction' && schemaId !== 'ctzn.network/vote') {
+    if (!SUPPORTED_SCHEMA_IDS.includes(schemaId)) {
       return ''
     }
     let blendedCreatedAt = Number(new Date(note.blendedCreatedAt))
@@ -328,11 +329,33 @@ function dateHeader (ts, range) {
 
 function reduceSimilarNotifications (acc, note) {
   if (note.item?.reaction && note.item?.subject?.dbUrl) {
+    // reactions
     const {dbUrl} = note.item.subject
-    // is a reaction
     for (let note2 of acc) {
       if (!note2.item?.reaction) continue
       if (note2.item?.subject?.dbUrl === dbUrl) {
+        note2.mergedNotes = note2.mergedNotes || []
+        note2.mergedNotes.push(note)
+        return acc
+      }
+    }
+  }
+  if (note.item?.source?.dbUrl) {
+    // reposts
+    const {dbUrl} = note.item.source
+    for (let note2 of acc) {
+      if (note2.item?.source?.dbUrl === dbUrl) {
+        note2.mergedNotes = note2.mergedNotes || []
+        note2.mergedNotes.push(note)
+        return acc
+      }
+    }
+  }
+  if (note.item.vote && note.item?.subject?.dbUrl) {
+    // votes
+    const {dbUrl} = note.item.subject
+    for (let note2 of acc) {
+      if (note2.item?.subject?.dbUrl === dbUrl && note2.item.vote === note.item.vote) {
         note2.mergedNotes = note2.mergedNotes || []
         note2.mergedNotes.push(note)
         return acc

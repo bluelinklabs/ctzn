@@ -43,6 +43,7 @@ export class PublicServerDB extends BaseHyperbeeDB {
     const NOTIFICATIONS_SCHEMAS = [
       'ctzn.network/follow',
       'ctzn.network/comment',
+      'ctzn.network/post',
       'ctzn.network/reaction',
       'ctzn.network/vote'
     ]
@@ -65,6 +66,20 @@ export class PublicServerDB extends BaseHyperbeeDB {
           const {key, idxkey} = genKey(subjectDbKey)
           await batch.put(key, {
             subjectDbKey,
+            idxkey,
+            itemUrl: diff.right.url,
+            createdAt: createdAt.toISOString()
+          })
+          break
+        }
+        case 'ctzn.network/post': {
+          if (!diff.right.value?.source?.dbUrl) return // only handle reposts
+          let urlp = parseEntryUrl(diff.right.value.source.dbUrl)
+          const subjectDb = getDb(urlp.dbKey)
+          if (!subjectDb || !subjectDb.writable) return // not one of our users
+          const {key, idxkey} = genKey(urlp.dbKey)
+          await batch.put(key, {
+            subjectDbKey: urlp.dbKey,
             idxkey,
             itemUrl: diff.right.url,
             createdAt: createdAt.toISOString()

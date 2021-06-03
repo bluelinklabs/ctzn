@@ -212,6 +212,10 @@ export class TestFramework {
           t.is(schemaId, 'ctzn.network/follow', itemDesc)
           t.is(entry.item.subject.dbKey, desc[2].dbKey, itemDesc)
           break
+        case 'repost':
+          t.is(schemaId, 'ctzn.network/post', itemDesc)
+          t.is(entry.item.source.dbUrl, desc[2].dbUrl)
+          break
         case 'comment':
           t.is(schemaId, 'ctzn.network/comment', itemDesc)
           t.is(entry.item.text, desc[2].text, itemDesc)
