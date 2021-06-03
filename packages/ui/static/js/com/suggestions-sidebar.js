@@ -51,7 +51,7 @@ export class SuggestionsSidebar extends LitElement {
           </div>
         </section>
       ` : ''}
-      <section class="sticky top-12 my-5 w-52">
+      <section class="sticky top-16 my-5 w-52">
         <div class="text-sm mb-6">
           <div class="text-base font-medium">
             <span class="fas fa-heart fa-fw mr-1"></span> Support CTZN!
