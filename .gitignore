@@ -2,4 +2,5 @@
 node_modules
 package-lock.json
 *.build.js
+!ctzn-api-client.build.js
 frontend/static/css/tailwind.css

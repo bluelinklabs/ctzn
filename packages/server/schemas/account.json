@@ -1,0 +1,35 @@
+{
+  "id": "ctzn.network/account",
+  "title": "Account",
+  "description": "Internal record of user account registrations.",
+  "type": "json-table",
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["email", "hashedPassword", "privateDbKey"],
+    "properties": {
+      "email": {
+        "type": "string",
+        "format": "email"
+      },
+      "hashedPassword": {
+        "type": "string"
+      },
+      "passwordChangeCode": {
+        "type": "string"
+      },
+      "passwordChangeCodeCreatedAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "privateDbKey": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "notificationsClearedAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+}

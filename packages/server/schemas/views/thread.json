@@ -1,0 +1,105 @@
+{
+  "id": "ctzn.network/views/thread",
+  "title": "Thread view",
+  "description": "Get a post-record and any relevant comment records.",
+  "type": "json-view",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["dbUrl"],
+    "properties": {
+      "dbUrl": {"type": "string", "format": "uri"}
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["comments"],
+    "properties": {
+      "comments": {
+        "type": "array",
+        "items": {"$ref": "#/definitions/comment"}
+      }
+    },
+    "definitions": {
+      "comment": {
+        "type": "object",
+        "required": ["author", "key", "seq", "dbUrl", "value"],
+        "properties": {
+          "author": {
+            "type": "object",
+            "required": ["dbKey"],
+            "properties": {
+              "dbKey": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          },
+          "key": {"type": "string"},
+          "reactions": {
+            "type": "object",
+            "patternProperties": {
+              ".*": {
+                "type": "array",
+                "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+              }
+            }
+          },
+          "votes": {
+            "type": "object",
+            "properties": {
+              "tally": {"type": "number"},
+              "mine": {"type": "number"}
+            }
+          },
+          "replyCount": {"type": "number"},
+          "replies": {
+            "type": "array",
+            "items": {"$ref": "#/definitions/comment"}
+          },
+          "seq": {"type": "number"},
+          "dbUrl": {"type": "string", "format": "uri"},
+          "value": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "reply": {
+                "type": "object",
+                "required": ["root"],
+                "properties": {
+                  "root": {
+                    "type": "object",
+                    "required": ["dbUrl"],
+                    "properties": {
+                      "dbUrl": {
+                        "type": "string",
+                        "format": "uri"
+                      }
+                    }
+                  },
+                  "parent": {
+                    "type": "object",
+                    "required": ["dbUrl"],
+                    "properties": {
+                      "dbUrl": {
+                        "type": "string",
+                        "format": "uri"
+                      }
+                    }
+                  }
+                }
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

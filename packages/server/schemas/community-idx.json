@@ -1,0 +1,25 @@
+{
+  "id": "ctzn.network/community-idx",
+  "title": "Communities Index",
+  "description": "Aggregated communities declared by users",
+  "type": "json-table",
+  "keyTemplate": [{"type": "json-pointer", "value": "/community"}],
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["community", "memberDbKeys"],
+    "properties": {
+      "community": {
+        "type": "string",
+        "maxLength": 64
+      },
+      "memberDbKeys": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "id": "ctzn.network/views/comment",
+  "title": "Comment view",
+  "description": "Get a comment-record.",
+  "type": "json-view",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "dbId": {"type": "string"},
+      "commentKey": {"type": "string"},
+      "dbUrl": {"type": "string", "format": "uri"}
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["author", "key", "seq", "dbUrl", "value"],
+    "properties": {
+      "author": {
+        "type": "object",
+        "required": ["dbKey"],
+        "properties": {
+          "dbKey": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "key": {"type": "string"},
+      "reactions": {
+        "type": "object",
+        "patternProperties": {
+          ".*": {
+            "type": "array",
+            "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+          }
+        }
+      },
+      "votes": {
+        "type": "object",
+        "properties": {
+          "tally": {"type": "number"},
+          "mine": {"type": "number"}
+        }
+      },
+      "replyCount": {"type": "number"},
+      "seq": {"type": "number"},
+      "dbUrl": {"type": "string", "format": "uri"},
+      "value": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "reply": {
+            "type": "object",
+            "required": ["root"],
+            "properties": {
+              "root": {
+                "type": "object",
+                "required": ["dbUrl"],
+                "properties": {
+                  "dbUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              },
+              "parent": {
+                "type": "object",
+                "required": ["dbUrl"],
+                "properties": {
+                  "dbUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

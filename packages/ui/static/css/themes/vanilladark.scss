@@ -1,0 +1,877 @@
+$color: #fff;
+$color-link: #6696ff;
+$color-light: #989faa;
+$color-dark: #fff;
+$color-error: red;
+$color-empty: #a4a8ae;
+$color-button-disabled: #6B7280;
+$color-button-primary: #fff;
+$color-button-primary-disabled: #EFF6FF;
+$color-post-controls: #989faa;
+$color-post-controls-selected: #0bae78;
+$color-comment-controls: #989faa;
+$color-reaction: #c9ced5;
+$color-reaction-selected: #c8daf2;
+$color-more-images: #fff;
+$color-notification-unread: #0c3d89;
+$color-notification-icon: #727c8b;
+$color-notification-icon-unread: #b1cffa;
+$color-header-nav-item: #eee;
+$color-header-nav-item-selected: #3285f8;
+$color-header-search-placeholder-icon: #989faa;
+$color-user-right-nav-item: $color-light;
+$color-user-right-nav-item-selected: #b7d5ff;
+$color-subnav-item-selected: #207dff;
+$bgcolor: #222;
+$bgcolor-light: #333;
+$bgcolor-label: #444;
+$bgcolor-error: #2f1515;
+$bgcolor-empty: #333;
+$bgcolor-button: #353535;
+$bgcolor-button-hover: #464747;
+$bgcolor-button-disabled: #464747;
+$bgcolor-button-primary: #2563EB;
+$bgcolor-button-primary-hover: #1D4ED8;
+$bgcolor-button-primary-disabled: #60A5FA;
+$bgcolor-button-transparent-hover: #464747;
+$bgcolor-button-transparent-disabled: #464747;
+$bgcolor-highlighted-comment: #EFF6FF;
+$bgcolor-reaction: #3d3d3d;
+$bgcolor-reaction-selected: #143993;
+$bgcolor-more-images: rgba(0,0,0,.85);
+$bgcolor-notification-unread: #033f8b;
+$bgcolor-user-right-nav-item: $bgcolor;
+$bgcolor-user-right-nav-item-selected: #033f8b;
+$bgcolor-subnav-underline: #0065f3;
+$bgcolor-placeholder-avatar: #333;
+$bordercolor: #515151;
+$bordercolor-button: $bordercolor;
+$bordercolor-button-primary: #1E40AF;
+$bordercolor-notification-unread: #2a84e8;
+$bordercolor-comments-aligner: #666;
+$bordercolor-highlighted-comment: #BFDBFE;
+$bordercolor-user-right-nav-item: $bordercolor;
+$bordercolor-user-right-nav-item-selected: #2a84e8;
+
+$screen-sm: 640px;
+$screen-md: 768px;
+$screen-lg: 1024px;
+$screen-xl: 1280px;
+$screen-2xl: 1536px;
+
+@mixin black-glass () {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  background: rgba(34, 34, 34, 0.9);
+}
+
+%theme-vanilladark {
+  background: $bgcolor;
+  color: $color;
+  --theme-bg: #222;
+
+  // common elements
+  // =
+
+  .link {
+    color: $color-link;
+  }
+  app-button button {
+    border-radius: 0.25rem;
+    background: $bgcolor-button;
+    box-shadow: 0 1px 2px #0002;
+    border: 1px solid $bordercolor-button;
+
+    &:hover {
+      background: $bgcolor-button-hover;
+    }
+    &.disabled {
+      background: $bgcolor-button-disabled;
+      color: $color-button-disabled;
+    }
+    &.primary {
+      background: $bgcolor-button-primary;
+      color: $color-button-primary;
+      border-color: $bordercolor-button-primary;
+      &:hover {
+        background: $bgcolor-button-primary-hover;
+      }
+      &.disabled {
+        background: $bgcolor-button-primary-disabled;
+      }
+    }
+    &.transparent {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      &:hover {
+        background: $bgcolor-button-transparent-hover;
+      }
+      &.disabled {
+        background: $bgcolor-button-transparent-disabled;
+      }
+    }
+  }
+  hr {
+    border: 0;
+    border-top: 1px solid $bordercolor;
+  }
+  input[type="text"],
+  input[type="password"],
+  textarea {
+    background: transparent;
+    border: 1px solid $bordercolor;
+    border-radius: 0.25rem;
+  }
+  .error {
+    background: $bgcolor-error;
+    color: $color-error;
+  }
+  .empty {
+    background: $bgcolor-empty;
+    color: $color-empty;
+  }
+  .popup-inner {
+    background: $bgcolor;
+    @media (min-width: $screen-sm) {
+      border-radius: 1rem;
+      box-shadow: 0 2px 4px #0002;
+      border: 1px solid $bordercolor;
+    }
+  }
+  .reaction {
+    color: $color-reaction;
+    background: $bgcolor-reaction;
+    font-size: 13px;
+    border-radius: 0.25rem;
+
+    .emoji {
+      width: 1em !important;
+    }
+
+    &.is-selected {
+      color: $color-reaction-selected;
+      background: $bgcolor-reaction-selected;
+    }
+  }
+  .communities-list {
+    .community {
+      display: inline-block;
+      border: 1px solid $bordercolor-button;
+      border-radius: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      margin-bottom: 0.25rem;
+      cursor: pointer;
+      &:hover {
+        text-decoration: underline;
+      }
+      .link {
+        padding: 0 0.25rem;
+        border-radius: 0.25rem;
+      }
+      .link:hover {
+        background: $bgcolor-light;
+      }
+    }
+  }
+
+  .bg-loading-gradient {
+    background: linear-gradient(to right, #242424, #2c2c2c, #242424);
+    background-size: 200% 200%;
+    animation: bg-loading-gradient 2s linear infinite;
+  }
+  @keyframes bg-loading-gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 200% 50%;
+    }
+  }
+
+  // shell
+  // =
+
+  app-header {
+    .desktop-header {
+      @include black-glass();
+      border-bottom: 1px solid $bordercolor;
+
+      .desktop-header-inner {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+
+      .nav-item {
+        padding: 1rem 0.5rem calc(1rem - 2px);
+        font-weight: bold;
+        font-size: 18px;
+        border-bottom: 2px solid transparent;
+        color: $color-header-nav-item;
+
+        & + .nav-item {
+          margin-left: 0.25rem;
+        }
+      }
+
+      .nav-item:hover,
+      .nav-item.is-selected {
+        color: $color-header-nav-item-selected;
+        border-bottom: 2px solid $color-header-nav-item-selected;
+      }
+
+      .search-placeholder {
+        border: 1px solid transparent;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 1rem;
+        padding: 0.5rem 1rem;
+
+        .search-placeholder-icon {
+          color: $color-header-search-placeholder-icon;
+          font-size: 14px;
+        }
+        .search-placeholder-text {
+          color: $color-light;
+          font-size: 14px;
+          font-weight: 500;
+        }
+      }
+
+      .search-container {
+        border-radius: 0.25rem;
+        background: $bgcolor;
+        border: 1px solid $bordercolor;
+        box-shadow: 0 2px 4px #0002;
+      }
+    }
+  }
+  app-subnav {
+    @include black-glass();
+    border-bottom: 1px solid $bordercolor;
+    @media (min-width: $screen-sm) {
+      border-left: 1px solid $bordercolor;
+      border-right: 1px solid $bordercolor;
+    }
+
+    .nav-item {
+      font-weight: 500;
+
+      &:hover,
+      &.is-selected {
+        color: $color-subnav-item-selected;
+      }
+    }
+
+    .underline {
+      background: $bgcolor-subnav-underline;
+    }
+  }
+
+  // content
+  // =
+
+  app-comment-composer {}
+  app-comment {
+    .as-reply-wrapper,
+    .content-only-wrapper {
+    }
+
+    .avatar {
+      border-radius: 50%;
+    }
+
+    .comment-metadata {
+      color: $color-comment-controls;
+      font-size: 13px;
+    }
+
+    .display-name {
+      color: $color-dark;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .comment-date {
+      font-size: 13px;
+    }
+
+    .comment-text {
+      font-size: 16px;
+    }
+
+    .comment-actions {
+      color: $color-comment-controls;
+      font-size: 13px;
+    }
+
+    .comment-composer-wrapper {
+      border: 1px solid $bordercolor;
+      border-radius: 0.25rem;
+      background: $bgcolor;
+    }
+  }
+  app-comments-feed {}
+  app-current-status {
+    .section {
+      border: 1px solid $bordercolor;
+      border-bottom: 0;
+      &:last-child {
+        border-bottom: 1px solid $bordercolor;
+      }
+      padding: 0.5rem 1rem;
+
+      .label {
+        color: $color-light;
+      }
+    }
+  }
+  app-current-statuses-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 0.5rem;
+
+    app-current-statuses-list-item {
+      &:empty {
+        display: none;
+      }
+      border: 1px solid $bordercolor;
+      padding: 0.25rem 0;
+      border-radius: 0.25rem;
+      app-mini-profile {
+        display: block;
+        margin: 0.5rem 0.75rem;
+      }
+      .section {
+        margin: 0.5rem 0.75rem;
+
+        .label {
+          color: $color-light;
+        }
+      }
+    }
+  }
+  app-notification {
+    .wrapper {
+    }
+
+    &.is-unread .icon-wrapper {
+      background: $bgcolor-notification-unread;
+    }
+
+    .icon {
+      font-size: 21px;
+      color: $color-notification-icon;
+    }
+
+    .is-unread .icon {
+      color: $color-notification-icon-unread;
+    }
+
+    .avatar {
+      border-radius: 50%;
+    }
+
+    .display-name {
+      font-weight: bold;
+    }
+
+    .subject-wrapper {
+      color: $color-light;
+    }
+
+    .comment-wrapper {
+      border: 1px solid $bordercolor;
+      border-radius: 1rem;
+      background: $bgcolor;
+      color: $color;
+    }
+  }
+  app-notifications-feed {
+    .placeholder,
+    app-notification {
+      border: 1px solid $bordercolor;
+      &:not(.is-first) {
+        border-top: 0;
+      }
+      &.is-unread {
+        border-color: $bordercolor-notification-unread;
+      }
+      @media (max-width: $screen-sm) {
+        border-left: 0;
+        border-right: 0;
+      }
+    }
+
+    .placeholder {
+      .avatar {
+        border-radius: 50%;
+        background: $bgcolor-placeholder-avatar;
+      }
+    }
+  }
+  app-post-composer {
+    .post-community-select {
+      border: 1px solid $bordercolor;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      &:hover {
+        background: $bgcolor-light;
+      }
+      &.selected {
+        background: $bgcolor-button-primary;
+        color: #fff;
+        border-color: $bordercolor-button-primary;
+      }
+    }
+  }
+  app-post {
+    &:empty {
+      display: none;
+    }
+
+    .default-wrapper,
+    .expanded-wrapper {
+    }
+
+    .avatar {
+      border-radius: 50%;
+    }
+
+    .post-audience {
+      color: $color-post-controls;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .post-metadata {
+      color: $color-post-controls;
+      font-size: 16px;
+    }
+
+    .display-name {
+      color: $color-dark;
+      font-weight: bold;
+      font-size: 17px;
+    }
+
+    .post-date {
+      font-size: 15px;
+    }
+
+    .post-text {
+      font-size: 17px;
+    }
+
+    .actions-summary {
+      border-top: 1px solid $bordercolor;
+      border-bottom: 1px solid $bordercolor;
+      font-size: 14px;
+      color: $color-post-controls;
+
+      .reaction {
+        margin-right: 0.25rem;
+      }
+    }
+
+    .warnings {
+      background: $bgcolor-light;
+      font-size: 12px;
+      color: $color-post-controls;
+      border-radius: 0.25rem;
+      font-weight: 600;
+    }
+
+    .post-actions {
+      color: $color-post-controls;
+    }
+
+    .repost.selected {
+      color: $color-post-controls-selected;
+    }
+
+    .post-media {
+      .item-wrapper {
+        border-radius: 0.25rem;
+        background: $bgcolor-light;
+      }
+
+      .item {
+        border-radius: 0.25rem;
+        border: 1px solid $bordercolor;
+      }
+      
+      .more-images {
+        font-weight: bold;
+        border-radius: 0.25rem;
+        font-size: 16px;
+        color: $color-more-images;
+        background: $bgcolor-more-images;
+      }
+    }
+  }
+  app-posts-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    align-items: flex-start;
+    grid-gap: 1rem;
+    padding: 1rem;
+
+    .placeholder,
+    app-post {
+      border: 1px solid $bordercolor;
+      border-radius: 0.25rem;
+    }
+
+    .placeholder {
+      .avatar {
+        border-radius: 50%;
+        background: $bgcolor-placeholder-avatar;
+      }
+    }
+  }
+  app-posts-feed {
+    @media (min-width: $screen-sm) {
+      border-left: 1px solid $bordercolor;
+      border-right: 1px solid $bordercolor;
+      border-bottom: 1px solid $bordercolor;
+    }
+
+    .placeholder,
+    app-post {
+      border-top: 1px solid $bordercolor;
+    }
+
+    .placeholder {
+      .avatar {
+        border-radius: 50%;
+        background: $bgcolor-placeholder-avatar;
+      }
+    }
+  }
+  app-thread {
+    @media (min-width: $screen-sm) {
+      border: 1px solid $bordercolor;
+      border-top: 0;
+    }
+
+    .comment-composer-placeholder {
+      color: $color-light;
+      background: $bgcolor-light;
+      border-radius: 0.25rem;
+    }
+    .comment-composer-wrapper {
+      border: 1px solid $bordercolor;
+      border-radius: 0.25rem;
+      background: $bgcolor;
+    }
+    .comments-container {
+      border-left: 2px solid $bordercolor-comments-aligner;
+    }
+    .comment-container {
+      &.highlight {
+        background: $bgcolor-highlighted-comment;
+        border: 1px solid $bordercolor-highlighted-comment;
+        border-left-width: 2px;
+        border-top-right-radius: 0.25rem;
+        border-bottom-right-radius: 0.25rem;
+      }
+    }
+  }
+
+  // users
+  // =
+
+  app-edit-profile {
+    .header {
+      border-bottom: 1px solid $bordercolor;
+      .label {
+        font-size: 19px;
+        font-weight: 500;
+      }
+    }
+    .nav {
+      @media (min-width: $screen-sm) {
+        border-right: 1px solid $bordercolor;
+      }
+      @media (max-width: $screen-sm) {
+        border-bottom: 1px solid $bordercolor;
+      }
+
+      .nav-item {
+        &:hover {
+          background: $bgcolor-light;
+        }
+        &.is-selected {
+          color: $color-header-nav-item-selected;
+          @media (min-width: $screen-sm) {
+            border-right: 4px solid $color-header-nav-item-selected;
+          }
+          @media (max-width: $screen-sm) {
+            border-bottom: 1px solid $color-header-nav-item-selected;
+          }
+        }
+      }
+    }
+
+    .img-input {
+      border-radius: 0.5rem;
+      border: 1px solid $bordercolor;
+    }
+  }
+  app-followers-list {
+    .is-toggleable:hover {
+      color: $color-link;
+    }
+
+    .label {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .count {
+      color: $color-light;
+      font-weight: bold;
+    }
+
+    .shared {
+      color: $color-light;
+    }
+  }
+  app-following-list {
+    .is-toggleable:hover {
+      color: $color-link;
+    }
+
+    .label {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .count {
+      color: $color-light;
+      font-weight: bold;
+    }
+  }
+  app-mini-profile {
+    .avatar {
+      border-radius: 0.25rem;
+    }
+    .display-name {
+      font-weight: bold;
+    }
+  }
+  app-searchable-user-list {
+    .wrapper {
+      &.widget-mode {
+        border-bottom: 1px solid $bordercolor;
+        font-size: 14px;
+      }
+      &.page-mode {
+        border-top: 1px solid $bordercolor;
+        border-bottom: 1px solid $bordercolor;
+      }
+    }
+    input {
+      border: 0 !important;
+    }
+    .search-icon {
+      font-size: 14px;
+      color: $color-light;
+    }
+    .result {
+      border-bottom: 1px solid $bordercolor;
+      font-size: 14px;
+      &:hover,
+      &.is-selected {
+        background: $bgcolor-light;
+      }
+    }
+    .result-icon {
+      background: $bgcolor-light;
+      border-radius: 0.25rem;
+    }
+    .avatar {
+      border-radius: 0.25rem;
+    }
+    .results-heading {
+      font-size: 13px;
+      font-weight: bold;
+      border-bottom: 1px solid $bordercolor;
+    }
+  }
+  app-user-list {
+    .user {
+      border-radius: 0.25rem;
+      border: 1px solid $bordercolor;
+
+      .banner-container,
+      .banner-container img {
+        border-top-left-radius: 0.25rem;
+        border-top-right-radius: 0.25rem;
+      }
+
+      .avatar {
+        border: 2px solid $bgcolor;
+        border-radius: 1rem;
+        box-shadow: 0 2px 4px #0002;
+        background: $bgcolor;
+      }
+
+      .display-name {
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .user-id {
+        font-weight: 500;
+        color: $color-light;
+        font-size: 14px;
+      }
+
+      .description {
+        font-size: 14px;
+      }
+      
+      .label {
+        color: $color-light;
+        background: $bgcolor-label;
+        font-size: 14px;
+        border-radius: 0.25rem;
+      }
+    }
+  }
+  app-simple-user-list {
+    .user {
+      border-top: 1px solid $bordercolor;
+
+      .avatar {
+        border-radius: 0.25rem;
+      }
+
+      .user-id {
+        font-size: 14px;
+        color: $color-light;
+      }
+    }
+  }
+  app-users-input {}
+
+  // views
+  // =
+
+  app-account-view {}
+  app-explore-view {
+    .content-header {
+      border-left: 1px solid $bordercolor;
+      border-right: 1px solid $bordercolor;
+    }
+
+    .communities-list {
+      padding: 1rem;
+      @media (min-width: $screen-sm) {
+        border: 1px solid $bordercolor;
+      }
+    }
+  }
+  app-forgot-password-view {}
+  app-main-view {
+    .content-header {
+      border-left: 1px solid $bordercolor;
+      border-right: 1px solid $bordercolor;
+    }
+
+    .left-nav-item {
+      border-radius: 0.25rem;
+      &.selected,
+      &:hover {
+        background: $bgcolor-light;
+      }
+      &.selected {
+        font-weight: 600;
+      }
+    }
+  }
+  app-notifications-view {
+    .content-header {
+      border-left: 1px solid $bordercolor;
+      border-right: 1px solid $bordercolor;
+    }
+  }
+  app-signup-view {}
+  app-thread-view {}
+  app-user-view {
+    app-followers-list,
+    app-following-list,
+    .info-block {
+      border: 1px solid $bordercolor;
+      @media (max-width: $screen-sm) {
+        border-top: 0;
+      }
+    }
+
+    .info-block .dbkey {
+      background: $bgcolor-light;
+      border-radius: 0.25rem;
+
+      .dbkey-text {
+        font-family: monospace;
+        font-size: 13px;
+      }
+    }
+
+    #right-nav-profile {
+      .avatar {
+        border: 2px solid $bgcolor;
+        border-radius: 1rem;
+        box-shadow: 0 2px 4px #0002;
+        background: $bgcolor;
+      }
+
+      .display-name {
+        font-size: 2rem;
+        font-weight: bold;
+      }
+
+      .userid {
+        color: $color-light;
+        font-weight: bold;
+      }
+
+      .profile-stat {
+        font-weight: 600;
+        color: $color-light;
+      }
+    }
+
+    .mini-right-nav-profile {
+      .avatar {
+        border-radius: 0.5rem;
+      }
+
+      .display-name {
+        font-size: 21px;
+        font-weight: 600;
+      }
+    }
+
+    .right-nav-item {
+      font-weight: 500;
+      color: $color-user-right-nav-item;
+      background: $bgcolor-user-right-nav-item;
+      border-left: 2px solid $bordercolor-user-right-nav-item;
+
+      &:hover,
+      &.is-selected {
+        color: $color-user-right-nav-item-selected;
+        background: $bgcolor-user-right-nav-item-selected;
+        border-left: 2px solid $bordercolor-user-right-nav-item-selected;
+      }
+    }
+  }
+}
+body.theme-vanilladark {
+  @extend %theme-vanilladark;
+}

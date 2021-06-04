@@ -1,0 +1,29 @@
+{
+  "name": "@bluelinklabs/ctzn-ui",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Application UI package for the ctzn project.",
+  "scripts": {
+    "build": "rollup -c",
+    "tailwind": "npx tailwindcss-cli@latest build -o static/css/tailwind.css",
+    "build-prod": "node ./scripts/generate-sw.js && npm run build && NODE_ENV=production npm run tailwind",
+    "prepare": "echo ''",
+    "postpublish": "echo ''",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pfrazee/ctznry.git"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "rollup": "^2.36.1"
+  },
+  "author": "Paul Frazee <pfrazee@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pfrazee/ctznry/issues"
+  },
+  "homepage": "https://github.com/pfrazee/ctznry#readme"
+}

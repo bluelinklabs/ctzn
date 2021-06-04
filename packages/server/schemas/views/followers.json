@@ -1,0 +1,35 @@
+{
+  "id": "ctzn.network/views/followers",
+  "title": "Followers of view",
+  "description": "Get multiple known followers of a user.",
+  "type": "json-view",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["dbId"],
+    "properties": {
+      "dbId": {"type": "string"}
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["subject"],
+    "properties": {
+      "subject": {
+        "type": "object",
+        "required": ["dbKey"],
+        "properties": {
+          "dbKey": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "followers": {
+        "type": "array",
+        "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

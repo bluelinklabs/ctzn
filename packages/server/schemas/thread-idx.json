@@ -1,0 +1,37 @@
+{
+  "id": "ctzn.network/thread-idx",
+  "title": "Thread Index",
+  "description": "Threaded replies to a piece of content",
+  "type": "json-table",
+  "keyTemplate": [{"type": "json-pointer", "value": "/subject/dbUrl"}],
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["subject", "items"],
+    "properties": {
+      "subject": {
+        "type": "object",
+        "required": ["dbUrl"],
+        "properties": {
+          "dbUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["dbUrl"],
+          "properties": {
+            "dbUrl": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        }
+      }
+    }
+  }
+}

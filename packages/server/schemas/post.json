@@ -1,0 +1,90 @@
+{
+  "id": "ctzn.network/post",
+  "title": "Post",
+  "description": "A top-level post",
+  "type": "json-table",
+  "keyTemplate": [{"type": "auto"}],
+  "blobs": {
+    "media1": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "video/mp4"]},
+    "media1Thumb": {"maxSize": 256000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media2": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "video/mp4"]},
+    "media2Thumb": {"maxSize": 256000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media3": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "video/mp4"]},
+    "media3Thumb": {"maxSize": 256000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media4": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "video/mp4"]},
+    "media4Thumb": {"maxSize": 256000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media5": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "video/mp4"]},
+    "media5Thumb": {"maxSize": 256000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]},
+    "media6": {"maxSize": 512000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "video/mp4"]},
+    "media6Thumb": {"maxSize": 256000, "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]}
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "oneOf": [
+      {
+        "type": "object",
+        "required": ["text", "createdAt"],
+        "properties": {
+          "audience": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["image", "video"]
+                },
+                "caption": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 32
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      {
+        "type": "object",
+        "required": ["source", "createdAt"],
+        "properties": {
+          "source": {
+            "type": "object",
+            "required": ["dbUrl"],
+            "properties": {
+              "dbUrl": {"type": "string", "format": "uri"},
+              "author": {
+                "type": "object",
+                "properties": {
+                  "displayName": {"type": "string"}
+                }
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": "ctzn.network/methods/whoami",
+  "title": "Whoami method",
+  "description": "Returns the current session information.",
+  "type": "method",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {}
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["hasSession"],
+    "properties": {
+      "hasSession": {"type": "boolean"},
+      "url": {"type": "string", "format": "uri"},
+      "dbKey": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+      "username": {"type": "string", "minLength": 3}
+    }
+  }
+}

@@ -1,21 +1,14 @@
 # CTZN (pronounced "Citizen")
 
-A decentralized social network with a strong focus on building communities.
-
-**Features**
-
-- Status feeds with 256 character limits but the ability to post "extended text" with no limit (shows on expand).
-- Social following and moderated communities.
-- Threaded comments.
-- Decentralized hosting (anybody can create a server, and data syncs using the [Hypercore Protocol](https://hypercore-protocol.org)).
-
-Read the [initial design document](./docs/design.md) to learn more about the architecture.
+An open social network built on the [Hypercore Protocol](https://hypercore-protocol.org) data mesh.
 
 ## ⚠️ Alpha Software
 
 CTZN is still in development! If you decide to run a server or build against the protocol, beware that breaking changes may occur and won't always be communicated ahead of time. We will create a stability process once CTZN reaches beta.
 
 ## 📚 Docs
+
+*Docs are out of date due to a recent rework, apologies while we update things.*
 
 - **Setup**
     - [**How to set up a CTZN server**](./docs/setting-up-a-server.md)
@@ -28,6 +21,8 @@ CTZN is still in development! If you decide to run a server or build against the
     - [**Database methods**](./docs/dbmethods.md)
     - [**Community roles system**](./docs/community-roles.md)
     - [**Community permissions system**](./docs/permissions.md)
+- **Developers**
+    - [**API Client**](./packages/api-client)
 
 ### 📺 Videos
 

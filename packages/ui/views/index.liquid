@@ -1,0 +1,11 @@
+{% layout '_layouts/default.liquid' %}
+
+{% block view %}
+  <app-root></app-root>
+{% endblock %}
+
+{% block scripts %}
+  <script src="/vendor/lazy-sizes.min.js"></script>
+  <script src="/vendor/ffmpeg-wasm/ffmpeg.min.js"></script>
+  <script type="module" src="/js/app.build.js"></script>
+{% endblock %}

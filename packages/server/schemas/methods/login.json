@@ -1,0 +1,25 @@
+{
+  "id": "ctzn.network/methods/login",
+  "title": "Login method",
+  "description": "Start a new account session with the server.",
+  "type": "method",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["username", "password"],
+    "properties": {
+      "username": {"type": "string", "minLength": 3},
+      "password": {"type": "string"}
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["url", "dbKey", "username"],
+    "properties": {
+      "url": {"type": "string", "format": "uri"},
+      "dbKey": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+      "username": {"type": "string", "minLength": 3}
+    }
+  }
+}

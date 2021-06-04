@@ -1,0 +1,44 @@
+{
+  "id": "ctzn.network/profile",
+  "title": "Profile",
+  "description": "Information about a user",
+  "type": "json-table",
+  "keyTemplate": [{"type": "string", "value": "self"}],
+  "blobs": {
+    "avatar": {
+      "maxSize": 512000,
+      "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]
+    },
+    "banner": {
+      "maxSize": 512000,
+      "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml"]
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["displayName"],
+    "properties": {
+      "displayName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "description": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "homepageUrl": {
+        "type": "string",
+        "format": "uri"
+      },
+      "communities": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "maxLength": 64
+        }
+      }
+    }
+  }
+}

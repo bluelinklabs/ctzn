@@ -1,0 +1,18 @@
+{
+  "id": "ctzn.network/methods/mark-notifications-read",
+  "title": "Mark notifications read method",
+  "description": "Clears the 'unread' state of all current notifications.",
+  "type": "method",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {}
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "clearedAt": {"type": "string", "format": "date-time"}
+    }
+  }
+}

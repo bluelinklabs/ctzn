@@ -1,0 +1,17 @@
+{
+  "name": "@bluelinklabs/ctzn-adminui",
+  "version": "0.0.1",
+  "description": "Admin UI package for the ctzn project.",
+  "type": "module",
+  "scripts": {
+    "tailwind-dev": "npx tailwindcss-cli@latest build -o static/css/tailwind.css",
+    "tailwind-prod": "NODE_ENV=production npx tailwindcss-cli@latest build -o static/css/tailwind.css",
+    "prepare": "npm run tailwind-prod",
+    "postpublish": "npm run tailwind-dev"
+  },
+  "author": "Paul Frazee <pfrazee@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+  },
+  "devDependencies": {}
+}

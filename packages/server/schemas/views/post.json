@@ -1,0 +1,94 @@
+{
+  "id": "ctzn.network/views/post",
+  "title": "Post view",
+  "description": "Get a post-record.",
+  "type": "json-view",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "dbId": {"type": "string"},
+      "postKey": {"type": "string"},
+      "dbUrl": {"type": "string", "format": "uri"}
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["author", "key", "seq", "dbUrl", "value"],
+    "properties": {
+      "author": {
+        "type": "object",
+        "required": ["dbKey"],
+        "properties": {
+          "dbKey": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "repostedBy": {
+        "type": "object",
+        "required": ["dbKey"],
+        "properties": {
+          "dbKey": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "key": {"type": "string"},
+      "reposts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "dbKey": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "postKey": {"type": "string"}
+          }
+        }
+      },
+      "reactions": {
+        "type": "object",
+        "patternProperties": {
+          ".*": {
+            "type": "array",
+            "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+          }
+        }
+      },
+      "replyCount": {"type": "number"},
+      "seq": {"type": "number"},
+      "dbUrl": {"type": "string", "format": "uri"},
+      "value": {
+        "type": "object",
+        "required": ["text", "createdAt"],
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["image", "video"]
+                },
+                "caption": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

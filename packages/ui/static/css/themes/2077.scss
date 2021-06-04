@@ -1,0 +1,165 @@
+@import './vanilladark';
+
+$color-green: #d7ecd3;
+$color-darkgreen: #109c10;
+$bgcolor-green: #1e2c1c;
+$bgcolor-green-light: #1e5118;
+$bordercolor-green: #639911;
+$font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+.theme-2077 {
+  @extend %theme-vanilladark;
+
+  .link {
+    color: $color-darkgreen;
+  }
+
+  .reaction {
+    border-radius: 0;
+    font-family: $font-mono;
+
+    &.is-selected {
+      background: $bgcolor-green-light;
+      color: $color-green;
+    }
+  }
+  .communities-list {
+    .community {
+      font-family: $font-mono;
+    }
+  }
+
+  app-button button {
+    &.primary {
+      background: $bgcolor-green;
+      border-color: $bordercolor-green;
+      &:hover {
+        background: $bgcolor-green-light;
+      }
+      &.disabled {
+        background: $bgcolor-green-light;
+        border-color: transparent;
+        color: $color-green;
+        opacity: 0.7;
+      }
+    }
+  }
+
+  app-header {
+    .desktop-header {
+      .nav-item {
+        font-family: $font-mono;
+      }
+      .nav-item:hover,
+      .nav-item.is-selected {
+        color: $color-darkgreen;
+        border-bottom: 2px solid $color-darkgreen;
+      }
+    }
+  }
+
+  app-user-list {
+    .user {
+      .avatar {
+        border: 2px solid $bordercolor-green;
+        border-radius: 0;
+        background: $bordercolor-green;
+      }
+    }
+  }
+
+  app-comment {
+    .avatar {
+      border-radius: 0;
+    }
+
+    .comment-text {
+      font-family: $font-mono;
+      font-size: 14px;
+    }
+  }
+
+  app-current-status,
+  app-current-statuses-list {
+    .section {
+      .text {
+        font-family: $font-mono;
+      }
+    }
+  }
+
+  app-mini-profile {
+    .avatar {
+      border-radius: 0;
+    }
+    .display-name {
+      font-family: $font-mono;
+      font-weight: bold;
+    }
+  }
+
+  app-post {
+    .avatar {
+      border-radius: 0;
+    }
+
+    .post-text {
+      font-family: $font-mono;
+      font-size: 15px;
+    }
+
+    .post-media .item {
+      border-radius: 0;
+      border: 0;
+    }
+  }
+
+  app-post-composer {
+    .post-community-select {
+      font-family: $font-mono;
+    }
+  }
+
+  app-posts-feed {
+    border: 0 !important;
+
+    .placeholder,
+    app-post {
+      border: 1px solid $bordercolor !important;
+      margin: 0.25rem 0;
+    }
+  }
+
+  app-notification {
+    .avatar {
+      border-radius: 0;
+    }
+  }
+
+  app-notifications-feed {
+    .placeholder,
+    app-notification {
+      border: 1px solid $bordercolor !important;
+      margin: 0.25rem 0;
+    }
+  }
+
+  app-suggestions-sidebar {
+    font-family: $font-mono;
+  }
+  
+  app-main-view {
+    .content-header {
+      border: 1px solid $bordercolor;
+      margin-top: 0.25rem;
+    }
+  }
+  app-notifications-view {
+    .content-header {
+      border: 1px solid $bordercolor;
+      margin-top: 0.25rem;
+    }
+  }
+  app-user-view {
+  }
+}

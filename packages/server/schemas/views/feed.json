@@ -1,0 +1,113 @@
+{
+  "id": "ctzn.network/views/feed",
+  "title": "Feed view",
+  "description": "Get the content in a user's feed.",
+  "type": "json-view",
+  "parameters": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "limit": {"type": "number"},
+      "lt": {"type": "string"},
+      "audience": {"type": "string"}
+    }
+  },
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["feed"],
+    "properties": {
+      "feed": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["author", "key", "seq", "dbUrl", "value"],
+          "properties": {
+            "author": {
+              "type": "object",
+              "required": ["dbKey"],
+              "properties": {
+                "dbKey": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            },
+            "repostedBy": {
+              "type": "object",
+              "required": ["dbKey"],
+              "properties": {
+                "dbKey": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            },
+            "key": {"type": "string"},
+            "reposts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "dbKey": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                  "postKey": {"type": "string"}
+                }
+              }
+            },
+            "reactions": {
+              "type": "object",
+              "patternProperties": {
+                ".*": {
+                  "type": "array",
+                  "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+                }
+              }
+            },
+            "replyCount": {"type": "number"},
+            "seq": {"type": "number"},
+            "dbUrl": {"type": "string", "format": "uri"},
+            "value": {
+              "type": "object",
+              "required": ["text", "createdAt"],
+              "properties": {
+                "audience": {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                "text": {
+                  "type": "string",
+                  "maxLength": 256
+                },
+                "media": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": ["image", "video"]
+                      },
+                      "caption": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "warnings": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

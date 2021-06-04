@@ -1,0 +1,25 @@
+{
+  "id": "ctzn.network/follow-idx",
+  "title": "Follows Index",
+  "description": "Aggregated follows for users on the server",
+  "type": "json-table",
+  "keyTemplate": [{"type": "json-pointer", "value": "/subjectDbKey"}],
+  "definition": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["subjectDbKey", "followerDbKeys"],
+    "properties": {
+      "subjectDbKey": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "followerDbKeys": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}
